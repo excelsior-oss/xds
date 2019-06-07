@@ -1,0 +1,31 @@
+(* Copyright (c) 1998 XDS Ltd, Russia. All Rights Reserved. *)
+
+DEFINITION MODULE OS2Processes;
+
+(* This module contains OS2-specific extended thread
+   controll in addition to basic functionality of ISO10514
+   standard module Processes
+*)
+
+IMPORT  xOS2, Processes, Semaphores;
+
+TYPE
+  TID       = xOS2.TID;
+  HEV       = xOS2.HEV;
+  ProcessId = Processes.ProcessId;
+  Sources   = Processes.Sources;
+  SEMAPHORE = Semaphores.SEMAPHORE;
+
+PROCEDURE GetThreadHandle(p: ProcessId): TID;
+  (* returns handle of OS2 thread corresponding to the given process *)
+
+PROCEDURE GetSemaphoreHandle(s: SEMAPHORE): HEV;
+  (* returns handle of OS2 semaphore corresponding to the given one *)
+
+PROCEDURE MakeSource(h: HEV): Sources;
+  (* makes event source from given OS2 handle.
+     Returned source may be used in calls to Processes.Attach,
+     Processes.Detach, Processes.IsAttached, Processes.Handler.
+  *)
+
+END OS2Processes.

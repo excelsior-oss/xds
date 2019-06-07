@@ -1,0 +1,104 @@
+-- Набор переменных, определяющих режим работы отладчика
+
+DEFINITION MODULE Options;
+
+IMPORT xStr;
+
+
+<* IF DEST_XDS THEN *>
+
+IMPORT Translit;
+
+<* END *>
+
+
+VAR
+  tst_name   : xStr.String; (* имя файла тестового пакета           *)
+  prog_name  : xStr.String; (* имя программы                        *)
+  prog_args  : xStr.String; (* аргументы программы                  *)
+  Stop_Pack  : BOOLEAN;     (* признак останова пакетного отладчика *)
+  DialogMode : BOOLEAN;     (* запуск в диалоговом режиме           *)
+  in_dialog  : BOOLEAN;     (* признак работы в диалоге             *)
+  name_only  : BOOLEAN;     (* признак выдачи только иемни пакета   *)
+  DisasmMode : BOOLEAN;     (* Полный/стандартный дисассемблер      *)
+  Code       : BOOLEAN;     (* Представление кода программы         *)
+  WarningBell: BOOLEAN;     (* Сигнал при ошибках                   *)
+  SaveOpt    : BOOLEAN;     (* Сохранять опции с файле сессии       *)
+  CodeHilight: BOOLEAN;     (* Выделение кода                       *)
+  CallHilight: BOOLEAN;     (* Выделение в тексте мест вызова       *)
+  X-, Y-     : CARDINAL;    (* Размер окна отладчика                *)
+  WholeHex   : BOOLEAN;     (* Отображать целые в 16 с/c            *)
+  KbdFile    : xStr.String; (* Файл раскладки клавиатуры            *)
+
+  ConvertVar2Ref: BOOLEAN;  (* Представление переменной как ссылки (см. Expr.def)    *)
+  ShowAllModules: BOOLEAN;  (* Показывать в диалоге модули без отладочной информации *)
+  InitDumpType  : CARDINAL; (* Умольчательное значение типа для дампа                *)
+
+ (*
+  JumpToMainEntry: BOOLEAN; (* Пропускать код до точки входа - главной функции *)
+  JumpToProgramEntry : BOOLEAN; (* Пропускать код до точки входа в компоненту      *)
+ *)
+
+  StopImmediately: BOOLEAN;
+  SkipDisasm     : BOOLEAN; (* Пропускать код без отладочной информации        *)
+
+  ShowModuleWithoutSource  : BOOLEAN; (* Показывать модули без исходного текста          *)
+  DisplayDerefencePointer  : BOOLEAN; (* Показывать указатели с разыменованным значением *)
+  IgnoreWriteProtected     : BOOLEAN; (* Забивать на флаги дампа, писать можно в код     *)
+  UseSingleStructureWindow : BOOLEAN; (* Новую структуру показывать в том же окне        *)
+  CatchExceptInternalError : BOOLEAN; (* Ловить или нет в EXCEPT от MainLoop             *)
+                                      (* и во Flush в диалоге при ошибках                *)
+
+  MergeEqualTypes          : BOOLEAN;
+TYPE
+  SYSTEM = ( os2, win95, win_nt);
+
+VAR
+  TargetSystem: SYSTEM;
+
+
+PROCEDURE SetXY (x, y: CARDINAL);
+
+<* IF DEST_K26 THEN *>
+
+VAR
+  TableModel    : BOOLEAN; -- Замена штатной внешней на штатную табличную
+  TraceRegisters: BOOLEAN; -- Устанавливать трассировку регистров в диалоге
+
+<* ELSIF DEST_XDS THEN *>
+
+VAR
+  ExceptionOnFirstChance: BOOLEAN;
+  ShowSoftwareException : BOOLEAN;
+  SSS_Delay             : CARDINAL;
+
+  StripPathFromFullName   : BOOLEAN;
+  StripPathFromPartialName: BOOLEAN;
+  TranslirateTextFromTo   : Translit.TRANSLITERATE_FROM_TO;
+
+  RemoteMode     : BOOLEAN;
+  RemoteHost     : xStr.String;
+  RemotePort     : CARDINAL;
+  RemoteTransport: xStr.String;
+
+  KernelInRemoteMode  : BOOLEAN;
+  AutoDetectActualType: BOOLEAN; (* Определять настоящий тип обьектов             *)
+  CorrectObjectName   : BOOLEAN; (* По возможности преобразовавать имена обьектов *)
+
+<* END *>
+
+
+<* IF DEFINED (xd_debug) & xd_debug THEN *>
+
+TYPE
+  DEBUG_MODE = ( Load, Expr, Another, InfoCache);
+  DEBUG_INFO = SET OF DEBUG_MODE;
+
+PROCEDURE DebugOn (d: DEBUG_MODE); (* Включить режим *)
+
+PROCEDURE Debug (d: DEBUG_MODE) : BOOLEAN; (* Включен ли режим? *)
+
+<* END *>
+
+
+END Options.

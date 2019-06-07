@@ -1,0 +1,6 @@
+LIBRARY xd_nb04
+
+EXPORTS
+  ProcessDebugInfo=DI_NB04_ProcessDebugInfo  
+  ReadModules=DI_NB04_ReadModules
+  BuildForMod=DI_NB04_BuildForMod

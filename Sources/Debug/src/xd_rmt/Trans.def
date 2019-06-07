@@ -1,0 +1,13 @@
+-- Определение процедуры инициализации транспорта
+-- для удаленной отладки
+-- Транспорт заполняет переданную структуру
+-- требуемыми процедурами, описанными в RemTypes
+
+DEFINITION MODULE Trans;
+
+IMPORT SYSTEM;
+IMPORT RemTypes;
+
+PROCEDURE InitTransport (VAR transport: RemTypes.TRANSPORT): BOOLEAN;
+
+END Trans.

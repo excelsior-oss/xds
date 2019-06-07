@@ -1,0 +1,159 @@
+M       = ctr.mkf
+
+TARGET  = ctr.exe
+
+CFLAGS  = /c /nologo /w /Zp1 /Zi -DctTargetOS_WIN -DctHostOS_WIN
+CC	= @cl
+
+
+
+
+# ------------------ objects enumeration ------------------
+#                    -------------------
+
+OBJ= \
+      ch\ctr.obj \
+      ch\ctSpawn.obj \
+      ch\ctRemoteSpawn.obj \
+      ch\ctMemory.obj \
+      ch\ctNode.obj \
+      ch\ctErrors.obj \
+      ch\ctMagic.obj \
+      ch\ctCfg.obj \
+      ch\ctExec.obj \
+      ch\ctScan.obj \
+      ch\ctParse.obj \
+      ch\ctInterpret.obj \
+      ch\lists.obj \
+      ch\stacks.obj
+
+# ------------------- target make rules -------------------
+#                     -----------------
+
+$(TARGET) : $(OBJ)
+	@link.exe @<<
+/nologo
+/debug
+/incremental:yes
+/subsystem:console
+/machine:I386
+/stack:100000
+/out:"$(TARGET)"
+$(OBJ)
+WINMM.LIB
+<<
+
+# ----------------- Dependency information ----------------
+#                   ----------------------
+ch\ctr.obj: src\ctParse.h
+ch\ctr.obj: src\ctInterpret.h
+ch\ctr.obj: src\ctr.c
+        $(CC) $(CFLAGS) src\ctr.c /Foch\ctr.obj
+
+ch\ctSpawn.obj: src\ctSpawn.h
+ch\ctSpawn.obj: src\ctSpawn.c
+        $(CC) $(CFLAGS) src\ctSpawn.c  /Foch\ctSpawn.obj
+
+ch\ctRemoteSpawn.obj: src\ctCfg.h
+ch\ctRemoteSpawn.obj: src\ctRemoteSpawn.h
+ch\ctRemoteSpawn.obj: src\ctRemoteSpawn.c
+        $(CC) $(CFLAGS) src\ctRemoteSpawn.c /Foch\ctRemoteSpawn.obj
+
+ch\ctMemory.obj: src\ctMemory.h
+ch\ctmemory.obj: src\ctAssert.h
+ch\ctMemory.obj: src\ctMemory.c
+        $(CC) $(CFLAGS) src\ctMemory.c  /Foch\ctMemory.obj
+
+ch\ctNode.obj: src\ctMagic.h
+ch\ctNode.obj: src\ctLimits.h
+ch\ctNode.obj: src\ctNode.h
+ch\ctNode.obj: src\lists.h
+ch\ctNode.obj: src\ctMemory.h
+ch\ctNode.obj: src\ctAssert.h
+ch\ctNode.obj: src\ctNode.c
+        $(CC) $(CFLAGS) src\ctNode.c  /Foch\ctNode.obj
+
+ch\ctErrors.obj: src\ctErrCodes.h
+ch\ctErrors.obj: src\ctErrors.h
+ch\ctErrors.obj: src\ctErrors.c
+        $(CC) $(CFLAGS) src\ctErrors.c  /Foch\ctErrors.obj
+
+ch\ctMagic.obj: src\ctAssert.h
+ch\ctMagic.obj: src\ctMagic.h
+ch\ctMagic.obj: src\ctMagic.c
+        $(CC) $(CFLAGS) src\ctMagic.c /Foch\ctMagic.obj
+
+ch\ctCfg.obj: src\ctAssert.h
+ch\ctCfg.obj: src\ctMagic.h
+ch\ctCfg.obj: src\ctMemory.h
+ch\ctCfg.obj: src\ctStrs.h
+ch\ctCfg.obj: src\ctScan.h
+ch\ctCfg.obj: src\ctErrors.h
+ch\ctCfg.obj: src\lists.h
+ch\ctCfg.obj: src\ctCfg.h
+ch\ctCfg.obj: src\ctCfg.c
+        $(CC) $(CFLAGS) src\ctCfg.c /Foch\ctCfg.obj
+
+ch\ctExec.obj: src\ctAssert.h
+ch\ctExec.obj: src\ctSpawn.h
+ch\ctExec.obj: src\ctMagic.h
+ch\ctExec.obj: src\ctMemory.h
+ch\ctExec.obj: src\ctStrs.h
+ch\ctExec.obj: src\ctErrors.h
+ch\ctExec.obj: src\ctNode.h
+ch\ctExec.obj: src\lists.h
+ch\ctExec.obj: src\ctExec.h
+ch\ctExec.obj: src\ctExec.c
+        $(CC) $(CFLAGS) src\ctExec.c /Foch\ctExec.obj
+
+ch\ctScan.obj: src\ctAssert.h
+ch\ctScan.obj: src\ctLimits.h
+ch\ctScan.obj: src\ctMemory.h
+ch\ctScan.obj: src\ctMagic.h
+ch\ctScan.obj: src\ctScan.h
+ch\ctScan.obj: src\ctErrCodes.h
+ch\ctScan.obj: src\ctScan.c
+        $(CC) $(CFLAGS) src\ctScan.c /Foch\ctScan.obj
+
+ch\ctParse.obj: src\ctAssert.h
+ch\ctParse.obj: src\ctLimits.h
+ch\ctParse.obj: src\ctMagic.h
+ch\ctParse.obj: src\ctStrs.h
+ch\ctParse.obj: src\ctErrors.h
+ch\ctParse.obj: src\ctNode.h
+ch\ctParse.obj: src\ctErrCodes.h
+ch\ctParse.obj: src\ctScan.h
+ch\ctParse.obj: src\ctMemory.h
+ch\ctParse.obj: src\ctParse.h
+ch\ctParse.obj: src\ctParse.c
+        $(CC) $(CFLAGS) src\ctParse.c /Foch\ctParse.obj
+
+ch\ctInterpret.obj: src\stacks.h
+ch\ctInterpret.obj: src\ctAssert.h
+ch\ctInterpret.obj: src\ctErrors.h
+ch\ctInterpret.obj: src\ctErrCodes.h
+ch\ctInterpret.obj: src\ctMagic.h
+ch\ctInterpret.obj: src\ctMemory.h
+ch\ctInterpret.obj: src\ctNode.h
+ch\ctInterpret.obj: src\ctExec.h
+ch\ctInterpret.obj: src\ctInterpret.h
+ch\ctInterpret.obj: src\ctInterpret.c
+        $(CC) $(CFLAGS) src\ctInterpret.c /Foch\ctInterpret.obj
+
+
+ch\lists.obj: src\ctAssert.h
+ch\lists.obj: src\ctMemory.h
+ch\lists.obj: src\lists.h
+ch\lists.obj: src\lists.c
+        $(CC) $(CFLAGS) src\lists.c /Foch\lists.obj
+
+
+ch\stacks.obj: src\ctAssert.h
+ch\stacks.obj: src\ctMemory.h
+ch\stacks.obj: src\stacks.h
+ch\stacks.obj: src\stacks.c
+        $(CC) $(CFLAGS) src\stacks.c /Foch\stacks.obj
+
+
+# end of makefile
+

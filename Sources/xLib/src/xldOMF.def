@@ -1,0 +1,95 @@
+(** Copyright (c) 1995 xTech Ltd, Russia. All Rights Reserved. *)
+(** XDS librarian. Description of OMF structures. *)
+(** It is not intended to be complete OMF description. *)
+<*+ M2EXTENSIONS *>
+<* ALIGNMENT="1" *>
+DEFINITION MODULE xldOMF; (* Hady. 03.11.95 12:09 *)
+
+IMPORT
+  SYSTEM
+  ,IOChan
+  ,IOResult
+  ;
+
+
+CONST
+  LibPageSize = 16;
+  DirPageSize = 512;
+  DirPageBuckets = 37;
+  DirPageHeaderSize = DirPageBuckets+1;
+
+
+TYPE
+  ChanId = IOChan.ChanId;
+
+  BYTE = SYSTEM.CARD8;
+  WORD = SYSTEM.CARD16;
+  HeaderType = BYTE;
+  LengthType = WORD;
+  NameType   = ARRAY [0..255] OF CHAR;
+
+CONST (* Types *)
+  LibHdr   = HeaderType(0F0H);
+  LibEnd   = HeaderType(0F1H);
+  THEADR   = HeaderType(080H);
+  LHEADR   = HeaderType(082H);
+  COMENT   = HeaderType(088H);
+  MODEND   = HeaderType(08AH);
+  MODEND32 = HeaderType(08BH);
+  PUBDEF16 = HeaderType(090H);
+  PUBDEF32 = HeaderType(091H);
+  COMDEF   = HeaderType(0B0H);
+  XOMF_THEADR   = HeaderType(0D5H);
+  XOMF_LibHdr   = HeaderType(0F2H);
+
+VAR IsXOMF : BOOLEAN;
+
+PROCEDURE LibHash(name: ARRAY OF CHAR; pages,buckets: INTEGER; VAR px,pd,po,od: INTEGER);
+
+PROCEDURE WritePadding(to: ChanId; len: CARDINAL);
+
+PROCEDURE WriteLibHeader(to: ChanId; page,dofs,dsize: INTEGER; flg: CHAR);
+
+PROCEDURE WriteLibEnd(to: ChanId; padd: INTEGER);
+
+PROCEDURE WriteTHEADR(to: ChanId; name: ARRAY OF CHAR);
+
+PROCEDURE WriteImportByName( to     :ChanId;
+                             iname  :ARRAY OF CHAR;
+                             mname  :ARRAY OF CHAR;
+                             ename  :ARRAY OF CHAR
+                           );
+
+PROCEDURE WriteImportByOrdinal( to     :ChanId;
+                                iname  :ARRAY OF CHAR;
+                                mname  :ARRAY OF CHAR;
+                                ord    :CARDINAL
+                              );
+
+PROCEDURE WriteMODEND(to: ChanId);
+
+(* -------------------- INPUT ---------------------- *)
+
+TYPE
+  Record = RECORD
+    file: ChanId;
+    hdr : HeaderType;
+    len : LengthType;
+    err : BOOLEAN;
+  END;
+
+PROCEDURE OpenRecord(VAR r: Record; file: ChanId);
+
+PROCEDURE SkipRecord(VAR r: Record);
+
+PROCEDURE SkipBytes(VAR r: Record; bytes: INTEGER);
+
+PROCEDURE ReadByte(VAR r: Record; VAR b: BYTE);
+
+PROCEDURE ReadName(VAR r: Record; VAR name: NameType);
+
+PROCEDURE ReadIndex(VAR r: Record; VAR c: INTEGER);
+
+PROCEDURE Skip(file: ChanId; len: INTEGER);
+
+END xldOMF.

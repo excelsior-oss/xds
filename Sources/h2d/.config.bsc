@@ -1,0 +1,13 @@
+# XDS-LLVM Test Coverage System: Build System Configuration
+
+UNIT_NAME=XDS-x86-H2D-converter
+
+ALL_COMPONENTS=h2d
+PRIMARY_COMPONENTS=h2d
+DEFAULT_COMPONENT=h2d
+
+# Tools necessary to build component
+ENVIRONMENT=XDSDIR
+
+# External files which are part of this component  
+EXTDEPS=

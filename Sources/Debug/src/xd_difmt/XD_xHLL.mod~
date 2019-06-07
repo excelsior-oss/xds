@@ -1,0 +1,9 @@
+-- Главный модуль компоненты xd_nb09: конвертор для формата xHLL
+
+MODULE XD_xHLL;
+
+IMPORT DI_NB04;
+
+BEGIN
+  DI_NB04.ExtendedFormat := TRUE;
+END XD_xHLL.

@@ -1,0 +1,167 @@
+-- Предоставляет функции для получения
+-- данных о профилировании программы
+
+DEFINITION MODULE Profile;
+
+IMPORT sys := SYSTEM;
+
+IMPORT pt  := PrfTypes;
+
+
+TYPE
+  NAME = POINTER TO ARRAY [0..0FFFEH] OF CHAR;
+  PROFDATA = pt.PROFDATA;
+  MEM_TRACE_RESULT = pt.MEM_TRACE_RESULT;
+  TIME = pt.TIME;
+  CALL = pt.TCALL;
+
+
+CONST
+  -- LoadDebugInfo return code
+  Error                       = pt.Error;                       -- Error
+  OpenErrorProfilerData       = pt.OpenErrorProfilerData;       -- Error opening profiler trace file
+  ReadErrorProfilerData       = pt.ReadErrorProfilerData;       -- Error reading profiler trace file
+  ReadDebugInfo               = pt.ReadDebugInfo;               -- Error reading debugging information
+  WrongFormatProfilerData     = pt.WrongFormatProfilerData;     -- Wrong format of profiler trace file
+  IsNot_XDS_ProfilerTraceFile = pt.IsNot_XDS_ProfilerTraceFile; -- Is not XDS profiler trace file
+
+
+-- Load profiler trace file and debugging information.
+-- "name" is name of profiler trace file  
+-- Result:
+--   <= 0 in case of error (see above)
+--   >  0 if success (= number of components)
+PROCEDURE ["C"] LoadDebugInfo (name: ARRAY OF CHAR): INTEGER;
+
+
+CONST
+  UNKNOWN             = 0;
+  TRACE_EXECUTION     = 1;
+  TRACE_MEMORY        = 2;
+  TRACE_CALLS_PROFILE = 3;
+
+PROCEDURE ["C"] Utility (): CARDINAL;
+
+
+-- Clear debug information
+PROCEDURE ["C"] ClearDebugInfo;
+
+ 
+-- Number of snapshots
+-- "Snapshots" is a total number of EIP values collected during execution trace.
+PROCEDURE ["C"] GetSnapshots (): INTEGER;
+
+-- Number of times of memory used
+PROCEDURE ["C"] GetMemUsed (): INTEGER;
+
+
+-- Component name
+-- nCom from [0..Quantity_Components-1]
+PROCEDURE ["C"] ComponentName (nCom: INTEGER): NAME;
+
+-- Number of modules or publics in component
+-- nCom from [0..Quantity_Components-1]
+-- result = 0 - no parts in components
+-- result > 0 - quantity modules
+-- result < 0 - quantity publics
+PROCEDURE ["C"] N_Parts (nCom: INTEGER): INTEGER;
+
+-- Component shapshots
+-- nCom from [0..Quantity_Components-1]
+PROCEDURE ["C"] ComponentSnapshots (nCom: INTEGER): INTEGER;
+
+-- Quantity of snapshots in unknown parts
+PROCEDURE ["C"] GetUnknownParts (nCom: INTEGER): INTEGER;
+
+ 
+-- Public name
+-- nPublic from [0..Quantity_Public-1]
+PROCEDURE ["C"] PublicName (nCom, nPublic: INTEGER): NAME;
+
+-- Public shapshots
+-- nPublic from [0..Quantity_Publics-1]
+PROCEDURE ["C"] PublicSnapshots (nCom, nPublic: INTEGER): INTEGER;
+
+-- Public attributes: address and lenght
+-- nPublic from [0..Quantity_Publics-1]
+PROCEDURE ["C"] PublicAttr (nCom, nPublic: INTEGER; VAR addr, length: CARDINAL);
+
+
+-- Module name 
+-- nModule from [0..Quantity_Modules-1]
+PROCEDURE ["C"] ModuleName (nCom, nModule: INTEGER): NAME;
+
+-- Source file name 
+-- nModule from [0..Quantity_Modules-1]
+PROCEDURE ["C"] SourceName (nCom, nModule: INTEGER): NAME;
+
+-- Module shapshots
+-- nModule from [0..Quantity_Modules-1]
+PROCEDURE ["C"] ModuleSnapshots (nCom, nModule: INTEGER): INTEGER;
+
+
+-- Line snapshots
+-- nModule from [0..Quantity_Modules-1]
+-- nLine from [0..Quantity_Lines-1]
+PROCEDURE ["C"] LineSnapshots (nCom, nModule, nLine: INTEGER): INTEGER;
+
+
+-- Number of procedures in module 
+-- nModule from [0..Quantity_Modules-1]
+PROCEDURE ["C"] N_Proc (nCom, nModule: INTEGER): INTEGER;
+
+
+-- Procedure name 
+-- nModule from [0..Quantity_Modules-1]
+-- nProc from [0..Quantity_Procedures-1]
+PROCEDURE ["C"] ProcName (nCom, nModule, nProc: INTEGER): NAME;
+
+
+-- Procedure snapshots
+-- nModule from [0..Quantity_Modules-1]
+-- nProc from [0..Quantity_Procedures-1]
+PROCEDURE ["C"] ProcSnapshots (nCom, nModule, nProc: INTEGER): INTEGER;
+
+-- Procedure info (about call)
+-- nModule from [0..Quantity_Modules-1]
+-- nProc from [0..Quantity_Procedures-1]
+PROCEDURE ["C"] ProcInfo (nCom, nModule, nProc: INTEGER; VAR info: PROFDATA): sys.BOOL32;
+
+-- Procedure line bounds
+-- nModule from [0..Quantity_Modules-1]
+-- nProc from [0..Quantity_Procedures-1]
+-- "begin" is line number of procedure BEGIN (counting from 0)
+-- "end" is line number of procedure END
+-- Line numbers are counted from 0
+PROCEDURE ["C"] ProcBounds (nCom, nModule, nProc: INTEGER; VAR begin, end: INTEGER): sys.BOOL32;
+
+
+PROCEDURE ["C"] GetMemTraceResults (VAR res: MEM_TRACE_RESULT): sys.BOOL32;
+
+
+PROCEDURE ["C"] GetExecutionTime (VAR time: TIME): sys.BOOL32;
+
+
+PROCEDURE ["C"] GetProfilerMode (): pt.PROF_MODE;
+
+-- Procedure: calls info
+-- nModule from [0..Quantity_Modules-1]
+-- nProc from [0..Quantity_Procedures-1]
+PROCEDURE ["C"] N_Call (nCom, nModule, nProc: INTEGER): INTEGER;
+
+
+-- nModule from [0..Quantity_Modules-1]
+-- nProc from [0..Quantity_Procedures-1]
+-- nCall from [0..N_Call-1]
+PROCEDURE ["C"] CallCount (nCom, nModule, nProc, nCall: INTEGER): INTEGER;
+
+
+-- nModule from [0..Quantity_Modules-1]
+-- nProc from [0..Quantity_Procedures-1]
+-- nCall from [0..N_Call-1]
+PROCEDURE ["C"] CallPlace (nCom, nModule, nProc, nCall: INTEGER; VAR com, mod, line: INTEGER): sys.BOOL32;
+
+
+
+END Profile.
+

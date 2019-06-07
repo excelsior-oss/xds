@@ -1,0 +1,38 @@
+(* Copyright (C) 1996-99 XDS Ltd. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE xtsFIO;
+
+IMPORT FIO;
+IMPORT IOChan, ChanConsts, SysClock;
+
+TYPE
+  SpaceInfo = RECORD
+                clusterSize   :LONGCARD; (* bytes per allocation unit *)
+                totalClusters :LONGCARD; (* number of total alloc inits *)
+                freeClusters  :LONGCARD; (* number of free alloc inits *)
+              END;
+
+PROCEDURE setShM(denyRd, denyWr: BOOLEAN);
+PROCEDURE restoreShM;
+
+PROCEDURE mk_chan(cid :IOChan.ChanId; fh :LONGCARD; flags :ChanConsts.FlagSet; VAR res :ChanConsts.OpenResults);
+
+PROCEDURE SetDrive (drive :LONGCARD; VAR res :CARDINAL);
+PROCEDURE GetDrive () :LONGCARD;
+PROCEDURE GetSpaceInfo (drive :LONGCARD; VAR info :SpaceInfo; VAR res :CARDINAL);
+PROCEDURE GetLabel( drive :LONGCARD; VAR label :ARRAY OF CHAR; VAR res :CARDINAL );
+PROCEDURE ChgDir (path :ARRAY OF CHAR; VAR res :CARDINAL);
+PROCEDURE GetDir (drive :LONGCARD; VAR path :ARRAY OF CHAR; VAR res :CARDINAL);
+PROCEDURE CreateDir (path :ARRAY OF CHAR; VAR res :LONGCARD);
+PROCEDURE RmvDir (path :ARRAY OF CHAR; VAR res :LONGCARD);
+PROCEDURE ScanFirst ( path :ARRAY OF CHAR; attr: FIO.FileAttr; VAR info :FIO.DirEntry; VAR res :CARDINAL);
+PROCEDURE ScanNext  ( VAR info :FIO.DirEntry; VAR res :CARDINAL);
+PROCEDURE ScanClose ( VAR info :FIO.DirEntry );
+PROCEDURE SetFileDate(f :IOChan.ChanId; b :SysClock.DateTime) ;
+PROCEDURE GetFileStamp(F :IOChan.ChanId; VAR b :SysClock.DateTime) :BOOLEAN;
+
+END xtsFIO.
+

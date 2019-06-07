@@ -1,0 +1,1077 @@
+FROM XDS25M.DLL IMPORT
+  RealMath_BEGIN AS RealMath__BEGIN
+ ,LowReal_BEGIN AS LowReal__BEGIN
+ ,LowReal_ulp AS LowReal__ulp
+ ,LowReal_trunc AS LowReal__trunc
+ ,MathC_abs AS MathC__abs
+ ,LowReal_succ AS LowReal__succ
+ ,LowReal_round AS LowReal__round
+ ,LowReal_sign AS LowReal__sign
+ ,LowReal_setMode AS LowReal__setMode
+ ,LowReal_scale AS LowReal__scale
+ ,LowReal_synthesize AS LowReal__synthesize
+ ,M2EXCEPTION_M2Exception AS M2EXCEPTION__M2Exception
+ ,M2EXCEPTION_BEGIN AS M2EXCEPTION__BEGIN
+ ,LowLong_round AS LowLong__round
+ ,LowLong_synthesize AS LowLong__synthesize
+ ,LowLong_succ AS LowLong__succ
+ ,LowLong_sign AS LowLong__sign
+ ,LowLong_setMode AS LowLong__setMode
+ ,LowLong_scale AS LowLong__scale
+ ,LowLong_fractpart AS LowLong__fractpart
+ ,LowLong_exponent AS LowLong__exponent
+ ,LowLong_pred AS LowLong__pred
+ ,LowLong_intpart AS LowLong__intpart
+ ,LowLong_fraction AS LowLong__fraction
+ ,LowReal_fractpart AS LowReal__fractpart
+ ,LowReal_intpart AS LowReal__intpart
+ ,LowReal_pred AS LowReal__pred
+ ,LowLong_trunc AS LowLong__trunc
+ ,LowReal_exponent AS LowReal__exponent
+ ,LowReal_fraction AS LowReal__fraction
+ ,LowReal_currentMode AS LowReal__currentMode
+ ,LowReal_IsLowException AS LowReal__IsLowException
+ ,LowLong_BEGIN AS LowLong__BEGIN
+ ,LowLong_ulp AS LowLong__ulp
+ ,MathCL_power AS MathCL__power
+ ,MathCL_cosh AS MathCL__cosh
+ ,MathC_arccos AS MathC__arccos
+ ,MathCL_conj AS MathCL__conj
+ ,MathCL_arctanh AS MathCL__arctanh
+ ,MathCL_arctan2 AS MathCL__arctan2
+ ,MathCL_arcsin AS MathCL__arcsin
+ ,MathCL_arctan AS MathCL__arctan
+ ,MathCL_arcsinh AS MathCL__arcsinh
+ ,MathCL_arccos AS MathCL__arccos
+ ,MathCL_arccosh AS MathCL__arccosh
+ ,MathL_arccos AS MathL__arccos
+ ,MathCL_BEGIN AS MathCL__BEGIN
+ ,MathCL_exp AS MathCL__exp
+ ,MathCL_tan AS MathCL__tan
+ ,MathCL_sqrt AS MathCL__sqrt
+ ,MathCL_sinh AS MathCL__sinh
+ ,MathCL_tanh AS MathCL__tanh
+ ,MathCL_sin AS MathCL__sin
+ ,MathL_arccosh AS MathL__arccosh
+ ,MathCL_log AS MathCL__log
+ ,MathCL_ln AS MathCL__ln
+ ,MathCL_cos AS MathCL__cos
+ ,MathC_exp AS MathC__exp
+ ,MathC_cosh AS MathC__cosh
+ ,MathC_cos AS MathC__cos
+ ,MathCL_abs AS MathCL__abs
+ ,MathC_arccosh AS MathC__arccosh
+ ,MathC_arctanh AS MathC__arctanh
+ ,MathC_arctan2 AS MathC__arctan2
+ ,MathC_arctan AS MathC__arctan
+ ,MathC_arcsinh AS MathC__arcsinh
+ ,MathC_arcsin AS MathC__arcsin
+ ,MathC_conj AS MathC__conj
+ ,MathC_BEGIN AS MathC__BEGIN
+ ,MathC_tanh AS MathC__tanh
+ ,MathC_tan AS MathC__tan
+ ,MathC_sqrt AS MathC__sqrt
+ ,MathC_ln AS MathC__ln
+ ,MathC_sinh AS MathC__sinh
+ ,MathC_sin AS MathC__sin
+ ,MathC_power AS MathC__power
+ ,MathC_log AS MathC__log
+ ,LongComplexMath_arg AS LongComplexMath__arg
+ ,LongComplexMath_abs AS LongComplexMath__abs
+ ,LongComplexMath_IsCMathException AS LongComplexMath__IsCMathException
+ ,LongComplexMath_scalarMult AS LongComplexMath__scalarMult
+ ,LongComplexMath_power AS LongComplexMath__power
+ ,LongComplexMath_polarToComplex AS LongComplexMath__polarToComplex
+ ,LongComplexMath_ln AS LongComplexMath__ln
+ ,LongComplexMath_exp AS LongComplexMath__exp
+ ,LongComplexMath_arccos AS LongComplexMath__arccos
+ ,LongComplexMath_cos AS LongComplexMath__cos
+ ,LongComplexMath_conj AS LongComplexMath__conj
+ ,InOut_Write AS InOut__Write
+ ,LongComplexMath_arctan AS LongComplexMath__arctan
+ ,LongComplexMath_arcsin AS LongComplexMath__arcsin
+ ,InOut_WriteHex AS InOut__WriteHex
+ ,InOut_BEGIN AS InOut__BEGIN
+ ,InOut_termCH AS InOut__termCH
+ ,InOut_WriteString AS InOut__WriteString
+ ,InOut_WriteOct AS InOut__WriteOct
+ ,InOut_WriteLn AS InOut__WriteLn
+ ,InOut_WriteInt AS InOut__WriteInt
+ ,InOut_WriteCard AS InOut__WriteCard
+ ,LongStr_RealToFloat AS LongStr__RealToFloat
+ ,LongMath_round AS LongMath__round
+ ,LongMath_power AS LongMath__power
+ ,LongInOut_BEGIN AS LongInOut__BEGIN
+ ,LongMath_exp AS LongMath__exp
+ ,LongMath_cos AS LongMath__cos
+ ,LongMath_ln AS LongMath__ln
+ ,LongMath_arctan AS LongMath__arctan
+ ,LongMath_arcsin AS LongMath__arcsin
+ ,LongMath_arccos AS LongMath__arccos
+ ,LongMath_IsRMathException AS LongMath__IsRMathException
+ ,LongMath_tan AS LongMath__tan
+ ,LongStr_BEGIN AS LongStr__BEGIN
+ ,LongStr_StrToReal AS LongStr__StrToReal
+ ,LongStr_RealToStr AS LongStr__RealToStr
+ ,LongMath_sin AS LongMath__sin
+ ,LongStr_RealToFixed AS LongStr__RealToFixed
+ ,LowLong_currentMode AS LowLong__currentMode
+ ,LongStr_RealToEng AS LongStr__RealToEng
+ ,LongMath_BEGIN AS LongMath__BEGIN
+ ,LowLong_IsLowException AS LowLong__IsLowException
+ ,LongMath_sqrt AS LongMath__sqrt
+ ,LongConv_BEGIN AS LongConv__BEGIN
+ ,LongConv_ValueReal AS LongConv__ValueReal
+ ,LongConv_ScanReal AS LongConv__ScanReal
+ ,LongConv_LengthFloatReal AS LongConv__LengthFloatReal
+ ,LongComplexMath_sqrt AS LongComplexMath__sqrt
+ ,LongConv_LengthEngReal AS LongConv__LengthEngReal
+ ,LongConv_LengthFixedReal AS LongConv__LengthFixedReal
+ ,LongConv_IsRConvException AS LongConv__IsRConvException
+ ,LongConv_FormatReal AS LongConv__FormatReal
+ ,LongComplexMath_BEGIN AS LongComplexMath__BEGIN
+ ,LongComplexMath_tan AS LongComplexMath__tan
+ ,LongComplexMath_sin AS LongComplexMath__sin
+ ,LongInOut_ReadReal AS LongInOut__ReadReal
+ ,LongInOut_Done AS LongInOut__Done
+ ,LongIO_BEGIN AS LongIO__BEGIN
+ ,LongIO_WriteReal AS LongIO__WriteReal
+ ,LongInOut_WriteReal AS LongInOut__WriteReal
+ ,LongIO_WriteFloat AS LongIO__WriteFloat
+ ,LongIO_WriteFixed AS LongIO__WriteFixed
+ ,LongIO_WriteEng AS LongIO__WriteEng
+ ,LongIO_ReadReal AS LongIO__ReadReal
+ ,M2EXCEPTION_IsM2Exception AS M2EXCEPTION__IsM2Exception
+ ,Processes_MyParam AS Processes__MyParam
+ ,Printf_BEGIN AS Printf__BEGIN
+ ,Processes_IsProcessesException AS Processes__IsProcessesException
+ ,Processes_IsAttached AS Processes__IsAttached
+ ,Processes_Handler AS Processes__Handler
+ ,Processes_Me AS Processes__Me
+ ,Processes_Detach AS Processes__Detach
+ ,ProgEnv_ArgNumber AS ProgEnv__ArgNumber
+ ,Processes_Attach AS Processes__Attach
+ ,Processes_Activate AS Processes__Activate
+ ,Processes_Create AS Processes__Create
+ ,ProgEnv_ArgLength AS ProgEnv__ArgLength
+ ,Processes_BEGIN AS Processes__BEGIN
+ ,Processes_ProcessesException AS Processes__ProcessesException
+ ,Processes_UrgencyOf AS Processes__UrgencyOf
+ ,Processes_Switch AS Processes__Switch
+ ,Processes_Wait AS Processes__Wait
+ ,SHORT1FROMMR
+ ,Processes_SuspendMe AS Processes__SuspendMe
+ ,Processes_StopMe AS Processes__StopMe
+ ,Processes_Start AS Processes__Start
+ ,Processes_SuspendMeAndActivate AS Processes__SuspendMeAndActivate
+ ,Out_Char AS Out__Char
+ ,USHORT2FROMMR
+ ,SHORT2FROMMP
+ ,USHORT1FROMMR
+ ,USHORT2FROMMP
+ ,USHORT1FROMMP
+ ,ULONGFROMMR
+ ,COROUTINES_ATTACH AS COROUTINES__ATTACH
+ ,Printf_sprintf AS Printf__sprintf
+ ,SHORT2FROMMR
+ ,Printf_printf AS Printf__printf
+ ,Printf_fprintf AS Printf__fprintf
+ ,Out_BEGIN AS Out__BEGIN
+ ,Out_Int AS Out__Int
+ ,Out_String AS Out__String
+ ,Out_Real AS Out__Real
+ ,Out_Open AS Out__Open
+ ,Out_LongReal AS Out__LongReal
+ ,Out_Ln AS Out__Ln
+ ,ProgEnv_String AS ProgEnv__String
+ ,RealInOut_BEGIN AS RealInOut__BEGIN
+ ,RealInOut_WriteReal AS RealInOut__WriteReal
+ ,RealInOut_ReadReal AS RealInOut__ReadReal
+ ,RealInOut_Done AS RealInOut__Done
+ ,RealIO_BEGIN AS RealIO__BEGIN
+ ,RealIO_WriteReal AS RealIO__WriteReal
+ ,RealIO_ReadReal AS RealIO__ReadReal
+ ,RealIO_WriteFloat AS RealIO__WriteFloat
+ ,RealIO_WriteFixed AS RealIO__WriteFixed
+ ,RealIO_WriteEng AS RealIO__WriteEng
+ ,RealMath_arctan AS RealMath__arctan
+ ,RealMath_sin AS RealMath__sin
+ ,RealMath_round AS RealMath__round
+ ,RealMath_power AS RealMath__power
+ ,RealMath_ln AS RealMath__ln
+ ,RealMath_exp AS RealMath__exp
+ ,RealMath_IsRMathException AS RealMath__IsRMathException
+ ,RealMath_cos AS RealMath__cos
+ ,RealMath_sqrt AS RealMath__sqrt
+ ,RealMath_arcsin AS RealMath__arcsin
+ ,RealMath_arccos AS RealMath__arccos
+ ,RawIO_Read AS RawIO__Read
+ ,ProgEnv_GetArg AS ProgEnv__GetArg
+ ,ProgramArgs_BEGIN AS ProgramArgs__BEGIN
+ ,ProgramArgs_NextArg AS ProgramArgs__NextArg
+ ,ProgEnv_ProgramName AS ProgEnv__ProgramName
+ ,ProgramArgs_ArgChan AS ProgramArgs__ArgChan
+ ,ProgramArgs_IsArgPresent AS ProgramArgs__IsArgPresent
+ ,ProgEnv_BEGIN AS ProgEnv__BEGIN
+ ,ProgEnv_StringLength AS ProgEnv__StringLength
+ ,RealMath_tan AS RealMath__tan
+ ,ProgEnv_ProgramNameLength AS ProgEnv__ProgramNameLength
+ ,RealConv_BEGIN AS RealConv__BEGIN
+ ,RealConv_ValueReal AS RealConv__ValueReal
+ ,RawIO_Write AS RawIO__Write
+ ,RealConv_LengthFloatReal AS RealConv__LengthFloatReal
+ ,RealConv_LengthFixedReal AS RealConv__LengthFixedReal
+ ,RealConv_ScanReal AS RealConv__ScanReal
+ ,RealConv_LengthEngReal AS RealConv__LengthEngReal
+ ,RealConv_IsRConvException AS RealConv__IsRConvException
+ ,RealConv_FormatReal AS RealConv__FormatReal
+ ,RawIO_BEGIN AS RawIO__BEGIN
+ ,MathL_cos AS MathL__cos
+ ,MathR_arctan2 AS MathR__arctan2
+ ,MathR_arctan AS MathR__arctan
+ ,MathR_arcsinh AS MathR__arcsinh
+ ,MathR_arcsin AS MathR__arcsin
+ ,MathR_arccosh AS MathR__arccosh
+ ,MathLib0_BEGIN AS MathLib0__BEGIN
+ ,MathR_arccos AS MathR__arccos
+ ,MathLib0_ln AS MathLib0__ln
+ ,MathLib0_sqrt AS MathLib0__sqrt
+ ,MathLib0_sin AS MathLib0__sin
+ ,MathR_sqrt AS MathR__sqrt
+ ,MathR_sinh AS MathR__sinh
+ ,MathR_sin AS MathR__sin
+ ,MathR_round AS MathR__round
+ ,MathR_power AS MathR__power
+ ,MathR_log AS MathR__log
+ ,MathR_exp AS MathR__exp
+ ,MathR_ln AS MathR__ln
+ ,SHORT1FROMMP
+ ,MathR_cosh AS MathR__cosh
+ ,MathR_cos AS MathR__cos
+ ,MathL_power AS MathL__power
+ ,MathLib0_exp AS MathLib0__exp
+ ,MathL_arcsinh AS MathL__arcsinh
+ ,MathL_log AS MathL__log
+ ,MathL_ln AS MathL__ln
+ ,MathL_arctan AS MathL__arctan
+ ,MathL_exp AS MathL__exp
+ ,MathL_cosh AS MathL__cosh
+ ,MathL_arcsin AS MathL__arcsin
+ ,MathL_arctanh AS MathL__arctanh
+ ,MathL_arctan2 AS MathL__arctan2
+ ,MathL_round AS MathL__round
+ ,MathLib0_entier AS MathLib0__entier
+ ,MathLib0_cos AS MathLib0__cos
+ ,MathLib0_arctan AS MathLib0__arctan
+ ,MathL_BEGIN AS MathL__BEGIN
+ ,MathL_tan AS MathL__tan
+ ,MathL_tanh AS MathL__tanh
+ ,MathL_sin AS MathL__sin
+ ,MathL_sqrt AS MathL__sqrt
+ ,MathL_sinh AS MathL__sinh
+ ,MathR_arctanh AS MathR__arctanh
+ ,MPFROMHWND
+ ,MPFROMCHAR
+ ,MPFROM2USHORT
+ ,MPFROM2SHORT
+ ,MAKEFIXED
+ ,MRFROMUSHORT
+ ,LONGFROMMR
+ ,LONGFROMMP
+ ,FIXEDFRAC
+ ,FIXEDINT
+ ,HWNDFROMMP
+ ,MRFROMULONG
+ ,MPFROMLONG
+ ,MRFROMLONG
+ ,MRFROM2USHORT
+ ,MRFROM2SHORT
+ ,MRFROMSHORT
+ ,MPFROMUSHORT
+ ,MPFROMULONG
+ ,MPFROMSHORT
+ ,MPFROMSH2CH
+ ,MathR_tan AS MathR__tan
+ ,O2Strings_Replace AS O2Strings__Replace
+ ,O2Strings_Pos AS O2Strings__Pos
+ ,O2Strings_Length AS O2Strings__Length
+ ,O2Strings_Insert AS O2Strings__Insert
+ ,O2Strings_Extract AS O2Strings__Extract
+ ,CHAR4FROMMP
+ ,O2Strings_Delete AS O2Strings__Delete
+ ,O2Strings_Cap AS O2Strings__Cap
+ ,O2Strings_Append AS O2Strings__Append
+ ,MathR_tanh AS MathR__tanh
+ ,MathR_BEGIN AS MathR__BEGIN
+ ,CHAR3FROMMP
+ ,CHAR2FROMMP
+ ,CHAR1FROMMP
+ ,OS2IOChan_BEGIN AS OS2IOChan__BEGIN
+ ,O2Strings_BEGIN AS O2Strings__BEGIN
+ ,OS2IOChan_SetOpenAttrs AS OS2IOChan__SetOpenAttrs
+ ,OS2IOChan_MakeChannel AS OS2IOChan__MakeChannel
+ ,OS2IOChan_GetSysHandle AS OS2IOChan__GetSysHandle
+ ,OS2IOChan_GetOpenAttrs AS OS2IOChan__GetOpenAttrs
+ ,ULONGFROMMP
+ ,COROUTINES_CURRENT AS COROUTINES__CURRENT
+ ,FormOut_LineSeparator AS FormOut__LineSeparator
+ ,FileSys_BEGIN AS FileSys__BEGIN
+ ,FileSys_SetCD AS FileSys__SetCD
+ ,FileSys_Rename AS FileSys__Rename
+ ,FileSys_OpenDir AS FileSys__OpenDir
+ ,FileSys_RemoveDirectory AS FileSys__RemoveDirectory
+ ,FileSys_Remove AS FileSys__Remove
+ ,FileSys_ModifyTime AS FileSys__ModifyTime
+ ,FileSys_NextDirEntry AS FileSys__NextDirEntry
+ ,GeneralUserExceptions_IsGeneralException AS GeneralUserExceptions__IsGeneralException
+ ,GeneralUserExceptions_RaiseGeneralException AS GeneralUserExceptions__RaiseGeneralException
+ ,GeneralUserExceptions_BEGIN AS GeneralUserExceptions__BEGIN
+ ,GeneralUserExceptions_GeneralException AS GeneralUserExceptions__GeneralException
+ ,FormStr_BEGIN AS FormStr__BEGIN
+ ,FormStr_print AS FormStr__print
+ ,FormStr_append AS FormStr__append
+ ,FormStr_iscan AS FormStr__iscan
+ ,FormStr_image AS FormStr__image
+ ,FormOut_format AS FormOut__format
+ ,FormOut_BEGIN AS FormOut__BEGIN
+ ,FileName_GetFormat AS FileName__GetFormat
+ ,FileName_BEGIN AS FileName__BEGIN
+ ,FileName_Length AS FileName__Length
+ ,FileName_GetName AS FileName__GetName
+ ,FileName_GetExt AS FileName__GetExt
+ ,FileName_ConvertExt AS FileName__ConvertExt
+ ,FileName_GetDir AS FileName__GetDir
+ ,FileName_Get AS FileName__Get
+ ,FileName_Create AS FileName__Create
+ ,FileName_Convert AS FileName__Convert
+ ,FilePath_IsSimpleName AS FilePath__IsSimpleName
+ ,FileSys_GetCDNameLength AS FileSys__GetCDNameLength
+ ,FileSys_GetCDName AS FileSys__GetCDName
+ ,FileSys_Exists AS FileSys__Exists
+ ,FileSys_CreateDirectory AS FileSys__CreateDirectory
+ ,FileSys_CloseDir AS FileSys__CloseDir
+ ,FileSys_GetName AS FileSys__GetName
+ ,FilePath_BEGIN AS FilePath__BEGIN
+ ,FilePath_UseFirst AS FilePath__UseFirst
+ ,FilePath_Lookup AS FilePath__Lookup
+ ,FormOut_TextSeparator AS FormOut__TextSeparator
+ ,ComplexMath_sin AS ComplexMath__sin
+ ,ComplexMath_scalarMult AS ComplexMath__scalarMult
+ ,ComplexMath_power AS ComplexMath__power
+ ,ComplexMath_polarToComplex AS ComplexMath__polarToComplex
+ ,ComplexMath_ln AS ComplexMath__ln
+ ,ComplexMath_cos AS ComplexMath__cos
+ ,ComplexMath_exp AS ComplexMath__exp
+ ,ComplexMath_arctan AS ComplexMath__arctan
+ ,ComplexMath_conj AS ComplexMath__conj
+ ,ComplexMath_arg AS ComplexMath__arg
+ ,DStrings_Assign AS DStrings__Assign
+ ,EXCEPTIONS_GetMessage AS EXCEPTIONS__GetMessage
+ ,EXCEPTIONS_CurrentNumber AS EXCEPTIONS__CurrentNumber
+ ,ComplexMath_sqrt AS ComplexMath__sqrt
+ ,DStrings_BEGIN AS DStrings__BEGIN
+ ,EXCEPTIONS_IsCurrentSource AS EXCEPTIONS__IsCurrentSource
+ ,EXCEPTIONS_AllocateSource AS EXCEPTIONS__AllocateSource
+ ,DStrings_Append AS DStrings__Append
+ ,ConvTypes_BEGIN AS ConvTypes__BEGIN
+ ,ComplexMath_BEGIN AS ComplexMath__BEGIN
+ ,ComplexMath_tan AS ComplexMath__tan
+ ,ComplexMath_abs AS ComplexMath__abs
+ ,CharClass_IsControl AS CharClass__IsControl
+ ,ChanConsts_BEGIN AS ChanConsts__BEGIN
+ ,COROUTINES_BEGIN AS COROUTINES__BEGIN
+ ,COROUTINES_HANDLER AS COROUTINES__HANDLER
+ ,COROUTINES_PROT AS COROUTINES__PROT
+ ,COROUTINES_TRANSFER AS COROUTINES__TRANSFER
+ ,COROUTINES_NEWCOROUTINE AS COROUTINES__NEWCOROUTINE
+ ,COROUTINES_LISTEN AS COROUTINES__LISTEN
+ ,COROUTINES_IsATTACHED AS COROUTINES__IsATTACHED
+ ,COROUTINES_IOTRANSFER AS COROUTINES__IOTRANSFER
+ ,COROUTINES_DETACH AS COROUTINES__DETACH
+ ,ComplexMath_arccos AS ComplexMath__arccos
+ ,CharClass_IsLetter AS CharClass__IsLetter
+ ,ComplexMath_IsCMathException AS ComplexMath__IsCMathException
+ ,CharClass_BEGIN AS CharClass__BEGIN
+ ,ComplexMath_arcsin AS ComplexMath__arcsin
+ ,CharClass_IsWhiteSpace AS CharClass__IsWhiteSpace
+ ,CharClass_IsUpper AS CharClass__IsUpper
+ ,CharClass_IsNumeric AS CharClass__IsNumeric
+ ,CharClass_IsLower AS CharClass__IsLower
+ ,EXCEPTIONS_RAISE AS EXCEPTIONS__RAISE
+ ,EXCEPTIONS_BEGIN AS EXCEPTIONS__BEGIN
+ ,EXCEPTIONS_IsExceptionalExecution AS EXCEPTIONS__IsExceptionalExecution
+ ,IOChan_InvalidChan AS IOChan__InvalidChan
+ ,InOut_ReadInt AS InOut__ReadInt
+ ,IOChan_ChanException AS IOChan__ChanException
+ ,IOChan_DeviceError AS IOChan__DeviceError
+ ,IOChan_Flush AS IOChan__Flush
+ ,InOut_ReadString AS InOut__ReadString
+ ,IOChan_CurrentFlags AS IOChan__CurrentFlags
+ ,In_Name AS In__Name
+ ,In_LongReal AS In__LongReal
+ ,In_LongInt AS In__LongInt
+ ,In_Int AS In__Int
+ ,In_Done AS In__Done
+ ,IOLink_BEGIN AS IOLink__BEGIN
+ ,In_Char AS In__Char
+ ,IOResult_BEGIN AS IOResult__BEGIN
+ ,IOResult_ReadResult AS IOResult__ReadResult
+ ,IOLink_UnMakeChan AS IOLink__UnMakeChan
+ ,In_String AS In__String
+ ,InOut_Read AS InOut__Read
+ ,InOut_OpenOutput AS InOut__OpenOutput
+ ,InOut_OpenInput AS InOut__OpenInput
+ ,InOut_Done AS InOut__Done
+ ,InOut_CloseOutput AS InOut__CloseOutput
+ ,In_Open AS In__Open
+ ,InOut_CloseInput AS InOut__CloseInput
+ ,IOChan_IsChanException AS IOChan__IsChanException
+ ,InOut_ReadCard AS InOut__ReadCard
+ ,In_Real AS In__Real
+ ,In_BEGIN AS In__BEGIN
+ ,IOChan_TextWrite AS IOChan__TextWrite
+ ,IOChan_TextRead AS IOChan__TextRead
+ ,IOChan_SkipLook AS IOChan__SkipLook
+ ,IOChan_Skip AS IOChan__Skip
+ ,IOChan_SetReadResult AS IOChan__SetReadResult
+ ,IOChan_Look AS IOChan__Look
+ ,IOChan_Reset AS IOChan__Reset
+ ,IOChan_ReadResult AS IOChan__ReadResult
+ ,IOChan_RawWrite AS IOChan__RawWrite
+ ,IOChan_RawRead AS IOChan__RawRead
+ ,IOLink_RAISEdevException AS IOLink__RAISEdevException
+ ,IOLink_MakeChan AS IOLink__MakeChan
+ ,IOLink_IsIOException AS IOLink__IsIOException
+ ,IOLink_IsDevice AS IOLink__IsDevice
+ ,IOLink_IOException AS IOLink__IOException
+ ,IOChan_BEGIN AS IOChan__BEGIN
+ ,IOLink_DeviceTablePtrValue AS IOLink__DeviceTablePtrValue
+ ,IOLink_AllocateDeviceId AS IOLink__AllocateDeviceId
+ ,IOConsts_BEGIN AS IOConsts__BEGIN
+ ,IOChan_WriteLn AS IOChan__WriteLn
+ ,IOChan_GetName AS IOChan__GetName
+ ,X2C_AcquireSemaphore
+ ,X2C_ttyWrite
+ ,X2C_GetThreadWord
+ ,X2C_ttyReadLE
+ ,X2C_InitTTY
+ ,X2C_InitMem
+ ,X2C_AllocMem
+ ,X2C__EXPLI
+ ,X2C_ExitThread
+ ,X2C_CreateMutex
+ ,X2C_EnterMutex
+ ,X2C_DeleteThread
+ ,X2C_DeleteSemaphore
+ ,X2C_ExitMutex
+ ,X2C_DeleteMutex
+ ,X2C_CurrentThread
+ ,X2C_CreateThread
+ ,X2C_CreateSemaphore
+ ,X2C_EnableIpts
+ ,X2C_DisableIpts
+ ,X2C_StdOutN
+ ,X2C_StdOutH
+ ,X2C_StdOutS
+ ,X2C_DecToStr
+ ,X2C_StdOutD
+ ,X2C_HexToStr
+ ,X2C_SaveIptHandler
+ ,X2C_gmalloc
+ ,X2C_gfree
+ ,X2C_free
+ ,X2C_ZEROMEM
+ ,X2C_SetIptHandler
+ ,X2C_InitHeap
+ ,X2C_RestoreIptHandler
+ ,X2C_malloc
+ ,X2C_ttyReadNE
+ ,X2C_XInitHandler
+ ,X2C_TRAP_G
+ ,X2C_TRAP_F
+ ,X2C_ASSERT_F
+ ,X2C_TRUNCI
+ ,X2C_INIT_THREADS
+ ,X2C_TRUNCC
+ ,X2C_ENTIER
+ ,X2C_EXPRI
+ ,X2C__EXPCI
+ ,X2C_EXPRR
+ ,X2C__EXPCR
+ ,X2C_init_exceptions
+ ,X2C_XOFF
+ ,X2C_doRaise
+ ,X2C_XRETRY
+ ,X2C_XREMOVE
+ ,X2C_XON
+ ,X2C_TimeSecInt
+ ,X2C_CanGetTime
+ ,X2C_WaitEvents
+ ,X2C_SyncThreadState
+ ,X2C_SuspendThread
+ ,X2C_SetThreadWord
+ ,X2C_MyThreadHandle
+ ,X2C_SemaphoreToEvent
+ ,X2C_ResumeThread
+ ,X2C_ReleaseSemaphore
+ ,X2C_FracsPerSec
+ ,X2C_TimeDayNum
+ ,X2C_TimeDayInt
+ ,X2C_TimeDayAdd
+ ,X2C_TimeCompare
+ ,X2C_SetTime
+ ,X2C_CanSetTime
+ ,X2C_GetTime
+ ,X2C_TimeSecAdd
+ ,xShell_StartJob AS xShell__StartJob
+ ,X2C_rtsSource
+ ,X2C_objects
+ ,X2C_maxmem
+ ,X2C_hline
+ ,X2C_fs_init
+ ,X2C_assertSrc
+ ,X2C_busymem
+ ,xShell_BEGIN AS xShell__BEGIN
+ ,X2C_DirNext
+ ,X2C_INIT_RTS
+ ,X2C_coshl
+ ,X2C_DirGetName
+ ,X2C_DirClose
+ ,X2C_CreateDirectory
+ ,xosCodeSeg_BEGIN AS xosCodeSeg__BEGIN
+ ,xosCodeSeg_calcCodeExtent AS xosCodeSeg__calcCodeExtent
+ ,X2C_threshold
+ ,x2c_td_ptr
+ ,x2c_td_null
+ ,X2C_usedmem
+ ,X2C_MODULES
+ ,xShell_Comment AS xShell__Comment
+ ,xShell_Caption AS xShell__Caption
+ ,xShell_AppendFile AS xShell__AppendFile
+ ,X2C_tanhl
+ ,X2C_sinhl
+ ,X2C_tanh
+ ,X2C_pow
+ ,X2C_sinh
+ ,X2C_powl
+ ,xShell_TurnSortingOn AS xShell__TurnSortingOn
+ ,xShell_TurnSortingOff AS xShell__TurnSortingOff
+ ,xShell_String AS xShell__String
+ ,X2C_cosh
+ ,xShell_StartFileList AS xShell__StartFileList
+ ,xShell_EndFileList AS xShell__EndFileList
+ ,xShell_Start AS xShell__Start
+ ,xShell_Progress AS xShell__Progress
+ ,X2C_fWrite
+ ,xShell_Error AS xShell__Error
+ ,xShell_Finish AS xShell__Finish
+ ,X2C_fClose
+ ,X2C_fChSize
+ ,X2C_IsMixAllowed
+ ,X2C_fTell
+ ,X2C_FileRead
+ ,X2C_StdOut
+ ,X2C_FileWrite
+ ,X2C_FileSeek
+ ,X2C_FileOpenWrite
+ ,X2C_GetModuleName
+ ,X2C_fSize
+ ,X2C_fSetXAttrs
+ ,X2C_fSetStd
+ ,X2C_fSeek
+ ,X2C_fRead
+ ,X2C_fFlush
+ ,X2C_fOpen
+ ,X2C_fGetXAttrs
+ ,X2C_fGetStd
+ ,X2C_doexit
+ ,X2C_Execute
+ ,X2C_GetCDName
+ ,X2C_EnvStringLength
+ ,X2C_EnvString
+ ,X2C_SetCD
+ ,X2C_RemoveDirectory
+ ,X2C_GetCDNameLength
+ ,X2C_FileClose
+ ,X2C_Rename
+ ,X2C_atexit
+ ,X2C_Remove
+ ,X2C_ModifyTime
+ ,X2C_Exists
+ ,X2C_FileOpenRead
+ ,X2C_DirOpen
+ ,X2C_64TOINT
+ ,X2C_EstablishMain
+ ,X2C_IS_CODESEG
+ ,X2C_HISTORY_REG
+ ,X2C_InitThreads
+ ,X2C_HISTORY_ON
+ ,X2C_EXIT_HISTORY
+ ,X2C_GET_TD
+ ,X2C_xStart
+ ,X2C_BEGINDLL
+ ,X2C_SetBreakHandler
+ ,X2C_BEGIN
+ ,X2C_STACK_SCAN_PROC
+ ,X2C_reg_stackbotm
+ ,X2C_CopyJmpBuf
+ ,X2C_UnregisterThread
+ ,X2C_StopIterateThreads
+ ,X2C_StartIterateThreads
+ ,X2C_ini_coroutines
+ ,X2C_LockMutex
+ ,X2C_RegisterThread
+ ,X2C_PrepareToGC
+ ,X2C_NewMutex
+ ,X2C_SetCurrent
+ ,X2C_UnregisterCoroutine
+ ,X2C_IOTRANSFER
+ ,X2C_TRANSFER
+ ,X2C_RegisterCoroutine
+ ,X2C_UnlockCoroutines
+ ,X2C_PROTECT
+ ,X2C_NEWPROCESS
+ ,X2C_LockCoroutines
+ ,X2C_InitCoroutine
+ ,X2C_OR
+ ,X2C_ALLOCATE
+ ,X2C_XOR
+ ,xrMM_GCAUTO AS xrMM__GCAUTO
+ ,X2C_SET_EQU
+ ,X2C_INCL
+ ,X2C_ROTL
+ ,X2C__EXPLR
+ ,X2C_LSHL
+ ,X2C_LONGSET
+ ,X2C_SET_LEQ
+ ,xrMM_DynarrDescSize AS xrMM__DynarrDescSize
+ ,X2C_DEALLOCATE
+ ,xrMM_COLLECTOR AS xrMM__COLLECTOR
+ ,xrMM_Align AS xrMM__Align
+ ,xrMM_DoDefrag AS xrMM__DoDefrag
+ ,X2C_DYNDEALLOCATE
+ ,X2C_DYNCALLOCATE
+ ,X2C_DYNALLOCATE
+ ,X2C_DYNCDEALLOCATE
+ ,X2C_CARDTO64
+ ,X2C_ADD64
+ ,X2C_64TOCARD
+ ,X2C_EXCL
+ ,X2C_stkScan
+ ,X2C_show_profile
+ ,X2C_show_history
+ ,X2C_hisShow
+ ,X2C_scanStackHistory
+ ,X2C_COMPLEMENT
+ ,X2C_BIC
+ ,X2C_AND
+ ,X2C_MUL64
+ ,X2C_UnMinus64
+ ,X2C_CMP64
+ ,X2C_IsNeg64
+ ,X2C_INTTO64
+ ,X2C_MODULEXE
+ ,X2C_NEW_OPEN
+ ,X2C_NEW
+ ,xrMM_parts AS xrMM__parts
+ ,X2C_MODULEDLL
+ ,X2C_GetCurrent
+ ,X2C_DISPOSE
+ ,X2C_DISABLE_COMPONENT
+ ,X2C_DESTRUCTOR
+ ,xrMM_BEGIN AS xrMM__BEGIN
+ ,X2C_LSH
+ ,X2C_FreeAfterGC
+ ,X2C_DelMutex
+ ,X2C_COPY
+ ,X2C_ROT
+ ,X2C_CAP
+ ,X2C_ASH
+ ,X2C_FreeMutex
+ ,xrMM_blk_min AS xrMM__blk_min
+ ,xrMM_allocate AS xrMM__allocate
+ ,X2C_InitDesc
+ ,X2C_GC_INIT
+ ,X2C_GC_INCREASE
+ ,X2C_COLLECT
+ ,xrMM_O2MM_init AS xrMM__O2MM_init
+ ,xrMM_SetNil AS xrMM__SetNil
+ ,xrMM_SetGap AS xrMM__SetGap
+ ,xrMM_MakeBusy AS xrMM__MakeBusy
+ ,xrMM_MakeFree AS xrMM__MakeFree
+ ,xrMM_b_blocks AS xrMM__b_blocks
+ ,xrMM_free_block AS xrMM__free_block
+ ,xrMM_f_blocks AS xrMM__f_blocks
+ ,xrMM_dealloc AS xrMM__dealloc
+ ,xrMM_cur_td AS xrMM__cur_td
+ ,xrMM_blockno AS xrMM__blockno
+ ,xrMM_cur_offs AS xrMM__cur_offs
+ ,xrMM_ini_type_desc AS xrMM__ini_type_desc
+ ,xrMM_GCTHRESCNT AS xrMM__GCTHRESCNT
+ ,xrMM_blk_max AS xrMM__blk_max
+ ,StreamFile_Open AS StreamFile__Open
+ ,StreamFile_IsStreamFile AS StreamFile__IsStreamFile
+ ,StreamFile_Close AS StreamFile__Close
+ ,RealStr_RealToFixed AS RealStr__RealToFixed
+ ,Storage_StorageException AS Storage__StorageException
+ ,Storage_IsStorageException AS Storage__IsStorageException
+ ,Storage_DEALLOCATE AS Storage__DEALLOCATE
+ ,Storage_ALLOCATE AS Storage__ALLOCATE
+ ,StdChans_BEGIN AS StdChans__BEGIN
+ ,StdChans_StdErrChan AS StdChans__StdErrChan
+ ,StdChans_StdOutChan AS StdChans__StdOutChan
+ ,StdChans_StdInChan AS StdChans__StdInChan
+ ,StdChans_SetInChan AS StdChans__SetInChan
+ ,StdChans_SetOutChan AS StdChans__SetOutChan
+ ,Storage_BEGIN AS Storage__BEGIN
+ ,StdChans_SetErrChan AS StdChans__SetErrChan
+ ,Strings_Delete AS Strings__Delete
+ ,SysClock_BEGIN AS SysClock__BEGIN
+ ,SysClock_SetClock AS SysClock__SetClock
+ ,SysClock_IsValidDateTime AS SysClock__IsValidDateTime
+ ,Strings_Replace AS Strings__Replace
+ ,SysClock_GetClock AS SysClock__GetClock
+ ,SysClock_CanSetClock AS SysClock__CanSetClock
+ ,SysClock_CanGetClock AS SysClock__CanGetClock
+ ,Strings_BEGIN AS Strings__BEGIN
+ ,TERMINATION_HasHalted AS TERMINATION__HasHalted
+ ,StreamFile_BEGIN AS StreamFile__BEGIN
+ ,TERMINATION_IsTerminating AS TERMINATION__IsTerminating
+ ,Strings_Capitalize AS Strings__Capitalize
+ ,Strings_Append AS Strings__Append
+ ,Strings_CanInsertAll AS Strings__CanInsertAll
+ ,Strings_CanExtractAll AS Strings__CanExtractAll
+ ,Strings_CanDeleteAll AS Strings__CanDeleteAll
+ ,Strings_CanReplaceAll AS Strings__CanReplaceAll
+ ,Strings_CanConcatAll AS Strings__CanConcatAll
+ ,Strings_CanAssignAll AS Strings__CanAssignAll
+ ,Strings_CanAppendAll AS Strings__CanAppendAll
+ ,Strings_Assign AS Strings__Assign
+ ,Strings_Concat AS Strings__Concat
+ ,Strings_Insert AS Strings__Insert
+ ,Strings_FindPrev AS Strings__FindPrev
+ ,Strings_FindNext AS Strings__FindNext
+ ,Strings_FindDiff AS Strings__FindDiff
+ ,Strings_Extract AS Strings__Extract
+ ,Strings_Compare AS Strings__Compare
+ ,Strings_Equal AS Strings__Equal
+ ,TERMINATION_BEGIN AS TERMINATION__BEGIN
+ ,Strings_Length AS Strings__Length
+ ,SLongIO_WriteReal AS SLongIO__WriteReal
+ ,SLongIO_WriteFloat AS SLongIO__WriteFloat
+ ,SLongIO_WriteFixed AS SLongIO__WriteFixed
+ ,SLongIO_WriteEng AS SLongIO__WriteEng
+ ,SLongIO_ReadReal AS SLongIO__ReadReal
+ ,RndFile_BEGIN AS RndFile__BEGIN
+ ,SIOResult_BEGIN AS SIOResult__BEGIN
+ ,SIOResult_ReadResult AS SIOResult__ReadResult
+ ,RndFile_SetPos AS RndFile__SetPos
+ ,RndFile_StartPos AS RndFile__StartPos
+ ,SRawIO_BEGIN AS SRawIO__BEGIN
+ ,SRealIO_BEGIN AS SRealIO__BEGIN
+ ,SRealIO_WriteReal AS SRealIO__WriteReal
+ ,SRealIO_WriteFloat AS SRealIO__WriteFloat
+ ,SRealIO_WriteFixed AS SRealIO__WriteFixed
+ ,SRealIO_WriteEng AS SRealIO__WriteEng
+ ,SRawIO_Write AS SRawIO__Write
+ ,SRealIO_ReadReal AS SRealIO__ReadReal
+ ,STextIO_ReadChar AS STextIO__ReadChar
+ ,SLongIO_BEGIN AS SLongIO__BEGIN
+ ,SRawIO_Read AS SRawIO__Read
+ ,RegComp_Substitute AS RegComp__Substitute
+ ,RndFile_OpenOld AS RndFile__OpenOld
+ ,RegComp_Pos AS RegComp__Pos
+ ,RealStr_RealToStr AS RealStr__RealToStr
+ ,RegComp_Len AS RegComp__Len
+ ,RegComp_ExprDesc AS RegComp__ExprDesc
+ ,RegComp_Match AS RegComp__Match
+ ,RegComp_Const AS RegComp__Const
+ ,RegComp_Compile AS RegComp__Compile
+ ,RealStr_BEGIN AS RealStr__BEGIN
+ ,RealStr_StrToReal AS RealStr__StrToReal
+ ,RegComp_RESULT AS RegComp__RESULT
+ ,RndFile_OpenClean AS RndFile__OpenClean
+ ,RndFile_NewPos AS RndFile__NewPos
+ ,RealStr_RealToFloat AS RealStr__RealToFloat
+ ,RndFile_IsRndFile AS RndFile__IsRndFile
+ ,RndFile_IsRndFileException AS RndFile__IsRndFileException
+ ,RndFile_EndPos AS RndFile__EndPos
+ ,RndFile_CurrentPos AS RndFile__CurrentPos
+ ,RndFile_Close AS RndFile__Close
+ ,RegComp_BEGIN AS RegComp__BEGIN
+ ,StdChans_NullChan AS StdChans__NullChan
+ ,SeqFile_BEGIN AS SeqFile__BEGIN
+ ,SeqFile_Rewrite AS SeqFile__Rewrite
+ ,SeqFile_OpenWrite AS SeqFile__OpenWrite
+ ,SeqFile_Reread AS SeqFile__Reread
+ ,SeqFile_IsSeqFile AS SeqFile__IsSeqFile
+ ,SeqFile_OpenRead AS SeqFile__OpenRead
+ ,SeqFile_OpenAppend AS SeqFile__OpenAppend
+ ,StdChans_InChan AS StdChans__InChan
+ ,StdChans_ErrChan AS StdChans__ErrChan
+ ,StdChans_OutChan AS StdChans__OutChan
+ ,SWholeIO_WriteInt AS SWholeIO__WriteInt
+ ,SWholeIO_WriteCard AS SWholeIO__WriteCard
+ ,STextIO_ReadString AS STextIO__ReadString
+ ,SWholeIO_ReadCard AS SWholeIO__ReadCard
+ ,STextIO_BEGIN AS STextIO__BEGIN
+ ,STextIO_WriteString AS STextIO__WriteString
+ ,SWholeIO_ReadInt AS SWholeIO__ReadInt
+ ,STextIO_WriteLn AS STextIO__WriteLn
+ ,STextIO_WriteChar AS STextIO__WriteChar
+ ,STextIO_SkipLine AS STextIO__SkipLine
+ ,STextIO_ReadToken AS STextIO__ReadToken
+ ,SeqFile_Close AS SeqFile__Close
+ ,Semaphores_BEGIN AS Semaphores__BEGIN
+ ,Semaphores_Release AS Semaphores__Release
+ ,Semaphores_IsSemaphoreException AS Semaphores__IsSemaphoreException
+ ,Semaphores_Destroy AS Semaphores__Destroy
+ ,Semaphores_Claim AS Semaphores__Claim
+ ,Semaphores_Create AS Semaphores__Create
+ ,Semaphores_CondClaim AS Semaphores__CondClaim
+ ,STextIO_ReadRestLine AS STextIO__ReadRestLine
+ ,SWholeIO_BEGIN AS SWholeIO__BEGIN
+ ,X2C_arccosl
+ ,XReal_to_fixed AS XReal__to_fixed
+ ,XReal_to_any AS XReal__to_any
+ ,XProcesses_SetGCAware AS XProcesses__SetGCAware
+ ,XReal_power10 AS XReal__power10
+ ,XRaise_BEGIN AS XRaise__BEGIN
+ ,oberonRTS_ModuleOf AS oberonRTS__ModuleOf
+ ,XRaise_RAISE AS XRaise__RAISE
+ ,XPrs_BEGIN AS XPrs__BEGIN
+ ,XProcesses_BEGIN AS XProcesses__BEGIN
+ ,XReal_strcpy AS XReal__strcpy
+ ,oberonRTS_LevelOf AS oberonRTS__LevelOf
+ ,oberonRTS_IterTypes AS oberonRTS__IterTypes
+ ,oberonRTS_IterModules AS oberonRTS__IterModules
+ ,oberonRTS_IterCommands AS oberonRTS__IterCommands
+ ,oberonRTS_InstallFinalizer AS oberonRTS__InstallFinalizer
+ ,oberonRTS_BaseOf AS oberonRTS__BaseOf
+ ,oberonRTS_GetInfo AS oberonRTS__GetInfo
+ ,oberonRTS_Collect AS oberonRTS__Collect
+ ,XReal_to_float AS XReal__to_float
+ ,XReal_BEGIN AS XReal__BEGIN
+ ,XPrs_current AS XPrs__current
+ ,XIOChan_BEGIN AS XIOChan__BEGIN
+ ,XIOChan_Truncate AS XIOChan__Truncate
+ ,XProcesses_IsGCAware AS XProcesses__IsGCAware
+ ,xFilePos_IntToPos AS xFilePos__IntToPos
+ ,xFilePos_CardToPos AS xFilePos__CardToPos
+ ,X2C_arctanh
+ ,xDevData_BEGIN AS xDevData__BEGIN
+ ,xDevData_SoftError AS xDevData__SoftError
+ ,xDevData_UnMakeName AS xDevData__UnMakeName
+ ,xDevData_Open AS xDevData__Open
+ ,xDevData_SetPos AS xDevData__SetPos
+ ,X2C_arcsinl
+ ,xDevData_SetMode AS xDevData__SetMode
+ ,X2C_arcsinhl
+ ,oberonRTS_NameOfModule AS oberonRTS__NameOfModule
+ ,X2C_arcsin
+ ,TermFile_Close AS TermFile__Close
+ ,X2C_arccoshl
+ ,X2C_arctanhl
+ ,X2C_arccosh
+ ,X2C_arccos
+ ,xFilePos_BEGIN AS xFilePos__BEGIN
+ ,xFilePos_PosToInt AS xFilePos__PosToInt
+ ,X2C_arcsinh
+ ,xDevData_MakeName AS xDevData__MakeName
+ ,oberonRTS_nullType AS oberonRTS__nullType
+ ,oberonRTS_nullModule AS oberonRTS__nullModule
+ ,oberonRTS_NameOfType AS oberonRTS__NameOfType
+ ,oberonRTS_ThisType AS oberonRTS__ThisType
+ ,oberonRTS_TypeOf AS oberonRTS__TypeOf
+ ,oberonRTS_ThisCommand AS oberonRTS__ThisCommand
+ ,oberonRTS_SizeOf AS oberonRTS__SizeOf
+ ,oberonRTS_Search AS oberonRTS__Search
+ ,oberonRTS_NewObj AS oberonRTS__NewObj
+ ,oberonRTS_BEGIN AS oberonRTS__BEGIN
+ ,xDevData_Length AS xDevData__Length
+ ,platform_IsPathDelim AS platform__IsPathDelim
+ ,xDevData_GetDevData AS xDevData__GetDevData
+ ,xDevData_GetDID AS xDevData__GetDID
+ ,xDevData_HardError AS xDevData__HardError
+ ,xDevData_ForbidAll AS xDevData__ForbidAll
+ ,xDevData_CurrentPos AS xDevData__CurrentPos
+ ,xDevData_Close AS xDevData__Close
+ ,platform_BEGIN AS platform__BEGIN
+ ,xFilePos_PosToCard AS xFilePos__PosToCard
+ ,TimeConv_time AS TimeConv__time
+ ,TimeConv_BEGIN AS TimeConv__BEGIN
+ ,TimeConv_weekday AS TimeConv__weekday
+ ,TimeConv_unpack AS TimeConv__unpack
+ ,TimeConv_pack AS TimeConv__pack
+ ,WholeConv_IsWholeConvException AS WholeConv__IsWholeConvException
+ ,WholeConv_FormatInt AS WholeConv__FormatInt
+ ,WholeConv_FormatCard AS WholeConv__FormatCard
+ ,TermFile_IsTermFile AS TermFile__IsTermFile
+ ,TextIO_WriteString AS TextIO__WriteString
+ ,TermFile_Open AS TermFile__Open
+ ,TextIO_WriteChar AS TextIO__WriteChar
+ ,TextIO_SkipLine AS TextIO__SkipLine
+ ,TextIO_ReadToken AS TextIO__ReadToken
+ ,TextIO_WriteLn AS TextIO__WriteLn
+ ,TextIO_ReadString AS TextIO__ReadString
+ ,TextIO_ReadRestLine AS TextIO__ReadRestLine
+ ,TextIO_ReadChar AS TextIO__ReadChar
+ ,TermFile_BEGIN AS TermFile__BEGIN
+ ,TimeConv_TheDayNumber AS TimeConv__TheDayNumber
+ ,TimeConv_WeekDay AS TimeConv__WeekDay
+ ,TimeConv_TheFractionNumber AS TimeConv__TheFractionNumber
+ ,TimeConv_millisecs AS TimeConv__millisecs
+ ,TimeConv_SubDateSecs AS TimeConv__SubDateSecs
+ ,TimeConv_AddDateSecs AS TimeConv__AddDateSecs
+ ,TimeConv_SubDateDays AS TimeConv__SubDateDays
+ ,TimeConv_Compare AS TimeConv__Compare
+ ,TextIO_BEGIN AS TextIO__BEGIN
+ ,TimeConv_AddDateDays AS TimeConv__AddDateDays
+ ,WholeConv_LengthCard AS WholeConv__LengthCard
+ ,WholeIO_WriteInt AS WholeIO__WriteInt
+ ,WholeIO_WriteCard AS WholeIO__WriteCard
+ ,WholeIO_ReadInt AS WholeIO__ReadInt
+ ,WholeIO_ReadCard AS WholeIO__ReadCard
+ ,WholeConv_BEGIN AS WholeConv__BEGIN
+ ,WholeConv_ValueCard AS WholeConv__ValueCard
+ ,WholeConv_ValueInt AS WholeConv__ValueInt
+ ,WholeConv_LengthInt AS WholeConv__LengthInt
+ ,WholeConv_ScanInt AS WholeConv__ScanInt
+ ,WholeConv_ScanCard AS WholeConv__ScanCard
+ ,RealStr_RealToEng AS RealStr__RealToEng
+ ,WholeStr_BEGIN AS WholeStr__BEGIN
+ ,WholeIO_BEGIN AS WholeIO__BEGIN
+ ,WholeStr_StrToInt AS WholeStr__StrToInt
+ ,WholeStr_StrToCard AS WholeStr__StrToCard
+ ,WholeStr_IntToStr AS WholeStr__IntToStr
+ ,WholeStr_CardToStr AS WholeStr__CardToStr
+ ,X2C_EXIT_PROFILER
+ ,X2C_INIT_PROFILER
+ ,X2C_PROFILE_PROC_START
+ ,X2C_PROFILE_PROC_START_C
+ ,X2C_PROFILE_PROC_END
+ ,X2C_PROFILE_NEST_START
+ ,X2C_PROFILE_NEST_END
+ ,xrTCSx86_IncreaseCounter
+ ,xrTCSx86_IncreaseCounterExt
+ ,xrTCSx86_IncreaseIterationCounter
+ ,xrTCSx86_RegistryModule
+ ,xrTCSx86_BEGIN
+ ,X2C_ClearFPP
+ ,X2C_InitFPP
+ ,X2C_TRAP_OVERFL
+ ,X2C_TRAP_RANGE
+ ,X2C_TRAP_INDEX
+ ,X2C_TRAP_NIL
+ ,X2C_TRAP_DIV
+ ,X2C_TRAP_BREAK
+ ,X2C_TrapFJump
+ ,X2C_setjmp
+ ,X2C_longjmp
+ ,X2C_STRCMP_PROC
+ ,X2C_LENGTH
+ ,X2C_MEMSET
+ ,X2C_HALT
+ ,X2C_ABORT
+ ,X2C_FINALDLL
+ ,X2C_FINALEXE
+ ,X2C_EXIT
+ ,X2C_EXITDLL
+ ,CtrlC_BEGIN AS CtrlC__BEGIN
+ ,CtrlC_SetBreakHandler AS CtrlC__SetBreakHandler
+ ,CtrlC_IsCtrlCException AS CtrlC__IsCtrlCException
+ ,XEXCEPTIONS_RTSException AS XEXCEPTIONS__RTSException
+ ,XEXCEPTIONS_IsRTSException AS XEXCEPTIONS__IsRTSException
+ ,XEXCEPTIONS_IsAssertException AS XEXCEPTIONS__IsAssertException
+ ,XEXCEPTIONS_AssertCode AS XEXCEPTIONS__AssertCode
+ ,X2C_is_aNF
+ ,X2C_is_infF
+ ,X2C_is_NaNF
+ ,X2C_is_EQF
+ ,X2C_is_LESSF
+ ,X2C_is_aND
+ ,X2C_is_infD
+ ,X2C_is_NaND
+ ,X2C_is_EQD
+ ,X2C_is_LESSD
+ ,X2C_is_aNE
+ ,X2C_is_infE
+ ,X2C_is_NaNE
+ ,X2C_is_EQE
+ ,X2C_is_LESSE
+ ,X2C_frexp
+ ,X2C_arctan2l
+ ,X2J_ADD64 AS X2J__ADD64
+ ,X2J_AND64 AS X2J__AND64
+ ,X2J_DEC64 AS X2J__DEC64
+ ,X2J_DIV64 AS X2J__DIV64
+ ,X2J_EQ64 AS X2J__EQ64
+ ,X2J_GEQ64 AS X2J__GEQ64
+ ,X2J_GTR64 AS X2J__GTR64
+ ,X2J_INC64 AS X2J__INC64
+ ,X2J_LEQ64 AS X2J__LEQ64
+ ,X2J_LESS64 AS X2J__LESS64
+ ,X2J_MINUS64 AS X2J__MINUS64
+ ,X2J_MUL64 AS X2J__MUL64
+ ,X2J_NEQ64 AS X2J__NEQ64
+ ,X2J_NOT64 AS X2J__NOT64
+ ,X2J_OR64 AS X2J__OR64
+ ,X2J_REM64 AS X2J__REM64
+ ,X2J_SHL64 AS X2J__SHL64
+ ,X2J_SHR64 AS X2J__SHR64
+ ,X2J_SUB64 AS X2J__SUB64
+ ,X2J_UDIV64 AS X2J__UDIV64
+ ,X2J_UREM64 AS X2J__UREM64
+ ,X2J_USHR64 AS X2J__USHR64
+ ,X2J_XOR64 AS X2J__XOR64
+ ,FileSys_GetDrive AS FileSys__GetDrive
+ ,FileSys_GetLabel AS FileSys__GetLabel
+ ,FileSys_SetDrive AS FileSys__SetDrive
+ ,ProgExec_Execute AS ProgExec__Execute
+ ,ProgExec_BEGIN AS ProgExec__BEGIN
+ ,Threads_CreateMutex AS Threads__CreateMutex
+ ,Threads_DeleteMutex AS Threads__DeleteMutex
+ ,Threads_LockMutex AS Threads__LockMutex
+ ,Threads_UnlockMutex AS Threads__UnlockMutex
+ ,Threads_BEGIN AS Threads__BEGIN
+ ,Threads_GetKeyValue AS Threads__GetKeyValue
+ ,Threads_SetKeyValue AS Threads__SetKeyValue
+ ,Threads_DeleteKey AS Threads__DeleteKey
+ ,Threads_CreateKey AS Threads__CreateKey
+ ,Threads_CreateEvent AS Threads__CreateEvent
+ ,Threads_CreateSemaphore AS Threads__CreateSemaphore
+ ,Threads_CreateThread AS Threads__CreateThread
+ ,Threads_CurrentThread AS Threads__CurrentThread
+ ,Threads_DeleteEvent AS Threads__DeleteEvent
+ ,Threads_DeleteSemaphore AS Threads__DeleteSemaphore
+ ,Threads_DeleteThread AS Threads__DeleteThread
+ ,Threads_ExitThread AS Threads__ExitThread
+ ,Threads_GetThreadPriority AS Threads__GetThreadPriority
+ ,Threads_IsThreadsException AS Threads__IsThreadsException
+ ,Threads_ReleaseSemaphore AS Threads__ReleaseSemaphore
+ ,Threads_ResetEvent AS Threads__ResetEvent
+ ,Threads_ResumeThread AS Threads__ResumeThread
+ ,Threads_SetEvent AS Threads__SetEvent
+ ,Threads_SetThreadPriority AS Threads__SetThreadPriority
+ ,Threads_SuspendThread AS Threads__SuspendThread
+ ,Threads_TryWaitSemaphore AS Threads__TryWaitSemaphore
+ ,Threads_WaitEvent AS Threads__WaitEvent
+ ,Threads_WaitSemaphore AS Threads__WaitSemaphore
+ ,FileSys_FullName AS FileSys__FullName
+ ,FileSys_GetDriveCDName AS FileSys__GetDriveCDName
+ ,FileSys_GetDriveCDNameLength AS FileSys__GetDriveCDNameLength
+ ,LocalHeap_ALLOCATE AS LocalHeap__ALLOCATE
+ ,LocalHeap_Create AS LocalHeap__Create
+ ,LocalHeap_DEALLOCATE AS LocalHeap__DEALLOCATE
+ ,LocalHeap_DEALLOCATE_ALL AS LocalHeap__DEALLOCATE_ALL
+ ,LocalHeap_Destroy AS LocalHeap__Destroy
+ ,LocalHeap_BEGIN AS LocalHeap__BEGIN
+ ,OS2Processes_GetSemaphoreHandle AS OS2Processes__GetSemaphoreHandle
+ ,OS2Processes_GetThreadHandle AS OS2Processes__GetThreadHandle
+ ,OS2Processes_MakeSource AS OS2Processes__MakeSource
+ ,OS2Processes_BEGIN AS OS2Processes__BEGIN
+ ,ProgExec_Command AS ProgExec__Command
+ ,XDSRTL_Exit AS XDSRTL__Exit
+ ,XDSRTL_Init AS XDSRTL__Init
+ ,XEXCEPTIONS_BEGIN AS XEXCEPTIONS__BEGIN
+ ;

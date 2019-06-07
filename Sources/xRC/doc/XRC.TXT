@@ -1,0 +1,100 @@
+From:   Dmitry V. Leskov[SMTP:SNOWMAN@iis.nsk.su]
+Sent:   15 но€бр€ 1996 г. 16:02
+To:     Anatoly V. Grabar
+Subject:        Re: XRC text
+
+xrc.txt                          Copyright (c) 1995,96 xTech Ltd
+----------------------------------------------------------------
+
+                     XDS Resource Compiler
+                     ---------------------
+
+1. Starting XRC
+
+The XDS Resource Compiler is implemented as a command-line 
+utility called XRC. To invoke it, type:
+
+    xrc <options> <input file name>
+
+at the command prompt and press Enter.
+
+Being invoked without any arguments, XRC outputs a brief help
+message.
+
+<input file name> is a file name with source resource script.
+Default file extension is RC.
+
+Options are started with symbol "/" or "-". Some options 
+require a value that should be placed after the option.
+
+List of options:
+
+Name Value            Effect
+
+d    Name list        Define all names from list.
+
+Fo   File name        Rename output file (default extension is
+                      RES). If not specified the name of output
+                      file is same as input name and extension 
+                      is RES.
+
+L    Hexadecimal      Set language of resource number to
+                      specified id. Suppressed by LANGUAGE
+                      statement in RC file. Default value is 0.
+
+I    Directory list   Add directories to search path for 
+                      include files.
+
+X    None             Ignore INCLUDE environment variable.
+
+C    Number           Set code page for converting strings to
+                      UNICODE. Default is the current code page
+                      of your system.
+
+Stb  None             Predefine all symbols from windows.h. You
+                      can use this option if you do not have 
+                      Win32 SDK or would not like to include
+                      <windows.h> in your resource script.
+
+Lists in options '/D' and '/I' should be separated with 
+semicolons.
+
+
+2. Searching for include files
+
+When you use "#include" statements in resource script, the
+compiler searches for files in the following directories:
+
+1. Current directory (only if file name is enclosed in quotes)
+
+2. Directories specified in the '/I' option.
+
+3. Directories listed in the INCLUDE environment variable
+   (if '/X' option is not specified)
+
+
+3. Resource script language
+
+The resource compiler understands standard resource script
+language, specification of which can be found in Win32 SDK
+Reference, with some restrictions.
+
+The resource compiler does not understand the following
+statements in resource scripts:
+
+    ANICURSOR
+    ANIICON
+    DIALOGEX
+    MENUEX
+
+These resources are not documented by Microsoft.
+
+Be careful using preprocessor directives. The built-in 
+preprocessor is not a full C preprocessor. It conforms to
+the resource script language specification, but is not 
+ANSI-compliant. In particular, it does not support 
+function-like macros and some data types (float, double) 
+in constant expressions.
+
+Resource compiler does not support most of the resource
+script language extensions.

@@ -1,0 +1,14 @@
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE [2] xrcO2MM; (*  08-15-95 11:01am *)
+
+(* The collection of type guards used in C code *)
+
+IMPORT
+  rts:=xmRTS;
+
+PROCEDURE X2C_GUARDP_F(p: rts.X2C_pVOID; td: rts.X2C_TD): rts.X2C_pVOID;
+PROCEDURE X2C_GUARDV_F(vt,td: rts.X2C_TD): rts.X2C_TD;
+PROCEDURE X2C_GUARDPE_F(p: rts.X2C_pVOID; td: rts.X2C_TD): rts.X2C_pVOID;
+PROCEDURE X2C_GUARDVE_F(vt,td: rts.X2C_TD): rts.X2C_TD;
+
+END xrcO2MM.

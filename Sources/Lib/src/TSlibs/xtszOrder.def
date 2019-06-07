@@ -1,0 +1,33 @@
+(* Copyrigth (C) 1996 xTech Ltd *)
+
+<* +M2EXTENSIONS *>
+ 
+DEFINITION MODULE xtszOrder;
+
+CONST
+  wndNMax      = 64;
+  HWND_DESKTOP = 0;
+
+TYPE
+  HWND = CARDINAL;
+
+VAR
+  list :ARRAY [0..wndNMax] OF HWND;
+  top  :CARDINAL;
+
+PROCEDURE Kill ( hwnd :HWND );
+
+PROCEDURE PutOnTop ( hwnd :HWND );
+
+PROCEDURE PutBeneath ( newhwnd, hwnd :HWND);
+
+
+(* claim access rights *)
+PROCEDURE GainAccess;
+
+(* relinquish access rights *)
+PROCEDURE Relinquish;
+
+
+END xtszOrder.
+

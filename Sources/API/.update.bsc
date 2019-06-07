@@ -1,0 +1,13 @@
+# Builded files to be copied into an external workspace 
+# Target must be relative to the root of an external workplace
+# Note: target subfolder must end with symbol "\" 
+# <mode> ::= "" | "work" | "release"
+
+# <source>              <target>        <mode>
+src\Win32\windef.prj     def\Win32\
+src\Win32\Windows.def    def\Win32\
+
+# <source>              <target>        <mode>
+sym\C\*.sym              sym\C\
+sym\x86\*.sym            sym\x86\
+

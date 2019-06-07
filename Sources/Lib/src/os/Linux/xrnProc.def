@@ -1,0 +1,25 @@
+(* Copyright (c) Excelsior 2003.  All Rights Reserved *)
+
+(* Routines to get information from Linux' /proc filesystem. *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] xrnProc; (* Jek *)
+
+IMPORT SYSTEM;
+
+TYPE
+ GlobalMemInfo = RECORD
+   totalPhys : SYSTEM.INT64;
+   freePhys  : SYSTEM.INT64;
+   buffers   : SYSTEM.INT64;
+   cached    : SYSTEM.INT64;
+ END;
+
+PROCEDURE meminfo(VAR info: GlobalMemInfo);
+PROCEDURE GetExeName(VAR name: ARRAY OF CHAR; len: INTEGER);
+PROCEDURE GetCmdLine(VAR cmdline: ARRAY OF CHAR; len: INTEGER);
+
+END xrnProc.

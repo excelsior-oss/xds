@@ -1,0 +1,335 @@
+\newif\ifonline
+
+\documentstyle[11pt,makeidx,a4]{book}
+
+\title{LaTeX OnLine Users' Guide}
+
+\newcommand{\LO}{LaTeX OnLine}
+
+\setlength{\parindent}{0 pt}
+\setlength{\parskip}{6 pt}
+
+\begin{document}
+
+\noindent
+
+\chapter{About LaTeX OnLine}
+
+{\bf \LO} is a translator from a subset of \LaTeX{}
+macro package to various on-line document formats, either
+target or intermediate. The currently supported formats are:
+
+\begin{itemize}
+\item IPF tag language, which is a source for OS/2 INF and
+      HLP files. An IPF compiler is available as a part of IBM
+      Developer's Toolkit and along with some C/C++ compilers.
+\item Microsoft Help Compiler compatible subset of RTF,
+      which can be used to produce a Windows Help file.
+\item HTML, which can be viewed with any Web browser
+      immediately after translation.
+\end{itemize}
+
+\LO{} was originally developed for xTech internal use.
+The current manual is very brief and was written with assumption
+that a reader is used to \LaTeX{}. Its source, is bundled with the
+program to serve as a sample.
+
+\chapter{Using \LO{}}
+
+To invoke \LO{}, type
+
+\verb'    convert {<option>} <source file>'
+
+at the command prompt and press Enter. An option is
+preceded with either slash (\verb'"/"') or minus sign.
+Available options are:
+
+\begin{center}
+\begin{tabular}{ll}
+\verb'-i'    & emit IPF   \\
+\verb'-r[c[#]]' & emit RTF and, optionally, CNT (\verb'#' is a top heading level) \\
+\verb'-h'    & emit HTML  \\
+\verb'-e'    & emit extern file (see \ref{})
+\end{tabular}
+\end{center}
+
+In the current version, if no output format is specified, IPF is assumed.
+
+On startup, \verb'convert' searches for a file called \verb'convert.ini'
+in the current directory and then in the directory where the executable
+resides. This file consists of lines in format:
+
+\verb'<LaTeX command>'              \\
+\verb'<optional arguments number>'  \\
+\verb'<mandatory arguments number>'
+
+The commands listed in this file will be ignored along with their arguments.
+Any commands. which should have no effect on on-line documents anyway,
+may be added to it.
+
+Format of \verb'convert.ini' is subject to change in future versions of
+\LO. It will contain configuration options for all output formats.
+
+\verb'convert' reports warnings and errors in format:
+
+\verb'"(" <file> <line> ":" <column> ")" <message>'
+
+Processing is stopped on first encountered error.
+
+\chapter{Supported LaTeX features}
+
+The structure of this chapter closely matches the Appendix C of Leslie
+Lamport's book called \LaTeX: {\em A Document Preparation System}, which
+was used as a main information source during the development of \LO.
+With rare exceptions, the supported features exist in \LaTeX{} 2.09.
+They are is very briefly listed in the following sections.
+
+\section{Commands and Environments}
+
+\verb'    {}' (scopes) \\
+\verb'    \begin{'{\it name}\verb'} ... \end{'{\it name}\verb'}'
+\verb'    \\'
+
+The *-form and optional argument are not supported for \verb'\\'.
+
+\section{Sentences and Paragraphs}
+
+\subsection{Making Sentences}
+
+{\bf special characters}
+
+\verb'    \$ \% \{ \_ \& \# \}'
+
+{\bf logos}
+
+\verb'    \TeX \LaTeX'
+
+\subsection{Making Paragraphs}
+
+\verb'    \par'
+
+The \verb'\indent' and \verb'\noindent' commands are currently not supported.
+In produced output, paragraphs are always indentless.
+
+Style parameters are not supported. % !!!
+
+\subsection{Footnotes}
+
+\verb'    \footnote{'{\it text}\verb'}'
+
+Optional \verb'\footnote' argument is not supported.
+
+Style parameters are not supported. % !!!
+
+\subsection{Accents and Special Symbols}
+
+Accents are not supported.
+
+Many special, foreign, and  mathematical symbols are recognized,
+but only a few of them are supported in output formats.
+
+\section{Sectioning and Table of Contents}
+
+\subsection{Sectioning Commands}
+
+\verb'    \part'          \\
+\verb'    \chapter'       \\
+\verb'    \section'       \\
+\verb'    \subsection'    \\
+\verb'    \subsubsection' \\
+\verb'    \paragraph'     \\
+\verb'    \subparagraph'
+
+*-forms are also supported.
+
+The optional {\it toc\_entry} argument is not supported yet.
+
+{\bf Warning:} the \verb'\part' command is recognized, but its usage may
+cause unpredictable results in the current version.
+
+The \verb'\appendix' declaration is ignored.
+
+\subsection{Table of Contents}
+
+A table of contents is always formed, but its placement and representation
+depends on the target format. % !!! desribe.
+
+\subsection{Style parameters}
+
+Section numbering and table of contents style parameters ar not supported.
+
+\section{Document and Page Styles}
+
+\verb'    \title{'{\it text}\verb'}'
+
+The only command from this group which is supported is \verb'\title'.
+It defines the on-line document title.
+
+\section{Displayed paragraphs}
+
+\subsection{Quotations and Verse}
+
+Nothing is supported.
+
+\subsection{Horizontal Alignment}
+
+\verb'    \begin{flushleft}  ...  \end{flushleft}'  \\
+\verb'    \begin{flushright} ...  \end{flushright}' \\
+\verb'    \begin{center}     ...  \end{center}'
+
+The \verb'flushleft' environment has no effect since output is left
+flushed by default.
+
+{\bf Note:} \verb'flushright' and \verb'center' environments are not
+supported in IPF.
+
+\subsection{List-making Environments}
+
+\verb'    \begin{itemize}     '{\it item\_list}\verb' \end{itemize}'     \\
+\verb'    \begin{enumerate}   '{\it item\_list}\verb' \end{enumerate}'   \\
+\verb'    \begin{description} '{\it item\_list}\verb' \end{description}' \\
+\verb'    \item['{\it label}\verb']'
+
+The \verb'list' and \verb'trivlist' environments are not supported.
+
+\subsection{Verbatim}
+
+\verb'    \begin{verbatim} '{\it literal\_text}\verb' \end{verbatim}'  \\
+\verb'    \verb'{\it char literal\_text char}
+
+*-forms are not supported.
+
+\section{Mathematical formulas}
+
+In the current version, the one-character command \verb'$' causes font
+to be switched to roman style. No other math mode features are supported.
+
+\section{Definitions}
+
+\verb'    \newcommand  {'{\it cmd}\verb'}['{\it args}\verb']{'{\it def}\verb'}' \\
+\verb'    \renewcommand{'{\it cmd}\verb'}['{\it args}\verb']{'{\it def}\verb'}'
+
+\verb'#'{\it n} parameters are supported. Arguments and {\it def} may contain
+other user-defined commands.
+
+\section{Figures and Other Floating bodies}
+
+\verb'    \begin{table}['{\it loc}\verb'] '{\it body}\verb' \end{table}'
+
+The *-form and the \verb'figure' environment are not supported yet.
+
+\verb'    \caption{'{\it heading}\verb'}'
+
+Optional {\it lst\_entry} parameter of the \verb'\caption' command is not
+supported. The \verb'\label' command should {\em not} be placed inside
+{\it heading}.
+
+Style parameters are not supported.
+
+Marginal notes are not supported.
+
+\section{Lining It Up in Columns}
+
+\subsection{The tabbing Environment}
+
+Not supported yet.
+
+\subsection{The array and tabular Environments}
+
+\verb'    \begin{tabular}['{\it pos}\verb']{'{\it cols}\verb'} '{\it body}\verb' \end{table}'
+
+The \verb'array' and \verb'tabular*' environments are not supported yet.
+
+Tables is the most difficult thing to translate, so the results
+shown by the current version most probably will not satisfy you.
+
+\section{Moving information around}
+
+\subsection{Cross-References}
+
+\verb'    \label{'{\it key}\verb'}'  \\
+\verb'    \ref{'{\it key}\verb'}'    \\
+
+%\verb'    \public'                   \\ !!!
+%\verb'    \extern'                      !!!
+
+\subsection{Bibliography and Citation}
+
+Not supported yet.
+
+\subsection{Splitting the input}
+
+\verb'    \input{'{\it file\_name}\verb'}'   \\
+\verb'    \include{'{\it file}\verb'}'
+
+The \verb'\includeonly' command is not currently supported.
+
+\subsection{Index}
+
+\verb'    \index{'{\it str}\verb'}'
+
+Index is not supported for HTML yet. The format of {\it str} is
+compatible with \verb'makeindx' 2.12, but is not fully supported yet.
+
+\section{Line and Page Breaking}
+
+\verb'    \\'            \\
+\verb'    \newline'
+
+The optional {\it len} argument of \verb'\\' is not supported.
+
+\section{Length, Spaces, and Boxes}
+
+Nothing is supported.
+
+% \verb'    \mbox        break;                     // mbox == group !!!'
+
+\section{The picture Environment}
+
+Not supported.
+
+\section{Font Selection}
+
+\subsection{Changing the Type Style}
+
+The following type style selection declarations are recognized:
+
+\verb'    \rm \bf \sf \it \sl \sc \tt \em'
+
+However, for a particular output format some of them may be mapped
+to the same type style.
+
+\subsection{Changing the Type Size}
+
+The following font size selection declarations are recognized:
+
+\begin{verbatim}
+     \tiny        \scriptsize   \footnotesize
+     \small       \normalsize   \large
+     \Large       \LARGE        \huge
+     \Huge
+\end{verbatim}
+
+However, for a particular output format some of them may be mapped
+to the same size.
+
+\section{Conditional sections}
+
+\verb'    \newif\if'{\it name} \\
+\verb'    \if'{\it name}    \\
+\verb'    \else'  \\
+\verb'    \fi'    \\
+\verb'    \'{\it name}\verb'true'  \\
+\verb'    \'{\it name}\verb'false'
+
+In \LO, there is a special value of {\it name}:
+\verb'\newif\ifonline' implies \verb'\onlinetrue'
+and \verb'\onlinefalse' has no effect.
+
+This is not a LaTeX 2.09 feature.
+
+% !!! \verb'    \output' drop it off
+
+\end{document}
+
+

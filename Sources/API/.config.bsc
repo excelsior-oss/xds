@@ -1,0 +1,14 @@
+# XDS-x86 API: Build System Configuration
+
+UNIT_NAME=XDS-x86-API
+
+ALL_COMPONENTS=win32_x86,win32_c,posix_c
+PRIMARY_COMPONENTS=win32_x86,win32_c,posix_c
+DEFAULT_COMPONENT=win32_x86
+
+# Tools necessary to build component
+ENVIRONMENT=MSVC_HOME
+
+# External files which are part of this component  
+EXTDEPS=
+

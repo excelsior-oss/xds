@@ -1,0 +1,10 @@
+DEFINITION MODULE conBmp;
+
+IMPORT O:=OS2;
+
+PROCEDURE NewBitmap(cx, cy : CARDINAL; hAB : O.HAB) : O.HPS;
+PROCEDURE DestroyAll();
+
+END conBmp.
+
+

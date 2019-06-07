@@ -1,0 +1,124 @@
+-- Содержит описания типов, процедур, команд и номеров
+-- ошибок, необходимых для работы отладчика и сервера
+-- отладки при проведении уделенной отладки
+
+DEFINITION MODULE RemTypes;
+
+<* ALIGNMENT = "1" *>
+<* ENUMSIZE = "4" *>
+
+IMPORT SYSTEM;
+
+CONST
+  ServerKey  = 'XDS x86 server side';
+  ClientKey  = 'XDS x86 client side';
+  VersionKey = 230;
+
+
+TYPE
+  DATA_SORT = ( ready, data, string, command, result );
+
+  DATA_DESC = RECORD
+                sort: DATA_SORT; 
+                len : INTEGER;
+              END;
+
+  COMMAND = ( None
+            , StartProgram
+            , GetExecInfo
+            , GetDebugInfo
+            , QuitDebug
+            , GetRegisterCache
+            , PutRegisterCache
+            , GetMem
+            , PutMem
+            , Execute
+            , GetSegmentInfo
+            , IsExecutableSeg
+            , ReadExport
+            , NThreads
+            , GetThreadDescription
+            , SwitchToThread
+            , SuspendThread
+            , ResumeThread
+            , SetTrace
+            , RemoveTrace
+            , UnloadProgram
+            , RestartProgram
+            );
+
+TYPE
+  COMMAND_NAMES = ARRAY COMMAND OF ARRAY [0..32] OF CHAR;
+
+
+CONST
+  CommandsNames = COMMAND_NAMES { "None"
+                                , "StartProgram"
+                                , "GetExecInfo"
+                                , "GetDebugInfo"
+                                , "QuitDebug"
+                                , "GetRegisterCache"
+                                , "PutRegisterCache"
+                                , "GetMem"
+                                , "PutMem"
+                                , "Execute"
+                                , "GetSegmentInfo"
+                                , "IsExecutableSeg"
+                                , "ReadExport"
+                                , "NThreads"
+                                , "GetThreadDescription"
+                                , "SwitchToThread"
+                                , "SuspendThread"
+                                , "ResumeThread"
+                                , "SetTrace"
+                                , "RemoveTrace"
+                                , "UnloadProgram"
+                                , "RestartProgram"
+                                };
+
+
+TYPE
+  TRN_INIT           = PROCEDURE (VAR TRANSPORT): BOOLEAN;
+  TRN_CHANNEL        = SYSTEM.unsigned;
+  TRN_PORT           = SYSTEM.CARD16;
+  TRN_ID             = ARRAY [0..11] OF CHAR;
+  TRN_MASTER_LISTEN  = PROCEDURE (TRN_PORT, VAR TRN_CHANNEL): CARDINAL;
+  TRN_SERVER_CONNECT = PROCEDURE (TRN_CHANNEL): CARDINAL;
+  TRN_CLENT_CONNECT  = PROCEDURE (ARRAY OF CHAR, TRN_PORT): CARDINAL;
+  TRN_DISCONNECT     = PROCEDURE;
+  TRN_SEND           = PROCEDURE (SYSTEM.ADDRESS, CARDINAL): BOOLEAN;
+  TRN_RECEIVE        = PROCEDURE (SYSTEM.ADDRESS, CARDINAL): BOOLEAN;
+
+  TRANSPORT = RECORD
+                id         : TRN_ID;
+                mst_listen : TRN_MASTER_LISTEN;
+                srv_connect: TRN_SERVER_CONNECT;
+                cli_connect: TRN_CLENT_CONNECT;
+                disconnect : TRN_DISCONNECT;
+                send       : TRN_SEND;
+                receive    : TRN_RECEIVE;
+              END;
+
+VAR
+  INVALID_CHANNEL: TRN_CHANNEL;
+
+
+CONST
+  EmptyTransport = TRANSPORT { '', NIL, NIL, NIL, NIL, NIL, NIL };
+
+
+  Connection_established         = 0;
+  Host_unknown                   = 1;
+  Wrong_socket                   = 2;
+  Connection_not_established     = 3;
+  Wrong_identification           = 4;
+  Connection_already_established = 5;
+  Over_max_pending_connects      = 6;
+  Wrong_connection               = 7;
+  Unknown_transport              = 8;
+  Wrong_initialization_transport = 9;
+  DLL_transport_not_found        = 10;
+  Wrong_format_DLL_transport     = 11;
+  Something_error                = 12;
+
+END RemTypes.

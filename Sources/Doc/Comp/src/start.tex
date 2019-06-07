@@ -1,0 +1,370 @@
+% !!! xdsuser -> xcwork xcsamp
+
+\chapter{Getting started}\label{start}
+
+In this and following chapters we assume that
+\xds{} is properly installed and configured
+(See Chapter \ref{config});
+the default file extensions are used.
+
+Your \XDS{} package contains a script file, \XC{}{\tt work},
+which may be used to prepare a working directory.
+For more information, consult your {\tt readme.1st} file from
+the \XDS{} on-line documentation.
+
+\section{Using the Modula-2 compiler}
+
+In  the  working  directory,  use  a text editor to create a file
+called {\bf hello.mod}, containing the following text:
+
+\begin{verbatim}
+    MODULE hello;
+
+    IMPORT InOut;
+
+    BEGIN
+     InOut.WriteString("Hello World");
+     InOut.WriteLn;
+    END hello.
+\end{verbatim}
+
+Type
+
+\verb'    '{\tt \XC{}}\verb' hello.mod'
+
+at the command prompt. \xc{} will know that the \mt{} compiler
+should be invoked for the source file with the extension {\bf.mod}.
+The compiler heading line will appear:
+
+\verb'    XDS Modula-2 '{\it version}\verb' ['{\it code generator}\verb'] "hello.mod"'
+
+showing which compiler has been invoked
+(including its version number), which code generator
+is being used (in square brackets) and what is its version,
+and finally the name of the source file \xc{} has been
+asked to compile.
+
+Assuming that you have correctly typed the source file,
+the compiler will then display something like
+
+\verb'    no errors, no warnings, lines   15, time  1.09'
+
+showing the number of errors, the number of source lines
+and the compilation time.
+
+{\bf Note:} The \XDS{} compiler reports are user configurable.
+If the lines similar to the above do not appear, check that the \OERef{DECOR}
+equation value contains letters `C' (compiler heading) and `R' (report).
+
+\section{Using the Oberon-2 compiler}
+
+In our bilingual system the \mt{} source code just shown is also
+perfectly valid as the \ot{} code. \xds{} allows you to
+use \mt{} libraries when programming in \ot{} (in our case the
+{\tt InOut} module).
+
+As in \mt{}, this source code in \ot{} constitutes
+a {\em top-level module} or {\em program module},
+but in \ot{}, there is no syntactic distinction between
+a top-level module and any other module.
+The \ot{} compiler must be specifically told that this is
+a top-level module by using the option \OERef{MAIN}.
+
+Copy the source file to the file {\bf hello.ob2} and type:
+
+\verb'    '\XC{}\verb' hello.ob2 +MAIN'
+
+The same sequence of reports will occur as that of the \mt{} compiler,
+but the \ot{} compiler will also report whether a new symbol
+file was generated or not.
+It is also possible to override the default source file extension using
+\OERef{M2} and \OERef{O2} options:
+
+\verb'    '\XC{}\verb' hello.mod +O2 +MAIN'
+
+In this case, the \ot{} compiler will be invoked regardless
+of the file extension.
+
+\section{Error reporting}
+
+If either compiler detects an error in your code, an error description
+will be displayed. In most cases a copy of the source line will also be
+shown with a dollar sign \verb|"$"| placed directly before the point at
+which the error occurred. The format in which \xds{} reports errors is
+user configurable (See \ref{opt:errfmt}), by default it includes a
+file name, a position (line and column numbers) at which the error occurred,
+an error type indicator, which can be [E]rror, [W]arning or [F]ault,
+an error number, and an error message.
+
+\Example
+{\samepage
+\begin{verbatim}
+* [bf.mod 26.03 W310]
+* infinite loop
+  $LOOP
+\end{verbatim}
+} % samepage
+\pagebreak[1]
+
+\section{Building a program}\label{start:build}
+\index{running a program}
+
+\ifgencode        %----------------------
+
+To have you program automatically linked, invoke the compiler in the
+\See{MAKE mode}{}{xc:modes:make}:
+
+\verb'    '\xc\verb' =m hello.mod'
+
+In this mode, the compiler processes all modules which are imported by
+the module specified on the command line, compiling them if necessary.
+Then, if the specified module was a program module, the linker is invoked.
+
+However, if your program consists of several modules, we recommend to
+write a \See{project file}{}{xc:project}. In the simplest case, it consists
+of a single line specifying a name of a main module:
+
+\verb'    !module hello.mod'
+
+but it may also contain various \See{option settings}{}{options}.
+The following invocation
+
+\verb'    '{\tt \xc{}}\verb' =p hello.prj'
+
+will compile modules constituting the project (if required) and
+then execute the linker.
+
+Here is a more complex project file:
+\begin{verbatim}
+% debug ON
+-gendebug+
+-genhistory+
+-lineno+
+% optimize for Pentium
+-cpu = pentium
+% response file name
+-mkfname = wlink
+-mkfext  = lnk
+% specify an alternate template file
+-template = wlink.tem
+% linker command line
+-link = "wlink @%s",mkfname#mkfext;
+% main module of the program
+!module main.mod
+% additional library
+!module clib3s.lib
+\end{verbatim}
+
+After successful compilation of the whole project the compiler
+creates a linker response file using the specified
+\See{template file}{}{xc:template} and then executes a command line
+specified by the \OERef{LINK} equation.
+
+\fi % end ifgencode ----------------------
+
+\ifgenc %----------------------
+
+ After compilation of {\tt hello} program you can invoke your C compiler.
+ \index{C compiler}
+ It is necessary to specify the paths to header files and library
+ (use the name of appropriate library from you package).
+ Consult your C compiler manual for syntax of the compiler command line.
+ \begin{verbatim}
+   cc hello.c -Ic:\xds\include c:\xds\lib\libxds.lib
+ \end{verbatim}
+ Type
+ \begin{verbatim}
+   hello
+ \end{verbatim}
+ to run your program.
+
+ The {\tt xdsuser} script creates the {\tt xcc} script that can be used
+ to compile and link a simple program. Type
+ \begin{verbatim}
+   xcc hello.c
+ \end{verbatim}
+If your project contains more than one module, we recommend to
+write a project file (See \ref{xc:project}) and use appropriate
+template file (See \ref{xc:template}).
+The following project file contains all necessary settings:
+\begin{verbatim}
+% debug ON
+-gendebug+
+-lineno+
+% specify template file
+-template = xds.tem
+% specify a name of a makefile
+-mkfname = tmp
+-mkfext  = mkf
+% force generation of the makefile
+-makefile+
+% call the make
+-link = "make -f %s",mkfname#mkfext;
+% main module of the program
+!module hello.mod
+\end{verbatim}
+It specifies the template file to use ({\tt xds.tem}), the name
+of the makefile ({\tt tmp.mkf}) and the make command line.
+
+After successful compilation of the whole project the compiler
+creates the makefile and then executes the command line,
+specied by the {\bf LINK} equation.
+The {\tt xds.tem} template file defines a template for a makefile.
+The following invocation
+
+\verb'    '\xc{}\verb' hello.prj =p'
+
+will compile modules constituting the project (if required) and
+then execute the make. See \ref{xc:template} for the full description
+of template files.
+See also the project files, generated by the {\tt xdsuser} script.
+
+\fi %----------------------
+
+\section{Debugging a program}\label{start:debug}
+\index{debugging a program}
+
+\ifgencode
+
+\XDS{} compilers generate debug information in the
+\iflinux stabs \else CodeView or HLL4 \fi format and
+allow you to use any debugger compatible with that format \iflinux (for
+example, GDB)\else or the XD debugger included
+in your \XDS{} package\fi.  However,
+the {\em postmorten history}\index{history}\index{postmorten history}
+feature of \XDS{} run-time support may be used in many cases instead of
+debugger. To enable this feature, the option \OERef{LINENO}
+should be set on for all modules in the
+program and the option \OERef{GENHISTORY}
+for the main module of the program; the program also has to be linked
+with debug info included\ifxlink{} (See \ref{link:inout:gendebug})\fi.
+If your program was built with the above settings, the run-time system
+dumps the stack of procedure calls on an abnormal termination
+into a file called \verb'errinfo.$$$'. % What about Linux???
+The HIS utility reads that file and outputs the call stack in % ??? name
+terms of procedure names and line numbers using the debug info
+from your program's executable file.
+
+\Example
+\begin{verbatim}
+MODULE test;
+
+PROCEDURE Div(a,b: INTEGER): INTEGER;
+BEGIN
+  RETURN a DIV b
+END Div;
+
+PROCEDURE Try;
+  VAR res: INTEGER;
+BEGIN
+  res:=Div(1,0);
+END Try;
+
+BEGIN
+  Try;
+END test.
+\end{verbatim}
+
+\pagebreak[1]
+{\samepage
+When this program is running, an exception is raised and the
+run-time system stores the exception location and a stack of
+procedure calls in a file \verb'errinfo.$$$' and displays the
+following message:
+
+\begin{verbatim}
+#RTS: unhandled exception #6: zero or negative divisor
+
+File errinfo.$$$ created.
+\end{verbatim}
+} % \samepage
+\pagebreak[1]
+
+The \verb'errinfo.$$$' is not human readable. The HIS utility,
+once invoked, reads it along with the debug information from
+your program executable and outputs the call stack in a more
+usable form:
+
+\pagebreak[1]
+{\samepage
+\begin{verbatim}
+#RTS: unhandled exception #6: zero or negative divisor
+------------------------------------------------------------
+Source file                     LINE  OFFSET  PROCEDURE
+------------------------------------------------------------
+test.mod                           5  00000F  Div
+test.mod                          11  000037  Try
+test.mod                          15  000061  main
+\end{verbatim}
+} % \samepage
+\pagebreak[1]
+
+The exception was raised in line 5 of {\tt test.mod},
+the {\tt Div} procedure was called from line 11,
+while the {\tt Try} procedure was called from line 15
+(module body).
+
+{\bf Note:} In some cases, the history may be inaccurate.
+See \ref{rts:history} for further details.
+
+\fi % ifgencode --------------------------
+
+\ifgenc % debugging
+
+\XDS{} allows one to use any standard debugger. However, the {\em
+postmorten history}\index{history}\index{postmorten history} feature of
+\XDS{} run-time support may be used in may cases instead of debugger.
+To enable this feature the option \OERef{GENDEBUG}
+should be set for all modules in the program;
+the debug mode should also be set for a C compiler and linker.
+
+If your program is compiled in this mode, the run-time system will
+print a stack of procedure calls (a file name and a line number) on
+abnormal termination of your program.
+
+\Example
+\begin{verbatim}
+MODULE test;
+
+PROCEDURE Div(a,b: INTEGER): INTEGER;
+BEGIN
+  RETURN a DIV b
+END Div;
+
+PROCEDURE Try;
+  VAR res: INTEGER;
+BEGIN
+  res:=Div(1,0);
+END Try;
+
+BEGIN
+  Try;
+END test.
+\end{verbatim}
+When this program is running, an exception is raised and the
+run-time system prints the exception location and a stack of
+procedure calls. If the option \OERef{LINENO} is ON, all information
+will be reported in terms of original (\ot{}/\mt{}) source files:
+\begin{verbatim}
+#RTS: No exception handler #6: zero or negative divisor.
+test.mod              5
+test.mod             11
+test.mod             15
+\end{verbatim}
+The exception was raised in line 6 of {\tt test.mod},
+the {\tt Div} procedure was called from line 12,
+while the {\tt Try} procedure was called from line 16
+(module body).
+If the option \OERef{LINENO} is OFF, all information will be reported in
+terms of generated C files:
+\begin{verbatim}
+#RTS: No exception handler #6: zero or negative divisor.
+test.c               17
+test.c               27
+test.c               36
+\end{verbatim}
+See \ref{maptoc:opt:gen} for additional details.
+
+\fi % end ifgenc (debugging) ----------------------
+
+

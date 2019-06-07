@@ -1,0 +1,27 @@
+-- Процедуры для сортировки и поиска информации.
+
+DEFINITION MODULE Sort;
+
+TYPE
+  COMPARE = PROCEDURE (CARDINAL, CARDINAL) : BOOLEAN; (* Процедура сравнения *)
+  SHAKE   = PROCEDURE (CARDINAL, CARDINAL);           (* Процедура обмена    *)
+
+(* Сортировка Шелла                 *)
+(* Сортирует N-элементное множество *)
+PROCEDURE Shell (N: CARDINAL; Compare: COMPARE; Shake: SHAKE);
+PROCEDURE qsort(N : CARDINAL;Compare: COMPARE; swap: SHAKE);
+
+TYPE
+  (* Процедура сравнения двух элементов *)
+  (* -1: текущий "меньше" чем искомый   *)
+  (*  0: элементы "равны"               *)
+  (* +1: текущий "больше" чем искомый   *)
+  BINARY_COMPARE = PROCEDURE (CARDINAL): INTEGER;
+
+(* Бинарный поиск в N-элементном упорядоченном множестве *)
+(* Возвращает номер элемента, если он найден             *)
+PROCEDURE BinaryFind (N: CARDINAL; Compare: BINARY_COMPARE;
+                      VAR i: CARDINAL): BOOLEAN;
+
+
+END Sort.

@@ -1,0 +1,59 @@
+-- Процедуры для доступа к регистрам и памяти (чтение/запись/атрибуты).
+-- Также содержит функции для установки/снятия трассировки
+-- регистрам и областей памяти.
+-- Модуль является системо-зависимым.
+
+DEFINITION MODULE Krn_Mem;
+
+IMPORT sys := SYSTEM;
+
+IMPORT kt  := KrnTypes;
+
+FROM Events IMPORT ACCESS_TYPE;
+
+
+(* Получить регистры *)
+PROCEDURE GetRegisterCache(VAR Cache: kt.REGISTER_CACHE): BOOLEAN;
+
+(* Записать в регистры *)
+PROCEDURE PutRegisterCache(Cache: kt.REGISTER_CACHE): BOOLEAN;
+
+(* Прочитать с адреса в буфер немного байтов   *)
+PROCEDURE Get(source: kt.ADDRESS; dest: sys.ADDRESS; len: CARDINAL): BOOLEAN;
+
+(* Записать по адресу из буфера немного байтов *)
+PROCEDURE Put(dest: kt.ADDRESS; source: sys.ADDRESS; len: CARDINAL): BOOLEAN;
+
+(* Установить трассировку чтения из поля по адресу с заданой длиной *)
+PROCEDURE SetTrace (Access: ACCESS_TYPE; addr: kt.ADDRESS; len: CARDINAL; VAR Index: CARDINAL): BOOLEAN;
+
+(* Снять трассировку чтения из поля по адресу с заданой длиной *)
+PROCEDURE RemoveTrace (VAR Index: CARDINAL): BOOLEAN;
+
+(* Получить информацию о сегменте *)
+PROCEDURE GetSegmentInfo(    addr  : kt.ADDRESS;
+                         VAR begin : kt.ADDRESS;
+                         VAR len   : CARDINAL;
+                         VAR access: kt.ATTRIBS): BOOLEAN;
+
+(* Адрес из исполняемого сегмента *)
+PROCEDURE IsAddrFromExecutableSeg(addr: kt.ADDRESS): BOOLEAN;
+
+
+<* IF DEST_K26 THEN *>
+
+(* Установить трассировку чтения из регистра *)
+PROCEDURE SetRegTrace (Access: ACCESS_TYPE; regno: CARDINAL; VAR Index: CARDINAL): BOOLEAN;
+
+(* Снять трассировку записи в регистр *)
+PROCEDURE RemoveRegTrace (VAR Index: CARDINAL): BOOLEAN;
+
+
+<* ELSIF DEST_XDS AND TARGET_x86 AND (TARGET_OS = "WINNT") THEN *>
+
+PROCEDURE SynchronizeTraceForAllThreads ();
+
+<* END *>
+
+
+END Krn_Mem.

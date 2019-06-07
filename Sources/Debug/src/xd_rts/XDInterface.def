@@ -1,0 +1,135 @@
+<* M2EXTENSIONS+ *>
+<* ALIGNMENT = "4" *>
+
+DEFINITION MODULE ["StdCall"] XDInterface;
+(* 
+   This module provides interface of interacting between RT and Debugger
+*)
+
+IMPORT xjRTS;
+
+FROM SYSTEM IMPORT ADDRESS;
+
+
+-------------------------------------------------------------------------------
+
+TYPE
+  X2C_TD_STR     = xjRTS.X2C_TD_STR;   -- сделать константы, а не переопределение
+  X2C_LINK_STR   = xjRTS.X2C_LINK_STR;
+  X2J_DYNARR_STR = xjRTS.X2J_DYNARR_STR;
+
+CONST
+  k_gc_array = xjRTS.k_gc_array;
+  k_class    = xjRTS.k_class;
+  BODY_OFFS  = xjRTS.BODY_OFFS;
+
+
+
+-------------------------------------------------------------------------------
+
+TYPE
+  pXD_Interface = POINTER TO XD_Interface;
+
+  XD_Interface = RECORD
+                   Magic: CARDINAL;
+                   -- RTS dependent information
+                 END;
+
+
+  HandlerType = ( htException -- The user can choose either to stop or to continue execution
+                , htTrap      -- A program is unconditionally stopped
+                , htMessage   -- The debugger shows a message
+                );
+
+  HandlerDesc = RECORD
+                  Type     : HandlerType;
+                  Soft     : BOOLEAN;
+                  Message  : ARRAY [0..63] OF CHAR;
+                  HasParam : BOOLEAN;
+                END;
+
+
+
+-------------------------------------------------------------------------------
+
+CONST
+  XDInterfaceMagic_Java   = 023498705H; -- Java XD Interface magic
+  XDInterfaceVersion_Java = 5;
+
+TYPE
+  Handlers_Java = ( hj_X2C_ASSERT_FC
+                  , hj_X2C_ASSERT_F
+                  , hj_X2C_NativeExit
+                  , hj_HandleUncaughtException
+                  , hj_X2C_TRAP_F
+                  , hj_X2C_TRAP_RANGE
+                  , hj_X2C_TRAP_NIL
+                  , hj_X2C_TRAP_OVERFL
+                  , hj_X2C_TRAP_DIV
+                  , hj_X2C_TRAP_INDEX
+                  , hj_X2C_ABORT
+                  , hj_PerfectFatalError
+                  , hj_X2J_UnsatisfiedLink
+                  , hj_OutOfMemory
+                  , hj_ProgramStopPoint
+                  , hj_X2C_TRAP_FC
+                  , hj_X2C_TRAP_RANGE_C
+                  , hj_X2C_TRAP_NIL_C
+                  , hj_X2C_TRAP_OVERFL_C
+                  , hj_X2C_TRAP_DIV_C
+                  , hj_X2C_TRAP_INDEX_C
+                  );
+
+  HANDLERS_Java = ARRAY Handlers_Java OF HandlerDesc;
+
+
+CONST
+  Handlers_List_Java = HANDLERS_Java {
+    HandlerDesc {htTrap,      FALSE, "ASSERT: RTS exception #%u", TRUE}
+  , HandlerDesc {htTrap,      FALSE, "ASSERT: RTS exception #%u", TRUE}
+  , HandlerDesc {htException, TRUE,  "Program has raised exception", TRUE}
+  , HandlerDesc {htException, TRUE,  "Program has raised exception that is uncaught", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "TRAP: RTS exception #%u", TRUE}
+  , HandlerDesc {htTrap,      FALSE, "RANGE EXCEPTION", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "NIL POINTER DEREFERENCE", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "OVERFLOW", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "DIVIZION BY ZERO", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "INVALID INDEX", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "ABORT", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "Redundant Method", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "Unsatisfied Link", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "Out Of Memory", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "Program execution stopped", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "TRAP: RTS exception #%u", TRUE}
+  , HandlerDesc {htTrap,      FALSE, "RANGE EXCEPTION", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "NIL POINTER DEREFERENCE", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "OVERFLOW", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "DIVIZION BY ZERO", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "INVALID INDEX", FALSE}
+  };
+
+
+
+TYPE
+  XD_Interface_Java = RECORD
+                        Magic     : CARDINAL;
+                        Version   : CARDINAL;
+                        MainAdr   : ADDRESS;  -- user program entry point
+                        EERing    : xjRTS.X2C_ExecEnv;
+                        nHandlers : CARDINAL;
+                        Handlers  : ARRAY Handlers_Java OF ADDRESS;
+                      END;
+
+
+
+
+-------------------------------------------------------------------------------
+
+CONST
+  IntializeProc = "XD_Init";
+
+TYPE
+  XD_Init_P = PROCEDURE ["StdCall"] (pXD_Interface);
+
+
+END XDInterface.

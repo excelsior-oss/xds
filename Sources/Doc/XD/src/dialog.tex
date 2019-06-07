@@ -1,0 +1,1401 @@
+\chapter{Using the dialog mode}
+\label{dialog}
+
+\section{Introduction}
+\label{dialog:intro}
+
+XD is a text mode application and usually operates in a Win32 console window. 
+It may also be started in fullscreen mode. In the following text, {\em screen} refers
+to either fullscreen or windowed console containing XD.
+
+The different types of information displayed by the debugger
+are collected in separate {\em windows}. There are five
+kinds of windows in XD:
+\begin{itemize}
+\item menus
+\item the {\bf Program} window
+\item information windows (or just windows)
+\item dialogs
+\item message boxes
+\end{itemize}
+The top line of XD screen is occupied by the {\bf Main} menu, which
+provides access to other menus. The rest of the screen is shared by
+the {\bf Program} window and {\em information windows}.
+All those windows are overlapped and may be freely moved, resized, and placed
+above or beneath each other.
+
+The {\bf Program} window contains the source text and/or the disassembled
+code of the program being debugged (the {\it debuggee}).
+It is frameless and may not be closed or hidden.
+
+Information windows are used to display various data about the current state
+of the debuggee, such as watch expressions, CPU registers, call stack, etc.
+They have frames and may be displayed, hidden, or closed at any time.
+
+A {\em dialog} is a window which {\em pops up} when XD prompts you for an information
+it needs to complete a requested action, such as a name of a variable to examine,
+or an expression to watch. Dialog windows are {\em modal}: another window
+may not be activated while the dialog is displayed and you have to explicitly
+confirm or cancel the action you requested.
+
+The debugger displays error, warning, and informational messages in
+{\it message boxes}. They are similar to dialogs, but the only
+action you may perform when a message box is displayed is to close it.
+
+\subsection{Using menus and shortcuts}
+\label{dialog:intro:menus}
+
+To select an item from the {\bf Main} menu, do one of the following:
+\begin{itemize}
+\item Click an item with the left mouse button.
+\item Hold down {\bf Alt} and press a highlighted character of an item.
+\item Press {\bf F10}, choose an item with left/right arrow keys,
+and press {\bf Enter} or the down arrow key.
+\end{itemize}
+This will cause one of the {\em pulldown menus} to be displayed. To select
+an item from a pulldown menu, do one of the following:
+\begin{itemize}
+\item Click an item with the left mouse button.
+\item Press a highlighted character (holding down {\bf Alt} is optional).
+\item Choose an item with up/down arrow keys and press {\bf Enter}.
+\end{itemize}
+Finally, there are {\em pop-up menus} available in most information windows.
+To activate a pop-up menu, click an information window with the {\em right} mouse button
+or press {\bf Ctrl+F10}. Then select an item as in a pulldown menu.
+
+The most often used menu commands have {\em shortcuts} - key combinations
+which may be used to activate a menu command without selecting it from a menu.
+Shortcuts are shown to the right of menu items.
+% You may change the default
+% shortcuts. See \ref{dialog:customization:shortcuts} for more information.
+
+\subsection{Using information windows}
+\label{dialog:intro:info}
+
+Most information windows contains lists of items, such as global variables
+or watch expressions. When a window becomes current, a cursor is displayed
+over one of its items. The following keys may be used to move the cursor:
+
+\KeyListBegin{8 cm}
+\KeyDef{Left/Right}     {scroll window contents horizontally}
+\KeyDef{Up/Down}        {move the cursor one line up/down}
+\KeyDef{PgUp/PgDn}      {move the cursor one page up/down}
+\KeyDef{Ctrl+PgUp/PgDn} {move the cursor to the first/last item of the list}
+\KeyDef{Ctrl+Home/End}  {move the cursor to the top/bottom of the window}
+\KeyListEnd
+
+An item may also be selected by clicking it with the left or right mouse button.
+In the latter case, a \Ref{pop-up menu}{dialog:intro:menus} will also be displayed.
+
+Information windows which contain lists of program entities,
+for instance, a list of all modules or a list of local variables
+provide {\em locators} for quick cursor positioning.
+
+To move the cursor to a certain item, start typing item's name on the keyboard.
+The characters you type will appear on the bottom line of a window frame
+(the locator), and the cursor will position on the first item which name 
+begins with those characters. You may use the {\bf Tab} key
+to quickly expand the current value of a locator.
+
+Once the cursor appears near the desired item, you may use arrow keys
+again to complete positioning. Character case is ignored during search, and
+case of characters in a locator always match the currently selected item.
+
+\subsection{Using dialogs}
+\label{dialog:intro:dialogs}
+
+A dialog is a modal window which pops up when you initiate a certain
+action which requires parameters, such as variable name or address.
+
+XD dialogs behave very similar to Windows dialogs.
+
+\subsection{Managing windows}
+\label{dialog:intro:windows}
+
+At any moment during a debugging session, there is exaclty one
+window which accepts user input - the {\it current window}.
+It is the topmost and is displayed with a double frame instead of
+a single\footnote{The frameless {\bf Program} window is marked as current
+by changing its header colour.}.
+
+To select a window to become current, click it or press {\bf Ctrl+Tab}
+to cycle through windows. You may also select a window from the
+{\bf Windows} menu, which always contains a list of all open windows.
+You may need to scroll it if there are too many windows open.
+
+To move or resize the current window using the keyboard,
+press {\bf Ctrl+W}. A bold frame will be drawn around the window.
+Use arrow keys to move the window.
+Holding down {\bf Ctrl} while pressing arrow keys will force
+the window to change its size instead of position.
+To leave the move/resize mode, press {\bf Ctrl+W} or {\bf Enter}.
+
+With the mouse, drag the top border of a window to move it or
+drag any other border or a corner to resize.
+
+To close the current window, press {\bf Ctrl+F4} or click the
+\verb'[x]' sign in its top right corner. It is also possible to close
+a window by selecting it in the {\bf Windows} menu using arrow keys
+and pressing {\bf Del}. The {\bf Program} window may not be closed.
+
+\subsection{Refreshing the screen}
+\label{dialog:intro:refresh}
+
+If there is any garbage on XD screen, press {\bf Ctrl+E}
+or select {\bf Refresh screen} from the {\bf File} menu to have
+all windows repainted.
+
+\subsection{Viewing batch mode output}
+\label{dialog:intro:log}
+
+If the debugger was invoked in the \See{batch mode}{Chapter }{batch}
+and then switched to the dialog mode with the help of the
+\See{{\bf DIALOG} command}{}{batch:DIALOG}, you may wish to look at the
+last lines of the log. To do this, press {\bf "/"} or select
+{\bf Show output} from the {\bf File} menu.
+
+\subsection{Smart session select}
+\label{dialog:intro:sss}
+
+Your program is likely to require user interaction. It would be convenient
+to have the session in which it is executed automatically brought
+to foreground (selected) during execution, and XD session to be selected
+whenever the program is stopped. However, in case of
+\See{step execution modes}{}{dialog:executing} usage that would cause
+undesirable flickering.
+
+XD uses a bit smarter approach: after resuming the debuggee execution,
+it waits for a small amount of time before selecting the debuggee session.
+If control returns to the debugger prior to timeout, its session remains
+selected. The \See{{\bf Delay to select debuggee} option}{}{dialog:options}
+allows you to adjust the timeout period.
+
+When your program is stopped, you may temporarily bring it to foreground
+by pressing {\bf "\bs{}"} or by selecting {\bf Show debuggee} from the
+{\bf File} menu. After a timeout, the XD session will be automatically
+selected again. A timeout does not occur if you select the debuggee
+using an operating system mechanism.
+
+% ??? different timeout for this case?
+
+\section{Files used by XD}
+\label{dialog:sysfiles}
+
+The following files are used by the debugger:
+
+\begin{tabular}{ll}
+\tt xd.red & redirection file \\
+\tt xd.cfg & default session settings \\
+\tt xd.hlp & on-line help \\
+\tt xd.msg & debugger messages \\
+% \tt *.kbd  & keyboard mappings \\
+\tt *.ses  & session settings
+\end{tabular}
+
+The debugger uses a redirection file to search for all other files
+the same way the compiler does, except that source files are searched via
+redirection only if the \See{{\bf Strip path from source name} option}{}{dialog:options}
+is switched ON.
+
+The \verb'xd.cfg', \verb'xd.hlp', and \verb'xd.msg' files, if not found via redirection,
+are expected to be found in the directory in which XD executable file, \verb'xd.exe',
+resides. The \verb'xd.msg' file is essential; the debugger will display an error message
+and terminate if it fails to locate it on startup.
+
+The configuration file contains default values of options, window sizes, positions,
+and colors.
+
+% \verb'*.kbd' files contain alternate keyboard mappings. See \ref  % !!! Remove this alternative from the menu.
+% for more information.
+
+Upon termination of a dialog debugging session,
+the debugger stores its settings in a session file, provided that
+the \See{{\bf Save debug session layout} option}{}{dialog:options}
+is set ON. A session file name matches the debugged executable name,
+and has the extension \verb'.ses'. Next time you debug that
+executable, XD will restore option values and window layout from
+the session file.
+
+% !!! New in 1.1:
+
+\See{Watch expressions}{}{dialog:data:watches}, if any, are also saved 
+in session files.
+
+\section{Loading a program}
+\label{dialog:load}
+
+To have a program which you want to debug automatically loaded when
+you invoke the debugger, pass its executable name and optional arguments
+on XD command line (see \ref{start:invoking}).
+If you do not provide this information,
+XD will display the {\bf Load Program} dialog upon startup.
+
+\ifcomment
+\begin{figure}[h]
+\begin{center}
+\ \drawing{dlgload}\
+\end{center}
+\caption{The {\bf Load Program} dialog}
+\end{figure}
+\fi
+
+To load a program via the {\bf Load Program} dialog:
+\begin{enumerate}
+\item Type the name of the executable in the {\bf Program name}
+      entry field or select the {\bf Browse} button to select it using
+      a file dialog.
+\item If you want any command line arguments to be passed to the
+      debuggee, type them in the {\bf Arguments} entry field.
+\item Select the {\bf OK} pushbutton or press {\bf Enter}.
+\end{enumerate}
+
+If you decided not to load a program, select the {\bf Cancel}
+pushbutton or press {\bf Esc}.
+
+% !!! write about PATH and xd.red.
+
+To load another program during a debugging session, select
+{\bf Load Program} from the {\bf File} menu or press {\bf F3}.
+
+\section{Navigating through your program}
+\label{dialog:navigating}
+
+XD displays the program you are debugging in the {\bf Program}
+window. This window is automatically opened upon program load
+and remains on the screen until you finish the debugging session.
+
+The {\bf Program} window is frameless. The top line is a header in which
+information about the current position in the code is displayed.
+The two leftmost columns are reserved for \See{breakpoint marks}{}{dialog:breaks}
+and are not scrolled horizontally. The remaining area of the window is used
+to display the program source and/or the disassembled code.
+
+\subsection{Cursors}
+\label{dialog:navigating:cursors}
+
+The {\bf Program} window contains two cursors, displayed in different colors.
+
+When the debuggee is stopped, the {\it execution cursor} is positioned
+over the line or instruction about to be executed. It may not be moved manually.
+
+The {\it user cursor} is intended for navigation. You may freely move it
+through the source text or code, which is scrolled, if neccessary,
+so that the user cursor always stays visible. It is also used to specify a
+breakpoint position. See \ref{dialog:breaks} for more information.
+
+When the two cursors coincide, only the execution cursor is displayed.
+The user cursor is moved to the position of the execution cursor
+when the debuggee execution is interrupted, for instance, when
+a step command is executed or a \Ref{breakpoint}{dialog:breaks} is hit.
+You may also quickly move the user cursor to the position of the execution
+cursor by pressing {\bf Ctrl+Home} or selecting {\bf Home} from the
+{\bf Search} menu.
+
+\subsection{View modes}
+\label{dialog:navigating:modes}
+
+The {\bf Program} window supports three view modes: {\bf Source}, {\bf Disassembly},
+and {\bf Mixed}.
+
+\ifcomment
+\begin{figure}[htb]
+\begin{center} \ \drawing{source}\ \end{center}
+\caption{Source mode}
+\end{figure}
+\fi
+
+In the {\bf Source} mode, the {\bf Program} window contains source code of
+one of the modules which constitute your program. Its name is
+displayed in the header along with the number of the source line
+currently selected by the user cursor.
+
+Two different colors are used to display executable
+and non-executable lines, unless the
+\See{{\bf Code highlight} option}{}{dialog:options}
+is set to {\bf No}. When the user cursor is positioned
+over an executable line, a corresponding address and a
+procedure name are displayed in the window header.
+
+\ifcomment
+\begin{figure}[htb]
+\begin{center} \ \drawing{disasm}\ \end{center}
+\caption{Disassembly mode}
+\end{figure}
+\fi
+
+In the {\bf Disassembly} mode, the code of your program is displayed
+as assembly instructions. A name of a procedure to which the
+instruction under the user cursor belongs and offset of this
+instruction from the procedure's entry point are shown in the window
+header. In this mode, you may scroll through the entire code segment,
+while in two other modes module boundaries may not be crossed.
+
+\ifcomment
+\begin{figure}[htb]
+\begin{center} \ \drawing{mixed}\  \end{center}
+\caption{Mixed mode}
+\end{figure}
+\fi
+
+The {\bf Mixed} mode is similar to the {\bf Disassembly} mode, with
+addition that the correspondent source line is displayed
+above each chunk of disassembled code. The source lines, however,
+are treated as comments; the user cursor jumps over them as you
+move it, so it is not possible to step execute an entire line or set
+a breakpoint on it.
+
+{\bf Note:} In the {\bf Source} and {\bf Mixed} modes,
+only one of the program's modules is displayed in the {\bf Program} window.
+Use the \See{{\bf Modules} window}{}{dialog:navigating:modules}
+to display another module.
+
+After loading a program, XD always enters the {\bf Source} mode,
+unless there is no debug info at the execution point.
+If a source file can not be found, the window is filled
+with lines containing the corresponding message.
+
+To toggle view modes, select a corresponding item from the {\bf Code} menu,
+from the pop-up menu, or use the following shortcuts:
+
+\KeyListBegin{11 cm}
+\KeyDef{Alt+1} {switch to the {\bf Source} mode}
+\KeyDef{Alt+2} {switch to the {\bf Disassembly} mode}
+\KeyDef{Alt+3} {switch to the {\bf Mixed} (source+disassembly) mode}
+\KeyListEnd
+
+\subsection{Moving around in the Program window}
+\label{dialog:navigating:moving}
+
+The following keys move the user cursor through the contents
+of the {\bf Program} window:
+
+\KeyListBegin{8 cm}
+\KeyDef{Left/Right}     {scroll window contents horizontally}
+\KeyDef{Up/Down}        {move the user cursor one line up/down}
+\KeyDef{PgUp/PgDn}      {move the user cursor one page up/down}
+\KeyDef{Ctrl+PgUp/PgDn} {move the user cursor to the top/bottom of the current module}
+\KeyDef{Ctrl+Home/End}  {move the user cursor to the top/bottom of the window}
+\KeyDef{Home/End}       {show the current line beginning/end}
+\KeyDef{Ctrl+Up/Down}   {move the user cursor to the previous/next procedure in the current module}
+\KeyDef{Ctrl+H}         {move the user cursor to the execution cursor position}
+\KeyDef{Ctrl+G}         {move the user cursor to a source line by its number}
+\KeyDef{Ctrl+A}         {move the user cursor to a certain address}
+\KeyDef{Ctrl+F}         {find a string}
+\KeyDef{Ctrl+N}         {repeat last find}
+\KeyListEnd
+
+Some of the key combinations listed above are shortcuts for the
+\See{{\bf Search} menu}{}{dialog:navigating:search} commands.
+
+In addition, the following information windows may help you to quickly move to
+certain points in the code:
+
+\begin{tabular}{lll}
+\bf Window & \bf May be used to \\
+\hline
+\bf \See{Modules}   {}{dialog:navigating:modules}    & display another module \\
+\bf \See{Procedures}{}{dialog:navigating:procedures} & display a procedure in the current module \\
+\bf \See{Publics}   {}{dialog:navigating:publics}    & display a public procedure \\
+\bf \See{Call Stack}{}{dialog:executing:callstack}   & display a call chain element \\
+\bf \See{Breaks}    {}{dialog:breaks:window}         & display code where a breakpoint is set \\
+\bf \See{Components}{}{dialog:navigating:components} & switch to another component \\
+\bf \See{Threads}   {}{dialog:executing:threads}     & switch to another thread
+\end{tabular}
+
+\subsection{The Search menu}
+\label{dialog:navigating:search}
+
+The {\bf Search} menu commands may be used to quickly move to certain
+positions in windows. Most of them are available in the {\bf Program}
+window only.
+
+\begin{description}
+\item[{\bf Find}] \mbox{} \\
+  Searches for a string in the currently displayed source module.
+  Shortcut: {\bf Ctrl+F}
+\item[{\bf Find next}] \mbox{} \\
+  Finds the nexts occurence of a string.
+  Shortcut: {\bf Ctrl+N}
+\item[{\bf Find prev}] \mbox{} \\
+  Finds the previous occurence of a string.
+\item[{\bf Next procedure}] \mbox{} \\
+  Moves the user cursor to the beginning of the next procedure.
+  Shortcut: {\bf Ctrl+Down}
+\item[{\bf Prev. procedure}] \mbox{} \\
+  Moves the user cursor to the beginning of the previous procedure.
+  Shortcut: {\bf Ctrl+Up}
+\item[{\bf Goto line}] \mbox{} \\
+  Moves the user cursor to a given line in the displayed module.
+  Shortcut: {\bf Ctrl+G}
+\item[{\bf Home}] \mbox{} \\
+  Moves the user cursor to the current execution cursor position.
+  Shortcut: {\bf Alt+Home}
+\item[{\bf Goto address}] \mbox{} \\
+  Moves the user cursor to a certain address.
+  Shortcut: {\bf Ctrl+A}
+\end{description}
+
+\subsection{The Components window}
+\label{dialog:navigating:components}
+
+In the {\bf Components} window, the debugger displays the list
+of executable components (EXE and DLLs) of your program.
+It can be opened by selecting {\bf Components} from the
+{\bf Code} menu.
+
+When your program is first loaded into the debugger, its EXE file
+becomes the current component. To choose another component,
+double-click it in the {\bf Components} window, or select it and
+press {\bf Enter}.
+
+% !!! New in version 1.1:
+
+The {\bf Components} window contains two marks similar to
+\See{cursors}{}{dialog:navigating:cursors}: one for the currently
+displayed component and another for the component in which
+debuggee execution stopped.
+
+Use the pop-up menu to toggle display of full paths to components
+on or off.
+
+\subsection{The Modules window}
+\label{dialog:navigating:modules}
+
+The {\bf Modules} window contains the list of modules which constitute
+the current \Ref{component}{dialog:navigating:components}.
+To open it, select {\bf Modules} from the {\bf Code}
+menu or press {\bf Ctrl+M}. To display another module in the
+{\bf Program} window, double-click its name, select it using arrow
+keys and press {\bf Enter}, or select {\bf Show code} from the pop-up menu.
+
+By default, only modules for which debug information is available
+are displayed. Switch the \See{{\bf Show all modules} option}{}{dialog:options}
+ON or select {\bf Show all} from the pop-up menu to display
+all modules.
+
+% !!! New in version 1.1:
+The module that is currently displayed in the 
+\Ref{{\bf Program} window}{dialog:navigating} and the module that contains
+the instruction pointer have marks in the first column. The color
+of each mark matches the color of the respective
+\Ref{cursor}{dialog:navigating:cursors}.
+
+To display global variables of a particular module in a separate window
+(see \ref{dialog:data:module}), press {\bf Ctrl+V} or select 
+{\bf Show variables} from the pop-up menu.
+
+\subsection{The Procedures window}
+\label{dialog:navigating:procedures}
+
+All procedures of the current module are listed in the {\bf Procedures}
+window, which may be opened by selecting {\bf Procedures} from
+the {\bf Code} menu or by pressing {\bf Ctrl+L}. To position the user cursor
+on a procedure, double-click its name or select it using arrow
+keys and press {\bf Enter}.
+
+\subsection{The Publics window}
+\label{dialog:navigating:publics}
+
+The {\bf Publics} window contains all public names belonging to your
+program's code. Double-clicking or pressing {\bf Enter} on a name
+causes the correspondent source or disassembled code to be
+displayed in the {\bf Program} window.
+
+
+\section{Executing your program}
+\label{dialog:executing}
+
+The debugger provides different methods to execute your program. You
+may use the {\it continuous execution commands} to quickly move the execution
+point to a certain position in the code, to watch execution flow,
+or to wait for an event, such as variable access. The {\it step commands}
+allow you to monitor your program execution.
+
+If the {\bf Program} window is in the {\bf Source} mode, step commands
+are performed in terms of source lines, otherwise --- in terms of CPU
+instructions.
+
+{\bf Note:} Execution of your program may be interrupted earlier than
+implied by the command used to initiate it:
+\begin{itemize}
+\item if your program terminates
+\item if an exception is raised in your program
+\item if a breakpoint is hit
+\item if a break is activated
+\end{itemize}
+You may also explicitly interrupt your program and have control
+returned to XD.
+
+The execution commands are collected in the {\bf Run} menu:
+
+\begin{description}
+\item[{\bf Run}] \mbox{} \\
+    Start or resume program execution at full speed.
+\item[{\bf Execution trace}] \mbox{} \\
+    Start or resume line-by-line program execution.
+\item[{\bf Step into}] \mbox{} \\
+    Execute a single source or assembly line, stepping into a procedure call,
+    if there is one.
+\item[{\bf Step over}] \mbox{} \\
+    Execute a single source or assembly line without stepping into procedure calls.
+\item[{\bf Step out}] \mbox{} \\
+    Execute until return from the current procedure.
+\item[{\bf Run to cursor}] \mbox{} \\
+    Execute until the current \Ref{user cursor}{dialog:navigating:cursors}
+    position is reached.
+\item[{\bf Run to epilogue}] \mbox{} \\
+    Execute until the current procedure's stack cleanup code.
+\item[{\bf Run until address}] \mbox{} \\
+    Execute until a given address is reached.
+\item[{\bf Restart}] \mbox{} \\
+    Restart the debuggee and stop at the main module body.
+\item[{\bf Restart at startup}] \mbox{} \\
+    Restart the debuggee and stop at the very beginning - the startup code.
+\item[{\bf Restart at entry point}] \mbox{} \\
+    Restart the debuggee and stop at the entry point.
+\end{description}
+
+\subsection{Run}
+\label{dialog:executing:run}
+
+The {\bf Run} command resumes execution of your program from
+the current position at full speed, provided that no
+\See{condition breaks}{}{dialog:breaks:condition} are installed and enabled.
+
+Shortcut key: {\bf F5}
+
+\subsection{Execution Trace}
+\label{dialog:executing:trace}
+
+The {\bf Execution trace} command executes the debuggee line by line
+or instruction by instruction, moving the execution cursor
+and updating all information windows after each step. This enables
+you to watch control and data flow. Execution continues until you press {\bf Esc}
+and may also be interrupted by a breakpoint or a break.
+
+You may control whether code, for which no debug information is available,
+is to be traced, by setting the \See{{\bf Never fall into disassembler} option}{}
+{dialog:options}.
+
+The \See{{\bf Delay in execution trace} option}{}{dialog:options} allows you to specify
+a delay taken before execution of each line or instruction.
+
+Shortcut key: {\bf Ctrl+F5}
+
+\subsection{Step into}
+\label{dialog:executing:stepinto}
+
+The {\bf Step into} command executes the current line or instruction.
+If it contains a procedure call, execution stops at the first line
+or instruction of a called procedure.
+
+The \See{{\bf Never fall into disassembler} option}{}{dialog:options} controls whether
+procedures for which no debug infomation is available are traced
+or executed in one step.
+
+Shortcut key: {\bf F7}
+
+\subsection{Step over}
+\label{dialog:executing:stepover}
+
+The {\bf Step over} command executes the current line or instruction.
+If it contains any procedure calls, they are executed at once, unless
+a breakpoint is encountered or a break is activated.
+
+Shortcut keys: {\bf Ctrl+F7, Space}
+
+\subsection{Step out}
+\label{dialog:executing:stepout}
+
+The {\bf Step out} command places a temporary breakpoint right after
+the \verb'call' instruction which called the current procedure, and then
+resumes execution. If no other breakpoints or breaks are encountered,
+the debuggee will be executed until the current procedure finishes,
+and then control will be returned back to the debugger. You may use
+this command if you accidentally issued the \Ref{{\bf Step into}}
+{dialog:executing:stepinto} command instead of
+\Ref{{\bf Step over}}{dialog:executing:stepover}.
+
+Shortcut key: {\bf Ctrl+F6}
+
+\subsection{Run to cursor}
+\label{dialog:executing:tocursor}
+
+The {\bf Run to cursor} command installs a temporary breakpoint at
+the current position of the user cursor, which has to be on an
+\Ref{executable line}{start:general:executable},
+and then resumes execution of the debuggee.
+So execution will stop at that line, provided that no other breakpoints
+or breaks are encountered, no exception is raised and the debuggee
+is not terminated.
+
+Shortcut key: {\bf F4}
+
+\subsection{Run to epilogue}
+\label{dialog:executing:toepilogue}
+
+The {\bf Run to epilogue} command executes the debuggee until
+the \See{epilogue}{}{start:general:epilogue} of the current procedure is reached.
+This allows you to examine its local variables just before the procedure returns.
+
+This command is available only for procedures with debug information.
+
+\subsection{Run until address}
+\label{dialog:executing:address}
+
+The {\bf Run until address} command installs a temporary breakpoint
+at an address you specify and then resumes execution of your
+program.
+
+{\bf Warning:} Do not use this command unless you know for sure
+that there is an instruction starting at that address,
+otherwise you will corrupt the code and execution will not stop.
+
+\subsection{Restart}
+\label{dialog:executing:restart}
+
+The {\bf Restart} command reloads the debuggee and exectues it up to 
+the beginning of the main module body. All
+\Ref{breakpoints}{dialog:breaks}, \Ref{breaks}{dialog:breaks},
+and \Ref{watches}{dialog:data:watches} are retained.
+
+{\bf Note:} Your program may load DLLs at run-time, which will
+be unavailable after restart. If there were any breakpoints
+set in that DLLs, they will be disabled and a warning
+message will be displayed.
+
+Shortcut key: {\bf Ctrl+X}
+
+\subsection{Restart at startup}
+\label{dialog:executing:startup}
+
+The {\bf Restart at startup} command is similar to the
+\See{{\bf Restart}}{}{dialog:executing:restart} command
+except that no debuggee instructions are executed after restart.
+This allows you to debug DLL statrup code.
+
+\subsection{Restart at entry point}
+\label{dialog:executing:entry}
+
+% !!! New in v1.1:
+
+The {\bf Restart at entry point} command is similar to the
+\See{{\bf Restart}}{}{dialog:executing:restart} command
+except the debuggee is stopped at the EXE component's entry point, 
+when all load-time DLLs are loaded and intialized.
+
+\subsection{The Call Stack window}
+\label{dialog:executing:callstack}
+
+The {\bf Call Stack} window can be displayed by selecting the
+correspondent item from the {\bf Code} menu. It contains the names
+of the procedures which formed the call chain that led to the current
+position in the code. The current procedure is the topmost in the window.
+
+To have a certain procedure displayed in the {\bf Program} window,
+double click its name, or select it using arrow keys and press {\bf Enter}.
+% !!! New in version 1.1:
+A mark will appear in front of that procedure name in the {\bf Call Stack} 
+window, and the \See{{\bf Local variables} window}{}{dialog:data:locals}, 
+if open, will display local variables an parameters of that procedure.
+
+{\bf Note:} In some cases, the debugger may be unable to correctly trace back the
+call chain, so the {\bf Call Stack} window may contain some garbage entries.
+Turn the {\bf GENFRAME} compiler option ON to improve stack tracing accuracy.
+
+\subsection{The Threads window}
+\label{dialog:executing:threads}
+
+The {\bf Threads} window displays information about all threads
+started by the debuggee. It can be opened by selecting {\bf Threads}
+from the {\bf Code} menu.
+
+One of the threads is marked as current. When the debuggee is stopped,
+you may switch to another thread by double-clicking it or selecting
+with arrow keys and pressing {\bf Enter}.
+
+% Write more !!!
+
+\section{Using breakpoints and breaks}
+\label{dialog:breaks}
+
+A {\it breakpoint} is a mark in the debuggee's code which, once encountered
+({\it hit}) during execution, causes it to stop and control to be trasferred
+to the debugger. The source line or instruction on which the hit breakpoint is set is
+{\it not} executed.
+
+A {\it break} is a condition which is constantly checked during execution.
+Once it evaluates to true, the debuggee is immediately stopped.
+
+The major difference between breakpoints and breaks is that a breakpoint is
+bound to a particular source line or instruction, while a break is activated
+regardless of the current execution point. Using breakpoints, you may transfer
+control to the debugger when a certain code is about to be executed.
+Using breaks, you may force the debuggee to be stopped right after
+a particular event, such as modification of a specific variable, happens in it.
+
+To set a breakpoint, move the user cursor to the desired line or instruction,
+and select an appropriate command from the {\bf Breaks} menu (or press a shortcut key).
+Note that optimizations may cause strange effects during debugging, for instance,
+some lines containing statements may be displayed as unexecutable.
+See \ref{start:general} for more information.
+
+{\bf Note:} Your program may load and unload DLLs at run-time.
+If there were any breakpoints set in such a DLL, and your program unloads
+it, the breakpoints are disabled and a warning message is displayed.
+The same happens in the case of a restart.
+
+For historical reasons, XD supports only seven types of breakpoints
+which may not be combined together. This issue will be addressed
+in future releases.
+
+To set a break, select an appropriate command from the {\bf Breaks} menu
+(or press a shortcut key). \See{Access breaks}{}{dialog:breaks:access}
+may also be set from pop-up menus in some of the windows.
+
+The commands related to breakpoints and breaks are collected in the {\bf Breaks}
+menu:
+\begin{description}
+\item[{\bf Sticky breakpoint}] \mbox{} \\
+    Set a sticky breakpoint at the current user cursor position.
+\item[{\bf Breakpoint}] \mbox{} \\
+    Set an automatically removable breakpoint.
+\item[{\bf Delayed sticky breakpoint}] \mbox{} \\
+    Set a sticky breakpoint with a countdown of hits.
+\item[{\bf Delayed breakpoint}] \mbox{} \\
+    Set a removable breakpoint with a countdown.
+\item[{\bf Expression breakpoint}] \mbox{} \\
+    Set a sticky breakpoint which triggers when a given expression is true.
+\item[{\bf Pass counter}] \mbox{} \\
+    Set a sticky breakpoint which only counts number of hits.
+\item[{\bf Watchpoint}] \mbox{} \\
+    Set a sticky breakpoint which automatically resumes execution.
+\item[{\bf Access break}] \mbox{} \\
+    Define an access break.
+\item[{\bf Condition break}] \mbox{} \\
+    Define a condition break.
+\item[{\bf Disable}] \mbox{} \\
+    Disable the breakpoint at the current user cursor position.
+\item[{\bf Enable}] \mbox{} \\
+    Enable a previously disabled breakpoint.
+\item[{\bf Delete}] \mbox{} \\
+    Remove the breakpoint at the current user cursor postiion.
+\item[{\bf View all breaks}] \mbox{} \\
+    Display the {\bf Breaks} window.
+\item[{\bf Disable all breaks}] \mbox{} \\
+    Disable all breaks and breakpoints.
+\item[{\bf Enable all breaks}] \mbox{} \\
+    Enable all breaks and breakpoints.
+\item[{\bf Erase all breaks}] \mbox{} \\
+    Remove all breaks and breakpoints.
+\end{description}
+
+\subsection{Sticky breakpoint}
+\label{dialog:breaks:sticky}
+
+The {\bf Sticky breakpoint} command sets a breakpoint
+at the line or instrution pointed to by the user cursor.
+It is called "sticky" because it is not removed when hit,
+unlike a \Ref{simple breakpoint}{dialog:breaks:simple}.
+
+The $\Diamond$ symbol is displayed in the mark column for
+breakpoints in this type.
+
+Shortcut key: {\bf F9}
+
+\subsection{Breakpoint}
+\label{dialog:breaks:simple}
+
+The {\bf Breakpoint} command sets a simple breakpoint which is
+automatically removed when it is hit.
+
+The $\rhd$ symbol in the mark column indicates a simple breakpoint.
+
+Shortcut key: {\bf F8}
+
+\subsection{Delayed sticky breakpoints}
+\label{dialog:breaks:delayedsticky}
+
+The {\bf Delayed sticky breakpoint} command sets a
+\Ref{sticky breakpoint}{dialog:breaks:sticky}
+which stops the debuggee only after the specified number of hits.
+This is very useful for debugging loops.
+
+When you select this command, a dialog window is displayed,
+prompting you for an initial countdown value. Type the number
+of passes you wish the breakpoint to skip and press {\bf Enter}.
+
+% !!! New in 1.1:
+
+In a typical debug scenario a delayed breakpoint is used in conjunction with 
+a \See{counter}{}{dialog:breaks:counter}: you first use a counter to 
+determine how many times a particular line has been executed before crash,
+then establish a delayed breakpoint at that line so that your program will
+be stopped on the last iteration before crash, and then restart your program.
+So if there is already a \See{counter}{}{dialog:breaks:counter}
+established at the current line/address, the initial countdown
+value in the dialog will be automatically set to the current value 
+of the counter decremented by 1. 
+
+When the countdown reaches zero, the breakpoint turns into a
+regular \See{sticky breakpoint}{}{dialog:breaks:sticky}.
+
+For a delayed sticky breakpoint, XD displays the remaining number of
+passes (or the * symbol if it exceeds 9) and the $\Diamond$ symbol in the mark column.
+
+Shortcut key: {\bf Ctrl+F9}
+
+\subsection{Delayed breakpoint}
+\label{dialog:breaks:delayed}
+
+The {\bf Delayed breakpoint} command sets a delayed breakpoint
+which is automatically removed after final hit.
+See \ref{dialog:breaks:delayedsticky} for more infomation about
+usage of delayed breakpoints.
+
+A digit equal to the number of passes left (or the * symbol),
+followed by the $\rhd$ symbol, is displayed in the mark column
+for a delayed breakpoint.
+
+Shortcut key: {\bf Ctrl+F8}
+
+\subsection{Expression breakpoint}
+\label{dialog:breaks:expression}
+
+The {\bf Expression breakpoint} command installs a
+\Ref{sticky breakpoint}{dialog:breaks:sticky}
+and associates a boolean expression with it. The expression is evaluated each
+time the breakpoint is hit, and execution is stopped only if the result is
+\verb'TRUE'.
+
+When the \Ref{user cursor}{dialog:navigating:cursors}
+is positioned over a line containing an expression
+breakpoint, the associated expression is shown in the {\bf Program}
+window header.
+
+A question mark (\verb'"?"') in the mark column indicates an expession
+breakpoint.
+
+Shortcut key: {\bf Alt+F9}
+
+\subsection{Pass counter}
+\label{dialog:breaks:counter}
+
+The {\bf Pass counter} command establishes a
+\Ref{sticky breakpoint}{dialog:breaks:sticky}
+which, however, does not cause execution to stop but just counts the number of hits.
+A pass counter initially has a value of zero which is incremented
+each time the line or instruction associated with it is
+executed.
+
+Pass counters provide a method to determine how many times,
+if at all, a particular line or instruction is encountered during
+program execution.
+This information may be used, for instance, when setting delayed
+breakpoints.
+
+When the \Ref{user cursor}{dialog:navigating:cursors} is positioned over
+a pass counter, its value is shown in the {\bf Program} window header.
+You may also use the \See{{\bf Breaks} window}{}{dialog:breaks:window}
+to examine pass counter values.
+
+For a pass counter, its current value followed by the "." symbol
+is displayed in the mark column; values exceeding 9 are represented
+with the "*" symbol.
+
+Shortcut key: {\bf .}
+
+\subsection{Watchpoint}
+\label{dialog:breaks:watchpoint}
+
+The {\bf Watchpoint} command sets a
+\Ref{sticky breakpoint}{dialog:breaks:sticky},
+upon encountering which execution is resumed automatically.
+The effect is that all \Ref{information windows}{dialog:intro}
+are updated when a watchpoint is passed.
+
+This approach is in many cases more efficient than
+\See{execution trace}{}{dialog:executing:trace}
+in the sense that a program may be executed at full speed (for instance,
+using the \See{{\bf Run} command}{}{dialog:executing:run}),
+and information about its current state will be updated at and
+only at the moments you specify.
+
+The $\circ$ symbol in the mark column indicates a watchpoint.
+
+\subsection{Access break}
+\label{dialog:breaks:access}
+
+The {\bf Access break} command allows you to have execution of your program
+interrupted immediately after it accesses a certain block of memory.
+
+{\bf Note:} Since access breaks are implemented using CPU debug registers,
+they {\it do not slow down} execution of a debuggee, but also
+have certain restrictions:
+\begin{itemize}
+\item Only blocks of 1, 2, or 4 bytes may be monitored
+\item A block has to be aligned, i.e. its address must be a multiple of its length
+\item Only write or read/write access may be detected
+\item Only four access breaks may be enabled at a time
+\end{itemize}
+
+When you activate this command, the {\bf Access break}
+dialog is displayed.
+\ifcomment
+\begin{figure}[h]
+\begin{center} \ \drawing{accbrk}\ \end{center}
+\end{figure}
+\fi
+Select the desired access type and memory block length,         % ??? More detailed style?
+type an \See{address expression}{Chapter }{expr} in the {\bf Location} field,
+and select the {\bf OK} pushbutton.
+
+{\bf Note:} If there are already four enabled access breaks, the
+new one will be created in disabled state and a warning message will be issued.
+
+Shortcut key: {\bf Ins}
+
+\subsection{Condition break}
+\label{dialog:breaks:condition}
+
+The {\bf Condition break} command allows you to specify a
+boolean expression which will be constantly evaluated during
+execution of your program until it yields \verb'TRUE', causing
+execution to be stopped.
+
+{\bf Note:} if there is at least one enabled condition break, your program
+will be stopped after each CPU instruction, so its execution will slow
+down dramatically. Avoid using condition breaks whenever possible.
+
+\subsection{The Breaks window}
+\label{dialog:breaks:window}
+
+The {\bf Breaks} window contains a list of all breakpoints and breaks
+currently set. To display it, press {\bf Ctrl+B} or select
+{\bf View all breaks} from the {\bf Breaks} menu.
+
+For a breakpoint, the name of the corresponding module
+followed by the breakpoint mark and the source line is displayed.
+For an access break, access type and address range are displayed.
+Finally, for a conditional break, the associated expression is displayed.
+
+Double-clicking or pressing {\bf Enter} on a breakpoint moves
+the \Ref{user cursor}{dialog:navigating:cursors} to the
+breakpoint position. You may also achieve this by selecting {\bf Go to}
+from the pop-up menu.
+
+Double-clicking or pressing {\bf Enter} on a break displays a
+corrsponding dialog, allowing you to edit break parameters.
+The {\bf Modify} command from the pop-up menu does the same.
+
+\subsection{Managing breaks and breakpoints}
+\label{dialog:breaks:manage}
+
+A break or breakpoint may be {\it disabled} at any time.
+A disabled breakpoint, once encountered, does not cause
+the debuggee to stop executing. The associated counter, if any,
+is not changed either. Marks corresponding to disabled breakpoints
+are displayed in different color.
+
+To disable a breakpoint, move the user cursor to the line
+containing it or select it in the {\bf Breaks} window
+and press {\bf "-"} or select {\bf Disable} from the {\bf Breaks} menu.
+Press {\bf "+"} or select {\bf Enable} from the {\bf Breaks} menu to
+re-enable a previously disabled breakpoint.
+
+To delete a break or breakpoint, select it in the {\bf Program}
+or {\bf Breaks} window and press {\bf Del} or select {\bf Delete}
+from the {\bf Breaks} menu.
+
+You may disable, enable, or delete all breakpoints and breaks at once
+by selecting an appropriate item from the {\bf Breaks} menu.
+
+\section{Examining your program data}
+\label{dialog:data}
+
+The {\bf Data} menu contains commands which open different kinds
+of information windows displaying the current state of your program's data:
+variables, stack, CPU registers, etc.:
+
+\begin{description}
+\item[{\bf Examine data}] \mbox{} \\
+    Display and/or modify value of a given variable, designator, or register.
+\item[{\bf Evaluate expression}] \mbox{} \\
+    Evaluate an expression.
+\item[{\bf Global variables}] \mbox{} \\
+    Display the {\bf Global variables} window containing global variables of 
+    the current component.
+\item[{\bf Module variables}] \mbox{} \\
+    Display the automatic {\bf Module variables} window containing 
+    global variables of the current module.
+\item[{\bf Local variables}] \mbox{} \\
+    Display the {\bf Local variables} window containing local variables
+    and parameters of a procedure 
+\item[{\bf Memory dump}] \mbox{} \\
+    Open a new {\bf Dump} window, displaying raw memory at a given
+    address.
+\item[{\bf Registers}] \mbox{} \\
+    Display the {\bf Registers} window containing CPU registers.
+\item[{\bf Float Registers}] \mbox{} \\
+    Display the {\bf Float Registers} window containing FPU registers.
+\item[{\bf Stack}] \mbox{} \\
+    Display the {\bf Stack} window, which contains memory at the stack
+    pointer of the current thread.
+\item[{\bf Add watch}] \mbox{} \\
+    Add an expression to the {\bf Watches} window.
+\item[{\bf Delete watch}] \mbox{} \\
+    Delete an item from the {\bf Watches} window.
+\item[{\bf Show watch window}] \mbox{} \\
+    Display the {\bf Watches} window.
+\item[{\bf Del all watches}] \mbox{} \\
+    Clears the {\bf Watches} window.
+\end{description}
+
+\subsection{Displaying and modifying values}
+\label{dialog:data:display}
+
+The way a value of a variable or a watch expression is displayed
+depends on its type.
+
+Values of elementary types immediately follow
+the correspondent variables and expressions in list windows.
+For variables of set and structured types (arrays and records),
+except character arrays, only type names are shown in list windows.
+Double-clicking or pressing {\bf Enter} on such a variable causes a
+structured variable window to be displayed.
+Each line of those windows contains a single array element or record field.
+
+% !!! New in 1.1:
+Select {\bf Show address} item from the pop-up menu of a structured variable window
+to toggle display of variable addresses in window headers on or off. 
+
+The \See{{\bf Use single structure window} option}{}{dialog:options}
+controls whether a new window is opened to display a structured
+variable element which, in turn, is of a structured or pointer type.
+
+% !!! New in 1.1:
+You may alter the display format of a particular element of data using
+the {\bf Type} \Ref{pop-up submenu}{dialog:intro:menus}. You may change radix
+for wholes, turn pointer dereference on/off, etc.
+
+To modify a variable of a basic, range, or enumeration type
+displayed in a list window, double click it or select it using arrow
+keys and press {\bf Enter}. Type a new value in a displayed dialog and
+press {\bf Enter} or press {\bf Esc} if you do not want to modify the current value.
+
+Double-clicking or pressing {\bf Enter} on a pointer variable
+or expression has the same effect as it would have on a pointed-to
+object\footnote{provided that the pointer is not {\tt NIL}.}.
+Use the {\bf Ctrl+Enter} key combination to modify value of a
+pointer variable itself.
+
+\subsection{Examine variable}
+\label{dialog:data:variable}
+
+The {\bf Examine variable} command displays a dialog prompting you for
+a variable name. Type it and press {\bf Enter} (in fact, you may type
+not just a variable name, but a \See{designator}{Chapter }{expr},
+such as \verb'parr^[5].field').
+Depending on the type of an object denoted by the designator, either
+dialog containing the current value or structured variable view window
+will be displayed. See \ref{dialog:data:display} for more information.
+
+Shortcut key: {\bf ?}
+
+\subsection{Evaluate expression}
+\label{dialog:data:expression}
+
+The {\bf Evaluate expression} command allows you to evaluate an
+arbitrary \See{expression}{Chapter }{expr} using the current values
+of program objects. Type it in a displayed dialog and press {\bf Enter}.
+
+See also \ref{dialog:data:display}.
+
+\subsection{The Global variables window}
+\label{dialog:data:globals}
+
+The {\bf Global variables} window displays global variables of the current
+component, e.g. C \verb'extern' variables.
+To open it, select {\bf Global variables} from the {\bf Data} menu.
+
+See also \ref{dialog:data:display}.
+
+\subsection{The Module variables window}
+\label{dialog:data:module}
+
+The automatic {\bf Module variables} window displays global variables of 
+the module currently displayed in the {\bf Program} window.
+To open it, select {\bf Module variables} from the {\bf Data} menu or
+press {\bf Ctrl+V}.
+
+To display global variables of a particular module in a separate window,
+select {\bf Show variables} from the pop-up menu of the 
+\Ref{{\bf Modules} window}{dialog:navigating:modules}.
+
+See also \ref{dialog:data:display}.
+
+\subsection{The Local variables window}
+\label{dialog:data:locals}
+
+Select {\bf Local variables} from the {\bf Data} menu to open the
+{\bf Local variables} window. That window displays parameters and local
+variables of the procedure currently selected in the
+\Ref{{\bf Call Stack}}{dialog:executing:callstack} window.
+Name of that procedure is displayed in the window header.
+
+A horizontal line separates parameters from locals. An exclamation mark
+is displayed in the first column for
+\See{register variables}{}{start:general:regvars}.
+
+If the selected procedure is nested, and the option {\bf DBGNESTEDPROC}
+was set ON during complation of the module containing it, parameters and
+local variables of enclosing prodcures are also displayed in the
+{\bf Local variables} window. Horizontal lines with procedure names
+are used as separators.
+
+You may quickly traverse the \See{call stack}{}{dialog:executing:callstack}
+when the {\bf Local variables} window is active. Press {\bf Ctrl+Down}
+to display locals and parameters of the calling procedure, {\bf Ctrl+Up} ---
+of the called procedure.
+
+See also \ref{dialog:data:display}.
+
+\subsection{Memory dump windows}
+\label{dialog:data:dump}
+
+You may use {\bf Memory dump} windows to examine your program's
+code or data as raw memory. To open a dump window, press
+{\bf Ctrl+D} or select {\bf Memory dump} from the {\bf Data} menu.
+A dialog will display, prompting you for a starting address.
+Type an address expression and press {\bf Enter}. % ???
+
+If the current window contains a variable list or a structured variable
+and you are opening a dump window, the address of the currenly selected
+element will be substituted into the entry field.
+
+Memory may be displayed in different formats. Select {\bf Type} from
+the pop-up menu to switch between them.
+
+To modify a dump element, double-click it, or select it using arrow keys
+and press {\bf Enter}.
+
+To change dump origin, click in the address column or select
+{\bf Change dump origin} from the pop-up menu.
+
+% !!! New in version 1.1:
+
+You can save a memory dump to file in text or raw form by selecting 
+{\bf Save dump to file} from the pop-up menu.
+
+\subsection{The Registers window}
+\label{dialog:data:registers}
+
+The {\bf Registers} window displays names and values of the CPU registers.
+To open it, press {\bf Ctrl+R} or select {\bf Registers} from the {\bf Data}
+menu.
+
+Each time execution of a debuggee stops, register values which have been
+changed since previous stop are highlighted.
+
+To modify a register value, double click it or select it with arrow keys
+and press {\bf Enter}.
+
+\subsection{The Float Registers window}
+\label{dialog:data:float}
+
+The {\bf Float Registers} window displays names and values of the FPU registers.
+To open it, select {\bf Float Registers} from the {\bf Data} menu.
+
+\ifcomment !!!
+Each time execution of a debuggee stops, register values which have been
+changed since previous stop are highlighted.
+\fi
+
+To modify a register value, double click it or select it with arrow keys
+and press {\bf Enter}.
+
+\subsection{The Stack window}
+\label{dialog:data:stack}
+
+The {\bf Stack} window displays stack of the current thread in raw form,
+starting from the current stack pointer position. It may be opened by selecting
+{\bf Stack} from the {\bf Data} menu.
+
+You may change the format in which stack elements are displayed by
+selecting {\bf Type} from the pop-up menu.
+
+To change value of a stack element, double click it or select it with arrow keys
+and press {\bf Enter}.
+
+\subsection{The Watches window}
+\label{dialog:data:watches}
+
+The {\bf Watches} window contains arbitrary expressions along with their values.
+The expressions are re-evaluated in the current execution context each time
+the debuggee is stopped or program data is altered by the user.
+If an expression contains variables which are undefined or are not visible
+at the current execution point, an appropriate message is displayed instead
+of expression value.
+
+Expression results are displayed according to their types.
+See \ref{dialog:data:display} for more information.
+
+Each time execution of a debuggee stops, expressions which results have
+changed since previous stop are highlighted.
+
+To enter a new watch expression, select {\bf Add watch} from the {\bf Data}
+menu or press {\bf Ctrl+Ins}. The {\bf Watches} window will be automatically
+opened. To display it any time later, select {\bf Show watch window} from
+the {\bf Data} menu.
+
+To delete a watch expression, select it and press {\bf Del} or choose
+{\bf Del watch} from the pop-up menu. To clear the {\bf Watches} window,
+select {\bf Del all watches} from the {\bf Data} menu.
+
+\section{Saving scripts}
+\label{dialog:scripts}
+
+% !!! New in 1.1:
+
+When you find a suspicious place in your program, you may want to modify it
+slightly in order to prove or disprove your hypothesis. Then you will have to
+rebuild it and repeat the steps you took during the previous debugging
+session. You could save some time on the last stage by using the {\bf Save script}
+command from the {\bf File} menu before exitting the debugger. This command
+creates a \See{control file}{Chapter }{batch} that, if invoked, would restore
+all breakpoints, breaks, and watches currently set in the debugger.
+
+\section{Setting XD options}
+\label{dialog:options}
+
+Selecting {\bf Options} from the {\bf File} menu causes an option sheet
+to be displayed. These options are used to control various aspects of XD
+behaviour in dialog mode.
+
+\begin{description}
+\item[{\bf Delay in execution trace}] \mbox{} \\
+    The delay in milliseconds used in
+    \See{{\bf Execution trace} mode}{}{dialog:executing:trace}.
+\item[{\bf Exception raise on first chance}] \mbox{} \\
+    If this option is enabled, the debugger displays a
+    dialog immediately after an exception is raised in the program,
+    allowing you to examine its state.
+\item[{\bf Delay to select debuggee}] \mbox{} \\
+    Specifies delay in milliseconds before the debuggee session
+    is selected (see \ref{dialog:intro:sss}).
+\item[{\bf Never fall into disassembler}] \mbox{} \\
+    Check this box to disable automatic switching
+    from the {\bf Source} mode to the {\bf Disassembly} mode
+    during execution.
+\item[{\bf Code highlight}] \mbox{} \\
+    If enabled, XD displays \Ref{executable lines}{start:general:executable}
+    in different color.
+\item[{\bf Full disasm mode}] \mbox{} \\
+    If enabled, XD tries to resolve addresses to publics and
+    variable names in disassembly mode. Uncheck this box if you
+    have a slow system, especially if you are running Windows 95.
+\item[{\bf Dump in disassembler mode}] \mbox{} \\
+    If enabled, bytes which constitute CPU instructions are displayed
+    in {\bf Disassembly} and {\bf Mixed} modes.
+% !!! New in version 1.1:
+\item[{\bf Dereference pointers}] \mbox{} \\
+    If enabled, the debugger displays next to pointer variables values of
+    objects to which they refer (if the base type is simple), base type
+    name (if the base type is named compound type), or base type sort
+    (if the base type is anonymous compound type).
+\item[{\bf Strip path from source name}] \mbox{} \\
+    If this option is enabled, the debugger uses its redirection file
+    to locate source files. This may be useful if you debug a program which
+    was compiled in a different environment.
+\item[{\bf Show all modules}] \mbox{} \\
+    Defines whether the \See{{\bf Modules} window}{}{dialog:navigating:modules}
+    lists all modules or only those for which debug information is available.
+% !!! What about Show all Components?
+\item[{\bf Auto detect actual type}] \mbox{} \\
+% !!! New in version 1.1:
+    Enables detection of the actual dynamic type of an Oberon-2 pointer 
+    or a Java object. If this option is disabled, actual type of a 
+    particular entity can still be determined using a
+    \Ref{pop-up menu}{dialog:intro:menus}.
+\item[{\bf Use single structure window}] \mbox{} \\
+    Controls whether a new window is opened when you select an array element
+    or a record field of a structured or pointer type.
+\item[{\bf Warning bell}] \mbox{} \\
+    Enables or disables speaker beeping when an error message is displayed.
+\item[{\bf Save debug session layout}] \mbox{} \\
+    Enabling this option causes information about debugger options,
+    window layout and colors, and watch expressions to be automatically 
+    stored in a \verb'.ses' file upon debugging session termination.
+\item[{\bf Use keyboard layout}] \mbox{} \\
+    When enabled, forces XD to load keyboard shotcuts upon startup 
+    from the file specifed in the entry field; otherwise, the default 
+    layout is used (see \ref{dialog:options:shortcuts}).
+\end{description}
+
+Use the {\bf Save config} command from the {\bf File} menu to store the
+current option settings, window layout, and colors as the default.
+
+\subsection{Changing window colors}
+\label{dialog:options:colors}
+
+To modify XD color schemes, select {\bf Palette} from the {\bf File} menu.
+A window containing a list of all window types will appear.
+Selecting a window type will cause its color sheet to be displayed.
+A color sheet consists of two columns, the left containing names of window
+areas, and the right containing current colors for each area.
+
+The following keys may be used in a color sheet:
+
+\KeyListBegin{10 cm}
+\KeyDef{Up/Down}          {move the cursor one line up/down}
+\KeyDef{Left/Right}       {change foreground color}
+\KeyDef{Ctrl+Left/Right}  {change background color}
+\KeyDef{Esc}              {close the color sheet}
+\KeyListEnd
+
+If you have the \See{{\bf Save debug session layout} option}{}{dialog:options}
+switched ON, the new color scheme will be stored in a
+\Ref{session file}{dialog:sysfiles}
+upon debugging session termination. Otherwise, the changes you made
+will be lost unless you explicitly save the current configuration
+using the {\bf Save config} command from the {\bf File} menu.
+
+\subsection{Modifying keyboard shortcuts}
+\label{dialog:options:shortcuts}
+
+If the option \See{{\bf Use keyboard layout}}{}{dialog:options} is enabled,
+upon startup the debugger attempts to load keyboard shortcuts from the
+file specified in the respective entry field. If that name does not contain
+directories, the file is sought via redirections, then is the current directory,
+and then in the directory where XD executable resides.
+
+Default shortcuts are hard-wired into the debugger, so in order to modify
+them, you need to save the default layout to file using the
+{\bf Save keyboard layout} command from the {\bf File} menu. A
+keyboard shortcut file is a plain text file that looks similar to
+the following:
+
+\begin{verbatim}
+    [ Actions and keys ]
+    Main pulldown                    = F10
+    Main window                      = Ctrl-T
+    Menu: File                       = Alt-F
+    Load program                     = F3
+    Refresh screen                   = Ctrl-E
+    Show output                      = /
+    Show debuggee                    = \
+    Palette                          = 
+    Options                          = 
+       .  .  .
+\end{verbatim}
+
+Edit the layout file in any text editor, then enable the 
+\See{{\bf Use keyboard layout}}{}{dialog:options} and specify the name of
+that file in the respective entry field.
+described above.
+
+\subsection{Modifying frames}
+
+If the default window frames do not suite you, edit the \verb'FrameImageSingle',
+\verb'FrameImageDouble', and \verb'FrameImageMove' items in the \verb'[ Options ]'
+section of the debugger configuration file. 

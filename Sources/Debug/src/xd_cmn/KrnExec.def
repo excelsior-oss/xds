@@ -1,0 +1,48 @@
+-- Загрузка программы, отгрузка, рестарт, остановы, исполнение,
+-- режимы исполнения, получение времен исполнения.
+--  Модуль является системо-независимым.
+
+DEFINITION MODULE KrnExec;
+
+IMPORT kt := KrnTypes;
+
+
+VAR
+  Loaded: BOOLEAN;
+  (* Программа была успешно загружена *)
+
+  ProgInfo: kt.EXEC_INFO;
+  (* Информация о загруженной программе *)
+
+  ProgramContextOk: BOOLEAN;
+  (* Контекст программы доступен отладчику для изучения *)
+
+
+(* Загрузить программу *)
+PROCEDURE LoadProgram (name, args: ARRAY OF CHAR): CARDINAL;
+
+(* Отгрузить программу *)
+PROCEDURE UnloadProgram;
+
+(* Приостановить выполнение программы по требованию пользователя *)
+PROCEDURE StopByUserBreak;
+
+
+TYPE
+  TIMER_MODE = ( RESET, SHOW, SLEEP, WAKE );
+
+(* Время исполнения программы в реальном времени, прошедшего с последнего *)
+(* вызова с  mode = RESET.                                                *)
+PROCEDURE Timer(mode: TIMER_MODE): LONGCARD;
+
+(* Время исполнения программы в тактах процессора, прошедших с последнего *)
+(* вызова с  mode = RESET.                                                *)
+PROCEDURE Ticks(mode: TIMER_MODE): LONGCARD;
+
+(* Определена ли точка входа в пользовательский код? *)
+PROCEDURE ProgramMainEntryFound (): BOOLEAN;
+
+(* Определена ли точка входа в программу? *)
+PROCEDURE ProgramStartupEntryFound (): BOOLEAN;
+
+END KrnExec.

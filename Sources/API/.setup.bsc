@@ -1,0 +1,14 @@
+# Static files to be copied into external workspace 
+# Target must be relative to the root of an external workplace
+# Note: target subfolder must end with symbol "\" 
+# <mode> ::= "" | "work" | "release"
+
+# <source>              <target>        <mode>
+src\POSIX\posix.prj      def\posix\
+src\POSIX\*.def          def\posix\
+
+# <source>              <target>        <mode>
+src\Win32\*.h            include\
+src\Win32\*.prj          def\Win32\
+src\Win32\*.def          def\Win32\
+src\Win32\rmsym.tem      def\Win32\

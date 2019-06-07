@@ -1,0 +1,7 @@
+/ch/
+/log/
+
+/workplace/*.pdb
+/workplace/*.ilk
+/workplace/*.exe
+/workplace/*.bsc

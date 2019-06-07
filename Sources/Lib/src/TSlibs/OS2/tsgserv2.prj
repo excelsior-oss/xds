@@ -1,0 +1,31 @@
+-lookup = *.exe = $!\..\..\..\enduser\tscp\bin
+-lookup = *.obj = $!\..\..\..\enduser\tmp
+-lookup = *.sym = $!\..\..\..\enduser\tmp;$!\..\..\..\enduser\xds\sym\x86
+-lookup = *.lib = $!\..\..\..\enduser\xds\lib\x86
+-lookup = *.res = $!\..\..\..\enduser\tmp
+-lookup = *.rsp = $!\..\..\..\enduser\tmp
+
+ -pm+
+ -m2extensions+
+ -m2addtypes+
+
+ -gendebug+
+ -lineno+
+ -genhistory+
+ -assert+
+ -checkindex-
+ -checkdindex-
+ -checkrange-
+ -checkset-
+ -checknil-
+ -checkproc-
+ -ioverflow-
+ -coverflow-
+ -foverflow-
+
+
+:INCL_BASE+
+:INCL_PM+
+
+!module TSGServ2
+!module TSGServ2.res

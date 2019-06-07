@@ -1,0 +1,18 @@
+TARGET = xc
+SRCDIR = src
+
+SOURCE = ..\Common\platform.tex ..\Common\backend.tex \
+	 $(SRCDIR)\xc.tex        $(SRCDIR)\preamble.tex  $(SRCDIR)\body.tex    \
+	 $(SRCDIR)\config.tex    $(SRCDIR)\errors.tex    $(SRCDIR)\intro.tex   \
+         $(SRCDIR)\limits.tex    $(SRCDIR)\lowlevel.tex  $(SRCDIR)\maptoc.tex  \
+         $(SRCDIR)\modula2.tex   $(SRCDIR)\multlang.tex  $(SRCDIR)\oberon2.tex \
+         $(SRCDIR)\os2api.tex    $(SRCDIR)\osa.tex \
+         $(SRCDIR)\options.tex   $(SRCDIR)\problems.tex  $(SRCDIR)\rts.tex     \
+         $(SRCDIR)\seamless.tex  $(SRCDIR)\start.tex     $(SRCDIR)\usage.tex   \
+         $(SRCDIR)\win32api.tex  $(SRCDIR)\xlib.tex      $(SRCDIR)\xlink.tex
+
+!if "$(TARGET_FMT)" == ""
+TARGET_FMT = pdf
+!endif
+
+!include ..\Common\$(TARGET_FMT).inc

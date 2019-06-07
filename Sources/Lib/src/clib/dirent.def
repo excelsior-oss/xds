@@ -1,0 +1,46 @@
+(* Copyright (c) xTech 19995.  All Rights Reserved *)
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<*+ NOCODE *>
+<*+ CSTDLIB *>
+DEFINITION MODULE [2] dirent;
+
+FROM SYSTEM IMPORT INT32, CARD16, ADDRESS, int;
+FROM xmRTS IMPORT X2C_pCHAR;
+
+TYPE
+<*# IF __GEN_C__ THEN *>
+<*+ GENTYPEDEF *>
+<*# END *>
+  DIR = RECORD
+    d_fd: int;	      (* file descriptor *)
+    d_loc: int;	      (* offset in block *)
+    d_size: int;      (* amount of valid data *)
+    d_buf: X2C_pCHAR; (* directory block *)
+  END;
+
+(*
+ * File-system independent directory entry.
+ *)
+<*# IF __GEN_C__ THEN *>
+<*- GENTYPEDEF *>
+<*# END *>
+  dirent = RECORD
+    d_ino: CARD16;	   (* "inode number" of entry *)
+    d_off: INT32;	   (* offset of disk directory entry *)
+    d_reclen: CARD16;	   (* length of this record *)
+    d_name: ARRAY [0..0] OF CHAR; (* name of file *)
+  END;
+
+  dirent_t = dirent;
+
+PROCEDURE opendir(s: ARRAY OF CHAR): ADDRESS (* DIR* *);
+PROCEDURE readdir(VAR d: DIR): ADDRESS (* dirent* *);
+PROCEDURE readdir_r(VAR d: DIR; VAR e: dirent): ADDRESS (* dirent* *);
+
+PROCEDURE telldir(VAR d: DIR): INT32;
+PROCEDURE seekdir(VAR d: DIR; x: INT32);
+PROCEDURE rewinddir(VAR d: DIR);
+PROCEDURE closedir(VAR d: DIR): int;
+
+END dirent.

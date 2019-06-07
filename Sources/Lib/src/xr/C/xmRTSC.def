@@ -1,0 +1,115 @@
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xmRTSC;
+
+FROM SYSTEM IMPORT
+	ADDRESS, CARD8, CARD16, CARD32,
+	INT8, INT16, INT32, SET32, SET16,
+	int, size_t;
+IMPORT  xmRTS;
+
+PROCEDURE / X2C_CHKINX_F(i: CARD32; len: CARD16): CARD16;
+PROCEDURE / X2C_CHKINXL_F(i: CARD32; len: CARD32): CARD32;
+(* ???. C only. *)
+
+PROCEDURE / X2C_CHKS_F (i: INT16): INT16;
+PROCEDURE / X2C_CHKSL_F(i: INT32): INT32;
+(* IF i<0 THEN trap() END. C only *)
+
+PROCEDURE / X2C_CHK_F (a: INT16; min: INT16; max: INT16): INT16;
+PROCEDURE / X2C_CHKL_F(a: INT32; min: INT32; max: INT32): INT32;
+(* IF (a<min) OR (a>max) THEN trap() END; RETURN a. C only *)
+
+PROCEDURE / X2C_CHKU_F (a: CARD16; min: CARD16; max: CARD16): CARD16;
+PROCEDURE / X2C_CHKUL_F(a: CARD32; min: CARD32; max: CARD32): CARD32;
+(* IF (a<min) OR (a>max) THEN trap() END; RETURN a. C only *)
+
+PROCEDURE / X2C_CHKNIL_F(p: xmRTS.X2C_pVOID): xmRTS.X2C_pVOID;
+PROCEDURE / X2C_CHKPROC_F(p: PROC): PROC;
+(* ???. C only *)
+
+PROCEDURE / X2C_REM_F(a: INT32; b: INT32): INT32;
+PROCEDURE / X2C_QUO_F(a: INT32; b: INT32): INT32;
+PROCEDURE / X2C_MOD_F(a: INT32; b: INT32): INT32;
+PROCEDURE / X2C_DIV_F(a: INT32; b: INT32): INT32;
+(* ??? C only *)
+
+PROCEDURE / X2C_IN(i: CARD32; bits: CARD16; set: SET32): BOOLEAN;
+(* ??? C only *)
+PROCEDURE / X2C_SET(a: CARD32; b: CARD32; bits: CARD16): SET32;
+(* ??? C only *)
+
+PROCEDURE / X2C_INL(i: CARD32; bits: CARD16; set: xmRTS.LSET): BOOLEAN;
+(* ??? C only *)
+
+PROCEDURE / CPLX_CMP(x,y: COMPLEX): int;
+PROCEDURE / CPLX_ADD(x,y: COMPLEX): COMPLEX;
+PROCEDURE / CPLX_SUB(x,y: COMPLEX): COMPLEX;
+PROCEDURE / CPLX_MUL(x,y: COMPLEX): COMPLEX;
+PROCEDURE / CPLX_DIV(x,y: COMPLEX): COMPLEX;
+PROCEDURE / CPLX_NEG(x: COMPLEX): COMPLEX;
+(* COMPLEX arythmetics. C only *)
+
+PROCEDURE / CPLX_LCMP(x,y: LONGCOMPLEX): int;
+PROCEDURE / CPLX_LADD(x,y: LONGCOMPLEX): LONGCOMPLEX;
+PROCEDURE / CPLX_LSUB(x,y: LONGCOMPLEX): LONGCOMPLEX;
+PROCEDURE / CPLX_LMUL(x,y: LONGCOMPLEX): LONGCOMPLEX;
+PROCEDURE / CPLX_LDIV(x,y: LONGCOMPLEX): LONGCOMPLEX;
+PROCEDURE / CPLX_LNEG(x: LONGCOMPLEX): LONGCOMPLEX;
+PROCEDURE / CPLX_L(x: COMPLEX): LONGCOMPLEX;
+(* LONGCOMPLEX arythmetics. C only *)
+
+PROCEDURE / X2C_EXPCI(base: COMPLEX;     ex: INT32): COMPLEX;
+(* ??? C only *)
+PROCEDURE / X2C_EXPLI(base: LONGCOMPLEX; ex: INT32): LONGCOMPLEX;
+(* ??? C only *)
+PROCEDURE / X2C_EXPCR(base: COMPLEX;     ex: LONGREAL): COMPLEX;
+(* ??? C only *)
+PROCEDURE / X2C_EXPLR(base: LONGCOMPLEX; ex: LONGREAL): LONGCOMPLEX;
+(* ??? C only *)
+
+PROCEDURE / X2C_INCC (VAR x: CHAR;   y: CARD8;  min,max: CHAR): CHAR;
+(* Operator INC(CHAR). C only *)
+PROCEDURE / X2C_INCS (VAR x: INT8;   y,min,max: INT8): INT8;
+(* Operator INC(SHORTINT). C only *)
+PROCEDURE / X2C_INCI (VAR x: INT16;  y,min,max: INT16): INT16;
+(* Operator INC(INT16). C only *)
+PROCEDURE / X2C_INC  (VAR x: INT32;  y,min,max: INT32): INT32;
+(* Operator INC(INT32). C only *)
+PROCEDURE / X2C_INCUS(VAR x: CARD8;  y,min,max: CARD8): CARD8;
+(* Operator INC(CARD8). C only *)
+PROCEDURE / X2C_INCUI(VAR x: CARD16; y,min,max: CARD16): CARD16;
+(* Operator INC(CARD16). C only *)
+PROCEDURE / X2C_INCU (VAR x: CARD32; y,min,max: CARD32): CARD32;
+(* Operator INC(CARD32). C only *)
+
+PROCEDURE / X2C_DECC (VAR x: CHAR;   y: CARD8;  min,max: CHAR): CHAR;
+(* Operator DEC(CHAR). C only *)
+PROCEDURE / X2C_DECS (VAR x: INT8;   y,min,max: INT8): INT8;
+(* Operator DEC(INT8). C only *)
+PROCEDURE / X2C_DECI (VAR x: INT16;  y,min,max: INT16): INT16;
+(* Operator DEC(INT16). C only *)
+PROCEDURE / X2C_DEC  (VAR x: INT32;  y,min,max: INT32): INT32;
+(* Operator DEC(INT32). C only *)
+PROCEDURE / X2C_DECUS(VAR x: CARD8;  y,min,max: CARD8): CARD8;
+(* Operator DEC(CARD8). C only *)
+PROCEDURE / X2C_DECUI(VAR x: CARD16; y,min,max: CARD16): CARD16;
+(* Operator DEC(CARD16). C only *)
+PROCEDURE / X2C_DECU (VAR x: CARD32; y,min,max: CARD32): CARD32;
+(* Operator DEC(CARD32). C only *)
+
+PROCEDURE / X2C_VAL_REAL(x: LONGREAL): REAL;
+(* VAL(REAL,x: LONGREAL). C only *)
+
+PROCEDURE / X2C_ABS_INT8 (x: INT8 ): INT8;
+(* C only *)
+PROCEDURE / X2C_ABS_INT16(x: INT16): INT16;
+(* C only *)
+PROCEDURE / X2C_ABS_INT32(x: INT32): INT32;
+(* C only *)
+
+PROCEDURE / X2C_PCOPY(VAR p: xmRTS.X2C_pVOID; size: size_t);
+(* Allocate memory & copy parameter of procedure. C only *)
+PROCEDURE / X2C_PFREE(p: xmRTS.X2C_pVOID);
+(* Free memory allocated for the procedure parameter. C only *)
+
+END xmRTSC.

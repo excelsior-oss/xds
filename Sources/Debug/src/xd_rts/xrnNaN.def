@@ -1,0 +1,60 @@
+(* Copyright (c) XDS 1998.  All Rights Reserved *)
+(*
+ * Predicates to test specific floating values (by the IEEE 754 standard)
+ *)
+
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] xrnNaN; (* MsheMshe *)
+
+TYPE
+  float    = REAL;
+  double   = LONGREAL;
+  extended = LONGLONGREAL;
+
+PROCEDURE X2C_is_aNF (f :float) :BOOLEAN;
+(* if "f" is a number *)
+
+PROCEDURE X2C_is_infF (f :float) :BOOLEAN;
+(* if "f" is a pos/neg infinity *)
+
+PROCEDURE X2C_is_NaNF (f :float) :BOOLEAN;
+(* if "f" is a NaN (not a number) *)
+
+PROCEDURE X2C_is_EQF (f1, f2 :float) :BOOLEAN;
+
+PROCEDURE X2C_is_LESSF (f1, f2 :float) :BOOLEAN;
+(* the two above procedures are provided to perform correct comparison
+   when one or both arguments are specific values;
+
+   NOTE: If we compare specific values like NaNs, FPU sets status flags in
+   the "uncomparable" state (if invalid operation X is masked) but M2/O2 BE
+   doesn't take into account the state when it genereates comparison operations.
+   So X2C_is_EQF or X2C_is_LESSF should be used for this purpose.
+ *)  
+
+
+PROCEDURE X2C_is_aND (d :double) :BOOLEAN;
+
+PROCEDURE X2C_is_infD (d :double) :BOOLEAN;
+
+PROCEDURE X2C_is_NaND (d :double) :BOOLEAN;
+
+PROCEDURE X2C_is_EQD (d1, d2 :double) :BOOLEAN;
+
+PROCEDURE X2C_is_LESSD (d1, d2 :double) :BOOLEAN;
+
+
+
+PROCEDURE X2C_is_aNE (e :extended) :BOOLEAN;
+
+PROCEDURE X2C_is_infE (e :extended) :BOOLEAN;
+
+PROCEDURE X2C_is_NaNE (e :extended) :BOOLEAN;
+
+
+PROCEDURE X2C_is_EQE (e1, e2 :extended) :BOOLEAN;
+
+PROCEDURE X2C_is_LESSE (e1, e2 :extended) :BOOLEAN;
+
+END xrnNaN.

@@ -1,0 +1,115 @@
+% Project file for XDS-x86 Disassembler.
+%
+% Valid modes are: work,enduser,demo
+%       The differences are: debug settings, lookup paths
+
+!if not defined mode then
+  !new mode = work
+!end
+
+-TARGET_VAX:-
+-TARGET_x86:+
+-TARGET_m68k:-
+-TARGET_PPC:-
+
+-DEST_XDS:-
+-DEST_XDASM:+
+
+-OBJ_FORMAT_OMF:+
+-OBJ_FORMAT_ELF:-
+-OBJ_FORMAT_AOUT:-
+-OBJ_FORMAT_XOMF:-
+
+% ======================================================
+% Files lookup settings
+% ======================================================
+-changesym+
+
+% Output lookup settings
++makedirs
+
+-lookup = *.lnk  = $!/ch
+-lookup = *.obj  = $!/ch
+-lookup = *.sym  = $!/sym
+-lookup = *.exe  = $!/workplace
+
+% Source lookup settings
+-lookup = *.ob2=src
+-lookup = *.def=src
+-lookup = *.mod=src
+!if OBJ_FORMAT_OMF then
+  -lookup = *.ob2=src\omf
+  -lookup = *.def=src\omf
+  -lookup = *.mod=src\omf
+!end
+!if OBJ_FORMAT_XOMF then
+  -lookup = *.ob2=src\xomf
+  -lookup = *.def=src\xomf
+  -lookup = *.mod=src\xomf
+!end
+!if OBJ_FORMAT_ELF then
+  -lookup = *.ob2=src\elf
+  -lookup = *.def=src\elf
+  -lookup = *.mod=src\elf
+!end
+!if OBJ_FORMAT_AOUT then
+  -lookup = *.ob2=src\aout
+  -lookup = *.def=src\aout
+  -lookup = *.mod=src\aout
+!end
+
+!if mode="enduser" then
+  -gendebug-
+  -lineno-
+  -genhistory+
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+
+!elsif mode="work" then
+
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+  -dbgnestedproc+
+
+  !if not defined noregvars then
+    -noregvars:+
+  !else
+    -noregvars+
+  !end
+
+!end
+
+
+
+-m2addtypes+
+-m2extensions+
+-o2extensions+
+-usedll+
+
+-heaplimit=32000000
+-gcthreshold=8000000
+
+-makefile+
+-mkfext=lnk
+-mkfname=xdasm
+
+!module xdasm

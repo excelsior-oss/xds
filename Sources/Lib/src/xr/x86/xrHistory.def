@@ -1,0 +1,35 @@
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrHistory; (* Hady. 24.05.96 14:48 *)
+
+IMPORT SYSTEM, xrnRTT;
+
+CONST X2C_HIS_LEN = 256;
+
+TYPE
+  X2C_HIS_BUFFER = ARRAY [0..X2C_HIS_LEN-1] OF SYSTEM.CARD32;
+
+TYPE
+  X2C_STACK_SCAN   = PROCEDURE ["C"] (SYSTEM.ADDRESS,SYSTEM.ADDRESS,BOOLEAN);
+  X2C_HISTORY_SHOW = PROCEDURE ["C"] ;
+
+VAR
+  X2C_stkScan: X2C_STACK_SCAN;
+  X2C_hisShow: X2C_HISTORY_SHOW;
+
+PROCEDURE X2C_scanStackHistory(from,to: SYSTEM.ADDRESS; exact: BOOLEAN);
+
+PROCEDURE X2C_show_history;
+
+PROCEDURE X2C_show_profile;
+(* Dummy for X86 *)
+
+PROCEDURE / X2C_IS_CALL (adr : SYSTEM.CARD32) : SYSTEM.CARD32;
+
+
+(* Register printing in case of unhandled RTS exception *)
+VAR
+  ExcInfo :xrnRTT.ExceptionInfo;
+
+PROCEDURE ["C"] X2C_PrintExceptionInfo ();
+
+END xrHistory.

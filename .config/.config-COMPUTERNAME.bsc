@@ -1,0 +1,5 @@
+# Folder to build XDS-x86 from the working-copy 
+XDS_BUILD_LOCAL_DIR=%~dp0\..\..\..\xds-build\local
+
+# Folder to build XDS-x86 from a Git repository 
+XDS_BUILD_GIT_DIR=%~dp0\..\..\..\xds-build\remote

@@ -1,0 +1,495 @@
+%
+% def.tex - common settings and useful definitions for XDS manuals
+%
+
+%%% Page Setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\sloppy                             % Do not cross right margin
+\raggedbottom                       % No vertical justification
+
+%\setlength{\oddsidemargin}{0 pt}
+%\addtolength{\topmargin}{-36 pt}    % Top margin is 0.5"
+%\addtolength{\textheight}{36 pt}
+%\addtolength{\textwidth}{72 pt}     % Width is 1 inch more than default
+
+%%% Paragraph style %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setlength{\parindent}{0 pt}
+\setlength{\parskip}{6 pt}
+
+%%% Conditional compilation identifiers %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newif\ifcomment\commentfalse % never set to true; use for commenting
+%\newif\ifonline\onlinefalse   % set to true automatically by LaTeX OnLine
+
+\newif\ifcommon\commonfalse   % Common document for all editions
+
+%-- Used language ------------------------------------------------------
+
+% default is English language
+\newif\ifrussianlang    % Russian language
+
+\input{../Common/language.tex} % should select one language
+
+%-- Available front-ends -----------------------------------------------
+
+% default is M2/O2
+\newif\iftopspeed       % TopSpeed extensions
+\newif\ifjava           % Java
+\newif\ifoberon         % Oberon-2
+
+\input{../Common/frontend.tex} % should select one code generator
+
+
+%-- Available code generators ------------------------------------------
+
+\newif\ifgenc           % C code generation
+\newif\ifgencode        % native code generation
+\newif\ifgenintel       % Intel x86 code generation
+\newif\ifgenvax         % VAX code generation
+\newif\ifgendfa         % data flow analysis
+\newif\ifgenefd         % Excelsior FlawDetector
+\newif\ifgeneit         % Excelsior Installation Toolkit
+
+\input{../Common/backend.tex}  % should select one code generator
+
+\ifgenc\else\ifgendfa\else\ifgenefd\else\ifgeneit\else\gencodetrue\fi\fi\fi\fi
+
+%-- Available platforms ------------------------------------------------
+
+\newif\ifmsdos          % MS-DOS
+\newif\ifosii           % OS/2
+\newif\ifwinnt          % WinNT & Win95
+\newif\iflinux          % Linux
+\newif\ifmacosx         % Mac OS X
+\newif\ifunix           % Unix
+
+\input{../Common/platform.tex} % should select one platform
+
+\iflinux \unixtrue \fi  % Linux is Unix
+\ifmacosx \unixtrue \fi % Mac OS X is Unix
+
+\newcommand{\SkipLine}{
+\ifonline
+  \newline    % в .hlp работает только /newline, остаьное игнорируется
+\else
+  \medskip    % в .pdf /newline дает ошибку вне абзаца
+\fi
+}
+
+\ifjava
+  \ifgencode
+    \newcommand{\ProductName}{\mbox{Excelsior JET}}
+  \else\ifgenefd
+    \newcommand{\ProductName}{\mbox{Excelsior FlawDetector}}
+  \else\ifgeneit
+    \newcommand{\ProductName}{\mbox{Excelsior Installer}}
+  \else
+    \JNO
+  \fi\fi\fi
+\else
+  \ifgenc
+    \newcommand{\ProductName}{\mbox{XDS-C}}
+  \else\ifgencode
+    \ifgenintel
+      \newcommand{\ProductName}{\mbox{Native XDS-x86}}
+    \else\ifgenvax
+      \newcommand{\ProductName}{\mbox{Native XDS-VAX}}
+    \else
+      \newcommand{\ProductName}{\mbox{Native XDS}}
+    \fi\fi
+  \else
+    \JNO
+  \fi\fi
+\fi
+
+
+\newif\ifthreads \threadsfalse
+\newif\ifdll     \dllfalse
+\newif\ifxlink   \xlinkfalse
+\newif\ifprofile \profilefalse
+\newif\ifxlib    \xlibfalse
+\ifgencode
+  \ifosii
+    \threadstrue\dlltrue\xlinktrue\profiletrue\xlibtrue
+  \else\ifwinnt
+    \threadstrue\dlltrue\xlinktrue\profiletrue\xlibtrue
+  \else\iflinux
+  \else\ifmacosx
+  \else         \JNO
+  \fi\fi\fi\fi
+\fi
+
+
+
+\newcommand{\BNFsize}{\small}
+
+\newcommand{\XDStm}{XDS}
+\newcommand{\XDS}{XDS}
+\newcommand{\xds}{XDS}
+\newcommand{\Exc}{Excelsior}
+
+%%% File names and extensions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ifgencode
+  \newcommand{\XC}{xc}
+  \newcommand{\xc}{{\tt xc}}
+\else
+  \newcommand{\XC}{xm}
+  \newcommand{\xc}{{\tt xm}}
+\fi
+\newcommand{\XD}{xd}
+\newcommand{\xd}{xd}
+
+
+%!!! warning
+% \index of the form \index{xm<..>@{\XC{}<...>}}
+% is used in config.tex & usage.tex
+% it may lead to wrong order of items in the index.
+% I don't know another way to use macro in the index.
+
+%\newcommand{\xc}{{\tt \XC{}}}
+\newcommand{\red}{{\tt \xc{}.red}}
+\newcommand{\msg}{{\tt \xc{}.msg}}
+\newcommand{\cfg}{{\tt \xc{}.cfg}}
+
+\ifgenc
+\newcommand{\kwd}{{\tt \xc{}.kwd}}
+\fi
+
+\ifgenc
+  \newcommand{\Sym}{.sym}
+  \newcommand{\Code}{.c}
+\fi
+\newcommand{\Header}{.h}
+
+\ifgencode
+  \newcommand{\Sym}{.sym}
+  \newcommand{\Bod}{.bod}
+  \ifunix
+    \newcommand{\Code}{.o}
+  \else
+    \newcommand{\Code}{.obj}
+  \fi
+\fi
+
+\ifunix
+  \newcommand{\Obj}{.o}
+  \newcommand{\Exe}{}
+\else
+  \newcommand{\Obj}{.obj}
+  \newcommand{\Exe}{.exe}
+\fi
+
+\ifunix
+  \newcommand{\EXE}{executable}
+  \newcommand{\DLL}{shared library}
+  \newcommand{\EXEs}{executables}
+  \newcommand{\DLLs}{shared libraries}
+  \newcommand{\dotDll}{.so}
+  \newcommand{\dotExe}{}
+\else\ifwinnt
+  \newcommand{\EXE}{EXE}
+  \newcommand{\DLL}{DLL}
+  \newcommand{\EXEs}{EXEs}
+  \newcommand{\DLLs}{DLLs}
+  \newcommand{\dotObj}{.obj}
+  \newcommand{\dotDll}{.dll}
+  \newcommand{\dotExe}{.exe}
+\else\JNO\fi\fi
+\ifunix
+  \newcommand{\DirSep}{/}
+\else
+  \newcommand{\DirSep}{$\backslash$}
+\fi
+
+\newcommand{\WinUnix}[2]{\ifwinnt #1\else\ifunix #2\else\JNO\fi\fi{}}
+
+%----------- useful commands -----------%
+
+\newcommand{\EndSection}{\paragraph{}}
+
+\ifrussianlang
+  \newcommand{\mt}{\mbox{Модула-2}}
+  \newcommand{\ot}{\mbox{Оберон-2}}
+  \newcommand{\Seealso}{{\bf Смотри также}\par}
+  %\newcommand{\Example}{\paragraph{Пример}}
+  %\newcommand{\Examples}{\paragraph{Примеры}}
+  \newcommand{\Example}{{\bf Пример}\par}
+  \newcommand{\Examples}{{\bf Примеры}\par}
+  \newcommand{\Format}{{\bf Формат}\par}
+  \newcommand{\Description}{{\bf Описание}\par}
+  \newcommand{\Note}{{\bf Замечание:}}
+  \newcommand{\Warning}{{\bf Предупреждение:}}
+\else
+  \newcommand{\mt}{\mbox{Modula-2}}
+  \newcommand{\ot}{\mbox{Oberon-2}}
+  \newcommand{\Seealso}{\begin{flushleft} \bf See also \end{flushleft} }
+  \newcommand{\Example}{\paragraph{Example}}
+  \newcommand{\Examples}{\paragraph{Examples}}
+  \newcommand{\Format}{{\bf Format}\par}
+  \newcommand{\Description}{{\bf Description}\par}
+\fi
+
+\newcommand{\arrow}{\^{}}
+\newcommand{\bs}{$\backslash$}
+
+\ifonline\else
+\newcommand{\drawing}[1]{\epsfbox{#1.eps}}
+\fi
+
+
+\newcommand{\maddonly}
+{
+\ifonline
+  \ifrussianlang
+    {\footnotesize {\bf Замечание:} доступно только при включенной опции \OERef{M2ADDTYPES}.\par}
+  \else
+    {\footnotesize NOTE: Only valid when option \OERef{M2ADDTYPES} is set.\par}
+  \fi
+\else
+  \begin{center}
+  \begin{tabular}{|l|}
+  \hline
+  \ifrussianlang
+    \footnotesize ЗАМЕЧАНИЕ: доступно только при включенной опции \OERef{M2ADDTYPES}.\\
+  \else
+    \footnotesize NOTE: Only valid when option \OERef{M2ADDTYPES} is set.\\
+  \fi
+  \hline
+  \end{tabular}
+  \end{center}
+\fi
+}
+
+\newcommand{\mextonly}
+{
+\ifonline
+  \ifrussianlang
+%    {\footnotesize {\bf ЗАМЕЧАНИЕ:} доступно только при включенной опции \OERef{M2EXTENSIONS}.\par}
+    {\footnotesize {\bf Замечание:} доступно только при включенной опции \OERef{M2EXTENSIONS}.\par}
+  \else
+    {\footnotesize NOTE: Only valid when option \OERef{M2EXTENSIONS} is set.\par}
+  \fi
+\else
+  \begin{center}
+  \begin{tabular}{|l|}
+  \hline
+  \ifrussianlang
+    \footnotesize ЗАМЕЧАНИЕ: доступно только при включенной опции \OERef{M2EXTENSIONS}.\\
+  \else
+    \footnotesize NOTE: Only valid when option \OERef{M2EXTENSIONS} is set.\\
+  \fi
+  \hline
+  \end{tabular}
+  \end{center}
+\fi
+}
+
+\newcommand{\oextonly}
+{
+\ifonline
+  {\footnotesize NOTE: Only valid when option \OERef{O2EXTENSIONS} is set.\par}
+\else
+  \begin{center}
+  \begin{tabular}{|l|}
+  \hline
+  \footnotesize NOTE: Only valid when option \OERef{O2EXTENSIONS} is set.\\
+  \hline
+  \end{tabular}
+  \end{center}
+\fi
+}
+
+\newcommand{\onumextonly}
+{
+\ifonline
+  {\footnotesize NOTE: Only valid when option \OERef{O2NUMEXT} is set.\par}
+\else
+  \begin{center}
+  \begin{tabular}{|l|}
+  \hline
+  \footnotesize NOTE: Only valid when option \OERef{O2NUMEXT} is set.\\
+  \hline
+  \end{tabular}
+  \end{center}
+\fi
+}
+
+\newcommand{\lindex}[1]{\protect\index{#1@{\bf #1}}} % !!! Has to be changed
+
+% This command should be used to encapsulate page numbers in the index
+
+\newcommand{\Encap}[1]{{\bf\hyperpage{#1}}}
+
+% Modules
+
+\newcommand{\ModuleI}{}
+\newcommand{\ModuleII}{}
+\newcommand{\ModuleIII}{}
+\newcommand{\ModuleIV}{}
+\newif\ifOneModule     % Generate label and index entry prefixed with \ModuleI
+\newif\ifTwoModules    % Generate label and index entry prefixed with \ModuleII
+\newif\ifFourModules   % Generate label and index entries prefixed with \ModuleIII and \ModuleIV
+
+\newcommand{\NoModules}{
+\OneModulefalse
+\TwoModulesfalse
+\FourModulesfalse
+}
+\newcommand{\OneModule}{
+\OneModuletrue   \label{\ModuleI}   \protect\index{\ModuleI}
+\TwoModulesfalse
+\FourModulesfalse
+}
+\newcommand{\TwoModules}{
+\OneModuletrue   \label{\ModuleI}   \protect\index{\ModuleI}
+\TwoModulestrue  \label{\ModuleII}  \protect\index{\ModuleII}
+\FourModulesfalse
+}
+\newcommand{\FourModules}{
+\OneModuletrue   \label{\ModuleI}   \protect\index{\ModuleI}
+\TwoModulestrue  \label{\ModuleII}  \protect\index{\ModuleII}
+\FourModulestrue \label{\ModuleIII} \protect\index{\ModuleIII}
+                 \label{\ModuleIV}  \protect\index{\ModuleIV}
+}
+
+\NoModules
+
+% Framed heading
+
+\newif\ifFrameIsDeep       % Frame is subsubsection when online
+\newif\ifFrameToContents   % Frames are added to contents
+
+\newcommand{\Frame}[2]{
+  \ifonline
+    \public{#1}
+    \ifFrameIsDeep
+      \subsubsection{#1 - #2}
+    \else
+      \subsection{#1 - #2}
+    \fi
+  \else
+    \bigskip
+    \noindent
+    \framebox[\textwidth]{\large {\bf #1} \hfill {\sl #2}}
+    \ifFrameToContents
+      \ifFrameIsDeep
+        \addcontentsline{toc}{subsubsection}{#1 - #2}
+      \else
+        \addcontentsline{toc}{subsection}{#1 - #2}
+      \fi
+    \fi
+  \fi
+  \protect\index{#1}
+  \ifOneModule
+  \label{\ModuleI.#1}
+  \protect\index{\ModuleI!#1}
+  \fi
+  \ifTwoModules
+  \label{\ModuleII.#1}
+  \protect\index{\ModuleII!#1}
+  \fi
+  \ifFourModules
+  \label{\ModuleIII.#1} \label{\ModuleIV.#1}
+  \protect\index{\ModuleIII!#1} \protect\index{\ModuleIV.#1}
+  \fi
+}
+
+% Module list
+
+\newcommand{\ModuleList}
+{\ifonline
+\ifTwoModules Modules: \else Module \fi
+\IdRef{\ModuleI}\ifTwoModules ,
+\IdRef{\ModuleII}\fi\ifFourModules ,
+\IdRef{\ModuleIII}, \IdRef{\ModuleIV} \fi
+\par
+\fi}
+
+% Reference to an id
+\newcommand{\IdRef}[1]{{\tt \ifonline \ref[#1]{#1}\else #1\fi}}
+
+% Reference to an unqualified id with qualified label
+\newcommand{\IdQualRef}[1]{{\tt \ifonline \ref[#1]{\ModuleI.#1}\else #1\fi}}
+
+% Options/Equations headings
+
+\newcommand{\OptHead}[2]{
+  \ifonline
+    \subsection{#1 - #2}
+    \label{#1}
+    \protect\index{#1}
+    \protect\index{options!#1}
+  \else
+    \item[{\bf #1} - #2]
+    \protect\index{#1@{\bf #1}|Encap}
+    \protect\index{options!#1@{\bf #1}|Encap}
+  \fi
+}
+
+\newcommand{\EquHead}[2]{
+  \ifonline
+    \subsection{#1 - #2}
+    \label{#1}
+    \protect\index{#1}
+    \protect\index{equations!#1}
+  \else
+    \item[#1 - #2]
+    \protect\index{#1@{\bf #1}|Encap}
+    \protect\index{equations!#1@{\bf #1}|Encap}
+  \fi
+}
+
+\newcommand{\LinkOpt}[2]{
+  \ifonline
+    \subsection{/#1 - #2}
+    \public{#1}                % ???
+    \label{link:options:#1}
+    \protect\index{/#1}
+    \protect\index{linker options!/#1}
+  \else
+%    \addcontentsline{toc}{subsection}{\protect\makebox[0.5cm]{}/#1 - #2}
+    \protect\index{#1@{\bf /#1}, linker option|Encap}
+    \protect\index{linker options!#1@{\bf /#1}|Encap}
+    \protect\item[{\large \bf /#1}] \mbox{} \\
+  \fi
+}
+
+% Reference to an option/equation
+\newcommand{\OERef}[1]{\ifonline\ref[#1]{#1}\else{\bf #1}\protect\index{#1@{\bf #1}}\fi}
+\newcommand{\OEName}[1]{\ifonline #1\else{\bf #1}\protect\index{#1@{\bf #1}}\fi}
+
+\newcommand{\LORef}[1]{\ifonline\ref[/#1]{link:options:#1}\else
+{\bf /#1}\protect\index{#1@{\bf /#1}, linker option}
+\fi}
+
+\newcommand{\Ref}[2]{\ifonline\ref[#1]{#2}\else#1\fi}
+\ifrussianlang
+  \newcommand{\See}[3]{\ifonline\ref[#1]{#3}\else#1 (см. #2\protect\ref{#3})\fi}
+\else
+  \newcommand{\See}[3]{\ifonline\ref[#1]{#3}\else#1 (see #2\protect\ref{#3})\fi}
+\fi
+
+\newcommand{\havetowrite}{{\bf Have to write something here.}}
+
+\newcommand{\EXAMPLE}[2]{
+\ifonline
+  \par \ref{#2} \par
+\else
+  \paragraph{Example - #1}
+\fi
+}
+
+\ifonline\else
+  \newcommand{\public}[1]{\label{#1}}
+\fi
+
+\newcommand{\Picture}[3]{
+\ifonline
+  \includegraphics[#2]{#3}
+\else
+  \includegraphics[#1]{#3.pdf}
+\fi
+}
+

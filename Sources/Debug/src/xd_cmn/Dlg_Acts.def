@@ -1,0 +1,257 @@
+-- Описание команд диалогового отладчика и их названий.
+-- Организация связывания <команда, клавиша быстрого достпупа>
+-- Поиск и исполнение команды по нажатой клавише
+
+DEFINITION MODULE Dlg_Acts;
+
+IMPORT key := Keys;
+IMPORT dt  := DI_Types;
+IMPORT dlt := DlgTypes;
+
+TYPE
+  NAME = ARRAY [0..31] OF CHAR;
+
+
+
+<* IF DEST_K26 THEN *>
+
+  ACTION  = ( None, Reserved,
+              Pulldown,   MainWindow,
+              FileMenu,   EntryPoint, Load, LoadTableDevises, Refresh, Show_scr, Pallette,  Options,  SaveConfig, SaveKeyboardLayout, ReturnToBatch, Quit, Halt, SaveAsBatch, RestoreFromBatch,
+              RunMenu,    Run,  Into,    Over,     Skip,     Animation, UptoCall, UptoRet, UptoAddr, Restart, RestartAtAddress,
+              BreaksMenu, Sticky, OneTime, D_Sticky, D_OneTime, ExprPoint, Counter, Watchpoint,  ConditionBreak, Disable, Enable, Delete, ViewAll, DisableAll, EnableAll, EraseAll,
+              CodeMenu,   SourceMode, AssemblyMode, MixMode, CallStack, Components, Modules, Procs, TableDevises,
+              DataMenu,   Examine, Evaluate, GlobalVars, ModuleVars, LocalVars, Dump, ChangeOrigin, Registers, Stack, AddWatch, DelWatch, Watches, DelAllWatches,
+              SearchMenu, Find, FindNext, FindPrev, NextProc, PrevProc, GotoExec, GotoLine, GotoAddr,
+              WindowsMenu,
+             <* IF DEFINED(SCHERN_K26) AND SCHERN_K26 THEN *>
+              ProfMenu,     prf_1,prf_2,prf_3,prf_4,prf_5,prf_6,prf_7,
+              ProfBreakMenu,prf_br1,prf_br2,prf_br3,prf_br4,prf_br5,prf_br6,prf_br7,prf_br8,prf_br9,
+              ProfBlokMenu, prf_blok1,prf_blok2,prf_blok3,prf_blok4,prf_blok5,prf_blok6,prf_blok7,prf_var0,prf_var9,prf_var8,prf_var7,prf_var6,
+             <* END *>
+              HelpMenu, Help, ContextMenu, About,
+              ChangeTypes);
+
+<* ELSIF DEST_XDS THEN *>
+
+  ACTION  = ( None, Reserved,
+              Pulldown,   MainWindow,
+              FileMenu,   Load, Refresh, Show_scr, Show_wnd, Pallette, Options, SaveConfig, SaveKeyboardLayout, ReturnToBatch, Quit, Halt, SaveAsBatch, RestoreFromBatch,
+             <* IF xd_batch_included AND xd_batch_dlg_cmd THEN *>
+              BatchCommand,
+             <* END *>
+              RunMenu,    Run, Into, Over, UptoRet, Skip, Animation,  UptoEpilog, UptoAddr, Restart, RestartAtStartup, RestartAtEntryPoint,  JumpToMain,
+              BreaksMenu, Sticky, OneTime, D_Sticky, D_OneTime, ExprPoint, Counter, Watchpoint, Access, Condition, Disable, Enable, Delete, ViewAll, DisableAll, EnableAll, EraseAll,
+              CodeMenu,   SourceMode, AssemblyMode, MixMode, CallStack, Components, Modules, Procs, Publics, Threads,
+              DataMenu,   Examine, Evaluate, GlobalVars, ModuleVars, ModuleTypes, LocalVars, Dump, ChangeOrigin, Registers,
+             <* IF TARGET_OS = "WINNT" THEN *> --FIXME
+              FloatRegisters,
+             <* IF DEFINED (xd_debug) AND xd_debug THEN *>
+              ViewTD,
+             <* END *>
+             <* END *>
+              OutputDebugStrings,
+              Stack,
+              ShowMenu,   AddWatch, DelWatch, Watches, DelAllWatches, ExceptionsHistory,
+              SearchMenu, Find, FindNext, FindPrev, NextProc, PrevProc, GotoExec, GotoLine, GotoAddr,
+              ToolsMenu, Aliases,
+             <* IF DEFINED(mode) AND (mode="work") THEN *> -- FIXME
+              Controls, Log,
+             <* END *>
+              WindowsMenu,
+              HelpMenu, Help, ContextMenu, About,
+              ChangeTypes);
+<* END *>
+
+
+  ACTION_MODE  = ( mode_check, mode_silent, mode_loud );
+
+  ACTION_PROC  = PROCEDURE (ACTION, ACTION_MODE): BOOLEAN;
+
+  ACTION_NAMES = ARRAY ACTION OF NAME;
+
+  ACTIONS      = ARRAY ACTION OF ACTION_PROC;
+
+  ACTION_SET   = SET OF ACTION;
+
+
+CONST
+  MAX_CONTEXTS = 18;
+
+
+TYPE
+  CONTEXT_ACTION = ( nothing
+                   , do_action
+                   , push_key
+                   , context_item
+                   , toggler
+                   , radio
+                   , submenu
+                   , types
+                   , chngtypes
+                   , separate );
+
+  CONTEXT_NAME = NAME;
+
+  PCONTEXT_LIST = POINTER TO CONTEXT_LIST;
+
+  TOGGLER_PROC = PROCEDURE (BOOLEAN): BOOLEAN;
+
+  RADIO_PROC = PROCEDURE (BOOLEAN, dlt.HWND, PCONTEXT_LIST): BOOLEAN;
+
+  TYPES_SET = SET OF dt.SYM_TYPE_ID;
+
+  CONTEXT = RECORD
+              CASE context: CONTEXT_ACTION OF
+              | nothing  :
+              | do_action: action   : ACTION;
+              | push_key : keyname  : CONTEXT_NAME;
+                           keycode  : key.KEY;
+              | context_item:
+                item_name: CONTEXT_NAME;
+              | submenu  : subname  : CONTEXT_NAME;
+                           pscontext: PCONTEXT_LIST;
+              | toggler  : togglname: CONTEXT_NAME;
+                           togglproc: TOGGLER_PROC;
+              | radio    : radioname: CONTEXT_NAME;
+                           radioproc: TOGGLER_PROC;
+                           prcontext: PCONTEXT_LIST;
+              | types    : tenable  : TYPES_SET;
+              | chngtypes: t_value  : dt.SYM_TYPE_ID;
+              | separate :
+              ELSE
+              END;
+            END;
+
+  CONTEXT_LIST = ARRAY [0..MAX_CONTEXTS-1] OF CONTEXT;
+
+
+
+
+
+CONST
+  EMPTY_CONTEXT = CONTEXT { nothing };
+  EMPTY_CONTEXT_LIST = CONTEXT_LIST { EMPTY_CONTEXT BY MAX_CONTEXTS };
+
+VAR
+  GroupShow: CONTEXT;
+  GroupType: CONTEXT;
+  GroupData: CONTEXT;
+
+  ChangeTypesID: dt.SYM_TYPE_ID;
+
+
+TYPE
+  GROUP       = (_File, _Run, _Data, _Watch, _Search);
+  GROUP_DESC  = RECORD
+                  Name      : NAME;
+                  Start, End: ACTION;
+                END;
+  GROUPS_DESC = ARRAY GROUP OF GROUP_DESC;
+
+  ACTION_GROUP = SET OF ACTION;
+
+  ICON = ARRAY [0..3] OF CHAR;
+
+  ICONS = ARRAY ACTION OF ICON;
+
+
+
+<* IF DEST_K26 THEN *>
+
+CONST
+  ActionName = ACTION_NAMES{ 'Неопределено',   'Зарезервировано',
+                             'Главное меню',   'Главное окно',
+                             'Меню: Файл',     'Задать точку входа', 'Загрузить', 'Тема', 'Перерисовать', 'Показать экран', 'Расцветка',        'Параметры', 'Сохранить параметры', 'Сохранить раскладку', 'Выход в пакет', 'Выход', 'Конец отладки', 'Сохранить как пакет', 'Выполнить пакет',
+                             'Меню: Запуск',   'Запуск', 'Шаг внутрь', 'Шаг поверх',   'Выполнять до курсора', 'Запуск с трассировкой', 'Выполнять до вызова', 'Выполнять до возврата', 'Выполнять пока не адрес', 'Рестарт', 'Рестарт с адреса',
+                             'Меню: Останов',  'Постоянный', 'Одноразовый', 'Постоянный отложенный',  'Одноразовый отложенный',  'По условию',  'Подсчет числа проходов', 'Контрольная точка', 'Условный',  'Закрыть точку',  'Открыть точку',  'Удалить точку',  'Список всех остановов', 'Закрыть все точки',  'Разрешить все точки', 'Убрать все точки',
+                             'Меню: Код',      'Исходный текст', 'Дизассемблер', 'Смешанный режим', 'Стек вызовов', 'Фазы', 'Модули', 'Процедуры', 'Устройства',
+                             'Меню: Данные',   'Значение переменной', 'Вычислить выражение',  'Глобальные переменные',  'Переменные модуля', 'Локальные переменные', 'Дамп памяти',  'Сменить адрес', 'Регистры',  'Состояние стека', 'Добавить выражение', 'Удалить выражение', 'Показать окно слежения', 'Удалить все выражения',
+                             'Меню: Поиск',    'Найти строку', 'Найти следующую', 'Найти предыдущую', 'На процедуру вверх', 'На процедуру вниз', 'На исполняемую строку', 'Строку по номеру', 'На адрес',
+                             'Меню: Окна',
+                            <* IF DEFINED(SCHERN_K26) AND SCHERN_K26 THEN *>
+                             'Меню: Профиль','Создать','Расставить','Переменные','Процедуры_Время','Запись профиля','Чтение профиля','Деактивация',
+                             'Меню: ПРФ_Останов','Поставить останов','Убрать останов','Поставить на все','Поставить на процедуры','Убрать все','Первый останов','Следующий','Предыдущий','Частота использования',
+                             'Меню: ПРФ_Блок','Начало блока','Конец блока','Удалить блок','Первый блок','Следующий','Предыдущий','Показать время','Включить в ПРФ','Удалить из ПРФ','Все включить в ПРФ','Все удалить из ПРФ','Показать',
+                            <* END *>
+                             'Меню: Помощь',   'Помощь', 'Контекст', 'О программе',
+                             'Сменить тип'
+                            };
+
+<* ELSE *>
+
+CONST
+  ActionName = ACTION_NAMES{ 'No Action',     'Reserved',
+                             'Main pulldown', 'Main window',
+                             'Menu: File',    'Load program', 'Refresh screen', 'Show output', 'Show debuggee', 'Palette', 'Options', 'Save config', 'Save keyboard layout', 'Return to batch', 'Exit', 'Stop debugging', 'Save script', 'Restore from batch',
+                            <* IF xd_batch_included AND xd_batch_dlg_cmd THEN *>
+                             'Command',
+                            <* END *>
+                             'Menu: Run',     'Run', 'Step into', 'Step over', 'Step out', 'Run to cursor', 'Execution trace', 'Run to epilogue', 'Run until address', 'Restart', 'Restart at startup', 'Restart at entry point',  'Jump to main',
+                             'Menu: Breaks',  'Sticky breakpoint', 'Breakpoint', 'Delayed sticky breakpoint',  'Delayed breakpoint',  'Expression breakpoint',  'Pass counter', 'Watchpoint',  'Access break', 'Condition break', 'Disable break', 'Enable break', 'Delete break', 'View all breaks', 'Disable all breaks', 'Enable all breaks', 'Erase all breaks',
+                             'Menu: Code',    'Source', 'Disassembly', 'Mixed', 'Call stack', 'Components', 'Modules', 'Procedures', 'Publics', 'Threads',
+                             'Menu: Data',    'Examine', 'Evaluate expression',  'Global variables', 'Module variables', 'Module types', 'Local variables', 'Memory', 'Change dump origin', 'Registers',
+                            <* IF TARGET_OS = "WINNT" THEN *>
+                             'Float registers',
+                            <* IF DEFINED (xd_debug) AND xd_debug THEN *>
+                             'View TD',
+                            <* END *>
+                            <* END *>
+                             'Debug output',
+                             'Stack',
+                             'Menu: Show',    'Add watch', 'Del watch', 'Show watch window', 'Del all watches', 'Exceptions History',
+                             'Menu: Search',  'Find', 'Find next', 'Find prev', 'Next procedure', 'Prev. procedure', 'Home', 'Goto line', 'Goto address',
+                             'Tools',  'Aliases',
+                            <* IF DEFINED(mode) AND (mode="work") THEN *> -- FIXME
+                             'Controls', 'Log',
+                            <* END *>
+                             'Menu: Windows',
+                             'Menu: Help',    'Contents', 'Context', 'About',
+                             'Change types'
+                            };
+<* END *>
+
+
+VAR
+  Action: ACTIONS;
+  Icons : ICONS;
+
+
+PROCEDURE ExecuteAction (action: ACTION; mode: ACTION_MODE);
+
+PROCEDURE QueryAction (action: ACTION): BOOLEAN;
+
+PROCEDURE ClearQuery;
+
+PROCEDURE CheckQuery (): BOOLEAN;
+
+PROCEDURE ConfirmQuery;
+
+PROCEDURE ConfirmQueryByCond (condition: BOOLEAN);
+
+
+PROCEDURE IniIcon (action: ACTION; icon: ICON);
+
+
+PROCEDURE IniAction(action: ACTION; proc: ACTION_PROC);
+
+PROCEDURE GetPrimaryShortCut(action: ACTION): key.KEY;
+
+PROCEDURE IniShortCut(Key: key.KEY; action: ACTION);
+PROCEDURE ExecShortCut(Key: key.KEY): BOOLEAN;
+
+(* По кнопке вернет действие *)
+PROCEDURE GetActionByKey (k: key.KEY; VAR action: ACTION): BOOLEAN;
+
+(* По имени вернет действие *)
+PROCEDURE GetActionByName (name: ARRAY OF CHAR; VAR action: ACTION): BOOLEAN;
+
+(* Удаляет связи кнопок с действиями *)
+PROCEDURE DeleteLinks;
+
+PROCEDURE DeleteLinksForAction (action: ACTION);
+
+
+PROCEDURE DummyAction (action: ACTION; mode: ACTION_MODE): BOOLEAN;
+
+END Dlg_Acts.

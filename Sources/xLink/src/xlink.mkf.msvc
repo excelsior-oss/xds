@@ -1,0 +1,218 @@
+!if ("$(MODE)" == "INTERNAL") || ("$(MODE)" == "ENDUSER") || ("$(MODE)" == "TRIAL")
+OBJDIR  = ..\..\enduser\tmp
+NAME    = ..\..\enduser\xds\bin\xlink.exe
+!else
+OBJDIR  = .
+NAME    = xlink.exe
+!endif
+
+OBJ     = \
+          link.obj \
+          struct.obj \
+          typestable.obj \
+          efs.obj \
+          implib.obj \
+          idents.obj \
+          writepe.obj \
+          writelx.obj \
+          writeelf.obj \
+          debug.obj \
+          dbghll.obj \
+          dbgcv.obj \
+          rdos2res.obj \
+          rdntres.obj \
+          readdll.obj \
+          readelf.obj \
+          xshell.obj \
+          readcoff.obj \
+          readedf.obj \
+          messages.obj \
+          xmem.obj \
+          xdebug.obj \
+          readomf0.obj \
+          readomf.obj \
+          readxomf.obj \
+          args.obj \
+          reader.obj \
+          writer.obj \
+          writeeil.obj \
+          readeil.obj \
+          dbgedif.obj \
+          xos.obj \
+          parser.obj \
+          dbg99.obj \
+          unzip.obj \
+          ioapi.obj \
+          adler32.obj \
+          compress.obj \
+          crc32.obj \
+          deflate.obj \
+          gzio.obj \
+          infback.obj \
+          inffast.obj \
+          inflate.obj \
+          inftrees.obj \
+          trees.obj \
+          uncompr.obj \
+          zutil.obj
+
+CC      = @cl
+LD      = @link
+
+OBJDIR = .
+xOS = xos_WINNT
+
+CFLAGS  = /D$(xOS) /nologo /c /EHsc /W3 /Zp1 /I./zlib /I./minizip /D_CRT_SECURE_NO_DEPRECATE
+LFLAGS  = /STACK:10485760
+
+$(NAME) : $(OBJ)
+          $(LD) $(LFLAGS) $(OBJ) /OUT:$(NAME)
+
+implib.obj : implib.cpp struct.h idents.h messages.h xdebug.h omf.h implib.h xmem.h writer.h
+        $(CC) $(CFLAGS) implib.cpp
+
+idents.obj : idents.cpp xdefs.h idents.h xmem.h xdebug.h
+        $(CC) $(CFLAGS) idents.cpp
+
+readcoff.obj : readcoff.cpp struct.h idents.h messages.h debug.h xmem.h readcoff.h
+        $(CC) $(CFLAGS) readcoff.cpp
+
+link.obj : link.cpp idents.h xshell.h messages.h xdefs.h xos.h readxomf.h
+        $(CC) $(CFLAGS) link.cpp
+
+struct.obj : struct.cpp struct.h jet.h idents.h messages.h xdebug.h xmem.h reader.h writer.h cpb.h
+        $(CC) $(CFLAGS) struct.cpp
+
+typestable.obj : typestable.cpp typestable.h struct.h jet.h idents.h messages.h xdebug.h xmem.h
+        $(CC) $(CFLAGS) typestable.cpp
+
+efs.obj : efs.cpp efs.h struct.h jet.h idents.h messages.h xdebug.h xmem.h parser.h
+        $(CC) $(CFLAGS) efs.cpp
+
+xshell.obj : winmake.cpp winmake.h xshell.h xdefs.h
+        $(CC) $(CFLAGS) xshell.cpp
+
+writepe.obj : writepe.cpp struct.h idents.h messages.h xdebug.h debug.h implib.h xmem.h writepe.h writer.h
+        $(CC) $(CFLAGS) writepe.cpp
+
+writelx.obj : writelx.cpp struct.h idents.h messages.h xdebug.h debug.h implib.h xmem.h writelx.h writer.h
+        $(CC) $(CFLAGS) writelx.cpp
+
+writeelf.obj : writeelf.cpp struct.h idents.h messages.h xdebug.h xmem.h writeelf.h xos.h
+        $(CC) $(CFLAGS) writeelf.cpp
+
+debug.obj : debug.cpp struct.h debug.h dbghll.h dbg99.h dbgcv.h dbgedif.h xmem.h xdebug.h messages.h xos.h
+        $(CC) $(CFLAGS) debug.cpp
+
+dbghll.obj : dbghll.cpp struct.h xdebug.h idents.h messages.h dbghll.h xmem.h debug.h writer.h
+        $(CC) $(CFLAGS) dbghll.cpp
+
+dbgcv.obj : dbgcv.cpp struct.h idents.h messages.h debug.h xmem.h writer.h
+        $(CC) $(CFLAGS) dbgcv.cpp
+
+rdntres.obj : rdntres.cpp struct.h messages.h xmem.h rdntres.h
+        $(CC) $(CFLAGS) rdntres.cpp
+
+rdos2res.obj : rdos2res.cpp struct.h messages.h xdebug.h xmem.h rdos2res.h
+        $(CC) $(CFLAGS) rdos2res.cpp
+
+readdll.obj : readdll.cpp struct.h idents.h messages.h xmem.h readdll.h
+        $(CC) $(CFLAGS) readdll.cpp
+
+readelf.obj : readelf.cpp struct.h idents.h messages.h xmem.h readelf.h
+        $(CC) $(CFLAGS) readelf.cpp
+
+readedf.obj : readedf.cpp struct.h idents.h messages.h xmem.h readedf.h reader.h
+        $(CC) $(CFLAGS) readedf.cpp
+
+messages.obj : messages.cpp xdefs.h args.h xdebug.h messages.h xshell.h
+        $(CC) $(CFLAGS) messages.cpp
+
+xmem.obj : xmem.cpp xmem.h messages.h
+        $(CC) $(CFLAGS) xmem.cpp
+
+xdebug.obj : xdebug.cpp struct.h xdebug.h idents.h
+        $(CC) $(CFLAGS) xdebug.cpp
+
+readomf0.obj : readomf0.cpp struct.h debug.h omf.h idents.h messages.h xdebug.h xmem.h readomf0.h
+        $(CC) $(CFLAGS) readomf0.cpp
+
+readomf.obj : readomf.cpp struct.h debug.h omf.h idents.h messages.h xdebug.h xmem.h readomf.h readomf0.h
+        $(CC) $(CFLAGS) readomf.cpp
+
+readxomf.obj : readxomf.cpp readomf.cpp struct.h debug.h omf.h xomf.h idents.h messages.h xdebug.h xmem.h readxomf.h readomf0.h
+        $(CC) $(CFLAGS) readxomf.cpp
+
+args.obj : args.cpp struct.h idents.h xmem.h messages.h readedf.h reader.h xshell.h args.h cpb.h
+        $(CC) $(CFLAGS) args.cpp
+
+reader.obj : reader.cpp xos.h xdefs.h messages.h xmem.h args.h idents.h reader.h omf.h readomf.h readxomf.h readeil.h readcoff.h readdll.h rdntres.h rdos2res.h readelf.h
+        $(CC) $(CFLAGS) reader.cpp
+
+writer.obj : writer.cpp xdefs.h xos.h xmem.h idents.h messages.h args.h writepe.h writelx.h writeelf.h implib.h writeeil.h writer.h
+        $(CC) $(CFLAGS) writer.cpp
+
+writeeil.obj : writeeil.cpp struct.h idents.h messages.h xdebug.h xmem.h writer.h writeeil.h eil.h
+        $(CC) $(CFLAGS) writeeil.cpp
+
+readeil.obj : readeil.cpp struct.h idents.h messages.h xdebug.h readeil.h
+        $(CC) $(CFLAGS) readeil.cpp
+
+dbg99.obj : dbg99.cpp dbghll.cpp struct.h xdebug.h idents.h messages.h dbg99.h xmem.h debug.h writer.h
+        $(CC) $(CFLAGS) dbg99.cpp
+
+xos.obj : xos.cpp xos.h messages.h
+        $(CC) $(CFLAGS) xos.cpp
+
+parser.obj : parser.cpp parser.h xos.h messages.h
+        $(CC) $(CFLAGS) parser.cpp
+
+dbgedif.obj : dbgedif.cpp dbgedif.h debug.h struct.h xdebug.h idents.h messages.h xmem.h writer.h
+        $(CC) $(CFLAGS) dbgedif.cpp
+
+# objs for minizip
+                                                                    
+$(OBJDIR)\unzip.obj: minizip\unzip.c minizip\unzip.h minizip\ioapi.h minizip\crypt.h zlib\zlib.h
+        $(CC) $(CFLAGS) minizip\unzip.c
+
+$(OBJDIR)\ioapi.obj: minizip\ioapi.c minizip\ioapi.h
+        $(CC) $(CFLAGS) minizip\ioapi.c
+
+$(OBJDIR)\adler32.obj: zlib\adler32.c zlib\zlib.h zlib\zconf.h
+         $(CC) $(CFLAGS) zlib\adler32.c
+
+$(OBJDIR)\compress.obj: zlib\compress.c zlib\zlib.h zlib\zconf.h
+         $(CC) $(CFLAGS) zlib\compress.c
+
+$(OBJDIR)\crc32.obj: zlib\crc32.c zlib\zlib.h zlib\zconf.h zlib\crc32.h
+         $(CC) $(CFLAGS) zlib\crc32.c
+
+$(OBJDIR)\deflate.obj: zlib\deflate.c zlib\deflate.h zlib\zutil.h zlib\zlib.h zlib\zconf.h
+         $(CC) $(CFLAGS) zlib\deflate.c         
+
+$(OBJDIR)\gzio.obj: zlib\gzio.c zlib\zutil.h zlib\zlib.h zlib\zconf.h
+         $(CC) $(CFLAGS) zlib\gzio.c        
+
+$(OBJDIR)\infback.obj: zlib\infback.c zlib\zutil.h zlib\zlib.h zlib\zconf.h zlib\inftrees.h zlib\inflate.h \
+             zlib\inffast.h zlib\inffixed.h
+         $(CC) $(CFLAGS) zlib\infback.c
+
+$(OBJDIR)\inffast.obj: zlib\inffast.c zlib\zutil.h zlib\zlib.h zlib\zconf.h zlib\inftrees.h zlib\inflate.h \
+             zlib\inffast.h
+         $(CC) $(CFLAGS) zlib\inffast.c
+
+$(OBJDIR)\inflate.obj: zlib\inflate.c zlib\zutil.h zlib\zlib.h zlib\zconf.h zlib\inftrees.h zlib\inflate.h \
+             zlib\inffast.h zlib\inffixed.h
+         $(CC) $(CFLAGS) zlib\inflate.c
+
+$(OBJDIR)\inftrees.obj: zlib\inftrees.c zlib\zutil.h zlib\zlib.h zlib\zconf.h zlib\inftrees.h
+         $(CC) $(CFLAGS) zlib\inftrees.c
+
+$(OBJDIR)\trees.obj: zlib\trees.c zlib\zutil.h zlib\zlib.h zlib\zconf.h zlib\deflate.h zlib\trees.h
+         $(CC) $(CFLAGS) zlib\trees.c
+
+$(OBJDIR)\uncompr.obj: zlib\uncompr.c zlib\zlib.h zlib\zconf.h
+         $(CC) $(CFLAGS) zlib\uncompr.c
+
+$(OBJDIR)\zutil.obj: zlib\zutil.c zlib\zutil.h zlib\zlib.h zlib\zconf.h
+         $(CC) $(CFLAGS) zlib\zutil.c

@@ -1,0 +1,4 @@
+IMPLEMENTATION MODULE KrnTypes;
+
+END KrnTypes.
+ 

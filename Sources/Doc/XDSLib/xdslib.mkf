@@ -1,0 +1,10 @@
+TARGET = xdslib
+SRCDIR = src
+
+SOURCE = $(SRCDIR)\xdslib.tex $(SRCDIR)\iso.tex $(SRCDIR)\pim.tex $(SRCDIR)\util.tex $(SRCDIR)\oakwood.tex $(SRCDIR)\ansic.tex
+
+!if "$(TARGET_FMT)" == ""
+TARGET_FMT = pdf
+!endif
+
+!include ..\Common\$(TARGET_FMT).inc

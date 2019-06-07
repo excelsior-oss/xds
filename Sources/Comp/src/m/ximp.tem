@@ -1,0 +1,7 @@
+! { main: "%s\n",#; }
+! { oberon: "%s\n",#; }
+! { def : "%s\n",#; }
+---
+! { main: "\n%s\n",#; {oberon def : "%s\n", #; } }
+! { oberon: "\n%s\n",#; {oberon def : "%s\n", #; } }
+! { def : "\n%s\n",#; {def : "%s\n", #; } }

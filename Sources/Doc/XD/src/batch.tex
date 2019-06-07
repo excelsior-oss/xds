@@ -1,0 +1,1290 @@
+\chapter{Using the batch mode}
+\label{batch}
+
+When invoked in the {\em batch mode}, the debugger loads
+a control file --- a text file containing XD control language
+statements. Those statements perform various debugging actions:
+load program, set breakpoint, add watch expression, start
+program execution, etc.
+
+During control file processing, the debugger creates a log,
+which may be saved in a file and then analyzed.
+
+There is also a statement that temporarily switches the
+debugger into the dialog mode. Upon exit from it, control
+file processing continues.
+
+\section{Control file syntax}
+
+Each line of a control file may contain a statement
+or a comment (empty lines are treated as comments).
+Comments start from the symbol \verb'";"'.
+
+\begin{verbatim}
+Statement =
+    [ label ] name [ parameter {"," parameter}] [";" comment]
+\end{verbatim}
+
+A statement consists of a label, a statement name,
+a comma-separated list of parameters and a comment.
+All these parts except statement name are optional.
+Statements may not be broken across two or more lines.
+Statement names are not case-sensitive.
+
+Control files are often used to prepare a
+program for debugging in the dialog mode, and
+usually perform the following actions:
+\begin{enumerate}
+\item load the program
+\item establish breakpoints, breaks, and watches
+\item initiate program execution
+\item upon the first breakpoint hit, switch to the dialog mode
+\end{enumerate}
+\pagebreak
+Below, is a small control file example with detailed comments.
+
+\begin{verbatim}
+       LOAD d:\xds\samples\bench\dry.exe  ;1
+                                          ;2
+       MODULE dry                         ;3
+                                          ;4
+       BREAK P0,ADDR,Proc0,Dialog         ;5
+       BREAK P8,ADDR,Proc8,Dialog         ;6
+                                          ;7
+       WATCH Char1Glob,Array1Glob[8]      ;8
+                                          ;9
+       START                              ;10
+       QUIT                               ;11
+                                          ;12
+Dialog DIALOG                             ;13
+       STOP                               ;14
+\end{verbatim}
+
+In this sample, comments are used to hold the line
+numbers referenced below.
+
+{\bf Line 1:} The \verb'LOAD' statement
+loads an executable file, specified as
+a parameter, into the debugger.
+
+{\bf Line 3:} The \verb'MODULE' statement sets
+the current module to \verb'dry', allowing to use unqualified
+indetifiers in the following statements.
+
+{\bf Lines 5 and 6:} The \verb'BREAK' statements
+establish sticky breakpoints at the entry
+points of the procedures \verb'dry.Proc0' and \verb'dry.Proc8'.
+\verb'Dialog' is the name of a label from which processing
+of the control file will continue if the breakpoint is hit.
+
+{\bf Line 8:} The \verb'WATCH' statement adds expressions
+\verb'dry.Char1Glob' and \verb'dry.Array1Glob[8]' to the list
+of watch expressions.
+
+{\bf Line 10:} The \verb'START' statement starts the
+debuggee. Processing of this statement finishes when
+the debuggee terminates or a \verb'STOP' statement is
+executed in a break handler.
+
+{\bf Line 11:} The \verb'QUIT' statement terminates
+the debugging session.
+
+{\bf Line 13:} The label \verb'Dialog' was specified
+in the \verb'BREAK' statements in lines 5 and 6.
+If either of the breakpoints set by those statements
+will be encountered during execution, in our case
+during processing of the \verb'START' statement in
+line 10, the debugger will process the control file
+starting from this line.
+
+The \verb'DIALOG' statement switches the debugger to
+dialog mode. Breakpoints and watch expressions
+remain active. Upon user-initiated exit from the
+dialog mode, the debugger will return to the batch mode
+and process the next statement.
+
+{\bf Line 14:} The \verb'STOP' statement terminates
+the debuggee. The debugger will continue control
+file processing from the line following the \verb'START'
+statement.
+
+\section{Load program statement}
+
+{\samepage
+\Frame{LOAD}{Load a program}\label{batch:LOAD}
+\begin{verbatim}
+    LOAD Program [ Arguments ]
+\end{verbatim}
+
+The \verb'LOAD' statement loads an executable file
+\verb'Program' into the debugger, passing optional
+command-line \verb'Arguments' to it. This statement should
+be executed prior to any statements which perform debugging
+actions, i.e. set breakpoints, add watch expressions, etc.
+} % \samepage
+
+If a program fails to load, a message is displayed
+and control file processing is terminated.
+
+{\samepage
+{\bf Possible Errors}
+
+\begin{flushleft}
+\begin{tabular}{ll}
+127 & Incorrect program name \\
+165 & Program name expected  \\
+700 & Loading $<$...$>$: $<$...$>$
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Examples}
+\begin{verbatim}
+    LOAD xc =p =a dry
+    LOAD dry
+\end{verbatim}
+} % \samepage
+
+\section{Control flow statements}
+
+The statements described in this section allow
+to change the order in which control file is processed,
+
+\pagebreak[1]
+{\samepage
+\Frame{PAUSE}{Suspend control file processing}\label{batch:PAUSE}
+\begin{verbatim}
+    PAUSE [ Delay ]
+\end{verbatim}
+The \verb'PAUSE' statement suspends control file processing
+for \verb'Delay' seconds, or until a key is pressed,
+allowing a user to view the last debugger messages.
+If \verb'Delay' is not specified, infinite delay is assumed.
+} % \samepage
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+126 & Incorrect parameter
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    PAUSE
+    PAUSE 10
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{GOTO}{Unconditional control transfer}\label{batch:GOTO}
+\begin{verbatim}
+    GOTO Label
+\end{verbatim}
+The \verb'GOTO' statement unconditionally transfers
+control to the statement associated with \verb'Label'.
+} % \samepage
+
+If the specified \verb'Label' does not exist in the control
+file, an error message is issued, and control is passed to the
+next statement.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+112 & Incorrect label \\
+114 & Label not found \\
+168 & Label expected
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    GOTO Terminate
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{IF}{Conditional control transfer}\label{batch:IF}
+\begin{verbatim}
+    IF Expression THEN Label
+\end{verbatim}
+The \verb'IF' statement evaluates \verb'Expression', which
+has to be of type \verb'BOOLEAN', and, if it yields \verb'TRUE',
+passes control to the statement associated with \verb'Label'.
+If the result of \verb'Expression' is \verb'FALSE', the next
+statement is executed.
+} % \samepage
+
+If the specified \verb'Label' does not exist in the control
+file, an error message is issued, and control is passed to the
+next statement.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+128 & THEN expected \\
+134 & Expression expected \\
+168 & Label expected \\
+176 & Incorrect expression
+\end{tabular}
+\end{flushleft}
+} % \samepage
+{\samepage
+{\bf Examples}
+\begin{verbatim}
+    IF Dry.Char1Glob='A' THEN Write
+    IF (Str.Len=10)AND(Memory.Limit) THEN exit
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{CALL/RETURN}{Procedure call}\label{batch:CALL}\label{batch:RETURN}
+\begin{verbatim}
+    CALL Label
+    RETURN
+\end{verbatim}
+The \verb'CALL' statement transfers control to the
+statement associated with \verb'Label'. The \verb'RETURN'
+statement returns control to the statement following
+the last executed \verb'CALL' statement. Thus,
+these two statements allow to group the common parts
+of a control file into subroutines.
+The procedure calls may be nested.
+} % \samepage
+
+If the specified \verb'Label' does not exist in the control
+file, an error message is issued, and control is passed to the
+next statement. The same happens if a \verb'RETURN' statement
+is encountered. which has no corresponding previously executed
+\verb'CALL' statement.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+112 & Incorrect label \\
+114 & Label not found \\
+115 & RETURN without CALL \\
+168 & Label expected
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+
+\begin{verbatim}
+    CALL Write
+. . .
+Write   . . .
+    RETURN
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{SIGNAL}{Error trapping}\label{batch:SIGNAL}
+\begin{verbatim}
+    SIGNAL "+" ErrorNumber "," Label
+    SIGNAL "-" ErrorNumber
+\end{verbatim}
+The \verb'SIGNAL' statement is used for error trapping.
+The \verb'"+"'-form enables trapping of an error \verb'ErrorNumber'.
+After execution of a statement caused this error, control
+is passed to the statement associated with \verb'Label'.
+An error is considered handled and the error counter is
+not incremented.
+} % \samepage
+
+If the specified \verb'Label' does not exist in the control
+file, an error message is issued, and control is passed to the
+next statement.
+
+The \verb'"-"'-form disables trapping of a specified error.
+
+The \Ref{{\tt \#IMPORT}}{batch:IMPORT} directive and the SIGNAL statement
+allow to implement reusable handlers for a certain group
+of errors.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+112 & Incorrect label \\
+114 & Label not found \\
+168 & Label expected \\
+208 & Error code expected \\
+209 & Incorrect error list action \\
+210 & Incorrect error code \\
+211 & Handler for error $<$...$>$ already defined \\
+212 & Handler for error $<$...$>$ not defined
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    SIGNAL +700,ErrorLoadProgram
+    SIGNAL -700
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{DIALOG}{Switch to the dialog mode}\label{batch:DIALOG}
+\begin{verbatim}
+    DIALOG [ Message ]
+\end{verbatim}
+The \verb'DIALOG' statement switches the debugger to the dialog mode.
+\verb'Message', if specified, is displayed in a message box.
+All breaks, breakpoints, and watches set in the batch mode remain
+active.
+} % \samepage
+
+Control file processing will be resumed upon exit from the dialog mode,
+unless you select {\bf Stop debugging} from the {\bf File} menu.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+116 & Program not loaded \\
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    DIALOG
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{QUIT}{Terminate control file processing}\label{batch:QUIT}
+\begin{verbatim}
+    QUIT
+\end{verbatim}
+The \verb'QUIT' statement unconditionally terminates
+control file processing.
+} % \samepage
+
+{\samepage
+{\bf Possible Errors}
+
+None.
+
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    QUIT
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+\section{Program execution statements}
+
+Statements of this group are used to establish breaks and breakpoints,
+and execute the program being debugged.
+
+{\samepage
+\Frame{START/STOP}{Start/stop execution}\label{batch:START}\label{batch:STOP}
+\begin{verbatim}
+    START
+    STOP
+\end{verbatim}
+The \verb'START' statement begins execution of the debuggee. During execution,
+control may be returned to the debugger, for instance, as a result of
+a breakpoint hit. The \verb'STOP' statement may be used in a \See{handler}{}{batch:BREAK} to
+terminate the debuggee. In this case, control file processing continues from
+a statement next to the \verb'START' statement.
+} % \samepage
+
+The \verb'START/STOP' statements form a pair similar to \Ref{{\tt CALL/RETURN}}{batch:CALL},
+except that nesting is not allowed. This means that a program may not be
+restarted until it is explicitly stopped, so \verb'START' is not allowed within
+a handler. Conversely, \verb'STOP' is not allowed outside a handler.
+% !!! Which error is issued in the latter case? Does execution continues in both cases?
+
+The \verb'STOP' statement unwinds the \Ref{subroutine stack}{batch:CALL} up to the
+level from which the \verb'START' statement was issued.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+116 & Program not loaded \\
+129 & Program restart not allowed
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    START
+    STOP
+\end{verbatim}
+} % \samepage
+
+
+\ifcomment !!!
+<<< ADVANCED BEGIN >>>
+
+        Для организации запуска отлаживаемой программы и возврата в пакет
+используется стек вызовов процедур. Во время выполнения оператора
+START в стек заносится номер строки, непосредственно следующей за
+текущей, при этом элемент стека помечается особым признаком, отличающим его от
+элементов, помещенных в стек оператором CALL. При выполнении оператора
+STOP вершиной стека становится помеченный элемент, после чего
+номер строки, сохраненный в этом элементе стека, становится номером текущей
+строки. Затем из стека удаляется помеченный элемент и выполнение пакета
+продолжается дальше.
+        Как было отмечено ранее, оператор START не может быть повторно
+исполнен до тех пор, пока не будет выполнен оператор STOP. Из этого
+следует, что стек вызовов процедур может содержать не более одного помеченного
+элемента. Элементы, находящиеся в стеке до помеченного элемента, соответствуют
+вызовам процедур, произошедшим до исполнения оператора START. Элементы,
+находящиеся в стеке после помеченного элемента, соответствуют вызовам процедур,
+произошедшим после исполнения оператора START. Эти элементы будут
+удаленны из стека после выполнения оператора STOP. Таким образом,
+возврат из процедур, вызов которых произошел после начала выполнения
+отлаживаемой программы, становиться невозможным после  ее завершения. Такая
+организация взаимодействия операторов вызова и возврата из процедур и
+операторов управления выполнением отлаживаемой программы необходима для вызова
+внутри каждого варианта выполнения программы процедур, необходимых только для
+этого варианта, завершение которых не нужно в случае завершения самого варианта.
+
+<<< ADVACED END >>>
+
+\fi
+
+\pagebreak[1]
+{\samepage
+\Frame{RESUME}{Resume execution}\label{batch:RESUME}
+\begin{verbatim}
+    RESUME
+\end{verbatim}
+The \verb'RESUME' statement effectively terminates a handler,
+causing program execution to continue after a breakpoint hit or
+a break activation.
+The \verb'CALL' stack, however, is not unwound, so issuing
+\verb'RETURN' later may cause control to be transferred to the
+line after the \verb'CALL' statement which called the subroutine
+containing the \verb'RESUME' statement.
+} % \samepage
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+116 & Program not loaded \\
+130 & Program was not started
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    RESUME
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{BREAK}{Install an event handler}\label{batch:BREAK}
+\begin{verbatim}
+    BREAK (Name | Number) "," Event
+
+    Event = StopByUser         |
+            ProgramException   |
+            BreakAtAddress     |
+            BreakAtLine        |
+            BreakAtProc        |
+            WriteAccess        |
+            ReadAccess         |
+            BreakByCondition
+
+    StopByUser       = USER "," Label.
+    ProgramException = XCPT "," Label.
+    BreakAtAddress   = ADDR "," Address ","
+                       ( Label [ "," Pass] [ ",?," Condition ] ["," "/"] |
+                         "*" | "." ).
+    BreakAtLine      = LINE "," ModuleName "," Line "," 
+                       ( Label [ "," Pass] [ ",?," Condition ] ["," "/"] |
+                         "*" | "." ).
+    BreakAtProc      = PROC "," ProcName "," [ "P" | "B" | "E" | "R" ] "," 
+                       ( Label [ "," Pass] [ ",?," Condition ] ["," "/"] |
+                         "*" | "." ).
+    WriteAccess      = WRITE "," Address "," Length "," Label.
+    ReadAccess       = READ "," Address "," Length "," Label.
+    BreakByCondition = COND "," BooleanExpression "," Label.
+\end{verbatim}
+The \verb'BREAK' statement establishes an event handler. When the specified
+\verb'Event' happens during execution of the debuggee, control is returned to
+XD and control file processing continues from the statement associated with
+\verb'Label'.  A handler is identified by an unique symbolic \verb'Name' or 
+\verb'Number'.
+} % \samepage
+
+The following types of events may be detected:
+\begin{description}
+\item[{\tt USER}]  Execution is interrupted by user
+\item[{\tt XCPT}]  An exception is raised
+\item[{\tt ADDR}]  A breakpoint is hit at \verb'Address'
+\item[{\tt LINE}]  A breakpoint is hit at \verb'Line' in \verb'ModuleName'
+\item[{\tt PROC}]  A breakpoint is hit at \verb'P'rologue, 
+                    \verb'B'ody (default), \verb'E'pilogue, or 
+                    \verb'R'eturn instruction of the procedure \verb'ProcName'
+\item[{\tt WRITE}] A \verb'Length' bytes block of memory at \verb'Address' was written to
+\item[{\tt READ}]  A \verb'Length' bytes block of memory at \verb'Address' was read from
+\item[{\tt COND}]  \verb'BooleanExpression' was evaluated to \verb'TRUE'
+\end{description}
+
+% New in 1.1:
+
+For breakpoints, you may optionally specify:
+
+\begin{itemize}
+\item \verb'Pass' to set a \See{delayed breakpoint}{}{dialog:breaks:delayedsticky}
+\item \verb'Condition' to set a \See{conditional breakpoint}{}{dialog:breaks:expression}
+\item  "\verb'/'". to set a \See{non-sticky breakpoint}{}{dialog:breaks:simple}
+\end{itemize}
+
+Specify "\verb'*'", or "\verb'.'"instead of \verb'Label' to set a 
+\See{watchpoint}{}{dialog:breaks:watchpoint} or a 
+\See{counter}{}{dialog:breaks:counter} respectively.
+
+If the specified \verb'Line' is not \See{executable}{}{start:general:executable},
+a warning is issued, and the breakpoint is set at the first executable line which
+number is greater, if such line exists.
+
+In \verb'Condition', it is possible to use variables that are not visible
+in the current context, but they have to be visible at the specified
+breakpoint location.
+
+%!!! More details
+
+{\bf Note:} It is recommended to remove access breaks from local variables
+upon return from a procedure.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+112 & Incorrect label \\
+114 & Label not found \\
+116 & Program not loaded \\
+131 & Incorrect address \\
+151 & Incorrect breakpoint number \\
+152 & Breakpoint number already in use \\
+153 & Incorrect event identifier \\
+155 & Incorrect length \\
+159 & Line number expected \\
+160 & Incorrect line number \\
+161 & Break already exists \\
+168 & Label expected \\
+169 & Breakpoint number expected \\
+170 & Breakpoint type expected \\
+171 & Breakpoint attributes expected \\
+182 & Incorrect break \\
+213 & Module not found \\
+917 & This break is set but is disabled due to hardware limit\\
+918 & Wrong expression in current context
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Examples}
+\begin{verbatim}
+    BREAK 1,USER,Break
+    BREAK 2,XCPT,Break
+    BREAK 3,ADDR,Dry.Proc8,Break
+    BREAK 4,WRITE,ADR(Dry.Char1Glob),1,Break
+    BREAK 5,READ,ADR(Dry.Char1Glob),1,Break
+    BREAK 6,COND,Dry.Char1Glob='A',Break
+    BREAK 7,LINE,Dry,210,Break
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{DEL}{Remove event handler(s)}\label{batch:DEL}
+\begin{verbatim}
+    DEL Number { "," Number }
+\end{verbatim}
+The \verb'DEL' statement removes a previoulsy installed event
+handler associated with \verb'Number'.
+} % \samepage
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+151 & Incorrect breakpoint number \\
+162 & Break number $<$...$>$ not found \\
+169 & Breakpoint number expected
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Examples}
+\begin{verbatim}
+    DEL 1
+    DEL 3,4,17
+\end{verbatim}
+} % \samepage
+
+\section{Data management statements}
+
+The statements described in this section are used to change and display
+values of CPU registers, variables, and memory areas.
+
+{\samepage
+\Frame{FILL}{Initialize memory/registers}\label{batch:FILL}
+\begin{verbatim}
+    FILL ( Address | Register ) "," Length "," WholeExpression
+\end{verbatim}
+The \verb'FILL' statement initializes a memory area or a set of
+CPU registers by setting all its bytes to a specified value.
+} % \samepage
+
+\verb'Address' must be an address expression, so use \verb'ADR(v)'
+to initialize a variable \verb'v'. \verb'Length' is a number of
+bytes to fill with result of \verb'WholeExpression MOD 100H'.
+
+It is also possible to specify CPU \verb'Register' instead of
+memory \verb'Address'. In this case, registers are "mapped" onto
+a byte array in the following sequence:
+
+\verb'EAX, EBX, ECX, EDX, ESI, EDI, EBP, ESP'
+
+starting from the less significant byte.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+107 & Parameter expected \\
+116 & Program not loaded \\
+126 & Incorrect parameter \\
+131 & Incorrect address \\
+157 & Address value expected \\
+203 & Write to address $<$...$>$ failed, len $<$...$>$
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    FILL ADR(Dry.Char1Glob),1,0x47
+    FILL ADR(Dry.Array2Dim),56,0
+    FILL @EAX,20,0xFA
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{SET}{Change variable/register value}\label{batch:SET}
+\begin{verbatim}
+    SET ( Variable | Register ) "," Expression
+\end{verbatim}
+The \verb'SET' statement evaluates an \verb'Expression' and assigns the
+result to a \verb'Variable' or loads it into a CPU \verb'Register'.
+
+See Chapter \ref{expr} for more information about expressions in XD.
+
+% ??? Type compatibility?
+} % \samepage
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+116 & Program not loaded \\
+134 & Expression expected \\
+187 & Write to register $<$...$>$ failed \\
+200 & Variable or register expected \\
+201 & Type incompatibility in assignment \\
+205 & Stuctured variable not allowed in this context
+%!!! ??? ref to expr errors
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    SET Dry.Char1Glob,'A'
+    SET @ESP,0xFAFBFCFD
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{MOVE}{Copy memory area}\label{batch:MOVE}
+\begin{verbatim}
+    MOVE SourceAddress "," DestinationAddress "," Length
+\end{verbatim}
+The \verb'MOVE' statement copies \verb'Length' bytes of memory from
+\verb'SourceAddress' to \verb'DestinationAddress'. Both addresses
+may be specified as \See{expressions}{Chapter }{expr}.
+Overlapped areas are copied unsafely; a warning is issued in this case.
+} % \samepage
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+116 & Program not loaded \\
+126 & Incorrect parameter \\
+155 & Incorrect length \\
+157 & Address value expected \\
+203 & Write to address $<$...$>$ failed, len $<$...$>$
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    MOVE ADR(Dry.Char1Glob),ADR(Dry.Array1Dim),1
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+\section{Log control statemnts}
+
+When operating in the batch mode, the debugger forms a log containing
+executed lines or instructions, messages, etc. The statements
+described in this section allow to output data to the log, redirect it
+to a file, toggle log filters, and otherwise control the logging features.
+
+{\samepage
+\Frame{LOG}{Redirect log to file}\label{batch:LOG}
+\begin{verbatim}
+    LOG [ FileName [ "." [ FileExt ] ]
+\end{verbatim}
+The \verb'LOG' statement allows to redirect log to a file.
+By default, the log information is written to the standard output.
+After redirection to a file, only error messages are written to the
+standard output.
+If \verb'FileExt' is not specified, the default extension \verb'.XDL' will be used.
+If no file name is specified at all, control file name will be used
+with extension replaced with the default log file extension.
+} % \samepage
+\pagebreak[1]
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+004 & Error opening log file $<$...$>$ \\
+117 & Incorrect log file name
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    LOG
+    LOG result.
+    LOG result.dat
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{PRINT}{Output formatted data}\label{batch:PRINT}
+\begin{verbatim}
+    PRINT Format { ',' Expression }.
+
+    Format       = '"' { Character | Specifier | ControlSeq } '"'
+    Character    = <any printable character except '%' and '\'>
+    ControlSeq   = '\' ( 'n' | 'r' | 'l' | 'f' |
+                         't' | 'e' | 'g' | '%' | '\' )
+    Specifier    = '%' { Modifier } Base | MemoryRegion
+    Modifier     = '$' | '-' | '+' | '|' | '#' | '0' |
+                   Space | Width | Precision
+    Base         = 'i' | 'd' | 'u' | 'x' | 'o' | 'b' |
+                   'c' | 's' | 'w' | 'f' | 'e' | 'g' |
+                   'X' | 'F' | 'E  | 'G' | 'u' | '%'
+    MemoryRegion = ('M'|'m') "(" "'" Specifier "'"
+                   [',' Const [',' Const ] ] ")"
+    Width        = Digit { Digit }
+    Precision    = '.' Digit { Digit }
+\end{verbatim}
+The \verb'PRINT' statement performs formatted output to the log.
+The format string syntax is similar to used by the \verb'printf'
+family of functions available in the C standard library.
+} % \samepage
+
+\verb'Format' is a string which may contain ordinary characters, control
+sequences (starting with \verb"'\'") and format specifiers (starting with \verb"'%'").
+During execution of a \verb'PRINT' statement, \verb'Format' is scanned from left
+to right. Ordinary characters are sent to the log unchanged, while control
+sequences are replaced with certain control characters.
+Upon encountering of a format specifier, result of a corresponding
+\verb'Expression' is formatted according to that specifier and output
+to the log. Therefore, the number of expressions has to match the
+number of format specifiers. If there is a specifier for which no
+expression is supplied, an error will be raised. If there are more expressions
+than specifiers, a warning will be issued. A newline sequence (\verb'CR+LF')
+is output upon completion of a \verb'PRINT' statement.
+
+\pagebreak[1]
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+134 & Expression expected \\
+143 & Double quotes expected \\
+144 & String not terminated (double quotes expected) \\
+204 & Read from address $<$...$>$ failed, len $<$...$>$ \\
+205 & Stuctured variable not allowed in this context \\
+206 & Register is not allowed
+\end{tabular}
+\end{flushleft}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    PRINT "Hello, world!"
+    PRINT "Char1Glob='%c'",Char1Glob
+    PRINT "------\n\t1 bell\g\n\t2 bell\g\n\t3 bell\g\n------"
+    PRINT "Array1Glob: [7]=%u, [8]=%u",Array1Glob[7],Array1Glob[8]
+    PRINT "Memory region: %M('%$4X\n',k4,l20)",ADR(Array1Glob[6])
+\end{verbatim}
+} % \samepage
+
+\subsubsection{Control sequences}
+
+{\samepage
+\verb'ControlSeq' is a two-character sequence which causes
+a certain control character to be output:
+
+\begin{tabular}{c|l}
+\bf Sequence & \bf Replaced with \\
+\hline
+\verb'\n' & CR+LF (15C 12C)    \\
+\verb'\r' & CR  (15C)          \\
+\verb'\l' & LF  (12C)          \\
+\verb'\f' & FF  (14C)          \\
+\verb'\t' & TAB (11C)          \\
+\verb'\e' & ESC (33C)          \\
+\verb'\g' & BEL (7C)           \\
+\verb'\%' & percent sign (45C) \\
+\verb'\\' & backslash (134C)
+\end{tabular}
+} % \samepage
+
+\subsubsection{Format bases}
+
+{\samepage
+The following format bases are recognized:
+
+\begin{tabular}{c|l|l}
+\bf Base & \bf Argument & \bf Output format           \\
+\hline
+   "c"   & CHAR    & single character                  \\
+"d", "i" & integer & signed decimal integer            \\
+   "u"   & integer & unsigned decimal integer          \\
+   "o"   & integer & unsigned octal integer            \\
+"x", "X" & integer & unsigned hexadecimal integer      \\
+   "f"   & real    & fixed-point real                  \\
+"e", "E" & real    & floating-point real               \\
+"g", "G" & real    & the shorter of "f" and "e"        \\
+   "s"   & string  & string                            \\
+   "w"   & boolean & "FALSE" or "TRUE"                 \\
+         & integer & "FALSE" if zero, "TRUE" otherwise \\
+%  "\{\}" & BITSET  & bitset, e.g. \verb|{1,3..5}| \\ !!!
+   "n"   & any type & default \\
+   "\%"   & none & "\%"
+\end{tabular}
+
+{\footnotesize
+{\bf Note:} Case of hex letters and of a letter used to introduce exponent
+in a floating point number matches case of the corresponding
+\verb'Base' character.
+
+} % \footnotesize
+} % \samepage
+
+\ifcomment !!!
+ - "Область памяти" предназначена для печати областей заданой длины
+   по указаному количеству байт в блоке по определенному формату.
+   Обозначение - 'M', 'm'. При отсутствии длины блока она принимается
+   равной 1, при отсутствии длины области пямяти она принимается равной 1.
+   Задаваемый формат применяется для всех блоков, расположенных внутри
+   заданной области. При задании некратной длины области и блока, длина
+   последнего блока при печати получается меньше заданой.
+
+!!!
+
+%W.P(...) means:
+
+print W blocks of memory P bytes each using format in parenthesis,
+
+Example:
+
+%16.4(%8X %8X %8X %8X\n)
+
+would print something like:
+
+0000000 0000000 0000000 FFFFFFFF
+0000000 0000000 0000000 FFFFFFFF
+0000000 0000000 0000000 FFFFFFFF
+0000000 0000000 0000000 FFFFFFFF
+
+\fi
+
+\subsubsection{Modifiers}
+
+\verb'Modifier' allow to alter the default data formatting:
+
+\begin{tabular}{c|c|l|l}
+\bf Modifier & \bf Bases & \bf Meaning                   & \bf Default \\
+\hline
+ \verb'"+"' & difegEG & always print sign                & only negative     \\
+   space    & difegEG & print space instead of "+"       &                   \\
+ \verb'"-"' & all     & left-justify the value           & right-justify     \\
+ \verb'"|"' & all     & center the value                 &                   \\
+ \verb'"0"', \verb'"$"' & numeric & print leading zeroes             & spaces            \\
+ \verb'"#"' & oxX     & print a base character           & no base character
+\end{tabular}
+
+\subsubsection{Width}
+
+\verb'Width' is an unsigned decimal specifying the minimum number of
+character positions used for a formatted value. If the output string
+is shorter than \verb'Width', blanks or zeroes are added according to
+\verb'Modifiers'. If the number of characters in an output string exceeds
+\verb'Width', or \verb'Width' is omitted, all characters are printed.
+
+\ifcomment !!!
+If {\tt Width} is set to an asterisk (\verb'"*"'), its actual value will be
+retrieved from the argument list. It has to be specified before the value
+being formatted.
+\fi
+
+\subsubsection{Precision}
+
+\verb'Precision' is an unsigned decimal preceded by a period,
+which specifies the exact number of characters to be printed or
+the number of decimal places. Unlike \verb'Width', \verb'Precision'
+may cause the output value to be truncated or floating-point value
+to be rounded.
+
+\ifcomment !!!
+If {\tt Precision} is set to an asterisk (\verb'"*"'), its actual value will
+be taken from the argument list. It has to be specified before the value being
+formatted, but after the actual value for {\tt Width}, if the latter is also set
+to "*".
+\fi
+
+{\tt Precision} value is interpreted depending upon the {\tt Base}:
+
+\begin{tabular}{l|p{10 cm}}
+\bf For bases & \bf Precision specifies \\
+\hline
+\bf i d u o x X &
+    The minimum number of digits to output. Shorter values are padded on
+    the left with blanks; longer values are not truncated. Default is 1. \\
+\bf f F e E &
+    The number of positions after the decimal point. The last digit output
+    is rounded. If {\tt Precision} is 0, decimal point is not printed.
+    Default is 6. \\
+\bf g G &
+    The maximum number of significant digits to output. By default,
+    all significant digits are printed. \\
+\bf c &
+    The number of times the character is to output, default is 1. \\
+\bf s &
+    The maximum number of characters to output. By default, characters
+    are output until \verb'0C' is reached. \\
+\bf \{\} &
+    Has no effect.
+\end{tabular}
+
+
+% !!! Review MODE statement
+{\samepage
+\Frame{MODE}{Log control}\label{batch:MODE}
+\begin{verbatim}
+    MODE Mode { "," Mode }
+
+    Mode = ADDR | BAT | BREAK | DUMP | PRINT ( "+" | "-" )
+           TRACE ( "+" | "-" ) [ "," ( CODE | SOURCE | MIX ) ]
+           DISASM "=" ( SMALL | FULL )
+           ERRORS "=" number
+\end{verbatim}
+The \verb'MODE' statement controls what is written to the log and in
+which format.
+} % \samepage
+\begin{tabular}{ll}
+\bf Mode & Controls \\ % !!! defaults and references
+\hline
+\tt ADDR   & whether memory dump lines contain addresses \\
+\tt BAT    & whether executed control file statements are logged \\
+\tt BREAK  & whether info about breaks is written \\
+\tt DISASM & disassembly mode \\
+\tt DUMP   & whether instruction codes are dumped \\
+\tt ERRORS & maximum number of errors \\
+\tt PRINT  & whether {\tt PRINT} statements are executed \\
+\tt TRACE  & the way execution trace is logged
+\end{tabular}
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+126 & Incorrect parameter \\
+137 & Incorrect mode \\
+138 & Errors limit set to $<$...$>$ \\
+172 & Mode expected
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    MODE TRACE-
+    MODE TRACE+,CODE,DUMP+,DISASM=FULL
+    MODE PRINT+,ADDR-
+    MODE ERRORS=10,BREAK+
+\end{verbatim}
+} % \samepage
+
+\section{Miscellaneous statements}
+
+\ifcomment !!!
+{\samepage
+\Frame{ALIAS}{Define an alias}\label{batch:ALIAS}
+\begin{verbatim}
+    ALIAS Alias [ "," "S," Expression ].
+\end{verbatim}
+%!!! "O" ?
+The \verb'ALIAS' statement allows to define a name for an expression or
+for an address in the code, which corresponds to the speicifed source line.
+It may also be used to to rename a statement.
+} % \samepage
+
+\verb'Expression' is {\em not} checked for correctness. In fact, it is treated
+as a string, which will be substituted instead of \verb'Alias' into any
+expression encountered during the following contfol file preocessing.
+The user is responsible for excluding the possibility of its misinterpreting.
+The simplest way is to surround an expression with parenthesis.
+
+If no code corresponds to the specified \verb'Line' in the given \verb'Module',
+an error message will be issued and control file processing will continue.
+
+After statement renaming, \verb'OldStatementName' is no longer valid.
+
+To remove an alias, specify it as the only parameter.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+116 & Program not loaded \\
+126 & Incorrect parameter \\
+131 & Incorrect address \\
+159 & Line number expected \\
+163 & Incorrect alias \\
+164 & Alias $<$...$>$ not defined \\
+174 & Alias expected \\
+175 & Alias definiton expected \\
+189 & Alias type expected \\
+213 & Module not found \\
+216 & Keyword can not be redefined
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    ALIAS Alias1,S,Dry.Char1Glob
+    ALIAS Alias2,L,Dry,210
+    ALIAS Alias3,O,LOAD
+    ALIAS Alias1                 ; Undefine Alias1
+\end{verbatim}
+} % \samepage
+\fi
+
+\pagebreak[1]
+{\samepage
+\Frame{MODULE}{Set current module}\label{batch:MODULE}
+\begin{verbatim}
+    MODULE [ ModuleName ]
+\end{verbatim}
+In the dialog mode, you may use names of program objects belonging to the current
+module without qualification. Similarly, in the batch mode, when execution of
+the program stops and control is returned to the debugger, the current component and
+module are set according to the value of the instruction pointer.
+The \verb'MODULE' statement explicitly changes the current module.
+If \verb'ModuleName' is not specified, unqualified identifiers recognition is disabled.
+} % \samepage
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+116 & Program not loaded \\
+213 & Module not found
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    MODULE Dry
+    MODULE
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{WATCH}{Add watch expression}\label{batch:WATCH}
+\begin{verbatim}
+    WATCH Expression { "," Expression }
+\end{verbatim}
+The \verb'WATCH' statement is used to fill up the list of
+\See{watch expressions}{}{dialog:data:watches},
+which is available in the dialog mode. It has no effect in the batch mode,
+and usually precedes the \verb'DIALOG' statement.
+
+Each \verb'Expression' is checked for correctness. If \verb'Expression' may not
+be evaluated in the current context, a warning will be issued.
+} % \samepage
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+116 & Program not loaded \\
+918 & Wrong expression in current context
+\end{tabular}
+\end{flushleft}
+} % \samepage
+
+{\samepage
+{\bf Example}
+\begin{verbatim}
+    WATCH Dry.Char1Glob
+    WATCH Dry.Array2Glob[1],Memory.Free<=128
+\end{verbatim}
+} % \samepage
+
+\pagebreak[1]
+{\samepage
+\Frame{\#IMPORT}{Control file import}\label{batch:IMPORT}
+\begin{verbatim}
+    #IMPORT ControlFile
+\end{verbatim}
+XD control files are likely to have some common routines,
+which perform, for instance, register dump, or heap tracing.
+It is possible to collect these routines in separate control files and
+import them into any control file which requires the routines.
+} % \samepage
+
+The \verb'#IMPORT' directive causes the debugger to load the
+specified \verb'ControlFile' into memory and add its labels
+to the global table of labels.
+
+After the debugger loads the control file specified on the
+command line, it scans it for labels and \verb'#IMPORT' directives,
+and recursively repeats this procedure for all imported
+control files.
+
+{\bf Note:} This directive was intentionally named \verb'#IMPORT',
+not \verb'#INCLUDE', in order to emphasis the fact that the
+contents of the \verb'ControlFile' are {\it not} substituted
+instead of the directive.
+
+When XD reaches the end of a control file, it terminates regardless
+of whether that file was imported or specified on the command line.
+So make sure the imported control files are ended with an explicit
+control transfer statement, such as \verb'RETURN' or \verb'GOTO'.
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+007 & Batch name missed.                 \\
+009 & Too many nested packages (16)      \\
+010 & Package $<$...$>$ recursively imported \\
+011 & Incorrect package name $<$...$>$       \\
+014 & Imported package $<$...$>$ not found.  \\
+018 & Unknown directive $<$...$>$.           \\
+111 & Label '$<$...$>$' already defined      \\
+112 & Incorrect label                    \\
+113 & Label matches reserved word
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}   % !!! A better example
+\begin{verbatim}
+    #IMPORT PrintRegisters
+    #IMPORT SetBreakpoints
+    #IMPORT ErrorHandler
+\end{verbatim}
+} % \samepage
+
+\ifcomment
+
+{\samepage
+\Frame{}{}
+\begin{verbatim}
+
+\end{verbatim}
+
+} % \samepage
+
+{\samepage
+{\bf Possible Errors}
+\begin{flushleft}
+\begin{tabular}{ll}
+
+\end{tabular}
+\end{flushleft}
+} % \samepage
+\pagebreak[1]
+{\samepage
+{\bf Example}
+\begin{verbatim}
+
+\end{verbatim}
+} % \samepage
+
+\fi
+
+

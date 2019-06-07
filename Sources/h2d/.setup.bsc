@@ -1,0 +1,10 @@
+# Static files to be copied into external workspace 
+# Target must be relative to the root of an external workplace
+# Note: target subfolder must end with symbol "\" 
+# <mode> ::= "" | "work" | "release"
+
+# <source>                <target>        <mode>
+workplace\h2d.msg         bin\
+workplace\h2d.cfg         bin\
+workplace\h2d.red         bin\
+                             

@@ -1,0 +1,338 @@
+\chapter{Managing libraries}
+\label{xlib}
+
+Libraries are files of a special format that are used to collect
+object modules or information required to tune import from DLLs
+(so called "import libraries").
+
+The XDS Library Manager (also referred to as XLIB in the documentation),
+is intended for library creation and management.
+
+\section{Starting XLIB}
+\label{xlib:start}
+
+To invoke XLIB, enter \verb'"xlib"' with necessary arguments
+at the command prompt. An argument may be either an option,
+a file name, a command, or a response file name. The
+command line syntax varies among \See{operation modes}{}{xlib:modes}.
+
+Being invoked without additional arguments,
+XLIB outputs a brief help message.
+
+\subsection{Options}
+
+Options may be placed on the command line in arbitrary order.
+An option consists of the slash ("\verb'/'") character immediately
+followed by an option name. Some options also have string values
+delimited with the "\verb'='" character.
+
+The following table lists XLIB options along with their meanings and
+default values.
+
+\begin{tabular}{ll}
+\bf Option   & \bf Meaning \\
+\hline
+\tt /IMPLIB         & \See{Create an import library}{}{xlib:modes:import} \\
+\tt /EDF            & \See{Create an export definition file}{}{xlib:modes:export} \\
+\tt /LIST           & \See{List contents of a given library}{}{xlib:modes:list} \\
+\tt /HELP           & Output a brief help text and terminate \\
+\tt /NOLOGO         & Suppress logo \\
+\tt /NOBAK          & Do not backup files before overwriting them \\
+\tt /NEW            & Always create a new library \\
+\tt /PREFIX=String  & \See{Set prefix of imported names}{}{xlib:modes:import} \\
+\tt /POSTFIX=String & \See{Set postfix of imported names}{}{xlib:modes:import} \\
+\tt /USEORD         & Use ordinal numbers (see \ref{xlib:modes:import} and \ref{xlib:modes:export})
+\end{tabular}
+
+If XLIB encounters an unknown option, or an option that has no
+effect in a given operation mode, it produces a warning message.
+
+\subsection{File names}
+
+File names appearing on XLIB command line are regular file
+names. Each name may be prefixed with directory path.
+If an extension is omitted, defaults are used:
+
+\begin{tabular}{ll}
+\bf Type         & \bf Extension \\
+\hline
+Library                & \tt .lib \\
+Object module          & \tt .obj \\
+DLL                    & \tt .dll \\
+Export definition file & \tt .edf \\
+Import definition file & \tt .idf
+\end{tabular}
+
+\subsection{Response files}
+
+A response file argument is the "\verb'@'" character immediately
+followed by a response file name.
+A response file is a text file that contains a number
+of XLIB arguments, one on each line. Any type of argument is allowed
+except another response file.
+
+{\bf Note:} The options /IMPLIB, /LIST, /EDF, /HELP, and /NOLOGO
+have no effect when used in a response file.
+
+\subsection{Commands}
+\label{xlib:start:commands}
+
+A command is a non-empty set of command symbols
+("\verb'+'","\verb'-'", and "\verb'*'")
+followed by the name of the object module or file which is the
+subject of the command. Relational order of command symbols has no meaning.
+
+Note that commands are valid for the
+\See{library management operation mode}{}{xlib:modes:management} only.
+
+\section{Operation modes}
+\label{xlib:modes}
+
+XLIB has four operation modes, switched by
+/IMPLIB, /LIST, and /EDF options as follows:
+
+\begin{tabular}{ll}
+\bf Option & Mode \\
+\hline
+default  & Library management \\
+/IMPLIB  & Import library creation \\
+/LIST    & Library contents listing \\
+/EDF     & Export info extraction
+\end{tabular}
+
+Details of operation modes are given in the following sections.
+
+\subsection{Library management}
+\label{xlib:modes:management}
+
+\begin{verbatim}
+    xlib { option } libname[.lib] { command }
+    command = { +|-|* }module[.obj] | @ResponceFileName
+\end{verbatim}
+
+In this mode XLIB acts as a proper library manager. The first
+argument which does not represent an option setting is treated as
+the name of the library file. If an extension is omitted, the
+default "\verb'.lib'" is added. If the /NEW option is not set,
+XLIB supposes that the given library file already exists and is
+valid, otherwise it produces a warning and creates a new library file.
+
+Arguments following a library name are treated as
+\See{commands}{}{xlib:start:commands}.
+Each command represents a set of actions and
+a name of an object module or library.
+
+Valid actions are add, remove, and extract, denoted by the
+"\verb'+'", "\verb'-'" and "\verb'*'" characters respectively.
+When more than one action is specified, XLIB performs them in the following order:
+
+\begin{enumerate}
+\item extract
+\item remove
+\item add
+\end{enumerate}
+
+For instance, to replace the module "\verb'a.obj'"
+you may use either "\verb'-+a'" or
+"\verb'+-a'" command.
+
+If all commands were successfully executed, XLIB checks the resulting
+library for duplicate names, producing warnings if necessary.
+
+Finally, the new library is written to disk. The original library file,
+if existed before XLIB execution, is saved by changing its
+extension to \verb'.BAK', unless the /NOBAK
+option is specified.
+
+\subsection{Import library creation}
+\label{xlib:modes:import}
+
+\begin{verbatim}
+    xlib /IMPLIB { option } libname[.lib] { File }
+    File = filename([.dll]|.exe|.idf) | @ResponceFileName
+\end{verbatim}
+
+In this mode XLIB produces an \See{{\em import library}}{}{dll:using:load-time}.
+Libraries of this kind contain information
+which is used by linkers to tune up import sections in
+executable files (see \ref{dll:using:load-time}).
+Import libraries are commonly used instead of definition files.
+
+To switch XLIB to import librarian mode, specify the /IMPLIB
+option on the command line.
+
+In this mode, XLIB treats the first given argument that does not
+represent an option setting as the name of the output library file.
+If an extension is omitted, the default \verb'.lib' is added. XLIB
+always creates a new library file. If the output file
+does already exist, XLIB saves it by changing its extension
+to "\verb'.bak'", unless the /NOBAK option is set.
+
+Other arguments that do not represent option settings are treated
+as names of source files. XLIB may retrieve information required
+to create an import library from two kinds of sources, namely from
+an executable (EXE or DLL) or from an
+\See{import definition file}{}{xlib:modes:import:IDF}.
+The type of source is determined by file extension,
+where "\verb'.exe'" stands for an executable,
+"\verb'.dll'" stands for a dynamically linked library,
+and "\verb'.idf'" stands for an import definition file.
+If an extension is omitted, "\verb'.dll'" is added by default.
+
+See \ref{xlib:formats} for details of supported formats.
+
+In general, an import library sets correspondence between
+entry names (e.g. names under which entries may be referenced
+in other executable modules) and pairs consisting of a DLL name
+and an internal name or ordinal number of an exported entry.
+It may be necessary to mangle entry names to fit naming
+convention of a programming system. XLIB provides a simple
+mechanism for mangling. It uses value of
+the /PREFIX option as a prefix and value of the
+/POSTFIX option as a postfix for all entry names it produces.
+
+For example, being invoked with
+
+\verb'    /PREFIX=_IMP_ /POSTFIX=_EXP_'
+
+XLIB will mangle the internal name "\verb'OneEntry'" to
+the entry name "\verb'_IMP_OneEntry_EXP_'".
+
+By default, XLIB creates import libraries which use import by name.
+The /USEORD option forces it to use import by ordinal.
+See \ref{dll:overview} and \ref{dll:using:load-time} for more
+information.
+
+After you have created an import library, you may use XLIB on it to
+add object modules which you want to be available to a linker when you
+link with that import library.
+
+\subsubsection{Import definition files}
+\label{xlib:modes:import:IDF}
+
+Below is the description of the import definition files format.
+
+\begin{verbatim}
+    File = Import ";" { Import ";" }
+    Import = FROM Module IMPORT Entry { "," Entry }
+    Entry = InternalName [ AS EntryName ]
+\end{verbatim}
+
+\verb'Module' is a name of an executable module (DLL or EXE).
+\verb'InternalName' is the entry name as it appears within that module.
+Finally, \verb'EntryName' is the entry name as it is to be known to
+other modules. If the \verb'AS EntryName' clause is omitted, the entry is
+exported under its internal name.
+
+Lines starting with "\verb'%'" are treated as comments and ignored.
+
+Example of an import definition file:
+
+\begin{verbatim}
+%
+%  Sample Import Definition File
+%  Copyright (c) 1997 XDS Ltd.
+%
+FROM KERNEL32.DLL IMPORT
+  CreateFileA
+  ,WriteFile
+  ,ReadFile
+  ,DeleteFileA
+  ,MoveFileA
+  ,SetFilePointer
+  ,SetSystemTime
+  ,RtlFillMemory AS FillMemory
+  ;
+FROM USER32.DLL IMPORT
+  ShowWindow
+  ,ShowWindowAsync
+  ,TileWindows
+  ;
+% end of the sample import definition file
+\end{verbatim}
+
+\subsection{Library contents listing}
+\label{xlib:modes:list}
+
+\verb'    xlib /LIST { option } libname[".lib"]'
+
+In this mode XLIB outputs a library contents listing.
+
+To switch XLIB to the library contents mode, specify the /LIST option
+on the command line.
+
+In this mode XLIB treats the first given argument as the input library
+file name. If extension is omitted, the default "\verb'.lib'" will be
+added. The library must exist and must be in correct format,
+otherwise XLIB will produce an error report.
+
+Other arguments that are not option settings are ignored.
+
+Library contents are printed as follows:
+
+\begin{verbatim}
+    Library "libxds.lib"
+      MODULE src\isoimp\chancons.mod
+        ChanConsts_BEGIN
+      MODULE src\isoimp\charclas.mod
+        CharClass_IsControl
+        CharClass_IsLetter
+        CharClass_IsLower
+        CharClass_IsNumeric
+        CharClass_IsUpper
+        CharClass_IsWhiteSpace
+        CharClass_BEGIN
+     .  .  .
+\end{verbatim}
+
+\subsection{Export info extraction}
+\label{xlib:modes:export}
+
+\verb'    xlib /EDF { option } edfname[.edf] dllname[.dll]'
+
+If this mode, XLIB reads export information from the given DLL and
+creates an \See{export definition file}{}{link:EDF} (EDF),
+which may then be edited and used when the DLL is rebuilt
+(See \ref{dll:create:export}).
+
+If the option /USEORD is specified, the output EDF will contain
+\See{ordinal numbers}{}{xlib:modes:import}.
+
+The first non-option argument is treated as the output EDF name.
+If no extension is specified, "\verb'.edf'" is assumed.
+The second argument must be a DLL name.
+If an extension is omitted, the default "\verb'.dll'" is assumed.
+
+\section{Supported formats}
+\label{xlib:formats}
+
+Here the input and output formats currently supported by XLIB are
+discussed.
+
+\subsection{Output library format}
+
+Currently XLIB produces output libraries in OMF format only.
+This format is compatible with most of available linkers. The
+important exception are Microsoft linkers which expect
+libraries to be in COFF format.
+
+COFF format will be supported later.
+
+\subsection{Input object file format}
+
+Currently XLIB expects all input object files to be in OMF
+format. Many modern compilers, produce object files in this format.
+The important exception are MSVC (v2.0 and higher) compilers
+by Microsoft which produce output in COFF format.
+XDS compilers may produce object files in both formats
+(see the \OERef{OBJFMT} option).
+
+COFF format will be supported later.
+
+\subsection{Input executable format}
+
+XLIB may retrieve information for import libraries
+from executables (either DLL or EXE) which are in the PE (Portable
+Executable) format, used for 32-bit executables in Windows.
+No other formats are planned to be supported.
+

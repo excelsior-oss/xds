@@ -1,0 +1,954 @@
+\chapter {Linking your program}
+\label{link}
+
+ Once you have the object modules for your program produced by the
+ compiler, you have to use a linker to link them together with
+ XDS runtime libraries and create an executable (EXE or DLL) file.
+ You may use XDS Linker (XLINK), described in this chapter,
+ or a \See{third-party linker}{}{link:third-party}
+ which accepts input object files and libraries in OMF
+ or COFF format.
+
+ The compiler may invoke a linker for you seamlessly (see \ref{link:seamless}).
+
+\section{Starting the linker}
+
+ In order to link your program you have to invoke the linker specifying
+ its input on the command line:
+
+\verb'    xlink [options] [@responsefile] {filename}'
+
+ Linker input consists of options and file name parameters.
+ Command line options have to start with either \verb'"-"' or \verb'"/"' character.
+ Option names are case insensitive; some of them allow shortening.
+ File name parameters are used to specify object, library, and resource
+ files to be linked.
+
+ {\bf Example:}
+
+ \verb'    xlink /sys=c /name=hello hello.obj d:\xds\lib\x86\libxds.lib'
+
+\subsection{Using response files}
+
+ Instead of specifying all linker input on the command line, you may put
+ some options and file name parameters into a response file. You may combine
+ response files with options and parameters on the command line.
+ Options in a response file have to be separated by any whitespace characters
+ (including line breaks).
+
+ When you invoke the linker, use the following syntax:
+
+\verb'    xlink {@responsefile}'
+
+ where \verb'responsefile' is the name of the response file.
+
+ The "\verb'@'" symbol indicates that the file is a response file. If the file is not
+ in the working directory, specify the path for the file as well as the file
+ name. If the linker cannot find a response file, it stops linking.
+
+ You can begin using a response file at any point on the linker command
+ line or in another response file.
+
+ Options can appear anywhere in a response file. If an option is not
+ valid, the linker generates an error message and stops linking.
+
+ The semi-colon character (\verb'";"') at the beginning of a line forces
+ the linker to treat it as a comment and ignore the whole line.
+
+\subsubsection{Sample response file}
+
+\begin{verbatim}
+    ; XLINK response file
+    /sys=VIO
+    /stack=100000
+    /name=runme.exe
+    commands.obj
+    echo.obj
+    genecho.obj
+    nodes.obj
+    types.obj
+    runme.obj
+    d:\xds\lib\x86\xstart.lib
+    d:\xds\lib\x86\libxds.lib
+    d:\xds\lib\x86\os2face.lib
+\end{verbatim}
+
+\subsection{Seamless linking}
+\label{link:seamless}
+
+ The compiler, when invoked in the \See{PROJECT mode}{}{xc:modes:project},
+ may automatically produce a response file and invoke the linker.
+ This is the default behaviour after \XDS{} installation.
+
+\havetowrite more in readme files. !!!
+
+\section{Input and output}
+
+\subsection{Specifying input files}
+
+ To specify an input object, library, or resource file,
+ pass its name to \verb'xlink'
+ as a command line parameter or include its name into a response file.
+ If a specified file name has no extension, .OBJ is assumed, so ensure
+ that you specify library and resource files with extensions.
+
+% !!! How the linker searches for files?
+
+\subsection{Specifying output format}
+
+ XLINK supports two output formats - Linear Executable Module Format (LX), used in OS/2,
+ and Portable Executable Format (PE), used in Windows.
+ Default is a format native to the host system. In order to explicitly specify the output
+ format, use the option /IMAGEFORMAT=format, where format can be PE or LX.
+
+ The linker may produce executable modules (EXE) and dynamic link libraries
+ (DLL) in both LX and PE formats.
+ An EXE file can be executed directly, for instance, by typing its
+ name at the command prompt. In contrast, a DLL is executed when
+ it is loaded by other processes, and cannot be invoked independently.
+
+\subsection{Producing an executable module}
+\label{link:inout:exetype:exe}
+
+ The linker produces executable (EXE) files by default.
+
+ To reduce the size of the EXE file and improve its performance, use the
+ following options:
+
+% !!! BASE should always be 10000 under OS/2
+
+\begin{itemize}
+\item /ALIGN=value to set the alignment factor in the output file. Set
+       value to smaller factors to reduce the size of the executable, and to
+       larger factors to reduce load time for the executable. By default, the
+       alignment is set to 0x200.
+\item /BASE=value to specify the load address for the executable.
+       By default, the load address is set to 0x00010000 for LX format
+       to 0x00400000 for PE format.
+\item /SMART to detect unreachable code and omit it in the output file.
+\item /FIXED to omit relocation information, which can result in a smaller
+      executable.
+\end{itemize}
+
+  Use the /NAME option to specify an output file name. If you do not specify an
+  extension, the linker will automatically append the extension \verb'.EXE' to
+  the name you provided. If you omit the /NAME option,
+  the linker will produce an .EXE file named after first .OBJ file specified.
+
+  Use the /ENTRY option to explicitly set an entry point for the executable and
+  the /NOENTRY option to set no entry point.
+
+\subsection{Producing a dynamic link library}
+\label{link:inout:exetype:dll}
+
+ A dynamic link library (DLL) contains executable code for common
+ functions, just as an ordinary library (.LIB) file does. However, when you
+ link with a DLL (directly or using an \Ref{import library}{dll:using:loadtime}),
+ the code in the DLL is not copied into the executable (EXE) file. Instead,
+ only the import definitions for DLL functions are copied. At run time,
+ the dynamic link library is loaded into memory, along with the EXE file.
+
+ To produce a DLL as output, use the /DLL option. If you are using
+ an export definition file (.EDF), specify its name in that same option
+ as /DLL=edfname. For more information on using .EDF files, see section
+ \ref{link:EDF}.
+
+ To reduce the size of the DLL and improve its performance, use the
+ following options:
+
+\begin{itemize}
+\item  /ALIGN=value to set the alignment factor in the output file. Set
+       value to smaller factors to reduce the size of the executable, and to
+       larger factors to reduce load time for the executable. By default, the
+       alignment is set to 0x200.
+\item  /BASE=value to specify the load address for the DLL.
+       By default, the load address is set to 0x00010000 for LX format
+       to 0x00400000 for PE format.
+\item  /SMART to detect unreachable code and omit it in the output file.
+\end{itemize}
+
+  Use the /EXPORT command line option or an
+  \See{export definition file}{}{link:EDF} to explicitly specify the
+  functions and data you want to make available to other executables.
+
+  Once you have built a DLL, you may produce an executable that
+  links to that DLL. This can be done in two ways:
+\begin{description}
+\item[{\bf Using the DLL itself.}] \mbox{} \\
+      If you want to produce a PE executable, you can specify a DLL
+      name on the command line as a file name parameter,
+      but make sure that the specified extension is .DLL.
+% ??? What about LX?
+\item[{\bf Using an import library.}] \mbox{} \\
+      Use the \Ref{XLIB utility}{xlib} to create an import library
+      for one or more DLLs. See \ref{xlib:modes:import} for
+      more information
+\end{description}
+
+  If you do not specify an extension for the output file name in the /NAME
+  option, the linker automatically adds the extension .DLL to the name you
+  provide. If you omit the /NAME option and there is no
+  specification in any object or library file, the linker generates a .DLL file
+  named after the first object file specified.
+
+  Use the /ENTRY option to explicitly set DLL initialization routine
+  and the /NOENTRY option to avoid setting any initialization
+  routine.
+
+\subsection{Including debug information}
+\label{link:inout:gendebug}
+
+ Use the /DEBUG option to include symbolic debug information into the output file,
+ to enable debugging at the source level, profiling, and      % !!! \ref
+ comprehensive \See{call history dump}{}{rts:history}.
+ The linker will embed symbolic data and line
+ number information in the output file. The linker recognizes debug information
+ in two formats - HLL4 and CodeView. Output format is always the one used in
+ input object and library files. If there are input files containing
+ debug information in different formats, a warning message is produced and debug
+ information is not included into the output file.
+
+ {\bf Note:} Linking with /DEBUG increases the size of the output file.
+
+\subsection{Generating a map file}
+\label{link:inout:genmap}
+
+ Specify the /MAP option to generate a map file, which lists object modules in
+ your output file and symbol information. If you do not specify a name for the
+ map file, the map file takes the name of the output file with extension .MAP.
+
+\subsection{Linker return codes}
+
+ The linker has the following return codes:
+
+\ifonline
+\begin{tabular}{ll}
+\else
+\begin{tabular}{ll}
+\fi
+\bf  Code & \bf Meaning \\
+\hline
+  0       & Linking completed successfully. The linker detected no errors. \\
+  255     & The linker detected errors during the linking process.
+\end{tabular}
+
+\section{Linking with library files}
+
+\subsection{Linking with static libraries}
+
+ The linker uses static library (.LIB) files to resolve external references from
+ the code in the object (.OBJ) files. When the linker finds a function or data
+ reference in an .OBJ file that requires a module from a library, the linker
+ links the module from the library to the output file (for more details see
+ the \LORef{SMART} option).
+
+\subsection{Linking with dynamic link libraries}
+
+\subsubsection{Using the DLL itself}
+
+  If you want to produce a PE executable then you can specify a DLL
+  name on the command line as a file name parameter, but make sure that
+  specified extension is .DLL.
+
+\subsubsection{Using an import library}
+
+  An import library contains information about procedures and data
+  exported by the DLL. Use the XLIB utility to create
+  an import library, as described in \ref{xlib:modes:import}.
+
+  You may then use the import library with the linker, when you generate
+  executables that reference entities from the DLL. Enter the import library name
+  as a file name parameter on the command line or in a response file.
+
+\section{Setting linker options}
+\label{link:options}
+
+\subsection{Setting options on the command line}
+
+ You can specify options anywhere on the command line. Separate options
+ with a space or tab character.
+
+ For example, to link an object file with the /MAP option, enter:
+
+\verb'    XLINK /MAP myprog.obj'
+
+\subsection{Setting numeric arguments}
+\label{link:set_option:set_numeric}
+
+ Some linker options take numeric arguments. The linker accepts numeric arguments
+ in special syntax. You can specify numbers in any of the following forms:
+
+\ifonline
+\begin{tabular}{ll}
+\else
+\begin{tabular}{lp{9 cm}}
+\fi
+  Decimal         & Any number not prefixed with x or 0x is a decimal number. \\
+                  & For example, 1234 is a decimal number. \\
+  Hexadecimal     & Any number prefixed with x or 0x is a hexadecimal number. \\
+                  & For example, 0x1234 is a hexadecimal number. \\
+  K or M suffixes & Any number (either decimal or hexadecimal) is multiplied \\
+                  & by 1024 if it is ended by suffix K and by 1048576 (1024 * 1024) \\
+                  & if it is ended by suffix M. For example, 1K is 1024 and \\
+                  & 1M is 1048576. \\
+\end{tabular}
+
+\subsection{Options reference}
+
+\ifonline\else
+\begin{tabular}{ll}
+\bf Option & \bf Meaning \\
+\hline
+\LORef{ALIGN} & Alignment factor \\
+\LORef{BASE} & Load address \\
+\LORef{DEBUG} & Include debug info \\
+\LORef{DLL} & Produce dynamic link library \\
+\LORef{ENTRY} & Entry point \\
+\LORef{NOENTRY} & No entry point \\
+\LORef{EXPORT} & Define exported entities \\
+\LORef{EXTRAALIGNMENT} & Align at 16-bytes boundary \\
+\LORef{FIXED} & Omit relocation information \\
+\LORef{HEAPCOMMIT} & Heap commit size \\
+\LORef{HEAPSIZE} & Heap size \\
+\LORef{IMAGEFORMAT} & Output file format \\
+\LORef{MAP} & Produce map file \\
+\LORef{NAME} & Output file name \\
+\LORef{SMART} & Enable smart linking \\
+\LORef{NOSMART} & Disable smart linking \\
+\LORef{STACKCOMMIT} & Stack commit size \\
+\LORef{STACKSIZE} & Stack size \\
+\LORef{STUB} & Stub file \\
+\LORef{SYS} & Application type \\
+\LORef{WARN} & Warnings severity level
+\end{tabular}
+\fi
+
+\ifonline\else
+\begin{description}
+\fi
+
+\LinkOpt{ALIGN}{Alignment factor}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /ALIGN=factor \\
+\bf Default: & \tt /ALIGN=512
+\end{tabular}
+
+ Use the /ALIGN option to set the alignment factor in the output EXE or DLL file.
+
+ The alignment factor determines where pages in an executable (EXE or DLL) file
+ start. From the beginning of the file, start of each page is aligned at
+ a multiple (in bytes) of the alignment factor. The alignment factor must
+ be a power of 2, from 1 to 4096.
+
+ The default alignment is 512 bytes.
+
+\LinkOpt{BASE}{Load address}
+\begin{tabular}{ll}
+\bf Syntax: & \tt /BASE=address \\
+\bf Default:& {\tt /BASE=0x00010000} for LX format \\
+            & {\tt /BASE=0x00400000} for PE format
+\end{tabular}
+
+ Use the /BASE option to specify the preferred load address for the module.
+
+\LinkOpt{DEBUG}{Include debug info}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /D[EBUG] \\
+\bf Default: & do not include debug info
+\end{tabular}
+
+ Use the /DEBUG option to include debug information in the output file,
+ enabling it to be debugged at the source level.
+ The linker will embed symbolic data
+ and line number information in the output file.
+
+ {\bf Note:} Linking with /DEBUG increases size of the output file.
+
+\LinkOpt{DLL}{Produce dynamic link library}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /DLL[=edfname] \\
+\bf Default: & build an EXE file
+\end{tabular}
+
+ Use the /DLL option to identify the output file as a dynamic link library (.DLL).
+ To use export definition file (.EDF) specify its name after the equals sign:
+ /DLL=edfname. For more information on producing DLLs, see \ref{link:inout:exetype:dll}.
+
+ If you do not specify /DLL the linker will produce an EXE file.
+
+\LinkOpt{ENTRY}{Entry point}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /ENTRY=identifier \\
+\bf Default: & use the default entry point
+\end{tabular}
+
+ Use the /ENTRY option to explicitly specify an entry point for the EXE module or an
+ initialization routine for the .DLL module. If there is an entry point in any object
+ or library file being linked, it is ignored and a warning message is issued.
+
+\LinkOpt{NOENTRY}{No entry point}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /NOENTRY \\
+\bf Default: & use the default entry point
+\end{tabular}
+
+ Use the /NOENTRY option to avoid setting any entry point or initialization routine.
+
+\LinkOpt{EXPORT}{Define exported entities}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /EXP[ORT]=external[.ordinal][=internal],... \\
+\bf Default: & export all
+\end{tabular}
+
+ Use the /EXPORT option to specify exported data and functions on the command line.
+
+\verb'    xlink . . . /EXPORT=Entry.1=Main_Entry,Main_BEGIN.2'
+
+\LinkOpt{EXTRAALIGNMENT}{Align at 16-bytes boundary}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /EXTRA[ALIGNMENT] \\
+\bf Default: & do not align at 16-bytes boundary
+\end{tabular}
+
+ Use the /EXTRAALIGNMENT option to align all at a 16-bytes boundary, if necessary.
+
+\LinkOpt{FIXED}{Omit relocation information}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /FIXED \\
+\bf Default: & include relocation information
+\end{tabular}
+
+ Use the /FIXED option to force the linker to omit relocation information
+ in the output file.
+
+\LinkOpt{HEAPCOMMIT}{Heap commit size}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /HEAPCOMMIT=number \\
+\bf Default: & \tt /HEAPCOMMIT=0x00001000
+\end{tabular}
+
+ Use the /HEAPCOMMIT option to specify the heap commit size of your program.
+
+\LinkOpt{HEAPSIZE}{Heap size}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /HEAP[SIZE]=number \\
+\bf Default: & \tt /HEAPSIZE=0x00002000
+\end{tabular}
+
+ Use the /HEAPSIZE option to specify the maximum heap size of your program.
+
+\LinkOpt{IMAGEFORMAT}{Output file format}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /IMAGE[FORMAT]=format \\
+\bf Default: & {\tt /IMAGE[FORMAT]=LX} under OS/2 \\
+             & {\tt /IMAGE[FORMAT]=PE} under Windows \\
+\end{tabular}
+
+ Use the /IMAGEFORMAT option to specify output executable file format.
+ Format can be PE or LX. For more information, see \ref{link:inout:exetype:exe}.
+
+\LinkOpt{MAP}{Produce map file}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /M[AP][=filename] \\
+\bf Default: & do not generate map
+\end{tabular}
+
+  Use the /MAP option to generate map file. For more information see
+  \ref{link:inout:genmap}.
+
+\LinkOpt{NAME}{Output file name}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /NAME=filename \\
+\bf Default: & use the first linked file name
+\end{tabular}
+
+  Use the /NAME option to explicitly specify the output file name. If
+  \verb'filename' is not specified, the linker will name the
+  output file after the first linked file.
+
+\LinkOpt{SMART}{Enable smart linking}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /SMART \\
+\bf Default: & \tt /SMART
+\end{tabular}
+
+ Use the /SMART option to enable smart linking for subsequent files.
+
+\LinkOpt{NOSMART}{Disable smart linking}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /NOSMART \\
+\bf Default: & \tt /SMART
+\end{tabular}
+
+ Use the /NOSMART option to disable smart linking for subsequent files.
+
+\LinkOpt{STACKCOMMIT}{Stack commit size}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /STACKCOMMIT=number \\
+\bf Default: & \tt /STACKCOMMIT=0x00002000
+\end{tabular}
+
+ Use the /STACKCOMMIT option to specify the stack commit size of your program.
+
+\LinkOpt{STACKSIZE}{Stack size}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /STACK[SIZE]=number \\
+\bf Default: & \tt /STACKSIZE=0x00010000
+\end{tabular}
+
+ Use the /STACKSIZE option to specify the maximum stack size of your program.
+
+\LinkOpt{STUB}{Stub file}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /STUB=filename \\
+\bf Default: & no stub file % ???
+\end{tabular}
+
+ Use the /STUB option to specify the stub file for your program.
+
+\LinkOpt{SYS}{Application type}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /SYS=C | W [,number [.number]] \\
+\bf Default: & \tt /SYS=C,4.0
+\end{tabular}
+
+ Use the /SYS option to force the linker to create console or windows application
+ and specify major and minor OS version.
+
+\LinkOpt{WARN}{Warnings severity level}
+\begin{tabular}{ll}
+\bf Syntax:  & \tt /WARN=(0|1|2|3) \\
+\bf Default: & \tt /WARN=2
+\end{tabular}
+
+ Use the /WARN option to set the severity level of warnings the linker produces and
+ that causes the warning count to increment. See \ref{xlink:errors}
+ for the description of error and warning messages.
+
+ You can set the severity levels from 0 up to 3.
+
+\ifonline\else
+\end{description}
+\fi
+
+\section{Using export definition files}
+\label{link:EDF}
+\index{export definition files}
+
+{\em Export definition files (EDF)} are used to specify which
+procedures and variables are to be visible outside a DLL.
+EDF also allows arbitrary external names and ordinal numbers
+to be assigned to those procedures and variables.
+
+\subsection{Export definition file syntax}
+\label{link:EDF:syntax}
+
+ An .EDF file begins with the LIBRARY section:
+
+\verb'     LIBRARY Identifier["." Identifier]'
+
+ where \verb'Identifier' is defined as follows:
+
+\verb!     identifier = (letter | "_") { letter | digit | "_" | "'")!
+
+ LIBRARY section is optional and specified library name is unused.
+ After it, the DESCRIPTION section goes:
+
+\verb!     DESCRIPTION [ '"' Text '"' ]!
+
+ DESCRIPTION section is also optional, but if it is present, the
+ specified \verb'Text' will be written to the output file.
+
+ After the DESCRIPTION section, the EXPORTS section goes:
+
+\verb'    EXPORTS' \\
+\verb'        { External [ "=" Internal ] [ "@" Ordinal ] }'
+
+ The EXPORTS section is used to define the names of procedures and
+ variables exported from the DLL.
+
+\begin{description}
+\item[{\tt External}] \mbox{} \\
+      an external name of an exported object (procedure or variable), i.e.
+      the name which has to be used in other executable modules
+      to reference that object.
+\item[{\tt Internal}] \mbox{} \\
+      an internal name of that object, i.e. the name
+      under which it appears in an object file. By default, the linker
+      assumes that it is the same as \verb'External'.
+\item[{\tt Ordinal}] \mbox{} \\
+      a decimal number specifying ordinal position of the object in the
+      module definition table. If it is not specified, the linker will
+      assign an ordinal number automatically.
+\end{description}
+
+ The EXPORTS section is optional. % ???
+
+\section{Linker error and warning messages}
+\label{xlink:errors}
+
+ 0\\
+ Unable to open file {\it file name}\\
+ {\bf Explanation:} The linker can not open a file. It may be locked by
+ another process or does not exist, path may be invalid or there is no
+ enough room on used drive.\\
+ {\bf Action:} Check possible reasons and relink.
+
+ 1\\
+ Unable to write file {\it file name}\\
+ {\bf Explanation:} The linker can not write a file. Possible reason is
+ lack of enough room on used drive.\\
+ {\bf Action:} Check it and relink.
+
+ 2\\
+ Unable to read file {\it file name}\\
+ {\bf Explanation:} \\
+ {\bf Action:}
+
+ 3\\
+ Insufficient memory\\
+ {\bf Explanation:} There is no enough memory to link successfully.\\
+ {\bf Action:} Close some applications and relink.
+
+ 5\\
+ Invalid system {\it argument}\\
+ {\bf Explanation:} Option /SYS is set to invalid value (different from 'W'
+ or 'C').\\
+ {\bf Action:} Check option setting validity and relink.
+
+ 6\\
+ Invalid OS version {\it argument}\\
+ {\bf Explanation:} OS version is set to invalid value (see option /SYS).\\
+ {\bf Action:} Check option setting validity and relink.
+
+ 7\\
+ Invalid number {\it argument}\\
+ {\bf Explanation:} {\it Argument} is not valid number (see
+ \ref{link:set_option:set_numeric}). \\
+ {\bf Action:} Check argument and relink.
+
+ 8\\
+ Invalid parameter - {\it argument}\\
+ {\bf Explanation:} Specified parameter is not valid.\\
+ {\bf Action:} Check parameter and relink.
+
+ 9\\
+ Invalid /ENTRY option\\
+ {\bf Explanation:} Entry point name is not specified in option /ENTRY setting.\\
+ {\bf Action:} Check the specification and relink.
+
+ 10\\
+ Invalid {\it option} value - {\it value}\\
+ {\bf Explanation:} {\it Option} is set to invalid {\it value}.\\
+ {\bf Action:} Check setting and relink.
+
+ 11\\
+ Unrecognized option {\it argument} - option ignored\\
+ {\bf Explanation:} Specified option is not recognized by the linker and
+ ignored.\\
+ {\bf Action:} Check option setting and relink.
+
+ 12\\
+ No file(s) specified\\
+ {\bf Explanation:} There are no files to link.\\
+ {\bf Action:} Check and relink.
+
+ 13\\
+ No DLL initializing routine\\
+ {\bf Explanation:} DLL initializing routine is not specified
+ or /NOENTRY option is set and there is no export from created library.\\
+ {\bf Action:} Check the specification or setting and relink.
+
+ 14\\
+ No program entry point\\
+ {\bf Explanation:} Program entry point is not specified or /NOENTRY option
+ is set.\\
+ {\bf Action:} Check the specification or setting and relink.
+
+ 15\\
+ Name {\it name} was declared in {\it module} and in {\it module}\\
+ {\bf Explanation:} There are declarations of {\it name} in two various
+ modules\\
+ {\bf Action:} Investigate the reasons, correct and relink.
+
+ 16\\
+ Name {\it name} was redeclared in {\it module}\\
+ {\bf Explanation:} {\it Name} was redeclared in {\it module}.\\
+ {\bf Action:} Investigate the reasons, correct and relink.
+
+ 17\\
+ Illegal RES file {\it file name} - must be 32-bit Microsoft format\\
+ {\bf Explanation:} Specified resource file consists of 32-bit Microsoft
+ format header but its format is not 32-bit Microsoft format.\\
+ {\bf Action:} Check resource file format and relink.
+
+ 18\\
+ Illegal file format - {\it file name}\\
+ {\bf Explanation:} Specified file format is not recognized by the liker.\\
+ {\bf Action:} Check the specified file format and relink.
+
+ 19\\
+ Empty file {\it file name}\\
+ {\bf Explanation:} Specified file is empty.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 20\\
+ File {\it file name} too long\\
+ {\bf Explanation:} There is no enough memory to read specified file.\\
+ {\bf Action:} Komu seichas legko?
+
+ 21\\
+ Duplicate definition for export name {\it name}\\
+ {\bf Explanation:} There is duplicate export definition for specified name.\\
+ {\bf Action:} Check command line, .EDF and .OBJ file export specification
+ and relink.
+
+ 22\\
+ Entry point from {\it source} ignored, used from {\it source}\\
+ {\bf Explanation:} There are two entry point specification, one of
+ them is ignored and the other is used.\\
+ {\bf Action:} To be sure, check entry point specifications and relink if
+ it is needed.
+
+ 23\\
+ File {\it file name} - illegal CPU type {\it type}\\
+ {\bf Explanation:} Specified file has Common Object File Format and its
+ CPU type is not i386 or UNKNOWN.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 24\\
+ File {\it file name} - cannot initialize BSS segment {\it name}\\
+ {\bf Explanation:} Specified file consists of uninitialized data segment
+ with initialized data.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 25\\
+ File {\it file name} - invalid weak external {\it name}\\
+ {\bf Explanation:} Specified file consists of reference to invalid weak
+ exrenal name.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 26\\
+ File {\it file name} - illegal symbol index {\it index}\\
+ {\bf Explanation:} Specified file cinsists of illegal symbol index.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 27\\
+ File {\it file name} - unsupported fixup type {\it type}\\
+ {\bf Explanation:} Specified file consists of fixup record of unsupported
+ type.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 28\\
+ File {\it file name} - invalid section {\it number}\\
+ {\bf Explanation:} Specified file consists of section with invalid number.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 29\\
+ File {\it file name} - bad storage class {\it number}\\
+ {\bf Explanation:} Specified file consists of bad storage class object.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 30\\
+ File {\it file name} - not expected end of file\\
+ {\bf Explanation:} The end of specified file is not expected. Possible
+ reason is the file is corrupt.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 31\\
+ File {\it file name} ({\it raw} : {\it column}) - identifier expected\\
+ {\bf Explanation:} The linker expects an identifier at specified location.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 32\\
+ File {\it file name} ({\it raw} : {\it column}) - string isn't closed\\
+ {\bf Explanation:} A string beginnig at specified location is not closed.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 33\\
+ File {\it file name} ({\it raw} : {\it column}) - bad ordinal number\\
+ {\bf Explanation:} Bad ordinal number is met at specified location.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 34\\
+ File {\it file name} ({\it raw} : {\it column}) - ordinal number expected \\
+ {\bf Explanation:} Ordinal number is expected at specified
+ location.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 35\\
+ File {\it file name} ({\it raw} : {\it column}) - end of file expected\\
+ {\bf Explanation:} The end of file is expected at specified location.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 37\\
+ File {\it file name} - unknown COMDAT length prefix {\it prefix}\\
+ {\bf Explanation:} \\
+ {\bf Action:}
+
+ 38\\
+ File {\it file name} - invalid entry point\\
+ {\bf Explanation:} There is invalid entry point specification.\\
+ {\bf Action:} Check the specified file or entry point specification
+ and relink.
+
+ 39\\
+ File {\it file name} group {\it name} - local groups not supported\\
+ {\bf Explanation:} The linker does not support local groups.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 40\\
+ File {\it file name} - unsupported group type {\it type}\\
+ {\bf Explanation:} There is unsupported group type in soecified file.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 41\\
+ File {\it file name} - unknown common type {\it type}\\
+ {\bf Explanation:} There is unknown common type in specified file.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 42\\
+ File {\it file name} - too much data for segment {\it name}\\
+ {\bf Explanation:} Specified segment lenght is not agree with lenght of
+ specified segment data.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 43\\
+ File {\it file name} - LINNUM segment not specified\\
+ {\bf Explanation:} There is no segment for specified LINNUM record.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 44\\
+ File {\it file name} - fixups in BSS segment {\it name}\\
+ {\bf Explanation:} Fixup record for uninitialized data segment is illegal.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 45\\
+ File {\it file name} - FIXUP without LEDATA\\
+ {\bf Explanation:} There is no LEDATA for segment referenced by
+ fixup record.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 46\\
+ File {\it file name} - unsupported OMF record type\\
+ {\bf Explanation:} There is unsupported OMF record type in specified file.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 47\\
+ Illegal record length\\
+ {\bf Explanation:} OMF record lenght has to be more then 2 bytes.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 48\\
+ Record too long\\
+ {\bf Explanation:} Specified OMF record lenght is too long.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 49\\
+ File {\it file name} - unknown record type {\it type}\\
+ {\bf Explanation:} There is unknown OMF record type in specified file.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 50\\
+ File {\it file name} - internal name {\it name} not found\\
+ {\bf Explanation:} Specified internal name is not found.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 51\\
+ File {\it file name} - duplicate definition for export name {\it name}\\
+ {\bf Explanation:} There is duplicate export definition for specified name.\\
+ {\bf Action:} Check export definitions and relink.
+
+ 52\\
+ File {\it file name} - unresolved segment {\it name}\\
+ {\bf Explanation:} There is unresolved reference to specified segment.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 53\\
+ Invalid fixup target\\
+ {\bf Explanation:} Specified fixup target is invalid.\\
+ {\bf Action:} ?
+
+ 54\\
+ Invalid fixup for a flat memory model\\
+ {\bf Explanation:} Specified fixup type is not valid for a flat memmory
+ model.\\
+ {\bf Action:} ?
+
+ 55\\
+ Name {\it name} not found\\
+ {\bf Explanation:} There is unresolved reference to specified name.\\
+ {\bf Action:} ?
+
+ 56\\
+ Name {\it name} not found (referenced in  {\it module}\\
+ {\bf Explanation:} There is unresolved reference to specified name in
+ specified file.\\
+ {\bf Action:} Check the specified file and relink.
+
+ 57\\
+ Invalid entry point target\\
+ {\bf Explanation:} Entry point specification is invalid (has bad target).\\
+ {\bf Action:} Check a file consisting of entry point specification and
+ relink.
+
+ 58\\
+ Illegal stub file {\it file name}\\
+ {\bf Explanation:} Specified stub file is illegal.\\
+ {\bf Action:} Check setting of /STUB option and specified stub file and
+ relink.
+
+ 61\\
+ File {\it file name} - unhandled EXE type or invalid EXE\\
+ {\bf Explanation:} Specified DLL has unhandled or invalid format.\\
+ {\bf Action:} Check the specified file and command line specifications
+ and relink.
+
+ 62\\
+ File {\it file name} - unable to find EXPORT section\\
+ {\bf Explanation:} Specified dll has no export section.\\
+ {\bf Action:} Check the specified file and command line specifications
+ and relink.
+
+ 63\\
+ Ivalid option {\it option} - option skipped\\
+ {\bf Explanation:} set value of specified option is invalid and option setting
+ is skipped.\\
+ {\bf Action:} Check option setting and relink.
+
+ 64\\
+ Ivalid image format {\it format}\\
+ {\bf Explanation:} Specified image format is invalid.\\
+ {\bf Action:} Check option /IMAGEFORMAT setting and relink.
+
+ 65\\
+ Unable to mix debug information from modules - {\it module} (CV), {\it module} (HLL4)\\
+ {\bf Explanation:} At least two modules with deffirent debug information
+ formats are specified to link. The linker can not mix debug information.\\
+ {\bf Action:} Check specified modules and relink.
+
+ 66\\
+ Duplicate debug information for module {\it module}\\
+ {\bf Explanation:} There is duplicate debug information for specified
+ module.\\
+ {\bf Action:} Check specified module and relink.
+
+ 67\\
+ File {\it file name} - duplicate resource name\\
+ {\bf Explanation:} There is duplicate resource name in specified resource
+ file.\\
+ {\bf Action:} Check the specified file and relink.
+
+\section{Using third-party linkers}
+\label{link:third-party}
+
+You may use virtually any third-party linker accepting libraries and object files
+in either OMF or COFF format (XLINK accepts both). Note, however, that the XDS
+run-time library is in OMF format; COFF version is available on a special request.
+
+The template file included into your XDS package contains support for
+some widely used third-party linkers, such as Watcom's WLINK. Refer to the
+Read Me First file from your on-line documentation.
+
+\havetowrite more in readme files. !!!
+

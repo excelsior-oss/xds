@@ -1,0 +1,35 @@
+-- Добавление нового выражения слежения
+-- Обработчик окна выражений слежения
+
+DEFINITION MODULE DlgWatch;
+
+IMPORT xStr;
+IMPORT exp := Expr;
+IMPORT dt  := DI_Types;
+IMPORT dlt := DlgTypes;
+
+TYPE
+  WATCH_EL = RECORD
+               expr      : xStr.STRING;
+               res, res_ : exp.ExprRes;
+               dfn       : BOOLEAN;
+               error     : CARDINAL;
+             END;
+  PWATCH = POINTER TO ARRAY OF WATCH_EL;
+
+  WATCH = RECORD
+            count: CARDINAL;
+            Watch: PWATCH;
+          END;
+VAR
+  Watches : WATCH;
+  WatchPos: CARDINAL;
+
+PROCEDURE RecalcWatches;
+
+PROCEDURE WatchFromPack(str: ARRAY OF CHAR);
+PROCEDURE NewWatch(): BOOLEAN;
+
+PROCEDURE WriteWatches (out: dlt.OUT_PROC);
+
+END DlgWatch.

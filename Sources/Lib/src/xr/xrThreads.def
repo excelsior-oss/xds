@@ -1,0 +1,79 @@
+(* Copyright (c) 1994,95,99 XDS Ltd, Russia. All Rights Reserved. *)
+<* +m2extensions *>
+DEFINITION MODULE ["C"] xrThreads; (* Hady. 12.07.96 12:51 *)
+
+IMPORT  xmRTS, SYSTEM;
+
+<* IF multithread THEN *>
+IMPORT  xosThreads;
+
+CONST
+  X2C_MaxSources = 31;
+
+CONST (* X2C_Process.tags *)
+  X2C_main_thread = 0;
+  X2C_no_GC       = 1;
+
+TYPE
+  Body = PROCEDURE ["Modula"];
+
+  X2C_Process = POINTER TO X2C_ProcessDesc;
+  X2C_ProcessDesc = RECORD
+    magic   : CARDINAL;
+    bck,fwd : X2C_Process;
+    param   : SYSTEM.ADDRESS;
+    info    : SYSTEM.ADDRESS;
+    current : xmRTS.X2C_Coroutine;
+    default : xmRTS.X2C_Coroutine;
+    thread  : xosThreads.X2C_Thread;
+    urgency : INTEGER;
+    tags    : BITSET;
+    body    : Body;
+    controll1,
+    controll: xosThreads.X2C_BSemaphore;    
+    sources : ARRAY [0..X2C_MaxSources] OF xosThreads.X2C_EventSource;
+    scount  : CARDINAL;
+    threadId: SYSTEM.CARD32; (* additional thread ID -- ThreadId in Win32 *)
+  END;
+
+PROCEDURE ["C"] X2C_CreateISOProcess(VAR p: X2C_Process;
+                                      proc: Body;
+                                     stack: CARDINAL;
+                                       par: SYSTEM.ADDRESS;
+                                      prio: INTEGER): SYSTEM.INT32;
+
+PROCEDURE ["C"] X2C_DeleteISOProcess(p: X2C_Process): SYSTEM.INT32;
+
+(*
+PROCEDURE X2C_SuspendMe;
+PROCEDURE X2C_Activate(p: X2C_Process);
+PROCEDURE X2C_Switch(p: X2C_Process; VAR info: SYSTEM.ADDRESS);
+PROCEDURE X2C_Wait;
+PROCEDURE X2C_Attach(e: xosThreads.X2C_EventSource);
+PROCEDURE X2C_Detach(e: xosThreads.X2C_EventSource);
+PROCEDURE X2C_IsAttached(e: xosThreads.X2C_EventSource) : BOOLEAN;
+PROCEDURE X2C_Handler(e: xosThreads.X2C_EventSource): X2C_Process;
+*)
+
+PROCEDURE X2C_NewMutex(VAR m: xmRTS.X2C_MUTEX);
+PROCEDURE X2C_DelMutex(VAR m: xmRTS.X2C_MUTEX);
+PROCEDURE X2C_LockMutex(m: xmRTS.X2C_MUTEX);
+PROCEDURE X2C_FreeMutex(m: xmRTS.X2C_MUTEX);
+
+PROCEDURE X2C_RegisterThread(p: X2C_Process);
+PROCEDURE X2C_UnregisterThread(p: X2C_Process);
+
+PROCEDURE X2C_StartIterateThreads;
+PROCEDURE X2C_StopIterateThreads;
+
+<* END *>
+
+PROCEDURE X2C_SetCurrent(c: xmRTS.X2C_Coroutine);
+PROCEDURE X2C_GetCurrent(): xmRTS.X2C_Coroutine;
+
+PROCEDURE X2C_InitThreads(): SYSTEM.INT32;
+
+PROCEDURE X2C_PrepareToGC;
+PROCEDURE X2C_FreeAfterGC;
+
+END xrThreads.

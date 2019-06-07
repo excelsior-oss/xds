@@ -1,0 +1,451 @@
+-- Определение основных типов данных целевой машины,
+-- необходимых для работы системы отладки.
+-- Необходимо переопределить типы расширений имен файлов,
+-- обьектов программы, регистров, кода прерывания
+--
+-- TARGET: x86, VAX, m68k
+<* NOHEADER+ *> -- NEVER GET THE HEADER FOR THIS FILE
+
+DEFINITION MODULE KrnTypes;
+
+<* ALIGNMENT = "1" *>
+<* ENUMSIZE = "1" *>
+<* SETSIZE = "1" *>
+
+<* IF TARGET_x86 THEN *> -- Intel x86
+
+IMPORT sys := SYSTEM;                    
+
+CONST                   (* Расширения имен файлов  *)
+  prg_file_ext = 'EXE'; (* Целевого файла отладки  *)
+  ref_file_ext = 'EXE'; (* Отладочной информации   *)
+  pkt_file_ext = 'XD';  (* Пакетов                 *)
+  imp_file_ext = 'XD';  (* Импортируемых           *)
+  res_file_ext = 'XDL'; (* Результатов             *)
+  dll_file_ext = 'DLL'; (* Внешних моделей         *)
+  tbl_file_ext = 'TDD'; (* Таблиц устройств        *)
+
+TYPE
+  PROGRAM_NAME  = ARRAY [0..255] OF CHAR;
+
+  APP_TYPE = (none, console, windowed);
+
+  ATTRIB = (execute, read, write, bit_32);
+  ATTRIBS = SET OF ATTRIB;
+  
+  OBJECT = RECORD
+             Attributes     : ATTRIBS;
+             RelocationBase : CARDINAL;
+             Begin          : CARDINAL;
+             End            : CARDINAL;
+           END;
+
+
+  EXEC_INFO = RECORD
+                short_name     : PROGRAM_NAME;
+                full_name      : PROGRAM_NAME;
+                app_type       : APP_TYPE;
+                Handle         : CARDINAL;
+                hFile          : CARDINAL;
+                StartupEntry   : CARDINAL;
+                MainEntry      : CARDINAL;
+                DebugInfoTag   : ARRAY [0..4] OF CHAR;
+                DebugInfoStart : CARDINAL;
+                DebugInfoSize  : CARDINAL;
+                N_Objects      : CARDINAL;
+                Objects        : POINTER TO ARRAY OF OBJECT;
+                Code_Object    : CARDINAL;
+              END;
+
+CONST
+  EmptyExecInfo = EXEC_INFO { "", "", none
+                            , 0, 0, 0, MAX(CARDINAL)
+                            , "", 0, 0
+                            , 0, NIL, 0 };
+
+TYPE
+  ADDRESS    = LONGCARD;        (* Адрес целевой машины *)
+  WORD       = sys.WORD;
+
+CONST
+  NIL_ADDRESS  = 0;
+  SIZE_ADDRESS = 4;
+
+
+CONST
+  RegsNum   = 32;    (* Количество регистров                         *)
+  ShownRegs = 10;    (* Отображаемые в диалоговом отладчике регистры *)
+  UserRegs  = 8;     (* Регистры, используемые для общих целей       *)
+  FloatRegs = 8;
+
+TYPE
+  REG_VALUE = CARDINAL;
+  REG_NAME  = ARRAY [0..6] OF CHAR;
+  REGISTER  = RECORD
+                name: REG_NAME;
+                reg_no: CARDINAL
+              END;
+  REGISTERS = ARRAY [0..RegsNum-1] OF REGISTER;
+
+  REGISTER_DATA = ARRAY [0..FloatRegs-1] OF LONGLONGREAL;
+
+  FLOATING_REGISTER_CACHE = RECORD
+                              ControlWord   : sys.CARD32;
+                              StatusWord    : sys.CARD32;
+                              TagWord       : sys.CARD32;
+                              ErrorOffset   : sys.CARD32;
+                              ErrorSelector : sys.CARD32;
+                              DataOffset    : sys.CARD32;
+                              DataSelector  : sys.CARD32;
+                              RegisterData  : REGISTER_DATA;
+                              Cr0NpxState   : sys.CARD32;
+                            END;
+
+
+TYPE
+  REGISTER_CACHE = RECORD
+                     FloatingRegisters: FLOATING_REGISTER_CACHE;
+                     CASE :BOOLEAN OF
+                     | TRUE:
+                       Eax, Ecx, Edx, Ebx: CARDINAL;
+                       Esp, Ebp, Esi, Edi: CARDINAL;
+                       SegEs,  SegCs,  SegSs,  SegDs,  SegFs,  SegGs:  sys.CARD16;
+                       BaseEs, BaseCs, BaseSs, BaseDs, BaseFs, BaseGs: ADDRESS;
+                     | FALSE:
+                       Common: ARRAY [0..7] OF RECORD
+                                                 CASE :INTEGER OF
+                                                 | 0: dw:  CARDINAL;
+                                                 | 1:  w:  sys.CARD16;
+                                                 | 2: l,h: sys.CARD8;
+                                                 END;
+                                               END;
+                       Segs:   ARRAY [0..5] OF sys.CARD16;
+                       Bases:  ARRAY [0..5] OF ADDRESS;
+                     END;
+                     Eip, EFlags: CARDINAL;
+                   END;
+
+  FLAGS = RECORD
+            O, D, S, Z, A, P, C: BOOLEAN;
+          END;
+
+CONST
+  EIP = 22H;
+  EFL = 24H;
+  ESP = 14H;
+  FRAME_REG = 15H;
+
+  (* Имена регистров *)
+  Registers = REGISTERS{ REGISTER{ 'EAX', 10H}, REGISTER{ 'EBX', 13H},
+                         REGISTER{ 'ECX', 11H}, REGISTER{ 'EDX', 12H},
+                         REGISTER{ 'ESI', 16H}, REGISTER{ 'EDI', 17H},
+                         REGISTER{ 'EBP', 15H}, REGISTER{ 'ESP', 14H},
+
+                         REGISTER{ 'EIP', EIP}, REGISTER{ 'EFL', EFL},
+
+                         REGISTER{ 'CS',  19H}, REGISTER{ 'SS',  1AH},
+                         REGISTER{ 'DS',  1BH}, REGISTER{ 'ES',  18H},
+                         REGISTER{ 'GS',  1DH}, REGISTER{ 'FS',  1CH},
+
+                         REGISTER{ 'AL', 0H},   REGISTER{ 'CL', 1H},
+                         REGISTER{ 'DL', 2H},   REGISTER{ 'BL', 3H},
+                         REGISTER{ 'AH', 4H},   REGISTER{ 'CH', 5H},
+                         REGISTER{ 'DH', 6H},   REGISTER{ 'BH', 7H},
+
+                         REGISTER{ 'AX', 08H},  REGISTER{ 'BX', 0BH},
+                         REGISTER{ 'CX', 09H},  REGISTER{ 'DX', 0AH},
+                         REGISTER{ 'SI', 0EH},  REGISTER{ 'DI', 0FH},
+                         REGISTER{ 'BP', 0DH},  REGISTER{ 'SP', 0CH}
+
+                       };
+
+
+CONST
+  BreakLen = 1;
+
+TYPE
+  BREAK_CODE = ARRAY [0 .. BreakLen-1] OF sys.CARD8;
+
+CONST
+  CodeBreakInterrupt = BREAK_CODE{0CCH};
+
+
+<* ELSIF TARGET_VAX THEN *> -- VAX
+
+IMPORT sys := SYSTEM;
+IMPORT typ := IntVType;
+
+CONST                   (* Расширения имен файлов  *)
+  prg_file_ext = 'PRG'; (* Целевого файла отладки  *)
+  ref_file_ext = 'REF'; (* Отладочной информации   *)
+  pkt_file_ext = 'PKT'; (* Пакетов                 *)
+  imp_file_ext = 'PKT'; (* Импортируемых пакетов   *)
+  res_file_ext = 'RES'; (* Результатов             *)
+  dll_file_ext = 'DLL'; (* Внешних моделей         *)
+  tbl_file_ext = 'CHA'; (* Таблиц устройств        *)
+
+TYPE
+  PROGRAM_NAME  = ARRAY [0..255] OF CHAR;
+
+  ATTRIB = (execute, read, write);
+
+  ATTRIBS = SET OF ATTRIB;
+
+  OBJECT = RECORD
+             Attributes: ATTRIBS;
+             Begin     : CARDINAL;
+             End       : CARDINAL;
+           END;
+
+  EXEC_INFO = RECORD
+                short_name     : PROGRAM_NAME;
+                full_name      : PROGRAM_NAME;
+                Handle         : CARDINAL;
+                StartupEntry   : CARDINAL;
+                MainEntry      : CARDINAL;
+                DebugInfoTag   : ARRAY [0..15] OF CHAR;
+                DebugInfoStart : CARDINAL;
+                DebugInfoSize  : CARDINAL;
+                N_Objects      : CARDINAL;
+                Objects        : POINTER TO ARRAY OF OBJECT;
+                Code_Object    : CARDINAL;
+              END;
+
+CONST
+  EmptyExecInfo = EXEC_INFO { "", ""
+                            , 0, 0, 0
+                            , "", 0, 0
+                            , 0, NIL, 0 };
+
+TYPE
+  ADDRESS    = typ.BoardAddr;      (* Адрес целевой машины *)
+  WORD       = typ.BoardWord;      (* Слово машины         *)
+
+---------------------- Доступ к памяти и регистрам -------------------------
+                      -----------------------------
+
+CONST
+  RegsNum   = 18+64; (* Количество регистров *)
+  ShownRegs = 17;    (* Отображаемые в диалоговом отладчике регистры *)
+  UserRegs  = 12;    (* Регистры, используемые для общих целей       *)
+
+TYPE
+  REG_VALUE = sys.CARD32;
+  REG_NAME  = ARRAY [0..6] OF CHAR;
+  REGISTER  = RECORD name: REG_NAME; reg_no: CARDINAL END;
+  REGISTERS = ARRAY [0 .. RegsNum-1] OF REGISTER;
+
+CONST
+  PC  = 15;
+  EIP = PC;
+  FRAME_REG = 13;
+
+  (* Имена регистров *)
+  Registers = REGISTERS{ REGISTER{ 'R0',  0},  REGISTER{ 'R1',   1}, REGISTER{ 'R2',   2},
+                         REGISTER{ 'R3',  3},  REGISTER{ 'R4',   4}, REGISTER{ 'R5',   5},
+                         REGISTER{ 'R6',  6},  REGISTER{ 'R7',   7}, REGISTER{ 'R8',   8},
+                         REGISTER{ 'R9',  9},  REGISTER{ 'R10', 10}, REGISTER{ 'R11', 11},
+
+                         REGISTER{ 'AP', 12},  REGISTER{ 'FP',  13}, REGISTER{ 'SP',  14},
+                         REGISTER{ 'PC', 15},
+
+                         REGISTER{ 'PSL', 2000},
+
+                         REGISTER{ 'SR0'  , 1000 },  REGISTER{ 'SR1'  , 1001},
+                         REGISTER{ 'SR2'  , 1002 },  REGISTER{ 'SR3'  , 1003},
+                         REGISTER{ 'SR4'  , 1004 },  REGISTER{ 'SR5'  , 1005},
+                         REGISTER{ 'SR6'  , 1006 },  REGISTER{ 'SR7'  , 1007},
+                         REGISTER{ 'SR8'  , 1008 },  REGISTER{ 'SR9'  , 1009},
+                         REGISTER{ 'SR10' , 1010 },  REGISTER{ 'SR11' , 1011},
+                         REGISTER{ 'SR12' , 1012 },  REGISTER{ 'SR13' , 1013},
+                         REGISTER{ 'SR14' , 1014 },  REGISTER{ 'SR15' , 1015},
+                         REGISTER{ 'SR16' , 1016 },  REGISTER{ 'SR17' , 1017},
+                         REGISTER{ 'SR18' , 1018 },  REGISTER{ 'SR19' , 1019},
+                         REGISTER{ 'SR20' , 1020 },  REGISTER{ 'SR21' , 1021},
+                         REGISTER{ 'SR22' , 1022 },  REGISTER{ 'SR23' , 1023},
+                         REGISTER{ 'SR24' , 1024 },  REGISTER{ 'SR25' , 1025},
+                         REGISTER{ 'SR26' , 1026 },  REGISTER{ 'SR27' , 1027},
+                         REGISTER{ 'SR28' , 1028 },  REGISTER{ 'SR29' , 1029},
+                         REGISTER{ 'SR30' , 1030 },  REGISTER{ 'SR31' , 1031},
+                         REGISTER{ 'SR32' , 1032 },  REGISTER{ 'SR33' , 1033},
+                         REGISTER{ 'SR34' , 1034 },  REGISTER{ 'SR35' , 1035},
+                         REGISTER{ 'SR36' , 1036 },  REGISTER{ 'SR37' , 1037},
+                         REGISTER{ 'SR38' , 1038 },  REGISTER{ 'SR39' , 1039},
+                         REGISTER{ 'SR40' , 1040 },  REGISTER{ 'SR41' , 1041},
+                         REGISTER{ 'SR42' , 1042 },  REGISTER{ 'SR43' , 1043},
+                         REGISTER{ 'SR44' , 1044 },  REGISTER{ 'SR45' , 1045},
+                         REGISTER{ 'SR46' , 1046 },  REGISTER{ 'SR47' , 1047},
+                         REGISTER{ 'SR48' , 1048 },  REGISTER{ 'SR49' , 1049},
+                         REGISTER{ 'SR50' , 1050 },  REGISTER{ 'SR51' , 1051},
+                         REGISTER{ 'SR52' , 1052 },  REGISTER{ 'SR53' , 1053},
+                         REGISTER{ 'SR54' , 1054 },  REGISTER{ 'SR55' , 1055},
+                         REGISTER{ 'SR56' , 1056 },  REGISTER{ 'SR57' , 1057},
+                         REGISTER{ 'SR58' , 1058 },  REGISTER{ 'SR59' , 1059},
+                         REGISTER{ 'SR60' , 1060 },  REGISTER{ 'SR61' , 1061},
+                         REGISTER{ 'SR62' , 1062 },  REGISTER{ 'SR63' , 1063},
+
+                         REGISTER{ 'R12', 12}};
+
+TYPE
+  REGISTER_CACHE = RECORD
+                   END;
+
+  FLAG  = ( fC, fV, fZ, fN, fT, fI, fF, fD );
+  FLAGS = SET OF FLAG;
+
+
+CONST
+  FlagsRegNo = 2000;
+
+CONST
+  BreakLen = 1;
+
+TYPE
+  BREAK_CODE = ARRAY [0 .. BreakLen-1] OF sys.CARD8;
+
+CONST
+  CodeBreakInterrupt = BREAK_CODE{03H};
+
+  XCPT_PROG_FINISHED  = 0;
+
+  XCPT_ABORT          = 0;
+  XCPT_TRAP           = 1;
+  XCPT_FAULT          = 2;
+  XCPT_INTERRUPT      = 3;
+  XCPT_PRHALT         = 4;
+
+  XCPT_NO_ENTRY_POINT = MAX(CARDINAL)-2;
+  XCPT_USER_BREAK     = MAX(CARDINAL)-3;
+  XCPT_WRITE_ROM      = MAX(CARDINAL)-4;
+  XCPT_WRITE_CODE     = MAX(CARDINAL)-5;
+
+<* ELSIF TARGET_m68k THEN *> -- m68k
+
+IMPORT sys := SYSTEM;
+
+CONST                   (* Расширения имен файлов  *)
+  prg_file_ext = 'O';   (* Целевого файла отладки  *)
+  ref_file_ext = 'O';   (* Отладочной информации   *)
+  pkt_file_ext = 'XD';  (* Пакетов                 *)
+  imp_file_ext = 'XD';  (* Импортируемых           *)
+  res_file_ext = 'RES'; (* Результатов             *)
+  dll_file_ext = 'DLL'; (* Внешних моделей         *)
+  tbl_file_ext = 'TDD'; (* Таблиц устройств        *)
+
+TYPE
+  PROGRAM_NAME  = ARRAY [0..255] OF CHAR;
+
+  APP_TYPE = (none, console);
+
+  ATTRIB = (execute, read, write);
+  ATTRIBS = SET OF ATTRIB;
+
+  OBJECT = RECORD
+             Attributes     : ATTRIBS;
+             Begin          : CARDINAL;
+             End            : CARDINAL;
+           END;
+
+
+  EXEC_INFO = RECORD
+                short_name     : PROGRAM_NAME;
+                full_name      : PROGRAM_NAME;
+                app_type       : APP_TYPE;
+                Handle         : CARDINAL;
+                StartupEntry   : CARDINAL;
+                MainEntry      : CARDINAL;
+                DebugInfoTag   : ARRAY [0..4] OF CHAR;
+                DebugInfoStart : CARDINAL;
+                DebugInfoSize  : CARDINAL;
+                N_Objects      : CARDINAL;
+                Objects        : POINTER TO ARRAY OF OBJECT;
+                Code_Object    : CARDINAL;
+              END;
+
+CONST
+  EmptyExecInfo = EXEC_INFO { "", "", none
+                            , 0, 0, 0
+                            , "", 0, 0
+                            , 0, NIL, 0 };
+
+
+TYPE
+  ADDRESS    = LONGCARD;        (* Адрес целевой машины *)
+  WORD       = sys.WORD;
+
+CONST
+  RegsNum   = 18;   (* Количество регистров                         *)
+  ShownRegs = 18;   (* Отображаемые в диалоговом отладчике регистры *)
+  UserRegs  = 14;   (* Регистры, используемые для общих целей       *)
+
+TYPE
+  REG_VALUE = CARDINAL;
+  REG_NAME  = ARRAY [0..6] OF CHAR;
+  REGISTER  = RECORD
+                name  : REG_NAME;
+                reg_no: CARDINAL
+              END;
+
+  REGISTERS = ARRAY [0 .. RegsNum-1] OF REGISTER;
+
+  REGISTER_CACHE = RECORD
+                     CASE :BOOLEAN OF
+                     | TRUE:
+                       d0, d1, d2, d3, d4, d5, d6, d7: REG_VALUE;
+                       a0, a1, a2, a3, a4, a5, a6, a7: REG_VALUE;
+                       sr: REG_VALUE;
+                       pc: REG_VALUE;
+                     | FALSE:
+                       d: ARRAY [0..7] OF REG_VALUE;
+                       a: ARRAY [0..7] OF REG_VALUE;
+                     END;
+                   END;
+
+  FLAGS = RECORD
+            O, D, S, Z, A, P, C: BOOLEAN;
+          END;
+
+CONST
+  EIP = 11H;
+
+  (* Имена регистров *)
+  Registers = REGISTERS{ REGISTER{ 'D0', 00H}, REGISTER{ 'D1', 01H},
+                         REGISTER{ 'D2', 02H}, REGISTER{ 'D3', 03H},
+                         REGISTER{ 'D4', 04H}, REGISTER{ 'D5', 05H},
+                         REGISTER{ 'D6', 06H}, REGISTER{ 'D7', 07H},
+
+                         REGISTER{ 'A0', 08H}, REGISTER{ 'A1', 09H},
+                         REGISTER{ 'A2', 0AH}, REGISTER{ 'A3', 0BH},
+                         REGISTER{ 'A4', 0CH}, REGISTER{ 'A5', 0DH},
+                         REGISTER{ 'A6', 0EH}, REGISTER{ 'A7', 0FH},
+
+                         REGISTER{ 'SR', 10H}, REGISTER{ 'PC', 11H}
+                         };
+
+CONST
+  BreakLen = 2;
+
+TYPE
+  BREAK_CODE = ARRAY [0 .. BreakLen-1] OF sys.CARD8;
+
+CONST
+  CodeBreakInterrupt = BREAK_CODE{04EH, 042H};
+
+<* ELSE *>    -- Target not defined
+  
+<* END *>
+
+
+TYPE
+  ENTRY_NAME = ARRAY [0..255] OF CHAR;
+
+  EXPORTED = RECORD
+               obj   : sys.CARD32;
+               offset: sys.CARD32;
+               name  : ENTRY_NAME;
+             END;
+
+  EXPORTS  = POINTER TO ARRAY OF EXPORTED;
+
+END KrnTypes.
+ 

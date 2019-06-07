@@ -1,0 +1,9 @@
+# Builded files to be copied into an external workspace 
+# Target must be relative to the root of an external workplace
+# Note: target subfolder must end with symbol "\" 
+
+# <source file>         <target in an external workspace>
+workplace\xc.exe         bin\
+
+# <source file>         <target in an external workspace>
+workplace\xm.exe         bin\

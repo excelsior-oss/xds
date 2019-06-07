@@ -1,0 +1,119 @@
+-- Запуск программы на исполнения в различных режимах
+-- Обработчик окна стека вызовов
+
+DEFINITION MODULE Dlg_Exec;
+
+IMPORT dt := DI_Types;
+IMPORT kt := KrnTypes;
+IMPORT xs := xStr;
+
+
+TYPE
+  EXEC_KIND = ( Stopped,
+                GO, InTo, Step, Trace,
+                UpToCall, UpToReturn, UpToAddr, UpToCurs,
+                SeekingforRet
+              );
+
+(* Переместить курсор исполнения в указанное место. *)
+PROCEDURE PointExecLine(PC: kt.ADDRESS);
+PROCEDURE PosExec(addr: kt.ADDRESS): BOOLEAN;
+
+
+CONST
+  TRAPS_NO = 10;
+
+TYPE
+  TRAP_NAME = ARRAY [0..63] OF CHAR;
+
+  TRAP = RECORD
+           Ready: BOOLEAN;
+           Name : TRAP_NAME;
+           Inx  : CARDINAL;
+           Enabled: BOOLEAN;
+         END;
+
+
+CONST
+  -- Для программ на Modula, Oberon
+  (* Индекс точки останова в процедуре longjmp *)
+  (* для правильного перехода в EXCEPT часть   *)
+  LongjmpNo   = 0;
+  LongjmpCall = 'X2C_INIT_EXCEPTIONS';
+
+  -- Для программ на Java
+  TrapFException            = 1;
+  TrapGException            = 2;
+  AbortException            = 3;
+  AssertFException          = 4;
+  AssertFCException         = 5;
+  TrapRangeException        = 6;
+  TrapNilException          = 7;
+  TrapOverflException       = 8;
+  TrapDivException          = 9;
+  TrapIndexException        = 10;
+
+  Trap_X2C_TRAP_FC          = 11;
+  Trap_X2C_TRAP_OVERFL_C    = 12;
+  Trap_X2C_TRAP_RANGE_C     = 13;
+  Trap_X2C_TRAP_INDEX_C     = 14;
+  Trap_X2C_TRAP_NIL_C       = 15;
+  Trap_X2C_TRAP_DIV_C       = 16;
+
+  TrapHandler               = 17;
+
+  LAST_FATAL_EXCEPTION = TrapHandler;
+
+  JavaLangRaisedException   = LAST_FATAL_EXCEPTION+1;
+  JavaLangUncaughtException = LAST_FATAL_EXCEPTION+2;
+  JavaLangRedundantMethod   = LAST_FATAL_EXCEPTION+3;
+  JavaLangUnsatisfiedLink   = LAST_FATAL_EXCEPTION+4;
+
+  LAST_EXCEPTION = JavaLangUnsatisfiedLink;
+
+TYPE
+  TRAPS = ARRAY [0..LAST_EXCEPTION] OF TRAP;
+
+
+VAR
+  ProcBeginIndex, UptoRetCount: CARDINAL;
+
+  StepSP       : CARDINAL;
+  ExecKind     : EXEC_KIND;
+  WasCall      : BOOLEAN;
+  AddrAfterCall: kt.ADDRESS;
+
+  Traps: TRAPS;
+
+PROCEDURE SetRTShandler;
+
+PROCEDURE RemoveRTShandler;
+
+PROCEDURE CheckTrap (no, inx: CARDINAL): BOOLEAN;
+
+
+
+
+PROCEDURE Load (filename: ARRAY OF CHAR) : BOOLEAN;
+
+
+TYPE
+  CHECK_PROC = PROCEDURE(): BOOLEAN;
+
+PROCEDURE AddStepCheck(check: CHECK_PROC);
+
+PROCEDURE DlgNeedStep(): BOOLEAN;
+
+
+
+PROCEDURE ResetCall;
+
+PROCEDURE ResetCallStack;
+
+
+PROCEDURE GoUpCallStack (): BOOLEAN;
+
+PROCEDURE GoDownCallStack (): BOOLEAN;
+
+
+END Dlg_Exec.

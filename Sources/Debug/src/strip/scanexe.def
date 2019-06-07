@@ -1,0 +1,10 @@
+-- Предоставляет функции для настройки обработчиков
+-- отладочной информации указанной программы
+
+DEFINITION MODULE ScanExe;
+
+IMPORT DI_Types;
+
+PROCEDURE OpenExe (name: ARRAY OF CHAR; com: CARDINAL; VAR Component: DI_Types.COMPONENT): BOOLEAN;
+
+END ScanExe.

@@ -1,0 +1,25 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=o2rep.chm
+Contents file=o2rep.hhc
+Default Window=Main
+Default topic=o2rep.html
+Display compile progress=No
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=Oberon-2 Language Report
+
+[WINDOWS]
+Main="Oberon-2 Language Report","o2rep.hhc",,"o2rep000.html",,,,,,0x2520,,0x300e,[30,30,994,708],,,,,,,0
+
+[ALIAS]
+#include "o2rep.hha"
+
+[MAP]
+
+[FILES]
+o2rep.html
+..\default.css
+
+[INFOTYPES]
+

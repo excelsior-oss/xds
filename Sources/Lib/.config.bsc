@@ -1,0 +1,34 @@
+# XDS-x86 Library: Build System Configuration
+#
+# XDS-Native Library:
+#     import32:     import32.lib
+#     xstart:       xstart.lib   - exestartup
+#                   xstartd.lib  - dllstartup
+#                   xstartc.lib  - cstartup
+#                   xstartx.lib  - xstartup
+#     x86_libxds:   libxds.lib   - single thread
+#     x86_libxdsmt: libxdsmt.lib - multi-thread
+#     stdll:        xds##.dll    - single thread dll
+#     mtdll:        xds##m.dll   - multi-thread dll
+#
+# XDS-C Library:
+#     msvc_lib:     libxds.lib
+#     msvc_mkf:     msvc.mkf    
+#     unix_mkf:     unix.mkf   
+#     watcom_mkf:   watcom.mkf 
+
+UNIT_NAME=XDS-x86-Libraries
+
+XDS_C_COMPONENTS=msvc_lib,msvc_mkf,unix_mkf,watcom_mkf,msvcts_lib,msvcts_mkf,watcomts_mkf,unixts_mkf
+XDS_X86_COMPONENTS=import32,xstart,x86_libxds,x86_libts,stdll,stimplib,tsstdll,tsstimplib,x86_libxdsmt,x86_libtsmt,mtdll,mtimplib,tsmtdll,tsmtimplib,vterm
+
+ALL_COMPONENTS=%XDS_X86_COMPONENTS%,%XDS_C_COMPONENTS%
+PRIMARY_COMPONENTS=%XDS_X86_COMPONENTS%,%XDS_C_COMPONENTS%
+DEFAULT_COMPONENT=x86_libxds
+
+# Tools necessary to build component
+ENVIRONMENT=NASM_HOME,WATCOM,MSVC_HOME,MINGW
+
+# External files which are part of this component  
+EXTDEPS=
+

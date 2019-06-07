@@ -1,0 +1,31 @@
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+(* Text window management for VTerm *)
+
+DEFINITION MODULE vterm_t;
+
+IMPORT W := Windows, StdChans;
+
+CONST
+  TWCLASSNAME = "TWWnd";
+  KEYBUFSIZE  = 65000;
+  USE_DEFAULT = 7FFFFFFFH;
+  CHAR_BEL    = 007C;
+  CHAR_BS     = 010C;
+  CHAR_LF     = 012C;
+  CHAR_CR     = 015C;
+  CHAR_EOF    = 032C;
+  TEMPSIFFILENAME = "c:\temp$%~2.s%f";
+
+VAR
+    inputFile       : StdChans.ChanId;
+    outputFile      : StdChans.ChanId;
+    readingFromFile     : BOOLEAN;
+    hsemCharReady   : W.HANDLE;
+
+PROCEDURE is_pressed(): BOOLEAN;
+PROCEDURE get_key(): CHAR;
+PROCEDURE pre_init(hInst :W.HINSTANCE):BOOLEAN;
+
+END vterm_t.

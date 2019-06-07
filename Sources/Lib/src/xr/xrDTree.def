@@ -1,0 +1,55 @@
+(* Copyright (c) 1999 Excelsior Ltd, Russia. All Rights Reserved. *)
+
+<* +M2EXTENSIONS *>
+<* +M2ADDTYPES   *>
+
+DEFINITION MODULE xrDTree; (* VitVit *)
+
+(* Distribution tree for fast search in sparce array *)
+
+CONST
+  dTreeLevel    = 14-3;
+  lastLevelBase = 2*1024;   --VAL(CARDINAL, 2**dTreeLevel);
+  dTreeLen      = VAL(CARDINAL, lastLevelBase*2 - 1);
+
+CONST
+  numOfLeaves    = lastLevelBase;
+
+  ROOT_NOT_FOUND = MAX(CARDINAL);
+
+VAR
+  dTree :ARRAY[0..dTreeLen] OF CARDINAL;
+  (*
+      dTree[0] makes no sence
+      dTree[ROOT_INDEX] - root
+   *)
+
+
+PROCEDURE ins (root :CARDINAL);
+(* updates the distribution tree with an object inserted *)
+
+
+PROCEDURE del (root :CARDINAL);
+(* update the distribution tree with an object deleted *)
+
+
+PROCEDURE find (root :CARDINAL) :CARDINAL;
+(* returns minimal root that is greater than "root" passed
+   if such a root is not found, returns  ROOT_NOT_FOUND *)
+
+PROCEDURE init();
+
+------------
+
+PROCEDURE weakIns (root :CARDINAL);
+(* updates only the leaf; on behalf of GC only *)
+
+
+PROCEDURE weakDel (root :CARDINAL);
+(* updates only the leaf; on behalf of GC only *)
+
+PROCEDURE recalc();
+(* recalculates whole tree according with leaf values; on behalf of GC only *)
+
+
+END xrDTree.

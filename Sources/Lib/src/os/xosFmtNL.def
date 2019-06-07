@@ -1,0 +1,7 @@
+(* Copyright (c) xTech 1992,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosFmtNL; (* Hady. 31.05.96 12:57 *)
+
+PROCEDURE X2C_StdOutN(); (* NewLine *)
+
+END xosFmtNL.

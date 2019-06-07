@@ -1,0 +1,50 @@
+(* Copyright (c) 2000 Excelsior, Russia. All Rights Reserved. *)
+
+<*+ M2EXTENSIONS *>
+
+<* IF ~(TARGET_CPU="X86") THEN *> This module can be used only in x86 <* END *>
+
+(* definition of profiler data structures. used in both compiler & RT lib *)
+
+DEFINITION MODULE ["C"] xProfRTS; (* paul 02-Feb-00 *)
+
+FROM SYSTEM IMPORT ADDRESS, CARD32;
+
+TYPE
+  X2C_CALL_TYPE_PTR = POINTER TO X2C_CALL_TYPE;
+  X2C_CALL_TYPE = RECORD
+    ip                : ADDRESS;
+    count             : CARD32;
+    next              : X2C_CALL_TYPE_PTR;
+  END;
+
+  X2C_Profile   = POINTER TO X2C_Profile_STR;
+  X2C_Profile_STR = RECORD
+    pure_dur_lo       : CARD32;
+    pure_dur_hi       : CARD32;
+    dirty_dur_lo      : CARD32;
+    dirty_dur_hi      : CARD32;
+    saved_overhead_lo : CARD32;
+    saved_overhead_hi : CARD32;
+    total_entry_count : CARD32;
+    norec_entry_count : CARD32;
+    rec_level         : CARD32;
+    call_list         : X2C_CALL_TYPE_PTR;
+  END;
+
+  X2C_Profile_XREF = POINTER TO ARRAY [0..7FFFH] OF CHAR;
+
+  X2C_Profile_Module = POINTER TO X2C_Profile_ModuleRec;
+  X2C_Profile_ModuleRec = RECORD
+      info		: POINTER TO ARRAY [0..7FFFH] OF X2C_Profile_STR;
+      xref		: POINTER TO ARRAY [0..7FFFH] OF X2C_Profile_XREF;
+      procCount		: INTEGER;
+      moduleName	: X2C_Profile_XREF;
+      mainAdr		: CARDINAL;
+      next		: X2C_Profile_Module;
+  END;
+  
+  ProfilingModeType = (PROF_MODE_NONE, PROF_MODE_MIN, PROF_MODE_STANDARD, PROF_MODE_FULL);
+  ProfilingModeSet  = SET OF ProfilingModeType;
+
+END xProfRTS.

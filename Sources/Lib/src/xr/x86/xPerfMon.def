@@ -1,0 +1,39 @@
+(* Copyright (c) 1999 XDS, Russia. All Rights Reserved. *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["StdCall"] xPerfMon;
+
+IMPORT SYSTEM, rts := xProfRTS;
+
+TYPE CARD32 = SYSTEM.CARD32;
+TYPE INT64 = RECORD lo, hi: CARD32; END;
+TYPE ProfSTR = rts.X2C_Profile_STR;
+
+TYPE BracketProc = PROCEDURE ["StdCall"] ( VAR ProfSTR );
+
+PROCEDURE X2C_Read_TSC( VAR timestamp: INT64 );
+PROCEDURE X2C_Open_TSC_Scope( VAR timestamp: INT64 );
+PROCEDURE X2C_Close_TSC_Scope( VAR timestamp: INT64 );
+--PROCEDURE X2C_GetCPUInfo( VAR info: CPU_Info );
+
+PROCEDURE X2C_PROFILE_PROC_START ( VAR pdesc: ProfSTR );
+PROCEDURE X2C_PROFILE_PROC_START_C ( VAR pdesc: ProfSTR; callerIP: INTEGER );
+PROCEDURE X2C_PROFILE_PROC_END ( VAR pdesc: ProfSTR );
+PROCEDURE X2C_PROFILE_NEST_START ( VAR pdesc: ProfSTR );
+PROCEDURE X2C_PROFILE_NEST_END ( VAR pdesc: ProfSTR );
+PROCEDURE X2C_PROFILE_TAIL_OVERHEAD ( VAR pdesc: ProfSTR;
+                         bracket: BracketProc; VAR tsc: INT64 );
+PROCEDURE X2C_PROFILE_HEAD_OVERHEAD ( VAR pdesc: ProfSTR;
+                         bracket: BracketProc; VAR tsc: INT64 );
+
+VAR proc_dirty_overhead_rec,
+    proc_dirty_overhead_norec,
+    proc_pure_overhead,
+    nest_dirty_overhead,
+    nest_pure_overhead : INTEGER;
+    brackets_sum_overhead_lo,
+    brackets_sum_overhead_hi : INTEGER;
+
+
+VAR X2C_prof_enabled: INTEGER;
+
+END xPerfMon.

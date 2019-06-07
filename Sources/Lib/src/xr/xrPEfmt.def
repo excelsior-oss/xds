@@ -1,0 +1,187 @@
+(** Copyright (c) 1995 xTech Ltd, Russia. All Rights Reserved. *)
+(** Data structures in Microsoft PE format. *)
+
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] xrPEfmt; (* Hady. Oct 20, 1995 *)
+
+IMPORT
+  SYSTEM
+  ;
+
+CONST
+  MZSIG  = 5A4DH; (* "MZ" exe & dll file header signature *)
+  PESIG  = 4550H; (* "PE" signature *)
+
+TYPE
+  DWORD = SYSTEM.CARD32;
+  WORD  = SYSTEM.CARD16;
+  BYTE  = SYSTEM.CARD8;
+  DWSET = SYSTEM.SET32;
+  WSET  = SYSTEM.SET16;
+
+CONST (* FileHeader.Characteristics *)
+  FileRelocsStripped    = WSET{0};   (* Relocation info stripped from file.                           *)
+  FileExecutableImage   = WSET{1};   (* File is executable  (i.e. no unresolved externel references). *)
+  FileLineNumsStripped  = WSET{2};   (* Line nunbers stripped from file.                              *)
+  FileLocalSymsStripped = WSET{3};   (* Local symbols stripped from file.                             *)
+  FileBytesReversedLo   = WSET{7};   (* Bytes of machine word are reversed.                           *)
+  File32bitMashine      = WSET{8};   (* 32 bit word machine.                                          *)
+  FileDebugStripped     = WSET{9};   (* Debugging info stripped from file in .DBG file                *)
+  FileSystem            = WSET{12};  (* System File.                                                  *)
+  FileDll               = WSET{13};  (* File is a DLL.                                                *)
+  FileBytesReversedHi   = WSET{15};  (* Bytes of machine word are reversed.                           *)
+
+TYPE
+  FileHeader = RECORD
+    Machine: WORD;
+    NumberOfSections: WORD;
+    TimeDateStamp: DWORD;
+    PointerToSymbolTable: DWORD;
+    NumberOfSymbols: DWORD;
+    SizeOfOptionalHeader: WORD;
+    Characteristics: SYSTEM.SET16;
+  END;
+
+  DataDirectory = RECORD
+    virtAddr: DWORD;
+    size: DWORD;
+  END;
+
+CONST (* OptionalHeader various *)
+  NumberofDirectoryEntries = 16;
+  NTOptionalHdrMagic = 10BH;
+  (* Subsystems *)
+  SubsystemUnknown    = 0; (* Unknown subsystem.                             *)
+  SubsystemNative     = 1; (* Image doesn't require a subsystem.             *)
+  SubsystemWindowsGUI = 2; (* Image runs in the Windows GUI subsystem.       *)
+  SubsystemWindowsCUI = 3; (* Image runs in the Windows character subsystem. *)
+  SubsystemOS2CUI     = 5; (* image runs in the OS/2 character subsystem.    *)
+  SubsystemPosixCUI   = 7; (* image run  in the Posix character subsystem.   *)
+  (* Directory Entries indexes *)
+  DirEntryExport     =  0; (* Export Directory             *)
+  DirEntryImport     =  1; (* Import Directory             *)
+  DirEntryResource   =  2; (* Resource Directory           *)
+  DirEntryException  =  3; (* Exception Directory          *)
+  DirEntrySequrity   =  4; (* Security Directory           *)
+  DirEntryBasereloc  =  5; (* Base Relocation Table        *)
+  DirEntryDebug      =  6; (* Debug Directory              *)
+  DirEntryCopyright  =  7; (* Description String           *)
+  DirEntryGlobalptr  =  8; (* Machine Value (MIPS GP)      *)
+  DirEntryTLS        =  9; (* TLS Directory                *)
+  DirEntryLoadConfig = 10; (* Load Configuration Directory *)
+
+TYPE
+  OptionalHeader = RECORD
+    Magic: WORD;
+    MajorLinkerVersion: BYTE;
+    MinorLinkerVersion: BYTE;
+    SizeOfCode: DWORD;
+    SizeOfInitializedData: DWORD;
+    SizeOfUninitializedData: DWORD;
+    AddressOfEntryPoint: DWORD;
+    BaseOfCode: DWORD;
+    BaseOfData: DWORD;
+    ImageBase: DWORD;
+    SectionAlignment: DWORD;
+    FileAlignment: DWORD;
+    MajorOperatingSystemVersion: WORD;
+    MinorOperatingSystemVersion: WORD;
+    MajorImageVersion: WORD;
+    MinorImageVersion: WORD;
+    MajorSubsystemVersion: WORD;
+    MinorSubsystemVersion: WORD;
+    Reserved1: DWORD;
+    SizeOfImage: DWORD;
+    SizeOfHeaders: DWORD;
+    CheckSum: DWORD;
+    Subsystem: WORD;
+    DllCharacteristics: WORD;
+    SizeOfStackReserve: DWORD;
+    SizeOfStackCommit: DWORD;
+    SizeOfHeapReserve: DWORD;
+    SizeOfHeapCommit: DWORD;
+    LoaderFlags: DWORD;
+    NumberOfRvaAndSizes: DWORD;
+    DataDir: ARRAY [0..NumberofDirectoryEntries-1] OF DataDirectory;
+  END;
+
+CONST (* SectionHeader.Characteristics bits *)
+  ScnTypeNoPad            = 00000008H; (* Reserved.                                                    *)
+
+  ScnCntCode              = 00000020H; (* Section contains code.                                       *)
+  ScnCntInitializedData   = 00000040H; (* Section contains initialized data.                           *)
+  ScnCntUninitializedData = 00000080H; (* Section contains uninitialized data.                         *)
+
+  ScnLnkOther             = 00000100H; (* Reserved.                                                    *)
+  ScnLnkInfo              = 00000200H; (* Section contains comments or some other type of information. *)
+  ScnLnkRemove            = 00000800H; (* Section contents will not become part of image.              *)
+  ScnLnkComdat            = 00001000H; (* Section contents comdat.                                     *)
+
+  ScnAlign1bytes          = 00100000H; (*                                                              *)
+  ScnAlign2bytes          = 00200000H; (*                                                              *)
+  ScnAlign4bytes          = 00300000H; (*                                                              *)
+  ScnAlign8bytes          = 00400000H; (*                                                              *)
+  ScnAlign16bytes         = 00500000H; (* Default alignment if no others are specified.                *)
+  ScnAlign32bytes         = 00600000H; (*                                                              *)
+  ScnAlign64bytes         = 00700000H; (*                                                              *)
+
+  ScnMemDiscardable       = 02000000H; (* Section can be discarded.                                    *)
+  ScnMemNotCashed         = 04000000H; (* Section is not cachable.                                     *)
+  ScnMemNotPaged          = 08000000H; (* Section is not pageable.                                     *)
+  ScnMemShared            = 10000000H; (* Section is shareable.                                        *)
+  ScnMemExecute           = 20000000H; (* Section is executable.                                       *)
+  ScnMemRead              = 40000000H; (* Section is readable.                                         *)
+  ScnMemWrite             = 80000000H; (* Section is writeable.                                        *)
+
+TYPE
+  SectionHeader = RECORD
+    Name: ARRAY [0..7] OF CHAR;
+    CASE : BOOLEAN OF
+      |TRUE : PhysicalAddress: DWORD;
+      |FALSE: VirtualSize: DWORD;
+    END;
+    VirtualAddress: DWORD;
+    SizeOfRawData: DWORD;
+    PointerToRawData: DWORD;
+    PointerToRelocations: DWORD;
+    PointerToLinenumbers: DWORD;
+    NumberOfRelocations: WORD;
+    NumberOfLinenumbers: WORD;
+    Characteristics: DWORD;
+  END;
+
+  ExportDirectory = RECORD
+    Characteristics: DWORD;
+    TimeDateStamp:  DWORD;
+    MajorVersion: WORD;
+    MinorVersion: WORD;
+    Name: DWORD;
+    Base: DWORD;
+    NumberOfFunctions: DWORD;
+    NumberOfNames: DWORD;
+    AddressOfFunctions: DWORD;
+    AddressOfNames: DWORD;
+    AddressOfNameOrdinals: DWORD;
+  END;
+
+TYPE
+  ArchiveStartType = ARRAY [0..7] OF CHAR;
+  ArchiveEndType   = ARRAY [0..1] OF CHAR;
+CONST
+  LF = 12C;
+  ArchiveStart = "!<arch>"+LF;
+  ArchiveEnd   = "'"+LF;
+
+TYPE
+  ArhiveMemberHeader = RECORD
+    name   : ARRAY [0..15] OF CHAR;
+    date   : ARRAY [0..11] OF CHAR;
+    iserId : ARRAY [0.. 5] OF CHAR;
+    groupId: ARRAY [0.. 5] OF CHAR;
+    mode   : ARRAY [0.. 7] OF CHAR;
+    size   : ARRAY [0.. 9] OF CHAR;
+    tail   : ArchiveEndType;
+  END;
+
+END xrPEfmt.

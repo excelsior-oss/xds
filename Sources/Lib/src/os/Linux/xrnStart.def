@@ -1,0 +1,25 @@
+(* Copyright (c) xTech 1995,96.  All Rights Reserved *)
+
+<* +M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] xrnStart;
+
+IMPORT SYSTEM;
+
+TYPE
+  BreakHandler = PROCEDURE ["C"] (): SYSTEM.BOOL32;
+
+
+PROCEDURE ["C"] X2C_SetBreakHandler(new: BreakHandler): BreakHandler;
+
+
+PROCEDURE X2C_EstablishMain ( mainAdr :SYSTEM.ADDRESS );
+(*  the module needs a main procedure address which is in
+    an object file being linked. If the module in DLL
+   ( not linked into ), it cannot obtain that address through
+    external/public resolving as it has a place when run-time library
+    is linked into *)
+
+PROCEDURE ["StdCall"] / X2C_xStart;
+
+END xrnStart.

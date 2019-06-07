@@ -1,0 +1,13 @@
+# XDS-x86 Library Manager: Build System Configuration
+
+UNIT_NAME=XDS-x86-Library-Manager
+
+ALL_COMPONENTS=xlib
+PRIMARY_COMPONENTS=xlib
+DEFAULT_COMPONENT=xlib
+
+# Tools necessary to build component
+ENVIRONMENT=XDSDIR
+
+# External files which are part of this component  
+EXTDEPS=

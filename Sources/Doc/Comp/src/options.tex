@@ -1,0 +1,2320 @@
+% !!! check "inline" and "header" attributes
+% !!! options/equation list not full
+% !!! platform-specific options (like PM and VIO)
+% !!! explicitly specify BE instead of '\ifgenc'/'\ifgencode'
+
+% Modes list
+
+\newcommand{\MLBegin}{\ifonline {\bf Modes:} \else [\fi}
+\newcommand{\MLEnd}{\ifonline \else ]\fi}
+\newcommand{\ModeC}{\ifonline \ref[COMPILE]{xc:modes:compile}\else compile\fi}
+\newcommand{\ModeM}{\ifonline \ref[MAKE]{xc:modes:make}\else make\fi}
+\newcommand{\ModeP}{\ifonline \ref[PROJECT]{xc:modes:project}\else project\fi}
+\newcommand{\ModeB}{\ifonline \ref[BROWSE]{xc:modes:browse}\else browse\fi}
+\newcommand{\ModeG}{\ifonline \ref[GEN]{xc:modes:gen}\else gen\fi}
+
+\chapter{Compiler options and equations}\label{options}
+
+A rich set of \xds{} compiler options allows you to control the source language,
+the generated code, and the internal limits and settings.  We distinguish
+between boolean options (or just options) and equations. An option can
+be set ON (TRUE) or OFF (FALSE), while an equation value is a string.
+
+\section{Options}\label{opt:bool}
+\index{options}
+
+Options control the process of compilation, including  language
+extensions, run-time checks and code generation. An option can be
+set ON (TRUE) or OFF (FALSE).
+
+A compiler setup directive (See \ref{config:options}) is used
+to set the option value or to declare a new option.
+
+Options may be set in a \See{configuration file}{}{config:cfg},
+\See{on the command line}{}{xc:modes}, in a \See{project file}{}{xc:project}).
+or in the source text (See \ref{m2:pragmas}). At any
+point of operation, the last value of an option is in effect.
+
+Alphabetical list of all options along with their descriptions
+may be found in the section \ref{opt:bool:list}.
+\ifonline\else
+See also tables
+\ref{table:opt:check} (page \pageref{table:opt:check}),
+\ref{table:opt:ext}   (page \pageref{table:opt:ext}),
+\ref{table:opt:code}  (page \pageref{table:opt:code})
+and
+\ref{table:opt:misc}  (page \pageref{table:opt:misc}).
+\fi
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\bf Option  & \bf Meaning \\
+\hline
+\OERef{ASSERT}       & enable ASSERT generation             \\
+\OERef{CHECKDINDEX}  & check of dynamic array bounds        \\
+\OERef{CHECKDIV}     & check for a positive divisor         \\
+                      & (DIV and MOD)                        \\
+\OERef{CHECKINDEX}   & check of static array bounds         \\
+\OERef{CHECKNIL}     & NIL pointer dereference check        \\
+\OERef{CHECKPROC}    & check of a formal procedure call     \\
+\OERef{CHECKRANGE}   & range checks                         \\
+                      & (range types and enumerations)       \\
+\OERef{CHECKSET}     & range check of set operations        \\
+\OERef{CHECKTYPE}    & dynamic type guards (\ot{} only)     \\
+\OERef{COVERFLOW}    & cardinal overflow check              \\
+\OERef{IOVERFLOW}    & integer overflow check               \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Run-time checks}
+\label{table:opt:check}
+\index{options!run-time checks}
+\end{table}
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\bf Option            & \bf Meaning \\
+\hline
+\OERef{M2ADDTYPES}    & add SHORT and LONG types  \\
+\OERef{M2BASE16}      & use 16-bits basic types in Modula-2 \\
+\OERef{M2CMPSYM}      & compare symbol files in Modula-2 \\
+\OERef{M2EXTENSIONS}  & enable \mt{} extensions  \\
+\OERef{O2ADDKWD}      & enable additonal keywords in \ot \\
+\OERef{O2EXTENSIONS}  & enable \ot{} extensions  \\
+\OERef{O2ISOPRAGMA}   & enable ISO \mt{} pragmas in Oberon \\
+\OERef{O2NUMEXT}      & enable \ot{} scientific extensions  \\
+\OERef{PIMCAST}       & enable PIM style type transfer, like CARDINAL(x)  \\
+\OERef{STORAGE}       & enable default memory management in \mt{} \\
+\OERef{SYSTEMFLAGEXT} & enable extension of system flags \\
+\iftopspeed
+\OERef{TOPSPEED}      & enable Topspeed \mt{}-compatible extensions \\
+\fi
+\hline
+\end{tabular}
+\end{center}
+\caption{Source language control options}\label{table:opt:ext}
+\index{options!language control}
+\end{table}
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\bf Option  &\bf Meaning \\
+\hline
+\OERef{\_\_GEN\_C\_\_}   & ANSI C code generation      \\
+\OERef{\_\_GEN\_X86\_\_} & code generation for 386/486/Pentium/PentiumPro \\
+\ifgenc
+  \OERef{COMMENT}        & copy comments into a generated C code  \\
+  \OERef{CONVHDRNAME}    & use file name in the \verb|#include| directive \\
+\fi
+\ifgenc
+  \OERef{CSTDLIB}     & definition of the C standard library \\
+\fi
+\ifgencode
+  \OERef{DBGNESTEDPROC} & generate information about procedure nesting \\
+  \OERef{DBGQUALIDS}  & generate qualified identifiers in debug info \\
+  \OERef{DEFLIBS}     & put the default library names into object files \\
+\fi
+\ifgenc
+  \OERef{DIFADR16}    & SYSTEM.DIFADR returns 16-bits value   \\
+\fi
+\ifgencode
+\ifdll
+  \OERef{DLLEXPORT}   & show exported objects to DLL clients \\
+\fi
+  \OERef{DOREORDER}   & perform instruction scheduling \\
+  \OERef{GENASM}      & generate assembly text \\
+\fi
+\ifgenc
+  \OERef{EXPORTINIT}  & export the initialization flag of the module body \\
+\fi
+\ifgenc
+  \OERef{GENCDIV}     & generate C division operators \\
+  \OERef{GENCPP}      & generate C++                     \\
+  \OERef{GENCONSTENUM} & generate enumeration as constants   \\
+  \OERef{GENENUMUSAGE} & generate enumeration type name in declarations \\
+\fi
+\ifgencode
+  \OERef{GENCPREF}    & generate underscore prefixes \\
+\fi
+\ifgenc
+  \OERef{GENCTYPES}   & generate C types                     \\
+  \OERef{GENDATE}     & insert a date in a C file  \\
+\fi
+\OERef{GENDEBUG}      & generate code in the debug mode        \\
+\ifgencode
+\ifdll
+  \OERef{GENDLL}      & generate code for dynamic linking      \\
+\fi
+  \OERef{GENFRAME}    & always generate a procedure frame      \\
+\fi
+\ifgenc
+  \OERef{GENFULLFNAME}  & generate full name in \verb'#lineno' directive \\
+\fi
+  \OERef{GENHISTORY}    & enable postmorten history  \\
+\ifgenc
+  \OERef{GENKRC}        & generate K\&R C               \\
+  \OERef{GENLONGSUFFIX} & generate suffix to specify long type of constant \\
+  \OERef{GENNOINIT}     & disable automatic module initialisation  \\
+  \OERef{GENOPAQUEDBG}  & generate opaque types in the debug mode  \\
+  \OERef{GENPROCLASS}   & generate a specification of a procedure class \\
+  \OERef{GENPROFILE}    & generate additional code for profiling \\
+  \OERef{GENPTRTOARR}   & generate pointer to array as pointer to array \\
+  \OERef{GENRETURN}     & generate additional return statement \\
+\fi
+\ifgencode
+  \OERef{GENPTRINIT}  & generate a local pointer initialization  \\
+\fi
+\ifgenc
+  \OERef{GENSIZE}    & evaluate sizes of types               \\
+  \OERef{GENTYPEDEF} & generate typedef's for types         \\
+  \OERef{GENUNSIGNSUFFIX} & generate suffix to specify unsigned type of constant \\
+\fi
+\ifgencode
+\ifdll
+  \OERef{IMPLIB}     & use import libraries                   \\
+\fi
+\fi
+\ifgenc
+  \OERef{INDEX16}    & index is of 16-bits                   \\
+\fi
+\ifgenc
+  \OERef{KEEPUNUSEDOBJS}  & retain unused objects in a generated C code \\
+\fi
+  \OERef{LINENO}     & generate line numbers
+                   \ifgenc in C code files \fi
+                   \ifgencode in object files \fi
+                                                        \\
+\ifgenc
+  \OERef{NOEXTERN}   & do not generate prototypes for external C functions \\
+\fi
+  \OERef{NOHEADER}   & disable generation of a header file    \\
+\ifgenc
+  \OERef{NOOPTIMIZE}  & disable a set of opimizations \\
+\else
+  \OERef{NOOPTIMIZE}  & disable machine-independent opimizations \\
+\fi
+\ifgencode
+  \OERef{NOPTRALIAS} & ignore pointer aliasing              \\
+\fi
+\ifgencode
+  \OERef{ONECODESEG} & generate one code segment \\
+\fi
+  \OERef{PROCINLINE} & enable in-line procedure expansion \\
+\ifgencode
+  \OERef{SPACE}      & favor code size over speed \\
+\fi
+\ifgenc
+  \OERef{TARGET16}   & C {\tt int} type is of 16-bits          \\
+\fi
+  \OERef{TARGET\_BIGENDIAN}  & target platform is big-endian  \\
+\ifgencode
+\ifdll
+  \OERef{USEDLL}     & use DLL version of the run-time library   \\
+\fi
+\fi
+  \OERef{VERSIONKEY} & append version key to the module initialization \\
+  \OERef{VOLATILE}   & declare variables as volatile \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Code generator control options}\label{table:opt:code}
+\index{options!code control}
+\end{table}
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\bf Option     & \bf Meaning \\
+\hline
+\OERef{BSCLOSURE}  & browse control option \\
+\OERef{BSREDEFINE} & browse control option \\
+\OERef{CHANGESYM}  & permission to change a symbol file \\
+\OERef{FATFS}      & limit file names to 8.3 \\
+\OERef{GCAUTO}     & enables implicit call of the garbage collector \\
+\OERef{LONGNAME}   & use long names in batch files  \\
+\OERef{M2}         & force the Modula-2 compiler  \\
+\OERef{MAIN}       & mark an Oberon-2 main module     \\
+\OERef{MAKEDEF}    & generate definition      \\
+\OERef{MAKEFILE}   & generate makefile        \\
+\OERef{O2}         & forces the Oberon-2 compiler  \\
+\OERef{OVERWRITE}  & create a file, always overwrites the old one \\
+\OERef{VERBOSE}    & produce verbose messages     \\
+\OERef{WERR}       & treat warnings as errors \\
+\OERef{WOFF}       & suppress warning messages    \\
+\OERef{XCOMMENTS}  & preserve exported comments \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Miscellaneous options}\label{table:opt:misc}
+\index{options!miscellaneous options}
+\end{table}
+
+\pagebreak % To not break the following section with tables
+\section{Options reference}\label{opt:bool:list}
+
+This section lists all options in alphabetical order.  Those  options
+that may  be arbitrarily  placed in the source code are marked as {\em
+inline} options (See also \ref{m2:pragmas}).  There are also options
+which can be placed in a source file, but only in a module header
+(i.e. before any of the keywords \verb'"DEFINITION"', \verb'"IMPLEMENTATION"', and
+\verb'"MODULE"') These options are marked as {\em header}.
+If an option is not marked either as header or inline,
+then the result of setting it in the source text is undefined.
+
+Operation  modes  in  which  an  option has effect are listed
+in square brackets ([]) after the option name; the character
+'*' stands for all operation  modes. For example, [browse] means
+that  the  option is used by the compiler in the BROWSE operation mode
+only.
+
+{\bf Note:} in the \See{MAKE}{}{xc:modes:make} and
+\See{PROJECT}{}{xc:modes:project} modes the compiler switches to
+the \See{COMPILE}{}{xc:modes:compile} mode to compile each module.
+
+Run-time check options are ON by default. If not explicitly
+specified, other options are OFF (FALSE) by default.
+
+\newcommand{\inline}{({\em inline})}
+\newcommand{\header}{({\em header})}
+
+\ifonline \else
+\begin{description}
+\fi
+
+\OptHead{\_\_GEN\_X86\_\_}{code generation for 386/486/Pentium/PentiumPro}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        The compiler sets this option ON, if the code generation for
+        386/486/Pentium/PentiumPro is in operation.
+
+        The option can be used for compiling different text fragments
+        for different targets. See also \ref{m2:pragmas:cc}.
+
+\OptHead{\_\_GEN\_C\_\_}{ANSI C code generation}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        The compiler sets this option ON, if the C code generation is
+        in operation.
+
+        The option can be used for compiling different text fragments
+        for different targets. See also \ref{m2:pragmas:cc}.
+
+\OptHead{ASSERT}{enable ASSERT generation}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If the option is OFF, the compiler ignores all calls
+        of the standard procedure \verb'ASSERT'.
+
+        {\bf Warning:} Ensure that all \verb'ASSERT' calls in
+        your program do not have side effects (i.e. do not contain
+        calls of other function procedures) before setting this option OFF.
+
+        The option is ON by default.
+
+
+\OptHead{BSCLOSURE}{browse control option}
+        \MLBegin{}\ModeB{}\MLEnd{}
+
+        Include all visible methods.
+
+        If the option is set ON, the browser includes all
+        defined and inherited type-bound procedure
+        declarations with all record declarations when creating
+        a pseudo-definition   module.  See also
+        \ref{o2:env:makedef}.
+
+\OptHead{BSREDEFINE}{browse control option}
+        \MLBegin{}\ModeB{}\MLEnd{}
+
+\nopagebreak
+        Include all redefined methods.
+
+        If the option is set ON, the browser includes original
+        definitions of any overwritten type-bound  procedures  with
+        record declarations.
+        See also \ref{o2:env:makedef}.
+
+\OptHead{CHANGESYM}{permission to change a symbol file}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        Permission to change a module interface (a symbol file).
+
+        The \ot{} compiler creates a temporary symbol file
+        every time an \ot{} module is compiled,
+        compares this symbol file with the existing one and
+        overwrites it with the new one if necessary. When
+        the  option is OFF (by default), the compiler
+        reports an error if interface of a module
+        (and, hence, its symbol file) has been changed and does
+        not replace the old symbol file.
+
+        {\bf  Note:}  if  the \OERef{M2CMPSYM} option is set, the
+        same  is valid for compilation  of a \mt{}
+        definition  module,  i.e.,  the {\bf CHANGESYM} option
+        should be set ON for the compilation to succeed
+        if a module interface has been changed.
+
+\OptHead{CHECKDINDEX}{check of dynamic array bounds}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        A check of dynamic array bounds.
+
+        If the option is set ON, the compiler generates index checks
+        for dynamic arrays (\verb'POINTER TO ARRAY OF T').
+
+        The option is ON by default.
+
+
+\OptHead{CHECKDIV}{check for a positive divisor (DIV and MOD)}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If the option is set ON, the compiler generates a check if
+        a divisor is positive in \verb'DIV' and \verb'MOD' operators.
+
+        The option is ON by default.
+
+
+\OptHead{CHECKINDEX}{check of static array bounds}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        A check of static array bounds.
+
+        If the option is set ON, the compiler generates index checks
+        for all arrays except dynamic (See the \OERef{CHECKDINDEX} option).
+
+        The option is ON by default.
+
+\OptHead{CHECKNIL}{NIL pointer dereference check}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If the option is set ON, the compiler generates NIL checks
+        on all pointer dereferences.
+
+        The option is ON by default.
+
+\OptHead{CHECKPROC}{check of a formal procedure call}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If the option is set ON, the compiler generates a NIL check
+        when calling a procedure variable.
+
+        The option is ON by default.
+
+\OptHead{CHECKRANGE}{range checks (range types and enumerations)}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If the option is set ON, the compiler generates range checks
+        for range types and enumerations.
+
+        The option is ON by default.
+
+\OptHead{CHECKSET}{range check of set operations}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If the option is set ON, the compiler generates range checks
+        for set operations (\verb'INCL', \verb'EXCL', set aggregates).
+
+        The option is ON by default.
+
+
+\OptHead{CHECKTYPE}{dynamic type guards (\ot{} only)}
+        \MLBegin{}\ModeC{}, \ot{} only\MLEnd{} \inline
+
+        If the option is set ON, the compiler generates dynamic type guards.
+
+        The option is ON by default.
+
+\ifgenc
+\OptHead{COMMENT}{copy comments into a generated C code}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON,  the  compiler copies comments
+        to appropriate places in the generated C code.
+        Comments  from  an \ot{} module are only inserted  into
+        the  C code file and not into the header file.
+\fi
+
+\ifgenc
+\OptHead{CONVHDRNAME}{use file name in the '\#include' directive}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON, the compiler uses a file name
+        in the \verb|#include| directive. Otherwise the compiler
+        generates a module name postfixed by the header file extension.
+
+\fi
+
+\OptHead{COVERFLOW}{cardinal overflow check}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If the option is set ON, the compiler generates overflow checks
+        for all cardinal (unsigned) arithmetic operators.
+
+        The option is ON by default.
+
+\ifgenc
+\OptHead{CSTDLIB}{definition of the C standard library}
+        \MLBegin{}\ModeC{},{\em foreign definition only}\MLEnd{} \header
+
+        The option should be set when compiling a foreign definition
+        module, otherwise it will be ignored.
+        If the option is set ON, the compiler uses angle brackets \verb+<>+
+        in the \verb|#include| directive, when importing the foreign
+        definition. Otherwise the compiler uses quotes.
+\begin{verbatim}
+    #include <stdio.h>
+    #include "MyLib.h"
+\end{verbatim}
+\fi
+
+\ifgencode
+\OptHead{DBGNESTEDPROC}{generate information about procedure nesting}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If this option is set ON, the compiler includes procedure nesting data
+        into debug information (CodeView and HLL formats only, see the
+        \OERef{DBGFMT} equation).
+
+        This is a non-standard feature, so a third party debugger would not
+        work correctly with an executable compiled with {\bf DBGNESTEDPROC} ON.
+        For instance, MSVC does not display local variables of nested procedures.
+
+        This option is OFF by default.
+
+\OptHead{DBGQUALIDS}{generate qualified identifiers in debug info}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON, the compiler prefixes names of
+        \mt{}/\ot{} global variable with the name of the respective module
+        and underscore in debug information. This feature may help you
+        distingushing identically named exported variables from different
+        modules in third-party debuggers that do not support \mt{}/\ot{}.
+
+        This option is OFF by default.
+
+\OptHead{DEFLIBS}{put the default library names into object files}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON, the compiler writes the default
+        library names to the generated object files.
+
+        The option is ON by default.
+\fi
+
+\ifgenc
+\OptHead{DIFADR16}{SYSTEM.DIFADR returns 16-bits value}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON, the compiler assumes that the
+        difference between addresses  on the target  platform is a
+        16-bit integer value, otherwise a 32-bit integer value.
+
+        The correct setting of the option is required for
+        the \verb'ADDADR', \verb'SUBADR', and \verb'DIFADR'
+        system functions to work correctly.
+
+        See \ref{maptoc:opt:config} for further details.
+\fi
+
+\ifgencode
+\ifdll
+\OptHead{DLLEXPORT}{show exported objects to DLL clients}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        Setting this option ON during compilation of a \mt{} definition module
+        or an \ot{} module causes exported procedures and variables
+        to be visible outside a dynamic link library.
+
+        See \ref{dll:create:export} for more information on
+        controlling export from DLLs.
+\fi
+
+\OptHead{DOREORDER}{perform instruction scheduling}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        Setting this option ON enables the {\em instruction scheduling}
+        mechanism of the x86 code generator. It reorders CPU instructions
+        so that independent instructions can be executed simultaneously
+        whenever possible.
+
+        {\bf Note}: this optimization significantly slows down the compiler,
+        but results in a code perfomance gain of 5-15\%.
+\fi
+
+\OptHead{FATFS}{limit file names to 8.3}
+        \MLBegin{}*\MLEnd{}
+
+        Forces the compiler to limit file names to FAT "8.3" convention.
+
+\OptHead{GCAUTO}{enables implicit call of the garbage collector}
+        \MLBegin{}\ModeC{},{\em top-level module only}\MLEnd{} \header
+
+        Enables implicit  calls  of the garbage collector in the
+        generated  program.  The option is ignored for all modules
+        except the top-level module of the program.  We recommend   to
+        set the option in the  project  or configuration file.
+
+        See also \ref{rts:mm}.
+
+\ifgencode
+\OptHead{GENASM}{generate assembly text}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If this option is set ON, the compiler generates text in the 
+        assembly language instead of object files. The only assembler
+        supported in the current version is GNU Assembler.
+\fi
+
+\ifgenc
+\OptHead{EXPORTINIT}{export the initialization flag of the module body}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler generates export declaration
+        for the module body initialization flag. The initialization flag   
+        is zero if the module body has not been initialized yet.   
+
+        The option is OFF by default.
+\fi
+
+\ifgenc
+\OptHead{GENCDIV}{generate C division operators}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler translates \verb'DIV' and
+        \verb'MOD' operators to C division operators \verb'/' and \verb'%'.
+        By default, \xds{} generates ???.
+
+\OptHead{GENCPP}{generate C++}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler generates C++ code.
+        By default, ANSI C code is generated.
+        (See also \OERef{GENKRC}).
+
+\OptHead{GENCONSTENUM}{generate enumeration as constants}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If this option is set ON, a \mt{} enumeration type is translated
+        to a set of integer constants. Otherwise, it is translated to
+        a C enumeration (\verb'enum').
+
+        {\bf Note:} This option turns off the option 
+        \OERef{GENENUMUSAGE}.
+
+\OptHead{GENENUMUSAGE}{generate enumeration type name in declarations}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If this option is set ON, enumeration type names are generated 
+        in declarations of variables and function parameters.
+
+        {\bf Note:} This option has effect only when the option 
+        \OERef{GENCONSTENUM} is OFF.
+
+        Ordinarily, expressions that define a value of an enumeration type 
+        have a different size in Modula-2 and ANSI C. In Modula-2, the smallest 
+        ordinal type capable of representing all values of the enumeration type 
+        is used. In ANSI C, the {\tt int} type is used always. 
+ÿ
+        The option {\tt GENENUMUSAGE} is applicable only if the C compiler and 
+        linker support a best fit strategy for enumeration types. To make sure 
+        that the size of enumeration types is the same in Modula-2 and C, a type 
+        size check is inserted into the BEGIN part of a module defining 
+        the enumeration type if the option {\tt GENENUMUSAGE} is ON.
+
+
+\fi
+
+\ifgencode
+\OptHead{GENCPREF}{generate underscore prefixes}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler uses underscore as
+        a prefix for all public names in object files.
+% !!! now it can be specified inline !!!
+
+\fi
+
+\ifgenc
+\OptHead{GENCTYPES}{generate C types}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler generates standard C type
+        names whenever possible, otherwise names defined in
+        run-time support are used.
+
+        See \ref{maptoc:opt:gen} for further details.
+\fi
+
+\ifgenc
+\OptHead{GENDATE}{insert a date in a C file}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON (by default), the compiler inserts
+        the current date into a generated C file.
+\fi
+
+\OptHead{GENDEBUG}{generate code in the debug mode}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+\ifgencode
+        If the option is set ON, the compiler puts
+        debug information into an object file.
+
+        In some cases, switching the option ON may reduce
+        code quality.
+
+        See also the \OERef{DBGFMT} equation.
+\fi
+\ifgenc
+        If the option is set ON, the compiler generates code in
+        debug mode. If your program is compiled in this mode, the
+        run-time system prints a stack of procedure calls (a file
+        name and a number of a line) on abnormal termination of your
+        program. If the option \OERef{LINENO} is also ON, the stack
+        is printed in terms of original (\ot{}/\mt{}) source files,
+        otherwise a file name and a number of a line of generated C files
+        is printed.
+
+        {\bf Note:} Setting the option ON will significantly enlarge
+        your program and slow it down.
+
+        See \ref{maptoc:opt:gen} for further details.
+\fi
+
+\ifgencode
+\ifdll
+\OptHead{GENDLL}{generate code for dynamic linking}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Setting this option ON forces generation of object and symbol files
+        suitable for building DLLs. In most cases, the \OERef{USEDLL} option
+        should be also turned on.
+
+        See Chapter \ref{dll} for details on building DLLs.
+\fi
+
+\OptHead{GENFRAME}{always generate a procedure frame}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler always generates a stack frame.
+        It may be necessary to simplify debugging.
+\fi
+
+\ifgenc
+\OptHead{GENFULLFNAME}{generate full name in '\#lineno' directive}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON, the compiler generates full file names,
+        including file paths from redirection directives,
+        in \verb'#lineno' directive.
+\fi
+
+\OptHead{GENHISTORY}{enable postmortem history}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+% !!! \gencode only !!!
+% !!! errinfo.$$$
+
+        If the option is set ON, the run-time system prints a stack of
+        procedure calls (a file name and a line number) on abnormal
+        termination of your program. It should be set when compiling a
+        main module of the program. In this case the required part of
+        the run-time system will be added to the program.  The option
+        \OERef{LINENO} should be set for all modules in the program.
+
+        See \ref{start:debug} for an example.
+
+\ifgencode
+        {\bf Note:} In some cases the printed list may contain incorrect
+        lines, i.e. procedures that were not called in the given context
+        (See \ref{rts:history}).
+\fi
+
+\ifgenc
+\OptHead{GENKRC}{generate K\&R C}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler generates K\&R C
+        (no types in function prototypes, etc).
+        It can be useful when porting software to platforms
+        for which ANSI C compilers are not available.
+        By default, the compiler generates ANSI C code.
+
+        See \ref{maptoc:proc} and \ref{maptoc:opt:gen} for
+        further details.
+
+        {\bf Note:} Seeting this option ON removes the line length
+        limit in the generated C text (see \OERef{GENWIDTH}).
+\fi
+
+
+\ifgenc
+\OptHead{GENLONGSUFFIX}{generate suffix to specify long type of constant}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+       If the option is set ON, the compiler generates suffix "l" 
+       for constants of long type (32-bits). 
+       
+       This suffix can be combined with the suffix which specifies 
+       unsigned type of constant (see \OERef{GENUNSIGNSUFFIX}). 
+
+       The option is OFF by default.
+\fi
+
+
+\ifgenc
+\OptHead{GENNOINIT}{disable automatic module initialisation}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler does not automatically include  
+        in the module body the check that module has been already initialized 
+        as well as the calls the bodies of the imported modules.
+
+        {\bf Note:} If option is used then it is up to the user to make sure
+        that all the modules are correctly initialised.
+
+        The option is OFF by default.
+\fi
+
+
+%------------------------------------------------------------------------------
+\ifgenc
+\OptHead{GENOPAQUEDBG}{generate opaque types in the debug mode}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If this option is set ON, the compiler generates Modula-2 opaque type 
+        declarations as a synonym to the special predefined type {\tt X2C\_OPAQUE}. 
+        It is more friendly  to a debugger way. This gives debugging tools the ability 
+        to identify opaque type and resolve it according to project specific 
+        known name mangling schemes.
+
+        By default, the following Modula-2 opaque type declaration
+\begin{verbatim}
+    TYPE
+      Socket;
+\end{verbatim}
+
+        will be translated into
+
+\begin{verbatim}
+    typedef void *Socket
+\end{verbatim}
+
+        If the {\bf GENOPAQUEDBG} option is set ON without respect to a value of 
+        the option \OERef{GENCTYPES} this declaration will be translated into
+
+\begin{verbatim}
+    typedef X2C_OPAQUE Socket;
+\end{verbatim}
+
+        The option is OFF by default.
+\fi  %\ifgenc
+
+
+\ifgenc
+\OptHead{GENPROCLASS}{generate a specification of a procedure class}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler inserts a special macro
+        \verb|X2C_PROCLASS| call in function prototypes for \mt{} and
+        \ot{} procedures. The option is set ON by default.
+
+        See \ref{maptoc:proc} and \ref{maptoc:opt:gen} for
+        further details.
+
+\fi
+
+\ifgenc
+\OptHead{GENPROFILE}{generate additional code for profiling}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler generates additional code
+        to provide a profile of the program. See \ref{maptoc:opt:gen}
+        for further details.
+
+\fi
+
+\ifgenc
+\OptHead{GENPTRTOARR}{generate pointer to array as pointer to array}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If this option is set ON, the compiler generates Modula-2 
+        pointer to array as pointer to array instead of pointer to 
+        array base.  
+
+The following Modula-2 text 
+\begin{verbatim}
+  TYPE
+    Pointer = POINTER TO Array;
+    Array = ARRAY [0..1] OF CARDINAL;
+\end{verbatim}
+
+        by default will be generated as  
+
+\begin{verbatim}
+    typedef unsigned long * Pointer;
+\end{verbatim}
+
+       If the option {\tt GENPTRTOARR} is set ON, then it will be generated as  
+
+\begin{verbatim}
+    typedef unsigned long Array[2];
+    typedef Array * Pointer;
+\end{verbatim}
+
+       The option is OFF by default.
+
+      {\bf Note:} According to Section 6.2.5.20 of INTERNATIONAL STANDARD ©ISO/IEC ISO/IEC 9899:201x 
+      The type of array element shall be complete whenever the array type is specified. In some cases
+      to satisfy this requirement the option {\tt GENPTRTOARR} will be ignored with corresponding warning.
+      For example, the following Modula-2 text has recursive type declaration.    
+
+\begin{verbatim}
+  TYPE
+    Pointer = POINTER TO Array;
+    Node = RECORD
+       index: CARDINAL;
+       next:  Pointer; 
+    END;
+    Array = ARRAY [0..1] OF Node;
+\end{verbatim}
+
+     The type "Pointer" will be generated as pointer to array element type independently of the option {\tt GENPTRTOARR}.
+
+\begin{verbatim}
+    struct Node;
+    typedef struct Node * Pointer;
+    struct Node {
+       unsigned long index;
+       Pointer next;
+    };
+    typedef struct Node Array[2];
+\end{verbatim}
+
+\fi
+
+\ifgenc
+\OptHead{GENRETURN}{generate additional return statement}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler generates additional return 
+        statement at the end of function procedures even if control flow
+        never reach it. 
+        
+        C compiler is not required to do control flow 
+        analysis and may always require presence of return statement
+        at the end of function procedures.
+        
+        The option is ON by default.
+\fi
+
+
+\ifgencode
+\OptHead{GENPTRINIT}{generate a local pointer initialization}
+        \MLBegin{}\ModeC{}, \ot{} only\MLEnd{} \header
+
+        If the option is set ON, the compiler generates code
+        for initialization of all local pointers, including
+        variables, record fields and
+        array elements. Values of all non-pointer
+        record fields and array elements are undefined.
+
+        The option is ON by default.
+\fi
+
+\ifgenc
+\OptHead{GENSIZE}{evaluate sizes of types}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        As  specified  in the language  reports the call of standard
+        function  SIZE  can be used in constant expression.  Due to the
+        specific of compilation to an intermediate language, the compiler
+        does not know the sizes of most types during compilation.
+
+        When the option is OFF, the compiler will report an error
+        if an attempt is made to use SIZE of almost all types in
+        a constant expression:
+
+\verb'    CONST size = SIZE(MyRecord);'
+
+        {\bf Note:} sizes of whole types, \verb'BOOLEAN', \verb'CHAR', and set types
+        are known to the compiler.
+
+        See \ref{maptoc:opt:sizeof} for further details.
+\fi
+
+\ifgenc
+\OptHead{GENTYPEDEF}{generate typedef's for types}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        There  are two possible ways to generate a declaration of
+        a record ({\tt struct}) type in C -- by using {\tt typedef} of
+        not. In most cases the way used by the compiler
+        is of no concern. However, when writing a foreign
+        language interface module (See Chapter \ref{multilang}) it
+        is desirable to control type declarations.
+
+        When the option is ON, the compiler uses the {\tt typedef} form
+        for all the types declared.
+        The option can be used in the source text, e.g:
+\begin{verbatim}
+    <* GENTYPEDEF + *>
+    TYPE FILE = RECORD END;
+    <* GENTYPEDEF - *>
+\end{verbatim}
+
+        See \ref{maptoc:opt:gen} for further details.
+\fi
+
+
+\ifgenc
+\OptHead{GENUNSIGNSUFFIX}{generate suffix to specify unsigned type of constant}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+        
+        If the option is set ON, the compiler generates suffix "u" 
+        for constants of unsigned type.
+
+        This suffix can be combined with the suffix which specifies 
+        long type of constant (see \OERef{GENLONGSUFFIX}). 
+
+        The option is ON by default.
+\fi
+
+
+\ifgencode
+\ifdll
+\OptHead{IMPLIB}{use import libraries}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        When this option is set ON, the compiler assumes that import
+        libraries will be used during linking to resolve references
+        to external data and code contained in DLLs. Otherwise, it
+        uses information contained in symbol files to form import
+        definition records in output object files, allowing the
+        executable to be linked without import libraries.
+
+        See \ref{dll:using:load-time} for more information.
+\fi
+\fi
+
+\ifgenc
+\OptHead{INDEX16}{index is of 16 bits}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON, the compiler assumes that an index is
+        of 16 bits on the target platform. By default, an index is of 32
+        bits.
+
+        See \ref{maptoc:opt:config} for further details.
+\fi
+
+\OptHead{IOVERFLOW}{integer overflow check}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If the option is set ON, the compiler generates overflow checks
+        of all integer (signed) arithmetic operators.
+
+        The option is ON by default.
+
+
+%------------------------------------------------------------------------------
+\ifgenc
+\OptHead{KEEPUNUSEDOBJS}{retain unused objects in a generated C code}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        When this option is set ON, the compiler retains the never used 
+        procedures and variables in a generated C code. Otherwise, unused 
+        objects are thrown away and don't get into a generated C code 
+        at all. 
+
+        The option is OFF by default.
+\fi
+
+
+%------------------------------------------------------------------------------
+\OptHead{LINENO}{generate line numbers}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+\ifgenc
+        If the option is set ON, the compiler inserts
+        a line of the form
+
+\verb'    #line lineno [module]'
+
+        into the generated  C  code  or header file
+        for every generated statement, forcing the C compiler and
+        other tools (such as a debugger) to refer to the original 
+        \mt{} or \ot{} source text instead of the generated C code.
+
+        {\bf Note:} Seeting this option ON removes the line length
+        limit in the generated C text (see \OERef{GENWIDTH}).
+\fi
+\ifgencode
+        If the option is set ON, the compiler inserts
+        line number information into object files.
+        This option should be set ON to get the postmortem
+        history (See the \OERef{GENHISTORY} option) and
+        for debugging.
+\fi
+
+\OptHead{LONGNAME}{use long names in batch files}
+        \MLBegin{}\ModeM{},\ModeP{}\MLEnd{}
+
+        Use long names.
+
+        If the option is set ON, the compiler uses full
+        path as a prefix for all module names
+        in the generated batch files. See also
+        \ref{xc:modes:batch}.
+
+\OptHead{M2}{force the Modula-2 compiler}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Force the \mt{} compiler.
+
+        If the option is set ON, the \mt{}  compiler is invoked
+        regardless of file extension.  The
+        option is ignored in MAKE and PROJECT modes.
+
+
+\OptHead{M2ADDTYPES}{add SHORT and LONG types}
+        \MLBegin{}\ModeC{},\mt{} only\MLEnd{} \header
+
+        Add short and long modifications of whole types.
+
+        If the option is set ON, the compiler recognizes the
+        types {\tt SHORTINT}, {\tt LONGINT}, {\tt SHORTCARD}
+        and {\tt LONGCARD} as pervasive identifiers .
+
+        {\bf Warning:}  Usage of additional types may cause
+        problems with the software portability to other
+        compilers.
+
+\OptHead{M2BASE16}{use 16-bits basic types in Modula-2}
+        \MLBegin{}\ModeC{},\mt{} only\MLEnd{} \header
+
+        If the option is set ON, the basic types {\tt INTEGER},
+        {\tt CARDINAL}, and {\tt BITSET}
+        are 16 bits wide in \mt{}. By default, they are 32 bits wide.
+
+\OptHead{M2CMPSYM}{compare symbol files in Modula-2}
+        \MLBegin{}\ModeC{},\mt{} only\MLEnd{}
+
+        If the option is set ON, the \mt{} compiler compares the symbol file
+        generated for a definition module with the old
+        version exactly as the \ot{} compiler does.
+        If the symbol files are equal, the old one
+        is preserved, otherwise the compiler overwrites symbol
+        file, but only if the \OERef{CHANGESYM} option is set ON.
+
+\OptHead{M2EXTENSIONS}{enable Modula-2 extensions}
+        \MLBegin{}\ModeC{},\mt{} only\MLEnd{} \header
+
+        If the option is set ON, the compiler allows
+        \See{\XDS{} \mt{} language extensions}{}{m2:ext}, such as line comment
+        ("\verb|--|"), read-only parameters, etc.,
+        to be used in the source code.
+
+        {\bf Warning:}  Extensions usage may cause problems with
+        porting to third-party compilers.
+
+\OptHead{MAIN}{mark an Oberon-2 main module}
+        \MLBegin{}\ModeC{}, \ot{} only\MLEnd{} \header
+
+        Mark the \ot{} main module.
+
+        If the option is set ON, the compiler generates a
+        program entry point (`main' function) for the \ot{}
+        module (See \ref{o2:env:main}).
+        Recommended to be used in a module header.
+
+\OptHead{MAKEDEF}{generate definition}
+        \MLBegin{}\ModeC{},\ot{} only\MLEnd{}
+
+        Forces the \ot{}
+        compiler to generate a (pseudo-) definition module after
+        successful compilation of an \ot{} module. The compiler
+        preserves the so-called {\em exported} comments
+        (i.e. comments started with `\verb|(**|')
+        if the \OERef{XCOMMENTS} option is set ON.
+
+        See \ref{o2:env:makedef}.
+
+\OptHead{MAKEFILE}{generate makefile}
+        \MLBegin{}\ModeP{}\MLEnd{}
+
+        Forces the compiler to generate a makefile after
+        successful compilation of a project.
+        See also \ref{xc:modes:gen} and \ref{xc:template}.
+
+\ifgenc
+\OptHead{NOEXTERN}{do not generate prototypes for external C functions}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If the option is set ON, the compiler does not generate C declarations for
+        procedures defined as external.
+
+        See \ref{multilang:extproc} for further details.
+\fi
+
+\OptHead{NOHEADER}{disable generation of a header file}
+        \MLBegin{}\ModeC{},\ModeM{},\ModeP{}\MLEnd{} \header
+
+\ifgenc
+        If the option is set ON, the compiler does not create a C
+        header file.
+
+        See also \ref{maptoc:opt:foreign}.
+\else
+        This option is used by translators to C. Native code compilers
+        recognize but ignore it.
+\fi
+
+\ifgenc
+\OptHead{NOOPTIMIZE}{disable a set of opimizations}
+\else
+\OptHead{NOOPTIMIZE}{disable machine-independent opimizations}
+\fi
+        \MLBegin{}\ModeC{}\MLEnd{}
+\ifgenc
+        If the option is set OFF (by default), the compiler performs a
+        set of optimizations, including constant expression evaluation,
+        constant propagation, etc. If the option is ON, the compiler
+        produces less efficient, but more readable text.
+
+        We recommend to switch the option ON only if you are using XDS as a
+        translator, i.e. if you will read or maintain the generated code.
+\else
+        If this option is set OFF (default), the machine-independent
+        optimizer is invoked before code generation. Setting it ON
+        causes less optimized, but still not straightforward code to
+        be produced.
+\fi
+
+\ifgencode
+\OptHead{NOPTRALIAS}{ignore pointer aliasing}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If the option is set ON, the compiler assumes that there is no
+        pointer aliasing, i.e. there are no pointers bounded to
+        non-structure variables. The only way to get a pointer to a
+        variable is to use the low-level facilities from the module
+        SYSTEM.  We recommend to turn this option ON for all modules
+        except low-level ones.  {\bf Note:} the code quality is better
+        if the option is ON.
+\fi
+
+\OptHead{O2}{force the Oberon-2 compiler}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Force \ot{} compiler.
+
+        If the option is set ON, the \ot{} compiler is invoked
+        regardless of the file extension.
+        The option is ignored in MAKE and PROJECT modes.
+
+\OptHead{O2ADDKWD}{enable additonal keywords in \ot}
+        \MLBegin{}\ModeC{},\ot{} only\MLEnd{} \header
+
+        Allows \mt{} \See{exceptions}{}{m2:ISO:exc} and \See{finalization}{}{m2:ISO:final}
+        to be used in \ot{} programs, adding keywords \verb'EXCEPT', \verb'RETRY', and
+        \verb'FINALLY'.
+
+        {\bf Warning:} Usage of this extension will prevent your
+        program from porting to other \ot{} compilers.
+
+\OptHead{O2EXTENSIONS}{enable Oberon-2 extensions}
+        \MLBegin{}\ModeC{},\ot{} only\MLEnd{} \header
+
+        If the option is set ON, the compiler allows \ot{}
+        language extensions to be used (See \ref{o2:ext}).
+
+        {\bf Warning:} Extensions usage will affect
+        portability to third-party \ot{} compilers.
+
+\OptHead{O2ISOPRAGMA}{enable ISO Modula-2 pragmas in Oberon}
+        \MLBegin{}\ModeC{},\ot{} only\MLEnd{}
+
+        If the option is set ON, the compiler allows the ISO \mt{}
+        style pragmas \verb|<* *>| to be used in \ot{}.
+        See \ref{o2:pragmas} and \ref{m2:pragmas}.
+
+        {\bf Warning:} Usage of ISO \mt{} pragmas may cause problems
+        when porting source code to third-party \ot{} compilers.
+
+\OptHead{O2NUMEXT}{enable Oberon-2 scientific extensions}
+        \MLBegin{}\ModeC{},\ot{} only\MLEnd{} \header
+
+        If the option is set ON, the compiler allows the \ot{}
+        scientific language extensions to be used (See \ref{o2:ext}),
+        including {\tt COMPLEX} and {\tt LONGCOMPLEX} types and the
+        in-line exponentiation operator.
+
+        {\bf Warning:}  Usage of additional types may cause
+        problems with portability to other compilers.
+
+\OptHead{PIMCAST}{enable PIM style type transfer, like CARDINAL(x)}
+        \MLBegin{}\ModeC{},\mt{} only\MLEnd{} \header
+
+        If the option is set ON, the compiler allows
+        PIM style type transfer, like {\tt CARDINAL(x)}. 
+        Type transfer is used to interpret a value of any type as 
+        a value of another type. 
+
+        {\bf Warning:} This option takes effect only when option \OERef{M2EXTENSIONS} is set.
+
+\ifgencode
+\OptHead{ONECODESEG}{generate one code segment}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is ON, the compiler produces only one code
+        segment which contains all code of a module, otherwise it generates
+        a separate code segment for each procedure.
+
+        {\bf Warning}: Setting this option ON disables smart linking.
+\fi
+
+\OptHead{OVERWRITE}{create a file, always overwrites the old one}
+        \MLBegin{}*\MLEnd{}
+
+        The option changes the way the compiler selects a directory
+        for output files. If the option is OFF,
+        the compiler always creates a file in the directory
+        which  appears  first  in  the  search  path list
+        correspondent to a pattern matching the file name.
+        Otherwise, the compiler overwrites the old file,
+        if it does exist in any directory of that list.
+        See also \ref{xc:red}.
+
+\OptHead{PROCINLINE}{enable in-line procedure expansion}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is ON, the compiler tries to expand procedures
+        in-line. In-line expansion of a procedure eliminates the overhead
+        produced by a procedure call, parameter passing, register saving,
+        etc. In addition, more optimizations become possible because
+        the optimizer may process the actual parameters used in a particular
+        call.
+
+        A procedure is not expanded in-line under the following
+        circumstances:
+        \begin{itemize}
+        \item the procedure is deemed too complex or too large by the
+              compiler.
+        \item there are too many calls of the procedure.
+        \item the procedure is recursive.
+        \end{itemize}
+
+\ifgencode
+\OptHead{SPACE}{favor code size over speed}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON, the compiler performs optimizations
+        to produce smaller code, otherwise (by default)
+        to produce faster code.
+\fi
+
+\OptHead{STORAGE}{enable the default memory management in Modula-2}
+        \MLBegin{}\ModeC{}, \mt{} only\MLEnd{} \header
+
+        If the option is set ON, the compiler uses the default memory
+        allocation and deallocation procedures for the
+        standard procedures \verb'NEW' and \verb'DISPOSE'.
+
+        {\bf Warning:} Usage of this option may cause problems
+        with software portability to other compilers.
+
+
+\OptHead{SYSTEMFLAGEXT}{enable extension of system flags}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        If this option is set ON, the compiler allows extended syntax
+        of direct language specification to specify various system 
+        flags such as volatile declaration and absolute address of a 
+        variables. See \ref{m2:ext:volatile} for details.
+
+        {\bf Warning:} This option takes effect only when option 
+        \OERef{M2EXTENSIONS} is set.
+
+        {\bf Warning:} This options forbids the option \OERef{VOLATILE}.  
+
+        The option is OFF by default for backward compatibility.
+
+\ifgenc
+\OptHead{TARGET16}{C 'int' type is of 16 bits}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON, the compiler assumes the C {\tt
+        int} type to be 16 bits wide on the target platform.
+
+        See \ref{maptoc:opt:config} for further details.
+\fi
+
+\OptHead{TARGET\_BIGENDIAN}{target platform is big-endian}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the option is set ON, the compiler assumes the target
+        platform to be big-endian. Large sets are treated in the reverse 
+        order and different set of run-time procedures are called.
+
+        The option is OFF by default. 
+
+\iftopspeed
+\OptHead{TOPSPEED}{enable Topspeed \mt{}-compatible extensions}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Setting this option ON enables a set of language extensions that
+        makes the compiler more compatible with TopSpeed.
+        The extensions are described in Appendix \ref{tscp}.
+\fi
+
+\OptHead{VERBOSE}{produce verbose messages}
+        \MLBegin{}\ModeM{},\ModeP{}\MLEnd{}
+
+        If the option is set ON, the compiler will report
+        a reason for each module (re)compilation (See \ref{xc:smart}).
+
+\ifgencode
+\ifdll
+\OptHead{USEDLL}{use DLL version of the run-time library}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        This options determines whether the run-time library has to be
+        linked statically (OFF) or dynamically (ON). It has to be set ON if a DLL
+        is being built (the \OERef{GENDLL} option is set ON), unless
+        your application consists of a single DLL (see \ref{dll:foreign}).
+
+        See Chapter \ref{dll} for more information on building
+        and using DLLs.
+\fi
+\fi
+
+\OptHead{VERSIONKEY}{append version key to the module initialization}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        This option may be used to perform version checks
+        at link time. If the option is set ON, the compiler generates
+        a name of a module body as composition of
+        \begin{itemize}
+        \item a module name
+        \item a string "\verb+_BEGIN_+"
+        \item a time stamp
+\ifgenc
+        \item values of options \OERef{TARGET16}, \OERef{INDEX16} and
+        \OERef{DIFADR16} in the packed form
+\fi
+        \end{itemize}
+        If a \mt{} definition module or an \ot{} module imported by
+        different compilation units has the same version, the same
+        name is generated for each call of the module body.
+        In all other cases unresolved references will be reported
+        at link time.
+
+        If the option is OFF, the compiler generates module body names
+        in a form: \verb|<module_name>_BEGIN|.
+
+        {\bf Note:} the option should be set when compiling
+        a \mt{} definition module or an \ot{} module.
+
+\ifgenc
+        See \ref{maptoc:idents} for further details.
+\fi
+
+
+\OptHead{VOLATILE}{declare variables as volatile}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        If this option appears to be switched ON during compilation
+        of a variable definition, the compiler assumes that references
+        to that variable may have side effects or that the value of
+        the variable may change in a way that can not be determined
+        at compile time. 
+\ifgenc
+        As a result, the optimizer will not eliminate any
+        operation involving that variable.
+\else
+        As a result, the optimizer will not eliminate any
+        operation involving that variable, and changes to the value of
+        the variable will be stored immediately.
+
+\ifthreads
+        See \ref{threads:volatile} for more information on volatile
+        variables usage in multithread programs.
+\fi
+\fi
+
+        {\bf Warning:} The option \OERef{SYSTEMFLAGEXT} enables more 
+        flexible syntax to declare variables as volatile and forbids 
+        the usage of {\tt VOLATILE} option.  
+
+
+\OptHead{WERR}{treat warningns as errors}
+        \MLBegin{}*\MLEnd{}  \inline
+
+        When the option \verb'WERRnnn' (e.g. \verb'WERR301') is set ON, the
+        compiler treats the warning \verb'nnn' (301 in the above example) as error.
+        See the \XC{}.msg file for warning texts and numbers.
+
+        \verb'-WERR+' forces the compiler to treat all warnings as errors.
+
+\OptHead{WOFF}{suppress warning messages}
+        \MLBegin{}*\MLEnd{}  \inline
+
+        When the option \verb'WOFFnnn' (e.g. \verb'WOFF301') is set ON, the
+        compiler does not report the warning \verb'nnn' (301 in the above example).
+        See the \XC{}.msg file for warning texts and numbers.
+
+        \verb'-WOFF+' disables all warnings.
+
+\OptHead{XCOMMENTS}{preserve exported comments}
+        \MLBegin{}\ModeC{},\ot{} only\MLEnd{}
+
+        If the option is set ON, the browser includes so-called
+        {\em exported} comments
+        (i.e. comments which start with "\verb'(**'")
+        into a generated pseudo definition module.
+
+        See also \ref{o2:env:makedef}.
+
+\ifonline \else
+\end{description}
+\fi
+
+\section{Equations}\label{opt:equ}
+\index{equations}
+
+An {\em equation} is a pair ({\tt name},{\tt value}), where {\tt value} is
+in general case an arbitrary string. Some equations have a limited set of
+valid values, some may not have the empty string as a value.
+
+A compiler setup directive (See \ref{config:options}) is used
+to set an equation value or to declare a new equation.
+
+Equations may be set in a \See{configuration file}{}{config:cfg},
+\See{on the command line}{}{xc:modes} and in a \See{project file}{}{xc:project}).
+Some equations may be set in the source text, at an arbitrary position
+(marked as {\em inline} in the reference), or only in the module header
+(marked as {\em header}). At any point of operation, the most recent
+value of an equation is in effect.
+
+Alphabetical list of all equations may be found in the section \ref{opt:equ:list}.
+\ifonline\else
+See also tables
+\ref{table:equ:ext} (page \pageref{table:equ:ext}),
+\ref{table:equ:code} (page \pageref{table:equ:code}),
+\ref{table:equ:misc} (page \pageref{table:equ:misc})
+\fi
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|c|l|}
+\hline
+\bf Name          & \bf Default & \bf File type \\
+\hline
+\OERef{BATEXT}   & \tt .bat    & recompilation batch file                     \\
+\OERef{BSDEF}    & \tt .odf    & pseudo-definition file created by browser    \\
+\ifgenc
+\OERef{CODE}     & \tt \Code   & generated C code file                        \\
+\fi
+\ifgencode
+\OERef{CODE}     & \tt \Code   & object file                                    \\
+\fi
+\OERef{DEF}      & \tt .def    & \mt{} definition module                      \\
+\ifgenc
+\OERef{HEADER}   & \tt \Header & generated C header file                      \\
+\fi
+\OERef{MKFEXT}   & \tt .mkf    & makefile                                     \\
+\OERef{MOD}      & \tt .mod    & \mt{} implementation or main module          \\
+\OERef{OBERON}   & \tt .ob2    & \ot{} module                                 \\
+\OERef{OBJEXT}   & \tt \Obj    & object file                                  \\
+\OERef{PRJEXT}   & \tt .prj    & project file                                 \\
+\OERef{SYM}      & \tt .sym    & symbol file \\
+\hline
+\end{tabular}
+\end{center}
+\caption{File extensions}\label{table:equ:ext}
+\index{options!file extensions}
+\end{table}
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|c|p{6.0cm}|}
+\hline
+\bf Name      & \bf Default & \bf Meaning \\
+\hline
+\iflinux
+\OERef{ALIGNMENT}  & \tt 4 & data alignment ({\em please read details below})\\
+\else
+\OERef{ALIGNMENT}  & \tt 1 & data alignment \\
+\fi
+\ifgenc
+\OERef{ALWAYS\_INCLUDE} & \tt X2C  & name of the file being always included \\
+\fi
+\ifgencode
+\iflinux
+\OERef{CC}         & \tt GCC & C compiler compatibility             \\
+\else
+\OERef{CC}         & \tt WATCOM & C compiler compatibility             \\
+\fi
+\OERef{CODENAME}   & \tt \_TEXT & Code segment name \\
+\OERef{CPU}        & \tt GENERIC & CPU to optimize for \\
+\fi
+\ifgenc
+\OERef{COPYRIGHT}   &       & copyright note                            \\
+\OERef{COPYRIGHT\_POSITION} &  & position of the copyright note \\
+\fi
+\ifgencode
+\OERef{DATANAME}   & \tt \_DATA & data segment name \\
+\OERef{DBGFMT}     & see desc. & debug information format \\
+\ifdll
+\OERef{DLLNAME}    &        & DLL name \\
+\fi
+\fi
+\OERef{ENUMSIZE}    & \tt 4  & default size of enumeration types \\
+\OERef{GCTHRESHOLD} &        & garbage collector threshold (obsolete) \\
+\ifgenc
+\OERef{GENIDLEN}   & \tt   30  & length of an identifier in the generated C text \\
+\fi
+\ifgenc
+\OERef{GENINDENT}  & \tt   3   & indentation \\
+\fi
+\ifgenc
+\OERef{GENWIDTH}   & \tt   78  & line width in the generated C text        \\
+\fi
+\OERef{HEAPLIMIT}  & \tt    0  & generated program heap limit    \\
+\ifgencode
+\OERef{MINCPU}     & \tt  386  & CPU required for execution      \\
+\OERef{OBJFMT}     & \tt \iflinux ELF \else OMF \fi & object file format \\
+\fi
+\OERef{SETSIZE}    & \tt 4     & default size of small set types \\
+\OERef{STACKLIMIT} & \tt 0  & generated program stack limit   \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Code generator equations}\label{table:equ:code}
+\index{options!code control equations}
+\end{table}
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|c|p{6.5cm}|}
+\hline
+\bf Name      & \bf Default & \bf Meaning \\
+\hline
+\OERef{ATTENTION} & \tt !     & attention character in template files       \\
+\OERef{BATNAME}   & \tt out   & batch file name                           \\
+\OERef{BATWIDTH}  & \tt  128  & maximum line width in a batch file     \\
+\OERef{BSTYLE}    & \tt  DEF  & browse style (See \ref{o2:env:makedef})      \\
+\ifcomment
+\OERef{COMPILE}   &       & C compiler command line (See \ref{seamless:comp}) \\
+\fi
+\OERef{COMPILERHEAP}  &    & heap limit of the compiler \\
+\OERef{COMPILERTHRES} &    & compiler's garbage collector threshold (obsolete) \\
+\OERef{DECOR}     & \tt hrtp   & control of compiler messages  \\
+\ifgenc
+\OERef{ENV\_HOST}  &        & host platform   \\
+\OERef{ENV\_TARGET} &       & target platform \\
+\fi
+\OERef{ERRFMT}    & See \ref{opt:errfmt} & error message format       \\
+\OERef{ERRLIM}    & \tt   16  & maximum number of errors                  \\
+\OERef{FILE}      &       & name of the file being compiled           \\
+\OERef{LINK}      &       & linker command line                       \\
+\OERef{LOOKUP}    &       & lookup directive                          \\
+\OERef{MAINNAME}  &       & name of program entry point               \\
+\OERef{MKFNAME}   &       & makefile name                             \\
+\OERef{MODULE}    &       & name of the module being compiled         \\
+\OERef{POSTPROCESSING} &  & postprocessing tool command line          \\
+\OERef{PRJ}       &       & project file name                         \\
+\OERef{PROJECT}   &       & project name                              \\
+\OERef{TABSTOP}   & \tt 8 & tabulation alignment                      \\
+\OERef{TEMPLATE}  &       & template name (for makefile)              \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Miscellaneous equations}\label{table:equ:misc}
+\index{options!miscellaneous equations}
+\end{table}
+\pagebreak % To not break the following section with tables
+
+\section{Equations reference}\label{opt:equ:list}
+
+Operation  modes in  which  an  equation has effect are
+enclosed in square brackets  ([])  after  the equation name; the
+character '*' stands  for  all  operation  modes.  For  example
+[browse]  means  that  the  equation is used by the compiler in the
+BROWSE  operation mode only. {\bf Note:} the compiler switches from
+the MAKE and PROJECT mode to the COMPILE mode to compile a module.
+
+\ifonline \else
+\begin{description}
+\fi
+
+\EquHead{ALIGNMENT}{data alignment}
+        \MLBegin{}\ModeC{}\MLEnd{} \inline
+
+        This equation sets the {\em data alignment}. Valid values are:
+        1,2,4, or 8. See
+        \ifgenc \ref{maptoc:opt:sizeof} \fi
+        \ifgencode \ref{lowlevel:recrep} \fi
+        for further details.
+
+        \ifgencode
+          \iflinux
+            {\bf Warning:} Since \XDS{} libraries are built through GCC which
+            uses 4 byte alignment, you should always keep ALIGNMENT set to 4,
+            unless you exactly know what you are doing.
+            See \ref{multilang:ccomp} for more details.
+          \fi
+        \fi
+
+\ifgenc
+\EquHead{ALWAYS\_INCLUDE}{name of the file being always included}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        The defines the name of the file that is included in all files 
+        generated by the \xc{} converter. File name is specified without
+        extension. 
+
+        The equation allows to replace the "{\tt X2C.h}" file (included 
+        by default) with the custom file.
+
+        See \ref{maptoc:layout}.
+\fi
+
+\EquHead{ATTENTION}{attention character in template files}
+        \MLBegin{}\ModeP{},\ModeG{}\MLEnd{}
+
+        The equation defines an attention character which is used
+        in template files ("!" by default).
+        See \ref{xc:template}.
+
+\EquHead{BATEXT}{recompilation batch file extension}
+        \MLBegin{}\ModeM{},\ModeP{},{\em batch submode}\MLEnd{}
+
+        Sets the file extension for recompilation
+        batch files (by default {\bf .bat}).
+        See \ref{xc:modes:batch}.
+
+\EquHead{BATNAME}{batch file name}
+        \MLBegin{}\ModeM{},\ModeP{},{\em batch submode}\MLEnd{}
+
+        Sets the batch file name.
+
+        The name of the project file will be used if no batch file  name
+        is explicitly specified.
+        See \ref{xc:modes:batch}.
+
+\EquHead{BATWIDTH}{maximum line width in a batch file}
+        \MLBegin{}\ModeM{},\ModeP{},{\em batch submode}\MLEnd{}
+
+        Sets the maximum width of a line in a
+        generated batch file (by default 128).
+        See \ref{xc:modes:batch}.
+
+\EquHead{BSDEF}{pseudo-definition file created by browser extension}
+        \MLBegin{}\ModeB{}\MLEnd{}
+
+        Sets the file extension for pseudo-definition
+        modules created by the browser (by default {\bf .odf}).
+        See \ref{xc:modes:browse}.
+
+\EquHead{BSTYLE}{browse style}
+        \MLBegin{}\ModeB{}\MLEnd{}
+
+        Sets the {\em style} of generated pseudo-definition
+        modules. See \ref{o2:env:makedef}.
+
+\ifgencode
+\EquHead{CC}{C compiler compatibility}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Sets the C compiler compatibility mode.
+        The correspondent calling and naming conventions  will be used 
+        for procedures and variables declared as \verb'["C"]'.
+
+        \iflinux
+          Currently the only valid value on Linux is "GCC".
+        \else
+          \ifwinnt
+            Valid values on Windows are "WATCOM" and "MSVC".
+          \else
+            \JNO
+          \fi
+        \fi
+% ???  , "BORLAND" and "SYMANTEC".
+
+        If the value of the equation is undefined,
+        \iflinux "GCC" \else "WATCOM" \fi
+        is assumed.
+
+        See \ref{multilang:ccomp} for more details.
+
+\fi
+
+\ifgenc
+\EquHead{CODE}{generated C code file extension}
+\else % gencode
+\EquHead{CODE}{object file extension}
+\fi
+        \MLBegin{}*\MLEnd{}
+
+        Sets the file extension for code
+        files generated by the compiler
+        (by default {\bf \Code}).
+
+\ifgencode
+\EquHead{CODENAME}{Code segment name}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        Sets name for a code segment.
+\fi
+
+\ifcomment
+\EquHead{COMPILE}{C compiler command line}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Defines a command line which will be executed
+        after successful compilation of each module.
+        As a rule, the equation is used for calling
+        the C compiler. See Chapter \ref{seamless}.
+\fi
+
+\EquHead{COMPILERTHRES}{compiler's garbage collector threshold (obsolete)}
+        \MLBegin{}*\MLEnd{}
+
+        This equation is left for compatibility; it is ignored by
+        the compiler. In versions prior to 2.50, it was used to fine tune
+        the compiler's garbage collector. 
+
+        See also \ref{config:memory}.
+
+\EquHead{COMPILERHEAP}{heap limit of the compiler}
+        \MLBegin{}*\MLEnd{}
+
+        Sets the maximum amount of heap memory (in bytes),
+        that can be used by the compiler.
+        For systems with virtual memory, we recommend to use
+        a value which is less than the amount of physical memory.
+
+        Setting this equation to zero forces adaptive
+        compiler heap size adjustment according to system load.
+
+
+\ifgenc
+\EquHead{COPYRIGHT}{copyright note}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        This copyright  note  line  will be inserted as
+        a comment into all generated C code/header
+        files. See \ref{maptoc:layout}, \ref{maptoc:opt:rep}.
+
+\EquHead{COPYRIGHT\_POSITION}{position of the copyright note}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        If the equation COPYRIGHT\_POSITION is set then the copyright 
+        statement is not added at the start of the file, but after 
+        the first line in the file header comments which contains 
+        the string defined by COPYRIGHT\_POSITION.
+
+        Example: The header of the Modula-2 file is
+\begin{verbatim}
+(***************************************************************
+*
+* @Project: RTS main program
+*
+* @Description: RTS main file, contains all necessary imports
+*
+* @Remarks:
+*
+****************************************************************)
+MODULE RTSMAIN;
+...
+\end{verbatim}
+
+        The equations are set to
+\begin{verbatim}
+-COPYRIGHT_POSITION=@Remarks
+-COPYRIGHT=*   Converted by X2C Version 2.51
+\end{verbatim}
+
+        The converted C file will begin the the header
+\begin{verbatim}
+(***************************************************************
+*
+* @Project: RTS main program
+*
+* @Description: RTS main file, contains all necessary imports
+*
+* @Remarks:
+*   Converted by X2C Version 2.51
+*
+****************************************************************)
+MODULE RTSMAIN;
+...
+\end{verbatim}
+\fi
+
+\ifgencode
+\EquHead{CPU}{CPU to optimize for}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Specifies on which Intel x86 family representative
+        the resulting program will be executed optimally.
+
+        Valid values: "386", "486", "PENTIUM", and "PENTIUMPRO".
+        The value must be "greater of equal" than the value
+        of the \OERef{MINCPU} equation.
+
+        There is also the special value "GENERIC", which means
+        that the optimizer should not perform code transformations
+        that may {\it significantly} reduce performance on a
+        particular CPU.
+\fi
+
+\ifgencode
+\EquHead{DATANAME}{Data segment name}
+        \MLBegin{}\ModeC{}\MLEnd{} \header
+
+        Sets name for a data segment.
+\fi
+
+\ifgencode
+\EquHead{DBGFMT}{debug information format}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Sets debug information format for output object files.
+        Valid values are "CodeView" and "HLL".
+\fi
+
+\EquHead{DECOR}{control of compiler messages}
+        \MLBegin{}*\MLEnd{}
+
+        The equation controls output of the \XC{} utility.
+        The value of equation is a string
+        that contains any combination of letters "h", "t",
+        "r", "p" (capital letters are also allowed).
+        Each character turns on output of
+        \begin{description}
+        \item[h]
+                header line, which contains the name and version of
+                the compiler's front-end and back-end
+        \item[p]
+                progress messages
+        \item[r]
+                compiler report: number of errors, lines, etc.
+        \item[t]
+                the summary of compilation of multiple files
+        \end{description}
+
+        By default, the equation value is "hrt".
+
+\EquHead{DEF}{\mt{} definition module extension}
+        \MLBegin{}*\MLEnd{}
+
+        Sets the file extension for Modula-2 definition modules (by
+        default {\bf .def}).
+
+\ifgencode
+\ifdll
+\EquHead{DLLNAME}{DLL name}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        This equation has to be set to the name of the DLL into which the
+        currently compiled module will be linked. It has no effect if code
+        for static linking is being generated (the \OERef{GENDLL} option is OFF).
+        In the \See{PROJECT mode}{}{xc:modes:project}, if this equiation is
+        not explicitly set, project file name without path and extension is assumed.
+        See \ref{dll:create:env} for more information.
+\fi
+\fi
+
+\EquHead{ENUMSIZE}{default size of enumeration types}
+        \MLBegin{}\ModeC{}\MLEnd \inline
+
+        Sets the default size for enumeration types in bytes (1,2, or 4).
+        If an enumeration type does not fit in the current default size,
+        the smallest suitable size will be taken.
+
+\EquHead{ENV\_HOST}{host platform}
+        \MLBegin{}*\MLEnd{}
+
+        A symbolic name of the host platform. \ifgenc See also \ref{config:seamless}.\fi % !!!
+
+\EquHead{ENV\_TARGET}{target platform}
+        \MLBegin{}*\MLEnd{}
+
+\ifgenc
+        Sets a symbolic name of a target platform. A platform is a combination of
+        operating system, file system, C compiler, its options, etc.
+        See a list of available platforms in {\tt \cfg}. See also
+        \ref{config:seamless}.
+\fi
+\ifgencode
+        This equation is always set to a symbolic name of the target % ??? always ?
+        platform (CPU/operating system).
+\fi
+
+\EquHead{ERRFMT}{error message format}
+        \MLBegin{}*\MLEnd{}
+
+        Sets the error message format. See \ref{opt:errfmt} for
+        details.
+
+\EquHead{ERRLIM}{maximum number of errors}
+        \MLBegin{}*\MLEnd{}
+
+        Sets the maximum number of errors allowed for
+        one compilation unit (by default 16).
+
+\EquHead{FILE}{name of the file being compiled}
+        \MLBegin{}\ModeC\MLEnd{}
+
+        The compiler sets this equation to the name of the currently
+        compiled file. See also the \OERef{MODULE} equation.
+
+\EquHead{GCTHRESHOLD}{garbage collector threshold (obsolete)}
+        \MLBegin{}\ModeC{},{\em top-level module only}\MLEnd{}
+
+        This equation is left for compatibility; it is ignored by
+        the compiler. In versions prior to 2.50, it was used to fine tune
+        the garbage collector. 
+
+        See also \ref{rts:mm}.
+
+\ifgenc
+\EquHead{GENIDLEN}{length of an identifier in the generated C text}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        The  maximum  length  of  an identifier in the
+        generated C code (by default 30). {\bf Note:} the
+        identifier length limit cannot be less than 6
+        characters.  Small  values result in a more
+        compact but less readable text.
+        See also \ref{maptoc:idents}.
+\fi
+
+\ifgenc
+\EquHead{GENINDENT}{indentation}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Sets indentation in the generated code
+        (by default 3 characters).
+\fi
+
+\ifgenc
+\EquHead{GENWIDTH}{line width in the generated C text}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        The maximum width of a line in
+        generated C code/header files (by default 78).
+
+        {\bf Note:} This equation is ignored and the maximun length of 
+        the line is not limited if at least one of the options 
+        \OERef{LINENO} and \OERef{GENKRC} is set ON.
+\fi
+
+\ifgenc
+\EquHead{HEADER}{generated C header file extension}
+        \MLBegin{}*\MLEnd{}
+
+        Sets the file extension for ANSI C header
+        files generated by compiler (by default {\bf .h}).
+\fi
+
+\EquHead{HEAPLIMIT}{generated program heap limit}
+        \MLBegin{}\ModeC{},{\em top-level module only}\MLEnd{}
+
+        Sets the maximum amount of heap memory, that can be allocated
+        by the generated program. The value is set in bytes.
+
+        Setting this equation to zero enables the run-time system
+        to dynamically adjust heap size according to application's
+        memory demands and system load.
+
+        The equation should be set when the top-level module of the
+        program is compiled. We recommend to set it in a
+        project file or the configuration file.
+
+        See also \ref{rts:mm}.
+
+\ifcomment
+\EquHead{IMPEXT}{}
+        \MLBegin{}\ModeM{},\ModeP{},\ModeG{}\MLEnd{}
+
+        Sets the file extension for pseudo-implementation
+        modules (by default {\bf .imp}).
+        See \ref{xc:make} for details.
+\fi
+
+\EquHead{LINK}{linker command line}
+        \MLBegin{}\ModeP{}\MLEnd{}
+
+        Defines a command line, which will be executed after a
+        successful completion of a project. As a rule, the equation is
+        used for calling a linker or make utility.
+
+        See \ref{start:build} for examples.
+
+\EquHead{LOOKUP}{lookup directive}
+        \MLBegin{}*\MLEnd{}
+
+        Syntax:
+
+\verb'    -LOOKUP = pattern = directory {";" directory }'
+
+        The equation can be used for defining additional search paths
+        that would complement those set in the redirection file.
+        A configuration or project file may contain several
+        {\bf LOOKUP} equations; they are also permitted on the
+        command line.
+
+        See also \ref{xc:red} and \ref{xc:project}.
+
+\ifgencode
+\EquHead{MINCPU}{minimal CPU required for execution}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Specifies an Intel x86 family representative
+        which (or higher) is requried for the resulting program
+        to be executed.
+
+        Valid values: "GENERIC", "386", "486", "PENTIUM", and
+        "PENTIUMPRO". For this equation, "GENERIC" is equivalent
+        to "386". The value of the \OERef{CPU} equation must be
+        "greater of equal" than the value of this equation.
+\fi
+
+\EquHead{MKFEXT}{makefile extension}
+        \MLBegin{}\ModeG{}\MLEnd{}
+
+        Sets the file extension for generated makefiles
+        (by default {\bf .mkf}). See \ref{xc:modes:gen}.
+
+%------------------------------------------------------------------------------
+\EquHead{MAINNAME}{name of program entry point}
+        \MLBegin{}\ModeC\MLEnd{}
+
+        Sets the the name of program entry point (the body of the main 
+        program module). 
+
+        By default, the program entry point has the name "main".
+
+%------------------------------------------------------------------------------
+\EquHead{MKFNAME}{makefile name}
+        \MLBegin{}\ModeG{}\MLEnd{}
+
+        Sets the name for a generated makefile. See \ref{xc:modes:gen}.
+
+\EquHead{MOD}{\mt{} implementation or main module extension}
+        \MLBegin{}*\MLEnd{}
+
+        Sets the file extension for \mt{} implementation
+        and program modules (by default {\bf .mod}).
+
+\EquHead{MODULE}{name of the module being compiled}
+        \MLBegin{}\ModeC\MLEnd{}
+
+        The compiler sets this equation to the name of the currently
+        compiled module. See also the \OERef{FILE} equation.
+
+\EquHead{OBERON}{\ot{} module extension}
+        \MLBegin{}*\MLEnd{}
+
+        Sets the file extension for \ot{}
+        modules (by default {\bf .ob2}).
+
+\EquHead{OBJEXT}{object file extension}
+        \MLBegin{}*\MLEnd{}
+
+        Sets the file extension for object files
+        (by default {\bf \Obj}).
+
+\ifgencode
+\EquHead{OBJFMT}{object file format}
+        \MLBegin{}\ModeC{}\MLEnd{}
+
+        Sets format for output object files. Valid values are "OMF",
+        "COFF" and "ELF".
+\fi
+
+\EquHead{POSTPROCESSING}{postprocessing tool command line}
+        \MLBegin{}\ModeP{}\MLEnd{}
+
+        Defines the command line which is executed after the successful 
+        translation of each module. This equation allows to specify 
+        the tool that will be invoked to adjust the code style of 
+        the generated .c and .h files.
+
+        Example:
+
+\verb'    -POSTPROCESSING="stylefmt.bat %s %s", srcname#>srcext, outname#>outext'
+
+        The command line is a template with up to the three items separated by 
+        commas. The first item is the format string, while others are arguments. 
+        Four auxiliary equations are available in this template: 
+        \begin{description}
+        \item[SRCNAME]
+                name of the file being compiled
+        \item[SRCEXT]
+                extension of the file being compiled
+        \item[OUTNAME]
+                name of the generated file
+        \item[OUTEXT]
+                extension of the generated file
+        \end{description}
+ 
+        See \ref{xc:template:fname}.
+
+
+\EquHead{PRJ}{project file name}
+        \MLBegin{}\ModeC{},\ModeM{},\ModeP{}\MLEnd{}
+
+        In the COMPILE and MAKE operation modes, the equation
+        defines a project file to read settings from.
+        In the PROJECT mode, the compiler sets this equation to
+        a project file name from the command line.
+        See \ref{xc:modes:project}.
+
+\EquHead{PRJEXT}{project file extension}
+        \MLBegin{}\ModeC{},\ModeM{},\ModeP{}\MLEnd{}
+
+        Sets the file extension for project files
+        (by default {\bf .prj}). See \ref{xc:modes:project}.
+
+\EquHead{PROJECT}{project name}
+        \MLBegin{}\ModeC{},\ModeM{},\ModeP{}\MLEnd{}
+
+        If a project file name is defined, the compiler sets
+        the equation to a project name without a file path and
+        extension. For example, if the project file name is
+        \verb'prj/Work.prj', the value of the equation is set
+        to \verb'Work'. The equation may be used, for instance,
+        in a template file to set the name of the executable file.
+
+\EquHead{SETSIZE}{default size of small set types}   % \gencode only ???
+        \MLBegin{}\ModeC{}\MLEnd \inline
+
+        Sets the default size for small (16 elements or less) set
+        types in bytes (1,2, or 4).
+        If a set type does not fit in the current default size,
+        the smallest suitable size will be taken.
+
+\EquHead{STACKLIMIT}{generated program stack limit}
+        \MLBegin{}\ModeC{},{\em top-level module only}\MLEnd{}
+
+        Sets the maximum size of the stack in a generated program.
+        The value is set in bytes.
+
+        The equation should be set when a top-level module of a
+        program is compiled. We recommend to set the option in the
+        project or configuration file.
+
+\ifgencode
+        {\bf Note:} for some linkers the stack size
+        should be also set as a linker option.
+\fi
+
+\EquHead{SYM}{symbol file extension}
+        \MLBegin{}*\MLEnd{}
+
+        Sets the file extension for symbol files
+        (by default {\bf \Sym}). See \ref{usage:genfiles}.
+
+\EquHead{TABSTOP}{tabulation alignment}
+        \MLBegin{}\ModeG{}\MLEnd{}
+
+        When reading text files, the compiler replaces the ASCII TAB character
+        with the number of spaces required to align text (by default {\bf
+        TABSTOP} is equal to 8). A wrong value may cause misplaced
+        comments in a generated pseudo-definition module, incorrect
+        error location in an error message, etc.  We recommend
+        to set this equation to the number used in your text editor.
+
+\EquHead{TEMPLATE}{template name (for makefile)}
+        \MLBegin{}\ModeG{}\MLEnd{}
+
+        Sets a name of a template file. See \ref{xc:template}.
+
+\ifonline \else
+\end{description}
+\fi
+
+\section{Error message format specification}\label{opt:errfmt}
+\index{error message format}
+
+The format in which \xds{} reports errors is user configurable through
+the \OERef{ERRFMT} equation. Its syntax is as follows:
+
+\verb'    { string "," [ argument ] ";" }'
+
+Any format specification allowed in the C procedure \verb'printf' can be
+used in {\tt string}.
+
+\begin{tabular}{lcl}
+\bf Argument &\bf Type &\bf Meaning \\
+\hline
+line         & integer  &  position in a source text   \\
+column       & integer  &  position in a source text   \\
+file         & string   &  name of a source file       \\
+module       & string   &  module name                 \\
+errmsg       & string   &  message text                \\
+errno        & integer  &  error code                  \\
+language     & string   &  Oberon-2 or Modula-2        \\
+mode         & string   &  ERROR or WARNING or FAULT   \\
+utility      & string   &  name of an utility          \\
+\end{tabular}
+
+Argument names are not case sensitive.
+By default, the error message format includes the following clauses:
+
+\begin{tabular}{lcl}
+\verb+"(%s",file;+       &---& a file name                   \\
+\verb+"%d",line;+        &---& a line number                 \\
+\verb+",%d",column;+     &---& a column number               \\
+\verb+") [%.1s] ",mode;+ &---& the first letter of an error mode  \\
+\verb+"%s\n",errmsg;+    &---& an error message               \\
+\end{tabular}
+
+If a warning is reported for the file {\tt test.mod} at line 5,
+column 6, the generated error message will look like this:
+
+\verb'    (test.mod 5,6) [W] variable declared but never used'
+
+\section{The system module COMPILER}
+\label{opt:COMPILER}
+\lindex{COMPILER}
+\index{system modules!COMPILER}
+
+The system module {\tt COMPILER} provides two procedures which
+allow you to use compile-time values of options and equations in
+your \mt{} or \ot{} program:
+\begin{verbatim}
+    PROCEDURE OPTION(<constant string>): BOOLEAN;
+    PROCEDURE EQUATION(<constant string>): <constant string>;
+\end{verbatim}
+
+Both this procedures are evaluated at compile-time and may be used
+in constant expressions.
+
+{\bf Note:} The {\tt COMPILER} module is non-standard.
+
+\Examples
+
+\begin{verbatim}
+Printf.printf("This program is optimized for the %s CPU\n",
+              COMPILER.EQUATION("CPU"));
+
+IF COMPILER.OPTION("__GEN_C__") THEN
+  ...
+END;
+\end{verbatim}
+
+
+

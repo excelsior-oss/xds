@@ -1,0 +1,93 @@
+\chapter{Introduction}
+\pagenumbering{arabic}
+\label{intro}
+%\epsfbox{sbear.eps}
+
+Sooner or later, every Modula-2 programmer encounters four problems.
+These are: absence, incompleteness, unportability, and low quality of
+libraries. At the same time, C/C++ programmers usually have problems
+{\em choosing} from a huge set of free, public domain, shareware, and
+commercial libraries of various purpose, size, and quality which are
+in many cases portable or are available for a number of platforms.
+Moreover, the {\em Application Programming Interfaces (APIs)} of the
+most widely used software products (operating systems, database engines,
+etc.), are defined in terms of the C programming language.
+
+In order to use this resources galore from Modula-2, a programmer needs, first,
+a Modula-2 compiler which supports C calling/naming conventions and a set of
+types corresponding to C types, and, second, definition modules
+corresponding to the C headers of the library/API. Finding a suitable compiler
+is not a very big deal, but manual conversion of C headers turns to a real
+nightmare when it comes to, say, the X Window API. That is why we created H2D.
+
+H2D does the job automatically, i.e. translates C header files into Modula-2
+definition modules. H2D is intended to be used with
+\See{XDS}{Appendix }{XDS}
+version 2.10 or later and is included in the XDS distribution package.
+However, the generated definition modules may be used with any ISO-compliant
+Modula-2 compiler. The required modifications are minor and may be done
+using text editor macros or a simple {\bf REXX}, {\bf sed}, etc script.
+
+The source language is a subset of ANSI C, which includes declarations and
+preprocessor directives, with some extensions (See \ref{rules:qualifiers} and
+Chapter \ref{project}).
+Destination language is {\bf ISO Modula-2} with some XDS language extensions.
+XDS allows to use the resulting definition modules with {\em both}
+Modula-2 and Oberon-2.
+
+H2D generates definition modules suitable for either XDS-C, Native XDS, or
+both. In case of Native XDS, module template for function-like C macros
+may be generated (See \ref{using:fit:native}). In case of XDS-C, an extra
+header file containing C declarations of types introduced by H2D is generated
+(See \ref{using:fit:c}).
+
+\section{New in version 1.30}
+
+Major improvements in v1.30:
+
+\begin{itemize}
+\item Generalized \PPDir{variant}
+\item \See{Custom mapping of C base types to Modula-2 types}{}{using:modrules:mapping}
+\item \See{Non-standard directives extraction}{}{rules:nonstandard}
+\item \See{Options renamed to follow XDS compilers style}{Chapter }{options}
+\item Control file syntax now closely matches used by XDS compilers
+      (see Chapters \ref{config} and \ref{project})
+\end{itemize}
+
+\section{Typographic conventions}
+\label{intro:conv}
+
+\subsection{Language descriptions}
+\label{intro:conv:EBNF}
+
+Where formal descriptions for language syntax constructions appear, an
+{\em extended Backus-Naur Formalism (EBNF)} is used.
+
+These descriptions are set in a monospaced font.
+
+\begin{verbatim}
+Text = Text [{Text}] | Text.
+\end{verbatim}
+
+In EBNF, brackets \verb+[+ and \verb+]+ denote optionality of the
+enclosed expression, braces \verb+{+ and \verb+}+ denote repetition
+(possibly 0 times), and the line \verb+|+ denotes other possible valid
+descriptions.
+
+Non-terminal symbols start with an upper case letter (e.g. \verb+Statement+).
+Terminal symbols either start with a lower case letter (e.g. \verb+ident+), or are
+written in all upper case letters (e.g. \verb+BEGIN+), or are enclosed within
+quotation marks (e.g. \verb+":="+).
+
+\subsection{Source code fragments}
+\label{intro:conv:cource}
+
+When fragments of a source code are used for examples or appear within
+a text they are set in a monospaced font.
+
+\begin{verbatim}
+/* example.h */
+
+typedef unsigned long int UINT;
+\end{verbatim}
+

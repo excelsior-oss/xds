@@ -1,0 +1,161 @@
+M	= ctr.mkf
+
+TARGET	= ctr
+
+INCL	= src
+CDEFS	= -DctTargetOS_UNIX -DctHostOS_UNIX
+CFLAGS	= -O2 -c -g -fno-strength-reduce -I$(INCL)
+CC	= gcc
+
+
+# ------------------ objects enumeration ------------------
+#                    -------------------
+
+OBJ= \
+	ch/ctr.o \
+	ch/ctSpawn.o \
+	ch/ctRemoteSpawn.o \
+	ch/ctMemory.o \
+	ch/ctNode.o \
+	ch/ctErrors.o \
+	ch/ctMagic.o \
+	ch/ctCfg.o \
+	ch/ctExec.o \
+	ch/ctScan.o \
+	ch/ctParse.o \
+	ch/ctInterpret.o \
+	ch/lists.o \
+	ch/stacks.o
+
+# ------------------- target make rules -------------------
+#                     -----------------
+
+$(TARGET) : $(OBJ) 
+	$(CC) -o $(TARGET) $(OBJ) -lm -lncurses
+	
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+ch/ctr.o: $(M) 
+ch/ctr.o: src/ctParse.h
+ch/ctr.o: src/ctInterpret.h
+ch/ctr.o: src/ctr.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctr.o src/ctr.c
+
+ch/ctSpawn.o: $(M)
+ch/ctSpawn.o: src/ctSpawn.h
+ch/ctSpawn.o: src/ctSpawn.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctSpawn.o src/ctSpawn.c
+
+ch/ctRemoteSpawn.o: $(M)
+ch/ctRemoteSpawn.o: src/ctCfg.h
+ch/ctRemoteSpawn.o: src/ctRemoteSpawn.h
+ch/ctRemoteSpawn.o: src/ctRemoteSpawn.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctRemoteSpawn.o src/ctRemoteSpawn.c
+
+ch/ctMemory.o: $(M)
+ch/ctMemory.o: src/ctMemory.h
+ch/ctmemory.o: src/ctAssert.h
+ch/ctMemory.o: src/ctMemory.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctMemory.o src/ctMemory.c
+
+ch/ctNode.o: $(M)
+ch/ctNode.o: src/ctMagic.h
+ch/ctNode.o: src/ctLimits.h
+ch/ctNode.o: src/ctNode.h
+ch/ctNode.o: src/lists.h
+ch/ctNode.o: src/ctMemory.h
+ch/ctNode.o: src/ctAssert.h
+ch/ctNode.o: src/ctNode.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctNode.o src/ctNode.c
+
+ch/ctErrors.o: $(M)
+ch/ctErrors.o: src/ctErrCodes.h
+ch/ctErrors.o: src/ctErrors.h
+ch/ctErrors.o: src/ctErrors.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctErrors.o src/ctErrors.c
+
+ch/ctMagic.o: $(M)
+ch/ctMagic.o: src/ctAssert.h
+ch/ctMagic.o: src/ctMagic.h
+ch/ctMagic.o: src/ctMagic.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctMagic.o src/ctMagic.c
+
+ch/ctCfg.o: $(M)
+ch/ctCfg.o: src/ctAssert.h
+ch/ctCfg.o: src/ctMagic.h
+ch/ctCfg.o: src/ctMemory.h
+ch/ctCfg.o: src/ctStrs.h
+ch/ctCfg.o: src/ctScan.h
+ch/ctCfg.o: src/ctErrors.h
+ch/ctCfg.o: src/lists.h
+ch/ctCfg.o: src/ctCfg.h
+ch/ctCfg.o: src/ctCfg.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctCfg.o src/ctCfg.c
+
+ch/ctExec.o: $(M)
+ch/ctExec.o: src/ctAssert.h
+ch/ctExec.o: src/ctSpawn.h
+ch/ctExec.o: src/ctMagic.h
+ch/ctExec.o: src/ctMemory.h
+ch/ctExec.o: src/ctStrs.h
+ch/ctExec.o: src/ctErrors.h
+ch/ctExec.o: src/ctNode.h
+ch/ctExec.o: src/lists.h
+ch/ctExec.o: src/ctExec.h
+ch/ctExec.o: src/ctExec.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctExec.o src/ctExec.c
+
+ch/ctScan.o: $(M)
+ch/ctScan.o: src/ctAssert.h
+ch/ctScan.o: src/ctLimits.h
+ch/ctScan.o: src/ctMemory.h
+ch/ctScan.o: src/ctMagic.h
+ch/ctScan.o: src/ctScan.h
+ch/ctScan.o: src/ctErrCodes.h
+ch/ctScan.o: src/ctScan.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctScan.o src/ctScan.c
+
+ch/ctParse.o: $(M)
+ch/ctParse.o: src/ctAssert.h
+ch/ctParse.o: src/ctLimits.h
+ch/ctParse.o: src/ctMagic.h
+ch/ctParse.o: src/ctStrs.h
+ch/ctParse.o: src/ctErrors.h
+ch/ctParse.o: src/ctNode.h
+ch/ctParse.o: src/ctErrCodes.h
+ch/ctParse.o: src/ctScan.h
+ch/ctParse.o: src/ctMemory.h
+ch/ctParse.o: src/ctParse.h
+ch/ctParse.o: src/ctParse.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctParse.o src/ctParse.c
+
+ch/ctInterpret.o: $(M)
+ch/ctInterpret.o: src/stacks.h
+ch/ctInterpret.o: src/ctAssert.h
+ch/ctInterpret.o: src/ctErrors.h
+ch/ctInterpret.o: src/ctErrCodes.h
+ch/ctInterpret.o: src/ctMagic.h
+ch/ctInterpret.o: src/ctMemory.h
+ch/ctInterpret.o: src/ctNode.h
+ch/ctInterpret.o: src/ctExec.h
+ch/ctInterpret.o: src/ctInterpret.h
+ch/ctInterpret.o: src/ctInterpret.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/ctInterpret.o src/ctInterpret.c
+
+ch/lists.o: $(M)
+ch/lists.o: src/ctAssert.h
+ch/lists.o: src/ctMemory.h
+ch/lists.o: src/lists.h
+ch/lists.o: src/lists.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/lists.o src/lists.c
+
+ch/stacks.o: $(M)
+ch/stacks.o: src/ctAssert.h
+ch/stacks.o: src/ctMemory.h
+ch/stacks.o: src/stacks.h
+ch/stacks.o: src/stacks.c
+	$(CC) $(CDEFS) $(CFLAGS) -o ch/stacks.o src/stacks.c
+
+# end of makefile
+

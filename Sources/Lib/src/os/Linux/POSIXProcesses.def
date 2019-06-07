@@ -1,0 +1,18 @@
+(* Copyright (c) 2003 Exccelsior LLC. All Rights Reserved. *)
+
+DEFINITION MODULE POSIXProcesses;
+
+IMPORT Processes;
+
+TYPE
+  Sources = Processes.Sources;
+
+PROCEDURE MakeSource(fdes: INTEGER): Sources;
+  (* Makes event source from given file descriptor.
+     Returned source may be used in calls to Processes.Attach,
+     Processes.Detach, Processes.IsAttached, Processes.Handler.
+     Note that this implementation does not need any finalisation
+     for created event source.
+  *)
+
+END POSIXProcesses.

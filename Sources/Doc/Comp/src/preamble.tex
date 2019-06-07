@@ -1,0 +1,17 @@
+\newcommand{\DocumentType}{User's Guide}
+\newcommand{\VersionNumber}{2.51}
+
+\FrameIsDeeptrue
+
+\makeindex
+
+\newcommand{\BookName}{\DocumentType}
+
+\ifonline % Set title 
+  \ifgencode
+  \title{Native XDS-x86 \DocumentType}
+  \else\ifgenc
+  \title{XDS-C \DocumentType}
+  \else\JNO
+  \fi\fi
+\fi

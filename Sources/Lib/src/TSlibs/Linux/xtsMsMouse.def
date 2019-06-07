@@ -1,0 +1,40 @@
+DEFINITION MODULE xtsMsMouse;
+
+  IMPORT Graph,
+         MsMouse,
+	 SYSTEM,
+	 gpm;
+
+TYPE
+  MsPos  = RECORD
+    row : INTEGER;
+    col : INTEGER;
+  END;     
+
+
+VAR
+   cur_cursor          :Graph.HBITMAP;
+   under_cursor        :Graph.HBITMAP;
+   cur_pos             :MsPos;
+   hot_spot            :MsPos;
+   
+   whetherCursorOn     :BOOLEAN;
+   showCursorCount     :INTEGER;
+   
+   countForShowText    :INTEGER;
+
+   event               :gpm.H2D_PtrGpm_Event;   
+
+PROCEDURE hideCursor();
+PROCEDURE showCursor();
+
+PROCEDURE hideTextCursor();
+PROCEDURE showTextCursor();
+
+PROCEDURE SetGraphCursor(VAR mp: MsMouse.MsGraphcur);
+
+PROCEDURE Gpm_DrawPointer ( x, y: SYSTEM.CARD16; fd: SYSTEM.int );
+
+PROCEDURE InitTextMouse;
+
+END xtsMsMouse.

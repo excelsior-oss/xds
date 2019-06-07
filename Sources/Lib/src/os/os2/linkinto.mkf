@@ -1,0 +1,45 @@
+# This makefile is used to create a small library containing DLL stub and
+# RTS modules, which has to be linked into any executable regardless of
+# USEDLL setting. This library is then bound to import liraries for
+# XDS run-time DLLs.
+
+AS      = alp
+AFLAGS  = -Mb -D:OS2 -Sv:alp
+
+!if ("$(MODE)" == "INTERNAL") || ("$(MODE)" == "ENDUSER") || ("$(MODE)" == "TRIAL")
+OBJDIR  = ..\..\..\enduser\tmp
+SYMDIR  = ..\..\..\enduser\xds\sym\x86
+!else
+OBJDIR  = ..\..\..\ch
+OBJDIR  = ..\..\..\sym
+!endif
+
+LILIB   = ..\..\..\li.lib
+
+all: $(LILIB)
+
+$(OBJDIR)\xrnincls.obj:  ..\..\xr\x86\xrnincls.asm
+  $(AS) $(AFLAGS) $** -Fo:$@
+
+$(OBJDIR)\xrnexcls.obj:  ..\..\xr\x86\xrnexcls.asm
+  $(AS) $(AFLAGS) $** -Fo:$@
+
+$(OBJDIR)\xrnloset.obj:  ..\..\xr\x86\xrnloset.asm
+  $(AS) $(AFLAGS) $** -Fo:$@
+
+$(OBJDIR)\xrnhiset.obj:  ..\..\xr\x86\xrnhiset.asm
+  $(AS) $(AFLAGS) $** -Fo:$@
+
+$(OBJDIR)\xrnrem.obj:  ..\..\xr\x86\xrnrem.asm
+  $(AS) $(AFLAGS) $** -Fo:$@
+
+$(OBJDIR)\xDllstub.obj:  xdllstub.asm
+  $(AS) $(AFLAGS) $** -Fo:$@
+
+$(OBJDIR)\dllrts.obj:    ..\..\ulib\dllrts.def ..\..\ulib\dllrts.mod
+  xc =m =a ..\..\ulib\dllrts.mod -lookup=*.def=..\..\ulib -lookup=*.obj=$(OBJDIR) -lookup=*.sym=$(SYMDIR) -gendebug -lineno -genhistory -INCL_DOS:+ -INCL_ERRORS:+ $(XC_OPTIONS)
+
+$(LILIB): $(OBJDIR)\xrnincls.obj $(OBJDIR)\xrnexcls.obj $(OBJDIR)\xrnloset.obj \
+          $(OBJDIR)\xrnhiset.obj $(OBJDIR)\xDllstub.obj $(OBJDIR)\dllrts.obj   \
+          $(OBJDIR)\xrnrem.obj
+  xlib /new /nobak $(LILIB) $**

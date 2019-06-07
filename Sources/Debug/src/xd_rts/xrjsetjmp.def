@@ -1,0 +1,13 @@
+(* Copyright (c) Excelsior 1999-2003. All Rights Reserved. *)
+
+<* M2EXTENSIONS+ *>
+<* ALIGNMENT = "1" *>
+
+DEFINITION MODULE ["StdCall"] xrjsetjmp;
+
+TYPE
+  JumpBuffer = RECORD
+    ebx, esi, edi, ebp, eip, esp, ecx, edx :CARDINAL;
+  END;
+
+END xrjsetjmp.

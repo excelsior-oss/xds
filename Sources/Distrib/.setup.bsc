@@ -1,0 +1,10 @@
+# Static files to be copied into external workspace 
+# Target must be relative to the root of an external workplace
+# Note: target subfolder must end with symbol "\" 
+# <mode> ::= "" | "work" | "release"
+
+# <source>                       <target>        <mode>
+workplace\sdk.ini                 .\
+workplace\sdk-c.ini               .\
+workplace\sdk-x86.ini             .\
+              

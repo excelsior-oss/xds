@@ -1,0 +1,46 @@
+(* Copyright (c) xTech 1993,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS*>
+DEFINITION MODULE [2] float;
+
+FROM SYSTEM IMPORT int;
+
+(* it is constants indeed but declared as read-only variables *)
+(* to provide portability *)
+
+VAR
+  FLT_ROUNDS      -: int;
+  FLT_RADIX       -: int;
+
+  FLT_DIG         -: int;
+  FLT_EPSILON     -: LONGREAL;
+  FLT_MANT_DIG    -: int;
+  FLT_MAX         -: LONGREAL;
+  FLT_MAX_10_EXP  -: int;
+  FLT_MAX_EXP     -: int;
+  FLT_MIN         -: LONGREAL;
+  FLT_MIN_10_EXP  -: int;
+  FLT_MIN_EXP     -: int;
+
+  DBL_DIG         -: int;
+  DBL_EPSILON     -: LONGREAL;
+  DBL_MANT_DIG    -: int;
+  DBL_MAX         -: LONGREAL;
+  DBL_MAX_10_EXP  -: int;
+  DBL_MAX_EXP     -: int;
+  DBL_MIN         -: LONGREAL;
+  DBL_MIN_10_EXP  -: int;
+  DBL_MIN_EXP     -: int;
+
+  LDBL_DIG        -: int;
+  LDBL_EPSILON    -: LONGREAL;
+  LDBL_MANT_DIG   -: int;
+  LDBL_MAX        -: LONGREAL;
+  LDBL_MAX_10_EXP -: int;
+  LDBL_MAX_EXP    -: int;
+  LDBL_MIN        -: LONGREAL;
+  LDBL_MIN_10_EXP -: int;
+  LDBL_MIN_EXP    -: int;
+
+END float.

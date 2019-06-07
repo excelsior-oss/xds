@@ -1,0 +1,13 @@
+# XDS-x86 Resource Compiler : Build System Configuration
+
+UNIT_NAME=XDS-x86-Resource-Compiler
+
+ALL_COMPONENTS=xrc
+PRIMARY_COMPONENTS=xrc
+DEFAULT_COMPONENT=xrc
+
+# Tools necessary to build component
+ENVIRONMENT=MSBUILD_HOME,MSVC_HOME
+
+# External files which are part of this component  
+EXTDEPS=

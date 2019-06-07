@@ -1,0 +1,17 @@
+/*/.project
+/*/.settings/
+
+/ch/*
+/include/*
+/lib/*
+/log/*
+/sym/*
+/tmp/*
+
+/ch/*.mkf
+
+/*.pdb
+
+/workplace/*
+
+/src/TSlibs/IO_.*

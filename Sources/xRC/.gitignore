@@ -1,0 +1,11 @@
+/workplace/*.exe
+/workplace/*.dll
+/workplace/*.lib
+
+/workplace/*.pdb
+/workplace/*.exp
+/workplace/*.ilk
+
+/*.user
+/*.suo
+/*.ncb

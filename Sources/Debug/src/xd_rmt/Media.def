@@ -1,0 +1,65 @@
+-- Высокоуровневый модуль для связи сервера и клиента
+-- Конкретный транспорт определяется заданными параметрами
+-- Содержит процедуры для установления/завершения сеанса связи,
+-- передачи нетипизированного потока данных, байтов/слов,
+-- строк, запроса выполнения команд и получения результатов
+
+DEFINITION MODULE Media;
+
+IMPORT sys := SYSTEM;
+IMPORT rmt := RemTypes;
+
+
+PROCEDURE MasterListen (port: rmt.TRN_PORT; VAR channel: rmt.TRN_CHANNEL): CARDINAL;
+
+PROCEDURE ServerConnect (channel: rmt.TRN_CHANNEL): CARDINAL;
+
+PROCEDURE ClientConnect (remote_host: ARRAY OF CHAR; port: rmt.TRN_PORT): CARDINAL;
+
+PROCEDURE Disconnect;
+
+PROCEDURE IsConnected (): BOOLEAN;
+
+
+PROCEDURE Send (addr: sys.ADDRESS; size: CARDINAL): BOOLEAN;
+
+PROCEDURE Receive (addr: sys.ADDRESS; size: CARDINAL): BOOLEAN;
+
+
+PROCEDURE SendReady (): BOOLEAN;
+
+PROCEDURE ReceiveReady (): BOOLEAN;
+
+
+PROCEDURE SendB (c: sys.CARD8) : BOOLEAN;
+
+PROCEDURE ReceiveB (VAR c: sys.CARD8): BOOLEAN;
+
+
+PROCEDURE SendW (c: sys.CARD16): BOOLEAN;
+
+PROCEDURE ReceiveW (VAR c: sys.CARD16): BOOLEAN;
+
+
+PROCEDURE SendDW (c: sys.CARD32): BOOLEAN;
+
+PROCEDURE ReceiveDW (VAR c: sys.CARD32): BOOLEAN;
+
+
+
+PROCEDURE SendStr (str: ARRAY OF CHAR): BOOLEAN;
+
+PROCEDURE ReceiveStr (VAR str: ARRAY OF CHAR): BOOLEAN;
+
+
+PROCEDURE SendCommand (CmdCode: rmt.COMMAND; CmdLen: CARDINAL): BOOLEAN;
+
+PROCEDURE ReceiveCommand (VAR arg_size: CARDINAL): rmt.COMMAND;
+
+
+PROCEDURE SendResult (rc: CARDINAL; size: CARDINAL): BOOLEAN;
+
+PROCEDURE ReceiveResult (VAR rc: CARDINAL; VAR size: CARDINAL): BOOLEAN;
+
+
+END Media.

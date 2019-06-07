@@ -1,0 +1,99 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+<*+ M2ADDTYPES *>
+<* IF __GEN_C__ THEN *>
+<*+ GENTYPEDEF *>
+<* END *>
+DEFINITION MODULE [2] stdio;
+
+FROM SYSTEM IMPORT size_t, ADDRESS, int, BYTE;
+FROM xmRTS  IMPORT X2C_pCHAR;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  SEEK_SET-: int;
+  SEEK_CUR-: int;
+  SEEK_END-: int;
+  EOF-     : int;
+<* ELSE *>
+CONST
+  SEEK_SET = 0;
+  SEEK_CUR = 1;
+  SEEK_END = 2;
+  EOF      =-1;
+<* END *>
+
+TYPE
+  FILE = RECORD END;
+
+VAR (* Standard I/O predefined streams (POINTER TO FILE) *)
+  stdin- : POINTER TO FILE;
+  stdout-: POINTER TO FILE;
+  stderr-: POINTER TO FILE;
+
+PROCEDURE clearerr(VAR f: FILE);
+PROCEDURE fclose(VAR f: FILE): int;
+PROCEDURE fflush(VAR f: FILE): int;
+PROCEDURE fgetc(VAR f: FILE): int;
+PROCEDURE fgets(VAR s: ARRAY OF CHAR; n: int; VAR f: FILE): ADDRESS;
+PROCEDURE fileno(VAR f: FILE): int;
+PROCEDURE fopen(path,mode: X2C_pCHAR): ADDRESS;
+(* returns POINTER TO FILE *)
+
+PROCEDURE fprintf(VAR f: FILE; format: X2C_pCHAR; SEQ x: BYTE): int;
+PROCEDURE fputc(c: int; VAR f: FILE): int;
+PROCEDURE fputs(s: X2C_pCHAR; VAR f: FILE): int;
+PROCEDURE fread(ptr: ADDRESS; size,n: size_t; VAR f: FILE): size_t;
+
+PROCEDURE freopen(path,mode: X2C_pCHAR; VAR oldfile: FILE): ADDRESS;
+(* returns POINTER TO FILE *)
+
+PROCEDURE fdopen(handle: int; type: X2C_pCHAR): ADDRESS;
+(* returns POINTER TO FILE *)
+
+PROCEDURE fscanf(VAR f: FILE; format: X2C_pCHAR; SEQ x: BYTE): int;
+PROCEDURE fseek(VAR f: FILE; offset: LONGINT; whence: int): int;
+PROCEDURE ftell(VAR f: FILE): LONGINT;
+PROCEDURE fwrite(ptr: ADDRESS; size,n: size_t; VAR f: FILE): size_t;
+
+PROCEDURE gets(VAR s: ARRAY OF CHAR): ADDRESS;
+PROCEDURE perror(s: X2C_pCHAR);
+PROCEDURE printf(format: X2C_pCHAR; SEQ x: BYTE): int;
+PROCEDURE puts(s: X2C_pCHAR): int;
+PROCEDURE rename(oldnam,newname: X2C_pCHAR): int;
+PROCEDURE rewind(VAR f: FILE);
+
+PROCEDURE scanf(format: X2C_pCHAR; SEQ x: BYTE): int;
+PROCEDURE setbuf(VAR f: FILE; buf: ADDRESS);
+PROCEDURE setvbuf(VAR f: FILE; buf: ADDRESS; type: int; size: size_t): int;
+
+PROCEDURE sprintf(VAR s: ARRAY OF CHAR; format: X2C_pCHAR; SEQ x: BYTE): int;
+PROCEDURE sscanf(s,format: X2C_pCHAR; SEQ x: BYTE): int;
+
+PROCEDURE tmpfile(): ADDRESS;
+(* returns POINTER TO FILE *)
+
+PROCEDURE ungetc(c: int; VAR f: FILE): int;
+
+PROCEDURE vfprintf(VAR f: FILE; format: X2C_pCHAR; args: ADDRESS): int;
+PROCEDURE vfscanf(VAR f: FILE; format: X2C_pCHAR; args: ADDRESS): int;
+PROCEDURE vprintf(format: X2C_pCHAR; args: ADDRESS): int;
+PROCEDURE vscanf(format: X2C_pCHAR; args: ADDRESS): int;
+PROCEDURE vsprintf(VAR s: ARRAY OF CHAR; format: X2C_pCHAR; args: ADDRESS): int;
+PROCEDURE vsscanf(VAR s: ARRAY OF CHAR; format: X2C_pCHAR; args: ADDRESS): int;
+
+PROCEDURE fgetpos(VAR f: FILE; VAR fp: LONGINT): int;
+PROCEDURE fsetpos(VAR f: FILE; VAR fp: LONGINT): int;
+
+PROCEDURE putchar(c: int): int;
+PROCEDURE getchar(): int;
+PROCEDURE putc(c: int; VAR f: FILE): int;
+PROCEDURE getc(VAR f: FILE): int;
+PROCEDURE remove(path: X2C_pCHAR): int;
+
+PROCEDURE feof(VAR f: FILE): int;
+PROCEDURE ferror(VAR f: FILE): int;
+
+END stdio.

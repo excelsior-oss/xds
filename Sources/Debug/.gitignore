@@ -1,0 +1,6 @@
+/src/xpview/Win32/Debug/*
+/src/xpview/Win32/Release/*
+
+/workplace/*.pdb
+/workplace/*.exp
+/workplace/*.ilk

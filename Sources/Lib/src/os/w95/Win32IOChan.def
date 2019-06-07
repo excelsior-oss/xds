@@ -1,0 +1,66 @@
+(* Copyright (c) 1996 xTech Ltd, Russia. All Rights Reserved. *)
+DEFINITION MODULE Win32IOChan;
+
+(* This module contains Win32-specific extended channels
+   controll in addition to basic functionality of ISO10514
+   standard input/output library
+*)
+
+IMPORT  IOChan, ChanConsts, Windows;
+
+TYPE
+  ChanId = IOChan.ChanId;
+  FlagSet = ChanConsts.FlagSet;
+  OpenResults = ChanConsts.OpenResults;
+  HANDLE = Windows.HANDLE;
+
+CONST
+  read = FlagSet{ChanConsts.readFlag};   (* input operations are requested/available *)
+  write = FlagSet{ChanConsts.writeFlag}; (* output operations are requested/available *)
+  text = FlagSet{ChanConsts.textFlag};   (* text operations are requested/available *)
+  raw = FlagSet{ChanConsts.rawFlag};     (* raw operations are requested/available *)
+
+PROCEDURE GetSysHandle(cid: IOChan.ChanId): HANDLE;
+  (* If the channel identified by cid is managed by RndFile, SeqFile or
+    StreamFile device modules, the function returns corresponding file
+    handle; otherwise the exception wrongDevice is raised
+  *)
+
+PROCEDURE MakeChannel(VAR cid: ChanId;
+                       handle: HANDLE;
+                         name: ARRAY OF CHAR;
+                        flags: FlagSet;
+                      VAR res: OpenResults);
+  (* Attemts to obtain a channel and to connect it to the file
+    identified by the given handle.
+    If successfull, assigns to cid the identity of the opened channel.
+
+    Access mode of cid is set according to the given flags.
+    GetName method of cid will return the given name.
+
+    Note that channel made by this procedure can be considered as
+    SeqFile, RndFile of StreamFile.
+  *)
+
+  (* tune-up to Open procedures of ISO device modules *)
+
+TYPE
+  XtdOpenAttrs = RECORD
+    shareMode: Windows.FILE_SHARE_MODE;    (* default FILE_SHARE_READ *)
+    securityArrts: Windows.PSECURITY_ATTRIBUTES; (* default NIL *)
+    fileAttrs: Windows.DWORD;              (* default 0 *)
+    fileFlags: Windows.FILE_ATTRIBUTE_SET; (* default FILE_ATTRIBUTE_NORMAL *)
+  END;
+
+PROCEDURE GetOpenAttrs(VAR data: XtdOpenAttrs);
+  (* assigns to data current values of parameters passed to
+    Windows.CreateFile by Open procedures of SeqFile, StreamFile and RndFile
+    device modules
+  *)
+PROCEDURE SetOpenAttrs(    data: XtdOpenAttrs);
+  (* sets according to data the set values of parameters passed to
+    Windows.CreateFile by Open procedures of SeqFile, StreamFile and RndFile
+    device modules
+  *)
+
+END Win32IOChan.

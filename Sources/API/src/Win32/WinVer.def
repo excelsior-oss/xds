@@ -1,0 +1,319 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] WinVer;
+
+(******************************************************************************
+*                                                                             *
+* WinVer.def -  Version management functions, types, and definitions          *
+*                                                                             *
+*               Import file for VER.DLL.  This library is                     *
+*               designed to allow version stamping of Windows executable files*
+*               and of special .VER files for DOS executable files.           *
+*                                                                             *
+******************************************************************************)
+
+FROM WinDef IMPORT BOOL, DWORD, PVOID, LPCVOID, UINT, WCHAR;
+FROM WinUser IMPORT RT_VERSION;
+
+(* ----- Symbols ----- *)
+
+CONST VS_FILE_INFO    = RT_VERSION;
+      VS_VERSION_INFO = 1;
+      VS_USER_DEFINED = 100;
+
+(* ----- VS_VERSION.dwFileFlags ----- *)
+
+CONST VS_FFI_SIGNATURE       =0FEEF04BDh;
+      VS_FFI_STRUCVERSION    = 00010000h;
+      VS_FFI_FILEFLAGSMASK   = 0000003Fh;
+
+(* ----- VS_VERSION.dwFileFlags ----- *)
+
+TYPE VS_FF_ENUM = (VS_FF__DEBUG,         (* 0 *)
+                   VS_FF__PRERELEASE,    (* 1 *)
+                   VS_FF__PATCHED,       (* 2 *)
+                   VS_FF__PRIVATEBUILD,  (* 3 *)
+                   VS_FF__INFOINFERRED,  (* 4 *)
+                   VS_FF__SPECIALBUILD); (* 5 *)
+
+     VS_FF_SET = SET OF VS_FF_ENUM;
+
+CONST VS_FF_DEBUG            = VS_FF_SET {VS_FF__DEBUG       }; (* 00000001h *)
+      VS_FF_PRERELEASE       = VS_FF_SET {VS_FF__PRERELEASE  }; (* 00000002h *)
+      VS_FF_PATCHED          = VS_FF_SET {VS_FF__PATCHED     }; (* 00000004h *)
+      VS_FF_PRIVATEBUILD     = VS_FF_SET {VS_FF__PRIVATEBUILD}; (* 00000008h *)
+      VS_FF_INFOINFERRED     = VS_FF_SET {VS_FF__INFOINFERRED}; (* 00000010h *)
+      VS_FF_SPECIALBUILD     = VS_FF_SET {VS_FF__SPECIALBUILD}; (* 00000020h *)
+
+(* ----- VS_VERSION.dwFileOS ----- *)
+
+TYPE VOS_TYPE = DWORD;
+
+CONST VOS_UNKNOWN            = 00000000h;
+      VOS_DOS                = 00010000h;
+      VOS_OS216              = 00020000h;
+      VOS_OS232              = 00030000h;
+      VOS_NT                 = 00040000h;
+
+      VOS__BASE              = 00000000h;
+      VOS__WINDOWS16         = 00000001h;
+      VOS__PM16              = 00000002h;
+      VOS__PM32              = 00000003h;
+      VOS__WINDOWS32         = 00000004h;
+
+      VOS_DOS_WINDOWS16      = 00010001h;
+      VOS_DOS_WINDOWS32      = 00010004h;
+      VOS_OS216_PM16         = 00020002h;
+      VOS_OS232_PM32         = 00030003h;
+      VOS_NT_WINDOWS32       = 00040004h;
+
+(* ----- VS_VERSION.dwFileType ----- *)
+
+TYPE VFT_TYPE = (VFT_UNKNOWN,     (* 0 *)
+                 VFT_APP,         (* 1 *)
+                 VFT_DLL,         (* 2 *)
+                 VFT_DRV,         (* 3 *)
+                 VFT_FONT,        (* 4 *)
+                 VFT_VXD,         (* 5 *)
+                 VFT_6,
+                 VFT_STATIC_LIB); (* 7 *)
+
+(* ----- VS_VERSION.dwFileSubtype for VFT_WINDOWS_DRV ----- *)
+
+TYPE VFT2_TYPE = (VFT2_UNKNOWN,          (* 00000000 *)
+                  VFT2_DRV_PRINTER,      (* 00000001 *)
+                  VFT2_DRV_KEYBOARD,     (* 00000002 *)
+                  VFT2_DRV_LANGUAGE,     (* 00000003 *)
+                  VFT2_DRV_DISPLAY,      (* 00000004 *)
+                  VFT2_DRV_MOUSE,        (* 00000005 *)
+                  VFT2_DRV_NETWORK,      (* 00000006 *)
+                  VFT2_DRV_SYSTEM,       (* 00000007 *)
+                  VFT2_DRV_INSTALLABLE,  (* 00000008 *)
+                  VFT2_DRV_SOUND,        (* 00000009 *)
+                  VFT2_DRV_COMM,         (* 0000000A *)
+                  VFT2_DRV_INPUTMETHOD); (* 0000000B *)
+
+(* ----- VS_VERSION.dwFileSubtype for VFT_WINDOWS_FONT ----- *)
+
+CONST VFT2_FONT_RASTER       = VFT2_DRV_PRINTER;  (* 00000001h *)
+      VFT2_FONT_VECTOR       = VFT2_DRV_KEYBOARD; (* 00000002h *)
+      VFT2_FONT_TRUETYPE     = VFT2_DRV_LANGUAGE; (* 00000003h *)
+
+(* ----- VerFindFile() flags ----- *)
+
+TYPE VFFF_TYPE = (VFFF_0,
+                  VFFF_ISSHAREDFILE); (* 0001h *)
+
+TYPE VFF_ENUM = (VFF__CURNEDEST,     (* 0 *)
+                 VFF__FILEINUSE,     (* 1 *)
+                 VFF__BUFFTOOSMALL); (* 2 *)
+
+      VFF_SET = SET OF VFF_ENUM;
+
+CONST VFF_CURNEDEST          = VFF_SET {VFF__CURNEDEST};    (* 0001h *)
+      VFF_FILEINUSE          = VFF_SET {VFF__FILEINUSE};    (* 0002h *)
+      VFF_BUFFTOOSMALL       = VFF_SET {VFF__BUFFTOOSMALL}; (* 0004h *)
+
+(* ----- VerInstallFile() flags ----- *)
+
+TYPE VIFF_ENUM = (VIFF__FORCEINSTALL,   (* 0 *)
+                  VIFF__DONTDELETEOLD); (* 1 *)
+
+     VIFF_SET = SET OF VIFF_ENUM;
+
+CONST VIFF_FORCEINSTALL      = VIFF_SET {VIFF__FORCEINSTALL }; (* 0001h *)
+      VIFF_DONTDELETEOLD     = VIFF_SET {VIFF__DONTDELETEOLD}; (* 0002h *)
+
+TYPE VIF_ENUM = (VIF__TEMPFILE,           (*  0 *)
+                 VIF__MISMATCH,           (*  1 *)
+                 VIF__SRCOLD,             (*  2 *)
+
+                 VIF__DIFFLANG,           (*  3 *)
+                 VIF__DIFFCODEPG,         (*  4 *)
+                 VIF__DIFFTYPE,           (*  5 *)
+
+                 VIF__WRITEPROT,          (*  6 *)
+                 VIF__FILEINUSE,          (*  7 *)
+                 VIF__OUTOFSPACE,         (*  8 *)
+                 VIF__ACCESSVIOLATION,    (*  9 *)
+                 VIF__SHARINGVIOLATION,   (* 10 *)
+                 VIF__CANNOTCREATE,       (* 11 *)
+                 VIF__CANNOTDELETE,       (* 12 *)
+                 VIF__CANNOTRENAME,       (* 13 *)
+                 VIF__CANNOTDELETECUR,    (* 14 *)
+                 VIF__OUTOFMEMORY,        (* 15 *)
+
+                 VIF__CANNOTREADSRC,      (* 16 *)
+                 VIF__CANNOTREADDST,      (* 17 *)
+
+                 VIF__BUFFTOOSMALL);      (* 18 *)
+
+     VIF_SET = SET OF VIF_ENUM;
+
+CONST VIF_TEMPFILE         = VIF_SET {VIF__TEMPFILE        }; (* 00000001h *)
+      VIF_MISMATCH         = VIF_SET {VIF__MISMATCH        }; (* 00000002h *)
+      VIF_SRCOLD           = VIF_SET {VIF__SRCOLD          }; (* 00000004h *)
+
+      VIF_DIFFLANG         = VIF_SET {VIF__DIFFLANG        }; (* 00000008h *)
+      VIF_DIFFCODEPG       = VIF_SET {VIF__DIFFCODEPG      }; (* 00000010h *)
+      VIF_DIFFTYPE         = VIF_SET {VIF__DIFFTYPE        }; (* 00000020h *)
+
+      VIF_WRITEPROT        = VIF_SET {VIF__WRITEPROT       }; (* 00000040h *)
+      VIF_FILEINUSE        = VIF_SET {VIF__FILEINUSE       }; (* 00000080h *)
+      VIF_OUTOFSPACE       = VIF_SET {VIF__OUTOFSPACE      }; (* 00000100h *)
+      VIF_ACCESSVIOLATION  = VIF_SET {VIF__ACCESSVIOLATION }; (* 00000200h *)
+      VIF_SHARINGVIOLATION = VIF_SET {VIF__SHARINGVIOLATION}; (* 00000400h *)
+      VIF_CANNOTCREATE     = VIF_SET {VIF__CANNOTCREATE    }; (* 00000800h *)
+      VIF_CANNOTDELETE     = VIF_SET {VIF__CANNOTDELETE    }; (* 00001000h *)
+      VIF_CANNOTRENAME     = VIF_SET {VIF__CANNOTRENAME    }; (* 00002000h *)
+      VIF_CANNOTDELETECUR  = VIF_SET {VIF__CANNOTDELETECUR }; (* 00004000h *)
+      VIF_OUTOFMEMORY      = VIF_SET {VIF__OUTOFMEMORY     }; (* 00008000h *)
+
+      VIF_CANNOTREADSRC    = VIF_SET {VIF__CANNOTREADSRC   }; (* 00010000h *)
+      VIF_CANNOTREADDST    = VIF_SET {VIF__CANNOTREADDST   }; (* 00020000h *)
+
+      VIF_BUFFTOOSMALL     = VIF_SET {VIF__BUFFTOOSMALL    }; (* 00040000h *)
+
+(* ----- Types and structures ----- *)
+
+TYPE VS_FIXEDFILEINFO =
+               RECORD
+                      dwSignature        : DWORD;     (* e.g. 0xfeef04bd *)
+                      dwStrucVersion     : DWORD;     (* e.g. 0x00000042 = "0.42" *)
+                      dwFileVersionMS    : DWORD;     (* e.g. 0x00030075 = "3.75" *)
+                      dwFileVersionLS    : DWORD;     (* e.g. 0x00000031 = "0.31" *)
+                      dwProductVersionMS : DWORD;     (* e.g. 0x00030010 = "3.10" *)
+                      dwProductVersionLS : DWORD;     (* e.g. 0x00000031 = "0.31" *)
+                      dwFileFlagsMask    : VS_FF_SET; (* = 0x3F for version "0.42" *)
+                      dwFileFlags        : VS_FF_SET; (* e.g. VFF_DEBUG | VFF_PRERELEASE *)
+                      dwFileOS           : VOS_TYPE;  (* e.g. VOS_DOS_WINDOWS16 *)
+                      dwFileType         : VFT_TYPE;  (* e.g. VFT_DRIVER *)
+                      dwFileSubtype      : VFT2_TYPE; (* e.g. VFT2_DRV_KEYBOARD *)
+                      dwFileDateMS       : DWORD;     (* e.g. 0 *)
+                      dwFileDateLS       : DWORD;     (* e.g. 0 *)
+               END;
+
+
+(* ----- Function prototypes ----- *)
+
+PROCEDURE VerFindFileA (uFlags         : VFFF_TYPE;
+                        FileName       : ARRAY OF CHAR;
+                        WinDir         : ARRAY OF CHAR;
+                        AppDir         : ARRAY OF CHAR;
+                        VAR CurDir     : ARRAY OF CHAR;
+                        VAR CurDirLen  : UINT;
+                        VAR DestDir    : ARRAY OF CHAR;
+                        VAR DestDirLen : UINT) : VFF_SET;
+
+PROCEDURE VerFindFileW (uFlags         : VFFF_TYPE;
+                        FileName       : ARRAY OF WCHAR;
+                        WinDir         : ARRAY OF WCHAR;
+                        AppDir         : ARRAY OF WCHAR;
+                        VAR CurDir     : ARRAY OF WCHAR;
+                        VAR CurDirLen  : UINT;
+                        VAR DestDir    : ARRAY OF WCHAR;
+                        VAR DestDirLen : UINT) : VFF_SET;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST VerFindFile = VerFindFileW;
+<* ELSE *>
+      CONST VerFindFile = VerFindFileA;
+<* END *>
+
+PROCEDURE VerInstallFileA (uFlags         : VIFF_SET;
+                           SrcFileName    : ARRAY OF CHAR;
+                           DestFileName   : ARRAY OF CHAR;
+                           SrcDir         : ARRAY OF CHAR;
+                           DestDir        : ARRAY OF CHAR;
+                           CurDir         : ARRAY OF CHAR;
+                           VAR TmpFile    : ARRAY OF CHAR;
+                           VAR TmpFileLen : UINT)
+                                                  : VIF_SET;
+
+PROCEDURE VerInstallFileW (uFlags         : VIFF_SET;
+                           SrcFileName    : ARRAY OF WCHAR;
+                           DestFileName   : ARRAY OF WCHAR;
+                           SrcDir         : ARRAY OF WCHAR;
+                           DestDir        : ARRAY OF WCHAR;
+                           CurDir         : ARRAY OF WCHAR;
+                           VAR TmpFile    : ARRAY OF WCHAR;
+                           VAR TmpFileLen : UINT)
+                                                  : VIF_SET;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST VerInstallFile = VerInstallFileW;
+<* ELSE *>
+      CONST VerInstallFile = VerInstallFileA;
+<* END *>
+
+(* Returns size of version info in bytes *)
+
+PROCEDURE GetFileVersionInfoSizeA (Filename   : ARRAY OF CHAR; (* Filename of version stamped file *)
+                                   VAR Handle : DWORD          (* Information for use by GetFileVersionInfo *)
+                                                      ) : DWORD;
+
+(* Returns size of version info in bytes *)
+
+PROCEDURE GetFileVersionInfoSizeW (Filename   : ARRAY OF WCHAR;
+                                   VAR Handle : DWORD
+                                                      ) : DWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetFileVersionInfoSize = GetFileVersionInfoSizeW;
+<* ELSE *>
+      CONST GetFileVersionInfoSize = GetFileVersionInfoSizeA;
+<* END *>
+
+(* Read version info into buffer *)
+
+PROCEDURE GetFileVersionInfoA (Filename : ARRAY OF CHAR; (* Filename of version stamped file *)
+                               dwHandle : DWORD;   (* Information from GetFileVersionSize *)
+                               dwLen    : DWORD;   (* Length of buffer for info *)
+                               lpData   : PVOID    (* Buffer to place the data structure *)
+                                                ) : BOOL;
+
+PROCEDURE GetFileVersionInfoW (Filename : ARRAY OF WCHAR;
+                               dwHandle : DWORD;
+                               dwLen    : DWORD;
+                               lpData   : PVOID) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetFileVersionInfo = GetFileVersionInfoW;
+<* ELSE *>
+      CONST GetFileVersionInfo = GetFileVersionInfoA;
+<* END *>
+
+PROCEDURE VerLanguageNameA (wLang    : DWORD;
+                            VAR Lang : ARRAY OF CHAR;
+                            nSize    : DWORD) : DWORD;
+
+PROCEDURE VerLanguageNameW (wLang    : DWORD;
+                            VAR Lang : ARRAY OF WCHAR;
+                            nSize    : DWORD) : DWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST VerLanguageName = VerLanguageNameW;
+<* ELSE *>
+      CONST VerLanguageName = VerLanguageNameA;
+<* END *>
+
+PROCEDURE VerQueryValueA (pBlock       : LPCVOID;
+                          SubBlock     : ARRAY OF CHAR;
+                          VAR lpBuffer : PVOID;
+                          VAR Len      : UINT) : BOOL;
+
+PROCEDURE VerQueryValueW (pBlock       : LPCVOID;
+                          SubBlock     : ARRAY OF WCHAR;
+                          VAR lpBuffer : PVOID;
+                          VAR Len      : UINT) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST VerQueryValue = VerQueryValueW;
+<* ELSE *>
+      CONST VerQueryValue = VerQueryValueA;
+<* END *>
+
+END WinVer.

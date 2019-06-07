@@ -1,0 +1,73 @@
+DEFINITION MODULE EDIF;
+
+IMPORT sys := SYSTEM;
+
+TYPE
+ <* PUSH *>
+ <* ALIGNMENT = "1" *>
+ <* ENUMSIZE = "4" *>
+
+ DIRECTORY_TYPE = ( dtReserved
+                  , dtVersionNumber
+                  , dtReferenceFileName
+                  , dtConsistentKey
+                  , dtSourceFileName
+                  , dtModuleName
+                  , dtTypesSection
+                  , dtSymbolsSection
+                  , dtLinumsSection
+                  );
+
+  DIRECTORY_TYPE_SET = SET OF DIRECTORY_TYPE;
+
+  DIRECTORY = RECORD
+                CASE :INTEGER OF
+                | 0 : Type: DIRECTORY_TYPE;
+                | 1 : Code: sys.CARD32;
+                END;
+                Entry: sys.CARD32;
+                Size: sys.CARD32;
+              END;
+
+
+  DIRECTORY_VERSION = RECORD
+                        VersionMajorNumber: sys.CARD32;
+                        VersionMinorNumber: sys.CARD32;
+                      END;
+
+
+  PREFIX = ARRAY [1..4] OF CHAR;
+
+
+  EDIF_HEADER = RECORD
+                  Prefix: PREFIX;
+                  DirectoryTable: sys.CARD32;
+                  -- . . . DIRECTORY
+                  -- . . . DIRECTORY
+                  -- . . . DIRECTORY
+                END;
+
+  SEGMENT_ENTRY = RECORD
+                    SegmentNumber: sys.CARD32;
+                    SectionNumber: sys.CARD32;
+                    SegmentOffset: sys.CARD32;
+                    SegmentSize: sys.CARD32;
+                  END;
+
+  LINUM_ENTRY = RECORD
+                  SegmentNumber: sys.CARD32;
+                  LineNumber: sys.CARD32;
+                  CodeOffset: sys.CARD32;
+                END;
+
+ <* POP *>
+
+CONST
+  Prefix = "EDIF";
+  Terminator = Prefix;
+  VersionMajorNumber = 1;
+  VersionMinorNumber = 0;
+  ModuleSection = "$$MO";
+  PublicSection = "$$PU";
+
+END EDIF.

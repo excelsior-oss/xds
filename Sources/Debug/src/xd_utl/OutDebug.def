@@ -1,0 +1,18 @@
+-- Store output debug strings
+
+DEFINITION MODULE OutDebug;
+
+IMPORT SYSTEM;
+
+
+PROCEDURE AddOutputDebugString (s: ARRAY OF CHAR; SEQ arg: SYSTEM.BYTE);
+
+PROCEDURE Clear ();
+
+PROCEDURE StringsNo (): CARDINAL;
+
+PROCEDURE GetString (i: CARDINAL; VAR s: ARRAY OF CHAR);
+
+
+END OutDebug.
+

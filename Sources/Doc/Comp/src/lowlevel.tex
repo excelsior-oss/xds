@@ -1,0 +1,379 @@
+\chapter{Low-level programming}\label{lowlevel}
+\index{Low-level programming}
+
+\section{Data representation}\label{lowlevel:datarep}
+
+The internal representation of values of \mt{}
+and \ot{} basic types is described in the tables
+\ref{table:m2:rep} and \ref{table:o2:rep}. In the
+table \ref{table:system:rep} the representation of system
+types is described.
+
+\begin{table}
+\begin{tabular}{|l|c|l|} \hline
+\bf Modula-2 type  & \bf Bits &\bf Representation \\ \hline
+\tt SHORTINT       & 8     & signed \\
+\tt INTEGER        & 16/32 & signed (See \ref{lowlevel:datarep:whole})\\
+\tt LONGINT        & 32    & signed \\
+\tt SHORTCARD      & 8     & unsigned \\
+\tt CARDINAL       & 16/32 & unsigned (See \ref{lowlevel:datarep:whole})\\
+\tt LONGCARD       & 32    & unsigned \\
+\tt CHAR           & 8     & unsigned \\
+\tt BOOLEAN        & 8/32  & unsigned (See \ref{lowlevel:datarep:bool})\\
+                   &       & 0 for FALSE, 1 for TRUE \\
+\tt subranges      &       & according to the base type \\
+\tt REAL           & 32    & 80x87 single-precision data format \\
+\tt LONGREAL       & 64    & 80x87 double-precision data format \\
+\tt LONGLONGREAL   & 80    & 80x87 extended-precision data format \\
+\hline
+\end{tabular}
+\caption{Representation of Modula-2 basic types}\label{table:m2:rep}
+\end{table}
+
+\begin{table}
+\begin{tabular}{|l|c|l|} \hline
+\bf Oberon-2 type  & \bf Bits &\bf Representation \\ \hline
+\tt SHORTINT       & 8        & signed \\
+\tt INTEGER        & 16       & signed \\
+\tt LONGINT        & 32       & signed \\
+\tt CHAR           & 8        & unsigned \\
+\tt BOOLEAN        & 8        & unsigned byte \\
+                   &          & 0 for FALSE, 1 for TRUE \\
+\tt REAL           & 32       & 80x87 single-precision data format \\
+\tt LONGREAL       & 64       & 80x87 double-precision data format \\
+\tt LONGLONGREAL   & 80       & 80x87 extended-precision data format \\
+\tt SET            & 32       & packed set \\
+\hline
+\end{tabular}
+\caption{Representation of Oberon-2 basic types}\label{table:o2:rep}
+\end{table}
+
+\begin{table}
+\begin{tabular}{|l|c|l|} \hline
+\bf System type  & \bf Bits  &\bf Representation \\ \hline
+\tt ADDRESS      & 32    & unsigned   \\
+\tt BOOL8        & 8     & unsigned \\
+\tt BOOL16       & 16     & unsigned \\
+\tt BOOL32       & 32    & unsigned \\
+\tt BYTE         & 8     & unsigned  \\
+\tt CARD8        & 8     & unsigned \\
+\tt CARD16       & 16    & unsigned \\
+\tt CARD32       & 32    & unsigned \\
+\tt INT8         & 8     & signed \\
+\tt INT16        & 16    & signed \\
+\tt INT32        & 32    & signed \\
+\tt LOC          & 8     & unsigned  \\
+\tt WORD         & 32    & ARRAY [0..3] OF LOC  \\
+\hline
+\end{tabular}
+\caption{Representation of SYSTEM types}\label{table:system:rep}
+\end{table}
+
+\subsection{Modula-2 INTEGER and CARDINAL types}\label{lowlevel:datarep:whole}
+
+If the option \OERef{M2BASE16} is OFF, objects of types \verb'INTEGER'
+and \verb'CARDINAL' are 4 bytes (32 bits) long, otherwise they are
+2 bytes (16 bits) long.
+
+\subsection{Modula-2 BOOLEAN type}\label{lowlevel:datarep:bool}
+
+A value of the type \verb'BOOLEAN' occupies 1 byte of memory.
+
+\subsection{Modula-2 enumeration types}
+
+Representation of enumeration type values depends on the current
+\OERef{ENUMSIZE} equation setting. Values of an enumeration type which
+fits the specified size (1, 2, or 4 bytes) occupy exactly that
+number of bytes; otherwise the smallest suitable size from
+that list is taken.
+
+\subsection{Modula-2 set types}
+
+Sete are represented as bit arrays. The \OERef{SETSIZE} equation
+specifies the default size for small sets (1, 2, or 4 bytes).
+
+If the option \OERef{M2BASE16} is OFF, the type {\tt BITSET}
+is represented by 32 bits, otherwise by 16 bits.
+
+\subsection{Pointer, address, and opaque types}
+
+The \XDS{} compiler allocates 4 bytes of storage for a value
+of a pointer, address, or opaque type.
+Address arithmetic is implemented as 32-bit unsigned arithmetic
+without overflow checks.
+
+\subsection{Procedure types}
+
+Procedure types are represented by 4 bytes which hold
+an address of a procedure entry point in the task code segment.
+
+\subsection{Record types}\label{lowlevel:recrep}
+
+Records are represented by a continuous memory segment containing all
+record components (fields) in a representation corresponding to their
+types. The compiler aligns each field according to its size and the
+current alignment (1,2,4, or 8), which may be set with the \OERef{ALIGNMENT}
+equation. Fields, which sizes, being rounded to the nearest power of 2,
+are less or equal to the current alignment, are placed at offsets which are
+multiple of their (rounded) sizes. Offsets of all other fields
+are multiples of the current alignment. Variant parts are aligned at the
+largest alignment of variant fields. Size of a record is rounded so that
+size of an array of such records is a multiple of the record size and
+the number of elements in the array, and each record in the array is
+correctly aligned.
+
+\begin{verbatim}
+    TYPE
+      R1 = RECORD                (* ALIGNMENT   1   2   4  *)
+             f1: CHAR;           (* f1 offset   0   0   0  *)
+             f2: SYSTEM.CARD16;  (* f2 offset   1   2   2  *)
+             f3: SYSTEM.CARD16;  (* f3 offset   3   4   4  *)
+             f4: CARDINAL;       (* f4 offset   5   6   8  *)
+             f5: CHAR;           (* f1 offset   9   10  12 *)
+           END;                  (* SIZE(R1)    10  12  16 *)
+\end{verbatim}
+
+
+\subsection{Array types}\label{lowlevel:opendesc}
+
+An array is represented by a continuous memory segment containing all
+array elements in a representation corresponding to their type.
+
+Note that elements within an array can be aligned, so in general  % !!!
+for
+
+\verb'    TYPE A = ARRAY [0..N-1] OF T;'
+
+{\tt SIZE(A)} may be not equal to {\tt SIZE(T) * N}.
+
+Open arrays, as well as procedure formal parameters of type
+{\tt ARRAY OF ... ARRAY OF T}, are represented by an open array descriptor.
+For an $N$-dimensional open array, the descriptor is an array of $2N$
+32-bit elements, which are:
+\begin{itemize}
+\item   the first element is the address of the array data
+\item   the second is the highest dimension
+\item   for each of $N-1$ higher dimensions, the descriptor contains
+        the size in bytes of a next dimension array and a number of elements
+        in the dimension
+\end{itemize}
+
+Let {\tt A} be a dynamic $3$-dimensional array
+of {\tt INTEGER} ({\tt SIZE(INTEGER)=2} in \ot{}) created as
+
+\verb'    NEW(A,4,3,6)'
+
+then its descriptor is a 6-element array containing:
+
+\begin{verbatim}
+     #0:  Address of array itself
+     #1:   6
+     #2:  12   (6*2)
+     #3:   3   
+     #4:  36   (12*3)
+     #5:   4
+\end{verbatim}
+
+\section{Sequence parameters}\label{lowlevel:seqrep}
+
+The array of bytes which is passed to a procedure in place of a formal
+SEQ-parameter is formed as follows:
+\begin{itemize}
+\item
+  values of all actual parameters forming the sequence are represented
+  as described below and concatenated in the array in their textual order
+\item integer values are converted to \verb'LONGINT'
+\item \verb'BOOLEAN', \verb'CHAR', cardinal, and enumeration values are converted
+      to \verb'LONGCARD'
+\item range type values are converted according to their base type
+\item real values are converted to \verb'LONGREAL'
+\item pointer, address, opaque, and procedure type values
+are converted to \verb'ADDRESS'
+\item
+    a structured value (record or array) is interpreted
+    as a one-dimensional array of bytes and
+    is represented by a 3-element descriptor:
+    \begin{itemize}
+    \item the address of the structure
+    \item a zero 32-bit word (reserved for future extensions)
+    \item size of the structure (in LOCs) minus one
+    \end{itemize}
+\end{itemize}
+
+\Example
+\begin{verbatim}
+    PROCEDURE write(SEQ args: SYSTEM.BYTE);
+    BEGIN
+    END write;
+
+    VAR i: INTEGER;
+        c: SYSTEM.CARD8;
+        r: LONGREAL;
+        S: RECORD a: LONGINT; c: CHAR END;
+        p: POINTER TO ARRAY OF CHAR;
+     .  .  .
+
+    write(i,c,S,r,p^);
+\end{verbatim}
+
+For this call the actual byte array passed to {\tt write} will contain:
+\begin{itemize}
+\item  4 bytes of the sign-extended value of {\tt i}
+\item  4 bytes of the zero-extended value of {\tt c}
+\item  12 bytes of the array descriptor
+\begin{itemize}
+    \item 4 bytes containing the address of {\tt S}
+    \item 4 bytes containing 0
+    \item 4 bytes containing 4 (\verb'SIZE(S)-1')
+\end{itemize}
+\item  8 bytes value of {\tt r} in the double-precision 80387 format
+\item  12 bytes of the array descriptor
+\begin{itemize}
+    \item 4 bytes containing the address of the \verb'P' data
+    \item 4 bytes containing the value 0
+    \item 4 bytes containing \verb'SIZE(p^)-1'
+\end{itemize}
+\end{itemize}
+
+\section{Calling and naming conventions}
+\label{lowlevel:conv}
+
+The calling and naming conventions for \mt{}, \ot{}, and
+foreign procedures are described in this section.
+
+\subsection{General considerations}
+
+All parameters are always passed on the stack. The number of bytes
+occupied by a parameter is a multiple of 4. High-order bytes of
+parameters which are of shorter types (e.g. \verb'CHAR',
+\verb'SYSTEM.CARD16') are undefined.
+
+Value parameters of scalar types (boolean, character, enumeration, whole,
+range, real, pointer, opaque, and procedure) and sets of size not
+greater than 32 bit are placed onto the stack. A complex type value
+parameter is passed as a pair of real.
+
+Value parameters of all other types (even an array of a single \verb'CHAR')
+are passed by reference. A procedure is responsible for copying its non-scalar
+value parameter onto the stack, unless it is marked as read-only.
+
+{\bf Warning:} In C, a {\em caller} should copy value parameters of
+structure type onto the stack. You should provide a wrapper C function
+which receives these parameters by reference. Fortunately, this is
+a very rare case.
+
+{\bf Note:} The number of 4-byte words pushed onto the stack is
+passed in the AL register to a \verb'"SysCall"' foreign procedure.
+
+\subsection{Open arrays}
+
+For an $N$-dimensional open array parameter $N+1$ parameters are
+actually passed --- the address of the array and its sizes in
+all dimensions from left to right. This is true for \mt{} and
+\ot{} procedures only. In case of a foreign procedure,
+only the address is passed.
+
+\subsection{Oberon-2 records}
+
+To a formal VAR-parameter which type is an \ot{} record type,
+the address of the actual parameter and the address of its dynamic type
+descriptor are passed.
+
+\subsection{Result parameter}
+\label{lowlevel:conv:result}
+
+If a function procedure result type is not scalar, it receives one extra
+parameter --- the address of a temporary variable in which the
+procedure should store the reslut. {\bf Note:} This may be incompatible with C.
+
+A complex result is returned as a record with two real fields.
+
+\subsection{Nested procedures}
+\label{lowlevel:conv:nested}
+
+A nested \mt{} or \ot{} procedure, which access scopes of outer
+procedures, receives their {\em bases} as extra parameters.
+More precisely, the procedure $P$ receives bases of all outer procedures
+which scopes are accessed by $P$ or any procedure nested in $P$.
+
+The base of a procedure is the address at which the procedure's
+return address resides on the stack.
+
+\subsection{Oberon-2 receivers}
+\label{lowlevel:conv:o2receivers}
+
+An extra parameter --- receiver --- is passed to an \ot{} type
+bound procedure. A reference to its dynamic type descriptor
+is also passed if the receiver is declared as a VAR-parameter.
+
+\subsection{Sequence parameters}
+\label{lowlevel:conv:seq}
+
+Sequence parameters for a \mt{}/\ot{} procedure are collected
+into a temporary variable, which is then passed as an \verb'ARRAY OF BYTE'
+(i.e. its address and size are passed). For foreign procedures,
+a C-compatible approach is used --- parameters are pushed onto the
+stack. In either case, all ordinal type parameters are extended to
+4 bytes, \verb'REAL's to \verb'LONGREAL's, non-scalar type parameters are
+passed by reference.
+
+\subsection{Order of parameters}
+
+The abstract order of parameters (all categories are optional):
+
+\begin{itemize}
+\item \See{address of a temporary variable to store the result}{}{lowlevel:conv:result}
+\item \See{bases of outer procedures}{}{lowlevel:conv:nested}
+\item \See{receiver}{}{lowlevel:conv:o2receivers} (Oberon-2 procedures only)
+\item regular parameters
+\item \See{sequence parameter}{}{lowlevel:conv:seq}
+\end{itemize}
+
+Actual order, in all cases except \verb'"Pascal"' foreign procedures,
+is from-right-to-left, i.e. the last sequence parameter is pushed
+onto the stack first, the result parameter is pushed last.
+
+\subsection{Stack cleanup}
+
+The stack space allocated for parameters has to be freed upon return
+from a procedure. Depending on the language of the procedure,
+it is performed by the caller (\verb'"C"' and \verb'"SysCall"') or
+the procedure itself (\mt{}, \ot{}, \verb'"StdCall"', \verb'"Pascal"').
+
+\subsection{Register usage}
+
+A procedure must preserve reisters \verb'ESI', \verb'EDI', \verb'EBP',
+and \verb'EBX' registers, keep \verb'ES=DS', and clear the \verb'D' flag.
+
+The FPU stack must be empty before a call to a procedure and upon
+return from it. Exceptions are procedures which return \verb'REAL' or
+\verb'LONGREAL'. In this case, the result is placed in \verb'ST(0)'.
+
+{\bf Note}: If the \OERef{CC} equation is set to either \verb'"WATCOM"' or
+\verb'"SYMANTEC"', foreign procedures declared as \verb'"C"' are considered
+to return \verb'REAL' results in \verb'EAX', and \verb'LONGREAL' results
+in \verb'EAX' (low order bytes) and \verb'EDX' (high order bytes).
+
+\subsection{Naming conventions}
+
+External names of exported procedures in object modules are
+built accroding to the following rules:
+
+\begin{center}
+\begin{tabular}{lll}
+\bf Convention & \bf Name is & \bf As in \\
+\hline
+\tt "Modula"       & prepended with the module name and "\_" & \verb'Module_Proc' \\
+\tt "Oberon"       & ditto                                 & \verb'Module_Proc' \\
+\tt "C"            & prepended with "\_" (see note)        & \verb'_Proc'       \\
+\tt "Pascal"       & capitalized                           & \verb'PROC'        \\
+\tt "StdCall"      & unchanged                             & \verb'Proc'        \\
+\tt "SysCall"      & unchanged                             & \verb'Proc'        \\
+\end{tabular}
+\end{center}
+
+{\bf Note:} If the \OERef{CC} equation is set to \verb'"WATCOM"',
+external names of \verb'"C"' foreign procedures are {\em} not prepended
+with an underscore character.
+
+%input{codeproc.tex} % -------------------------------

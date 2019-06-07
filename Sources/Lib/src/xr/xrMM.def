@@ -1,0 +1,268 @@
+(* Copyright (c) 1994,1999 XDS Ltd, Russia. All Rights Reserved. *)
+
+<* +M2EXTENSIONS *>
+<* -M2BASE16     *>
+<* +M2ADDTYPES   *>
+
+DEFINITION MODULE xrMM; (* VitVit'n'Hady *)
+
+(* XDS memory manager *)
+
+(* Modifications:
+  20-Jun-96 Ned  "size" for large blocks is in Block.fsum now (32 bits).
+                 size/tags word - placement of fields is changed.
+*)
+
+IMPORT SYSTEM,
+       types := xmRTS;
+
+FROM SYSTEM IMPORT ADDRESS;
+
+(*----------------------------------------------------------------*)
+(*                      Memory Manager Setup                      *)
+(*----------------------------------------------------------------*)
+
+(* MM uses different strategies for:
+        - large pieces  (size > MinLarge)
+        - small pieces  (size <= Max*SIZE(LinkDesc))
+        - normal pieces (all that not large nor small)
+
+   recommended numbers:
+          Max   = 11 (11*8 = 88 byte pieces are optimized)
+
+   1) large piece - for each piece a separate block is allocated
+   2) small piece - block of size "BlockSize" is allocated
+          and divided to equal pieces
+   3) normal piece - block of size "BlockSize" is allocated
+          when necessary and normal heap is organized inside the block.
+
+   To speed up explicit deallocation each (small or normal) object,
+   marked for explicitly deallocation contains a distance
+   between object and block descriptor in SIZE(LinkDesc) units.
+
+   Second word in LINK contains:
+        for large blocks:       tags
+        for small & normal:     tags, size, offset (in links)
+
+   Restrictions for BlockSize:
+        BlockSize <= 2**<bits_for_size> (for normal block)
+        BlockSize <= (2**<bits_for_offset>)*LINK_SZ
+
+   Size is stored with heap overhead & aligned by 8.
+
+   The following placement is used (normal & small blocks):
+
+   |31            21|20         14|13                 3|2         0|
+   +----------------+-------------+--------------------+-----------+
+   | offset 11 bits | tags 7 bits |  size/8  11 bits   |tags 3 bits|
+   +----------------+-------------+--------------------+-----------+
+
+   Hence:
+        BlockSize <= 2**14     (from size)   16K
+        BlockSize <= (2**11)*8 (from offset) 16K
+*)
+
+CONST
+  BlockSize = 16*1024;
+
+CONST
+  Max = 20;          -- max size of small object = Max*SIZE(LinkDesc) *)
+
+CONST
+  (* number of blocks *)
+  NORMAL = 0;
+  LARGE  = Max+1;
+
+CONST
+  MaxDim = 8; (* Maximum dynamic array dimension supported *)
+
+TYPE
+  GarbageCollector = PROCEDURE ["C"];
+
+  CARD32 = SYSTEM.CARD32;
+  SIZE_T = SYSTEM.size_t;
+  Block  = POINTER TO BlockDesc;
+
+  BlockDesc = RECORD
+    size  :CARDINAL;       (* size of NORMAL & LARGE block body                    *)
+    next  :Block;          (* next block of same kind                              *)
+    prev  :Block;
+    snxt  :Block;          (* sorted blocks, valid after SortBlocks                *)
+    fsum  :CARDINAL;       (* for NORMAL & SMALL :size of free memory in the block
+                              for LARGE          :non-aligned size of piece        *)
+    list  :types.X2C_LINK; (* list of free parts                                   *)
+    mem   :ADDRESS;        (* bottom of free memory pool for SMALL block           *)
+    magic :CARDINAL;       (* to provide additional safety check                   *)
+
+    root  :SHORTCARD;      (* index in blocks                                      *)
+    fixed :BOOLEAN;        (* contanes pieces that cannot be moved                 *)
+  END;
+
+  Dynarr = POINTER TO RECORD
+    a: SYSTEM.ADDRESS;
+    n: ARRAY [0..(MaxDim-1)*2] OF SIZE_T;
+  END;
+
+CONST
+  LINK_SZ   = SIZE(types.X2C_LINK_STR);
+
+  PAD_SZ     = LINK_SZ;
+  BLOCK_SZ   = (SIZE(BlockDesc) + PAD_SZ + LINK_SZ-1) DIV LINK_SZ * LINK_SZ; -- block descr size
+  MEMORY_OFS = BLOCK_SZ - PAD_SZ;
+
+(* It is supposed that the memory page size at almost all architectures
+   is equal to 4KB. So it looks wise to round memory requests to
+   4KB where possible. The folowing tuning serves this purpose.
+                             Hady, 30.10.95.
+*)
+  SmallBlockSize  = BlockSize - BLOCK_SZ;  (* of normal block *)
+  NormalBlockSize = SmallBlockSize;
+
+
+CONST (* bits in X2C_LINK^.tags *)
+  _sysbit    = 14;  (* can be collected after call to dealloc        *)
+  _expbit    = 15;  (* never collected, must be deallocated          *)
+  _markbit   = 16;  (* for mark phase                                *)
+  _free      = 17;  (* piece is in free list (for small and normal)  *)
+  _moved     = 18;  (* piece was moved                               *)
+  _stack     = 19;  (* piece is accesable from stack                 *)
+  _unmovable = 20;  (* don't move this piece                         *)
+
+  _unused0   = 0;
+  _unused1   = 1;
+  _notstack  = 2;   (* ignore references to this object from the stack *)
+
+  all_tags = {0..2}+{14..20};
+
+  BOFS_MASK = {21..31};  -- block offset mask
+
+  SZ_MASK   = {3..13};   -- small/normal block size mask
+
+
+(*  to recognize an object as large (one object per block),
+    check the following condition:
+
+    IF (obj^.tags*BOFS_MASK = {}) THEN -- large object
+      ...
+
+    It's correct 'cause for any small or normal object, offset # 0
+    (just SIZE(BlockDesc) > 0)
+*)
+
+
+CONST
+  MAGIC_B  = 12345678H;
+  MAGIC_T  = 93678150H;
+  MAGIC_G  = 84761853H;
+
+VAR
+  f_blocks   : ARRAY [0..Max+1] OF Block; (* blocks with free space *)
+  b_blocks   : ARRAY [0..Max+1] OF Block; (* busy blocks            *)
+  parts      : ARRAY [0..Max] OF CARDINAL;
+
+  expusedmem :CARDINAL;
+
+  DoDefrag   : BOOLEAN;
+  GCAUTO     : BOOLEAN;
+  GCTHRESCNT : INTEGER;
+
+  O2MM_init  : BOOLEAN;
+  COLLECTOR  : GarbageCollector;
+
+  FloatingHeaplimit :BOOLEAN;
+
+  X2C_AlwaysDefrag :BOOLEAN; (* perform heap defragmentation on every garbage collection *)
+
+CONST
+  InitialFloatingMaxMem = 10*1024*1024;
+  MinFloatingMaxMem     =  1*1024*1024;
+
+PROCEDURE allocate(VAR l: types.X2C_LINK; size: CARDINAL; clean :BOOLEAN);
+PROCEDURE free_block(x: Block);
+PROCEDURE dealloc(n: types.X2C_LINK);
+
+PROCEDURE foManager_add (obj :types.X2C_LINK);
+PROCEDURE foManager_del (obj :types.X2C_LINK);
+
+PROCEDURE ["C"] X2C_InitDesc(d: Dynarr; VAR size: SIZE_T;
+                    lens: ARRAY OF types.X2C_LENS_TYPE; dims: SIZE_T);
+
+PROCEDURE DynarrDescSize(dims: SIZE_T): SIZE_T;
+
+PROCEDURE SetNil (a: SYSTEM.ADDRESS; size: SIZE_T);
+PROCEDURE MakeFree(b: Block);
+PROCEDURE MakeBusy(b: Block);
+PROCEDURE Align(size: CARDINAL): CARDINAL;
+
+
+PROCEDURE CheckHeap();
+(* check consistency of entire heap *)
+
+-----------------------------------------
+
+PROCEDURE getFirstBlockAdr (b :Block) :ADDRESS;
+(* returns first address of block's memory *)
+
+PROCEDURE getLastBlockAdr1 (b :Block) :ADDRESS;
+(* returns last address of block's memory +1 !!!!! *)
+
+PROCEDURE getLargeObjBlock (largeObj :types.X2C_LINK) :Block;
+(* returns block descriptor of a large object *)
+
+PROCEDURE NewBlock (root: SHORTCARD; VAR b: Block; size: CARDINAL);
+
+PROCEDURE setObjOfsLen (VAR obj :types.X2C_LINK; size, ofs :CARDINAL);
+
+VAR
+  blk_min     : SYSTEM.ADDRESS;
+  blk_max     : SYSTEM.ADDRESS;
+
+(* -------- Next objects are used in XMM_DEBUG mode only ------- *)
+
+CONST
+  GAP_LEN  = 32;
+
+VAR
+  blockno     : CARDINAL;
+  cur_td      : types.X2C_TD;
+  cur_offs    : INTEGER;
+
+(* ------------------------------------------------------------- *)
+
+PROCEDURE getHpObjSize (obj :types.X2C_LINK) :CARDINAL;
+
+PROCEDURE SetGap (a :SYSTEM.ADDRESS);
+
+PROCEDURE ini_type_desc(VAR x: types.X2C_TD;
+                           nm: ARRAY OF CHAR;
+                 sz: CARDINAL; offs: SYSTEM.ADDRESS);
+
+VAR
+  anchorTracing :BOOLEAN;
+  anchorWeightThreshold :CARDINAL;
+
+  heapTracing :BOOLEAN;
+  heapTracingThreshold :CARDINAL;
+
+
+PROCEDURE stampAsNonConservative (obj :SYSTEM.ADDRESS);
+
+PROCEDURE ["C"] X2C_COLLECT;
+
+PROCEDURE ["C"] X2C_GC_INIT (auto :BOOLEAN; thres, heap :SYSTEM.CARD32) :BOOLEAN;
+
+PROCEDURE ["C"] X2C_GC_INCREASE (auto: BOOLEAN; thres,heap: SYSTEM.CARD32);
+(* increase threshold & heap size on the run *)
+
+PROCEDURE HeapLock();
+
+PROCEDURE HeapUnlock();
+
+PROCEDURE ["C"] X2C_MemoryManager_exit ();
+
+VAR
+  GCInvoker   :types.X2C_Coroutine;
+  StackEnd4GC :SYSTEM.ADDRESS;
+  SizeToAlloc :CARDINAL;
+
+END xrMM.

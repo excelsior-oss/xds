@@ -1,0 +1,23 @@
+(* Copyright (c) Excelsior 1999.  All Rights Reserved *)
+(* Copyright (c) XDS Ltd. 1993,95,98.  All Rights Reserved *)
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrnsetjmp;
+
+IMPORT  SYSTEM;
+
+CONST
+  stack_unwound = 2; -- setjmp ret code
+
+TYPE
+  X2C_jmp_buf = RECORD
+    ebx,ecx,edx,esi,edi,ebp,eip,esp: CARDINAL;
+    es,ds,cs,fs,gs,ss: SYSTEM.CARD16;
+<* IF target_os = "os2" THEN *>
+    excpt_handler: CARDINAL;
+<* END *>
+  END;
+
+PROCEDURE X2C_setjmp(VAR point: X2C_jmp_buf): INTEGER;
+PROCEDURE X2C_longjmp(VAR point: X2C_jmp_buf; n: INTEGER);
+
+END xrnsetjmp.

@@ -1,0 +1,7 @@
+-- Обработчик диалогового окна выбора файла
+
+DEFINITION MODULE DlgBrows;
+
+PROCEDURE Browse (header: ARRAY OF CHAR; VAR fname: ARRAY OF CHAR; action: PROC);
+
+END DlgBrows.

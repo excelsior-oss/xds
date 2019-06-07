@@ -1,0 +1,80 @@
+DEFINITION MODULE xruSTABS;
+
+IMPORT SYSTEM;
+
+
+(*
+ *********************************************
+ *	   General ELF description	     *
+ *********************************************
+*)
+
+  TYPE INT32    = SYSTEM.INT32;
+       CARD32   = SYSTEM.CARD32;
+       CARD16   = SYSTEM.CARD16;
+       CARD8    = SYSTEM.CARD8;
+       UCHAR    = SYSTEM.CARD8;
+
+    CONST
+      EI_NIDENT           = 16;    (* Size of e_ident *)
+      ET_EXEC             = 2;     (* Executable file *)
+      ELF_HEADER_SIZE     = 034H;
+      SECTION_HEADER_SIZE = 028H;
+
+    TYPE
+      ELF_HEADER  = RECORD
+        e_ident      : ARRAY [0..EI_NIDENT-1] OF UCHAR;
+        e_type       : CARD16;
+        e_machine    : CARD16;
+        e_version    : CARD32;
+        e_entry      : CARD32;
+        e_phoff      : CARD32;
+        e_shoff      : CARD32;
+        e_flags      : CARD32;
+        e_ehsize     : CARD16;
+        e_phentsize  : CARD16;
+        e_phnum      : CARD16;
+        e_shentsize  : CARD16;
+        e_shnum      : CARD16;
+        e_shstrndx   : CARD16;
+      END;
+      SECTION_HEADER = RECORD
+        sh_name     : CARD32;
+        sh_type     : CARD32;
+        sh_flags    : CARD32;
+        sh_addr     : CARD32;
+        sh_offset   : CARD32;
+        sh_size     : CARD32;
+        sh_link     : CARD32;
+        sh_info     : CARD32;
+        sh_addralign: CARD32;
+        sh_entsize  : CARD32;
+      END;
+
+(* STAB format description *)
+
+    CONST 
+      STAB_SIZE = 12;
+      N_UNDF   = 0;    (* N_... are STAB types *)
+      N_SO     = 064H;
+      N_SLINE  = 044H;
+      N_FUN    = 024H;
+
+    TYPE 
+      STAB  = RECORD
+        n_strx   : CARD32;
+        n_type   : CARD8;
+        n_other  : CARD8;
+        n_desc   : CARD16;
+        n_value  : CARD32;
+      END;
+
+PROCEDURE GetStabsNumber(): CARD32;
+
+PROCEDURE OpenMyExe(VAR Error: BOOLEAN);
+
+PROCEDURE CloseMyExe;
+
+PROCEDURE GetStab(stabstr_off: CARD32; VAR Error: BOOLEAN; indx: CARD32; VAR stab: STAB; VAR name: ARRAY OF CHAR);
+
+END xruSTABS.

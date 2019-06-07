@@ -1,0 +1,23 @@
+(* Copyright (c) Excelsior 2002. All Rights Reserved. *)
+
+(* This module provides subset of Proccess Status API (PSAPI) *)
+
+<* +M2EXTENSIONS *>
+<* ALIGNMENT = "1" *>
+
+DEFINITION MODULE PSAPI;
+
+IMPORT SYSTEM;
+
+IMPORT win := Windows;
+
+
+PROCEDURE ["StdCall"] GetModuleFileNameEx
+    ( hProcess   : win.HANDLE  -- handle to process
+    ; hModule    : win.HMODULE -- handle to module
+    ; lpFilename : win.PTSTR   -- path buffer
+    ; nSize      : win.DWORD   -- maximum characters to retrieve
+    ): win.DWORD;              -- the length of the string copied to the buffer
+
+
+END PSAPI.

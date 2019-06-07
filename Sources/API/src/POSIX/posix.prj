@@ -1,0 +1,32 @@
+% Copyright (c) Excelsior, LLC 2015. All rights reserved.
+%
+% IEEE Std 1003.1-1988,1990 POSIX.1 API for Modula-2/Oberon-2
+%
+
+-lookup = *.def=$!
+
+!if defined sym_place then
+  -lookup = *.sym = $(sym_place)
+!elsif backend="X86" then
+  -lookup = *.def = $!/../xds
+  -lookup = *.sym = $!/../../sym/x86
+!elsif backend="C" then
+  -lookup = *.sym = $!/../../sym/C
+!end
+
+!if backend="C" then
+  -noheader+
+  -woff354+
+!end
+
+-makefile
+-link=
++changesym
+
+!module	ctype.def	dirent.def	errno.def	fcntl.def
+!module float.def	grp.def		limits.def	locale.def
+!module math.def	pwd.def		setjmp.def	signal.def
+!module	stddef.def	stdio.def	stdlib.def	string.def
+!module	time.def	times.def	types.def	unistd.def
+!module utime.def	utsname.def	wait.def	stat.def
+!module termios.def

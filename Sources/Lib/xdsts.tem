@@ -1,0 +1,645 @@
+!if not defined native_library then
+  !new native_library-
+!end
+!if not defined pm then
+  !new pm-
+!end
+!if not defined map then
+  !new map-
+!end
+!if not defined multithread then
+  !new multithread -
+!end
+!if not defined genlib then
+  !new genlib-
+!end
+!if not defined gendll then
+  !new gendll-
+!end
+!if not defined genhistory then
+  !new genhistory-
+!end
+!if not defined exename then
+  !new exename=
+!end
+!if not genlib and not gendll and (exename="") and (project#"") then
+  !set exename = $(project)
+!end
+!if not defined usestaticclibs then
+  !new usestaticclibs-
+!end
+
+! "M\t= %s\n",mkfname#>mkfext
+!if defined xdsdir and (xdsdir#"") then
+  ! "XDSDIR\t= %s\n",xdsdir
+!else
+  ! "XDSDIR\t=.\n"
+!end
+!if defined tscpdir and (tscpdir#"") then
+  ! "TSCPDIR\t= %s\n",tscpdir
+!else
+  ! "TSCPDIR\t=.\n"
+!end
+!if target_fs#"UNIX" then
+  ! "INCL\t= $(XDSDIR)\include\n"
+!else
+  ! "INCL\t= $(XDSDIR)/include\n"
+!end
+!if target_fs#"UNIX" then
+  ! "INCLTS\t= $(TSCPDIR)\include\n"
+!else
+  ! "INCLTS\t= $(TSCPDIR)/include\n"
+!end
+
+!if genlib then
+  !if multithread then
+    ! "TSLIB\t= %s\n","libtsmt"#>libext
+  !else
+    ! "TSLIB\t= %s\n","libts"#>libext
+  !end
+  ! "LIBCMD\t= %s\n","libts"#>"tmp"
+!else
+  !if multithread then
+    ! "TSLIB\t= %s\n","libtsmt"#libext
+  !else
+    ! "TSLIB\t= %s\n","libts"#libext
+  !end
+  !if exename#"" then
+    ! "TARGET\t= %s\n",exename#>exeext
+  !else
+    ! { main : "TARGET\t= %s\n",#>exeext }
+  !end
+  !if (env_target="os2icc") or (env_target="os2vacpp") then
+    ! "CMDFILE\t=%s\n","xds"#>"tmp"
+  !end
+!end
+
+!if defined ccomp then
+
+!elsif env_target="alpha" then
+  ! "CDEFS\t= -DX2C_System_V -DX2C_strcmp\n"
+  ! "CF\t= -O2 -c -I$(INCL)\n"
+  ! "CC\t= cc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="decst" then
+  ! "CDEFS\t= -DX2C_no_spawn -DX2C_adr_align -DX2C_System_V -DX2C_strcmp\n"
+  ! "CF\t= -O2  -c -I$(INCL)\n"
+  ! "CC\t= cc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="free_bsd" then
+  ! "CDEFS\t= -D_unix -D_free_bsd -DX2C_no_spawn -DX2C_strcmp\n"
+  ! "CF\t= -O2 -c -I$(INCL)\n"
+  ! "CC\t= cc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="aix" then
+  ! "CDEFS\t= -D_unix -D_aix -DX2C_no_spawn -DX2C_strcmp\n"
+  ! "CF\t= -O2 -c -mcpu=common -I$(INCL)\n"
+  ! "CC\t= gcc\n"
+  !if usestaticclibs then
+    ! "LFLAGS\t= -static\n"
+  ! else
+    ! "LFLAGS\t=\n"
+  !end
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="hp9000" then
+  ! "CDEFS\t= -D_unix -DX2C_strcmp -D_HPUX_SOURCE -DX2C_adr_align -DX2C_alt_offs -DX2C_no_spawn\n"
+  ! "CF\t= -Aa -c -I$(INCL)\n"
+  ! "CC\t= cc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="hpkrc" then
+  ! "CDEFS\t= -D_unix -DX2C_strcmp -D_HPUX_SOURCE -DX2C_adr_align -DX2C_alt_offs -DX2C_no_spawn -DX2C_System_V\n"
+  ! "CF\t= -c -I$(INCL)\n"
+  ! "CC\t= cc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="hpgcc" then
+  ! "CDEFS\t= -D_unix -DX2C_strcmp -D_HPUX_SOURCE -DX2C_adr_align -DX2C_alt_offs -DX2C_no_spawn\n"
+  ! "CF\t= -O2 -c -I$(INCL)\n"
+  ! "CC\t= gcc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="hp9gpp" then
+  ! "CDEFS\t= -D_unix -DX2C_adr_align -DX2C_strcmp -DX2C_no_spawn\n"
+  ! "CF\t= -xc++ -pipe -I$(INCL) -c\n"
+  ! "CC\t= g++\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif (env_target="linux") or (env_target="x86linux") then
+  ! "CDEFS\t= -D_unix -D_linux -DX2C_no_spawn -DX2C_strcmp"
+  !if native_library then
+  !  " -DX2C_native_library"
+  !end
+  !if gendebug then
+  ! " -g"
+  !end
+  !"\n"  
+  !if usestaticclibs then
+    ! "LFLAGS\t= -static\n"
+  ! else
+    ! "LFLAGS\t=\n"
+  !end
+  ! "# xm does not work if -O2 is used (gcc v2.96 and v3.2)\n"
+  ! "CF\t= -m32 -fno-strength-reduce -I$(INCL) -I$(INCLTS) -O1\n"
+  ! "CC\t= gcc\n"
+  ! "AF\t= --32\n"
+  !if defined linuxaout_support and linuxaout_support then
+  !  "OBJFF\t= -bi486-linuxaout\n"
+  !else
+  !  "OBJFF\t="
+  !end
+  !new ccomp = $$(CC) $$(OBJFF) $$(CDEFS) $$(CF) -c -o %s %s
+!elsif (env_target="msdos") or (env_target="x86") then
+  ! "CDEFS\t=\n"
+  ! "CF\t= -mx -3 -c -I$(INCL)\n"
+  ! "CC\t= @sc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o%s %s
+!elsif env_target="winntsc" then
+  ! "CDEFS\t= \n"
+  ! "CF\t= -mn -3 -c -I$(INCL)\n"
+  ! "CC\t= @sc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o%s %s
+!elsif (env_target="watcom") or (env_target="x86dos")  then
+  ! "CDEFS\t= \n"
+  ! "CF\t= -s -d2 -mf -3s -fp3 -za -zm -zq -omiler -s -fpi87 -I$(INCL)\n"
+  ! "CC\t= @wcc386\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -fo%s %s
+!elsif env_target="watcomnt" then
+  ! "CDEFS\t=\n"
+  ! "CF\t= -s -d2 -mf -3s -fp3 -ze -zm -zq -omiler -s -fpi87 -I$(INCL)\n"
+  ! "CC\t= @wcc386\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -fo%s %s
+!elsif env_target="x86nt" then
+  ! "CDEFS\t=\n"
+  ! "CF\t= -s -d2 -mf -hc -3s -fp3 -ze -zm -zq -omiler -s -fpi87 -I$(INCL)\n"
+  ! "CC\t= @wcc386\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -fo%s %s
+!elsif env_target="os2" then
+  ! "CDEFS\t= -DX2C_pascal\n"
+  ! "CF\t= -w-ccc -w-rvl -w-rch -w-par -I$(INCL) -c\n"
+  ! "CC\t= @bcc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o%s %s
+!elsif (env_target="os2icc") or (env_target="os2vacpp") then
+  ! "CDEFS\t= -DX2C_pascal\n"
+  ! "CF\t= -q -Ti- -Tm- -I$(INCL) -c\n"
+  ! "CC\t= @icc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF)  -Fo%s %s
+!elsif env_target="os2watcom" then
+  ! "CDEFS\t=\n"
+  ! "CF\t= -d2 -mf -3s -fp3 -za -zm -zq -omiler -s -fpi87 -I$(INCL)\n"
+  ! "CC\t= wcc386\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -fo%s %s
+!elsif env_target="x86os2" then
+  !new ccomp = wcc386\
+   -bt=OS2 -d2 -mf -hc -3s -fp3 -za -zm -zq -omiler -s -fpi87 -I$$(INCL) -fo%s %s
+!elsif env_target="powermac" then
+
+!elsif env_target="sco386" then
+  ! "CDEFS\t= -DX2C_SCO\n"
+  ! "CF\t= -posix -c -I$(INCL)\n"
+  ! "CC\t= cc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="silicong" then
+  ! "CDEFS\t= -DX2C_strcmp\n"
+  ! "CF\t= -c -I$(INCL)\n"
+  ! "CC\t= cc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="sparc" then
+  ! "CDEFS\t= -DX2C_XE -DX2C_adr_align -DX2C_System_V -DX2C_no_spawn -DX2C_strcmp\n"
+  ! "CF\t= -O2 -c -I$(INCL)\n"
+  ! "CC\t= cc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="sparcgpp" then
+  ! "CDEFS\t= -D_unix -DX2C_XE -DX2C_adr_align -DX2C_no_spawn -DX2C_strcmp\n"
+  ! "CF\t= -xc++ -c -I$(INCL)\n"
+  ! "CC\t= g++\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="sunosgpp" then
+  ! "CDEFS\t= -D_unix -DX2C_XE -DX2C_adr_align -DX2C_no_atexit -DX2C_no_spawn -DX2C_strcmp\n"
+  ! "CF\t= -xc++ $(CDEFS) -I$(INCL) -c\n"
+  ! "CC\t= g++\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="sunos4" then
+  ! "CDEFS\t= -DX2C_XE -DX2C_adr_align -DX2C_System_V -DX2C_no_spawn -DX2C_strcmp\n"
+  ! "CF\t= -O2 -c -fno-delayed-branch -I$(INCL)\n"
+  ! "CC\t= gcc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!elsif env_target="winnt" then
+  ! "CDEFS\t= /DX2C_alt_offs /DX2C_no_asinh /DX2C_no_acosh /DX2C_no_atanh\n"
+  !if gendebug then
+    ! "CF\t= /c /nologo /w /J /Zp1 /Zi /I$(INCL)\n"
+  !else
+    ! "CF\t= /c /nologo /w /J /Zp1 /I$(INCL)\n"
+  !end
+  !if gendll then
+    ! "GENDLL\t= /LD -DX2C_GEN_DLL\n"
+  !elsif defined usedll and usedll then
+    ! "GENDLL\t= -DX2C_GEN_DLL\n"
+  !else
+    ! "GENDLL\t= \n"
+  !end
+  ! "CC\t= @cl\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) $$(GENDLL) /Fo%s /Tc%s
+!elsif (env_target="winntpp") or (env_target="winntpl") then
+  ! "CDEFS\t= /DX2C_alt_offs /DX2C_no_asinh /DX2C_no_acosh /DX2C_no_atanh\n"
+  !if gendebug then
+    ! "CF\t= /c /nologo /w /J /Zp1 /Zi /I$(INCL)\n"
+  !else
+    ! "CF\t= /c /nologo /w /J /Zp1 /I$(INCL)\n"
+  !end
+  !if gendll then
+    ! "GENDLL\t= /LD -DX2C_GEN_DLL\n"
+  !elsif defined usedll and usedll then
+    ! "GENDLL\t= -DX2C_GEN_DLL\n"
+  !else
+    ! "GENDLL\t= \n"
+  !end
+  ! "CC\t= @cl\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) $$(GENDLL) /Fo%s /Tp%s
+!elsif (env_target="ppcnt") then
+  ! "CDEFS\t= /DX2C_alt_offs /DX2C_ppcnt /DX2C_adr_align\n"
+  !if gendebug then
+  ! "CF\t= /c /nologo /w /J /Zi /I$(INCL)\n"
+  !else
+  ! "CF\t= /c /nologo /w /J /I$(INCL)\n"
+  !end
+  ! "CC\t= @cl\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) /Fo%s /Tp%s
+!elsif (env_target="ppcdccnt") then
+  ! "CDEFS\t= -D_unix -DX2C_no_profile\n"
+  ! "CF\t= -I$(INCL) -tPPC603ES -O -c"
+  !if gendebug then
+  ! " -g"
+  !end
+  ! "\n"
+  ! "CC\t= dcc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -o %s %s
+!else
+  ! "CDEFS\t= -D_unix\n"
+  ! "CF\t= -m32 -funsigned-char -I$(INCL)"
+  !if gendebug then
+    ! " -g"
+  !end
+  ! "\n"
+  ! "CC\t= cc\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) -c -o %s %s
+!end
+
+!if defined asmcomp then
+
+!elsif env_target="x86nt" then
+  !new asmcomp = nasm -dWIN32 -f obj %s -o %s
+!elsif (env_target="linux") then
+  !new asmcomp = as $$(AF) -o %s %s
+!elsif (env_target="x86linux") then
+  !new asmcomp = nasm -dLINUX -f obj -o %s %s
+!elsif env_target="x86os2" then
+  !new asmcomp = alp -Mb -D:OS2 -Sv:alp %s -Fo:%s
+!end
+
+# ------------------ objects enumeration ------------------
+#                    -------------------
+
+!if (env_target="watcom") or (env_target="watcomnt") or \
+    (env_target="os2watcom") then
+  ! "OBJ =\n"; { obj : "OBJ = $+$(OBJ)$- %s\n",# }
+!elsif env_target="x86nt" then
+  ! "OBJ="; { obj asm : " \\\n\t%s",#>objext }
+!else
+  ! "OBJ="; { obj : " \\\n\t%s",# }
+!end
+
+# ------------------- target make rules -------------------
+#                     -----------------
+
+!if genlib then
+  ! "$(TSLIB) : $(M) $(OBJ)\n"
+  !if (env_target="x86linux") then
+    ! "\trm -f $(XDSLIB)\n"
+    ! "\txlib -new -nologo -noback $(XDSLIB) $(OBJ)\n"
+  !elsif (env_target="linux") or (env_target="free_bsd") or (env_target="sunos4") or (env_target="aix") then
+    ! "\trm -f $(TSLIB)\n"
+    ! "\tar q $(TSLIB) $(OBJ)\n"
+    ! "\tranlib $(TSLIB)\n"
+  !elsif (env_target="msdos") or (env_target="winntsc") or (env_target="x86") then
+    ! "\t@command /c echo>$(LIBCMD) $(TSLIB)\n"
+    ! { obj : "\t@command /c echo>>$(LIBCMD) +%s &\n",# }
+    ! "\t@command /c lib >nul /c /noi /n /b @$(LIBCMD)\n"
+    ! "\t@del $(LIBCMD)"
+  !elsif (env_target="watcom") or (env_target="watcomnt") or \
+         (env_target="x86dos") or (env_target="os2watcom") then
+    ! "\t@if exist $(LIBCMD) @del $(LIBCMD)\n"
+    ! { obj : "\t@%append $(LIBCMD) -+%s\n",# }
+    ! "\t@wlib -b -c -n -q $(TSLIB) @$(LIBCMD)\n"
+    ! "\t@del $(LIBCMD)"
+  !elsif env_target="os2" then
+    ! "\ttlib $(TSLIB) /C @&&!\n"
+    ! { obj : "&\n+%s",# }
+    ! "\n!\n"
+  !elsif env_target="os2icc" then
+    ! "\t@if exist $(TSLIB) del $(TSLIB)\n"
+    ! "\t@lib @<<\n"
+    ! "/noi $(TSLIB)"
+    ! { obj :"+%s &\n",# }
+    ! "\n\n\n<<\n"
+  !elsif env_target="os2vacpp" then
+    ! "\t@if exist $(TSLIB) del $(TSLIB)\n"
+    ! "\t@ilib @<<\n"
+    ! "/noi $(TSLIB)"
+    ! { obj :"+%s &\n",# }
+    ! "\n\n\n<<\n"
+  !elsif env_target="x86nt" then
+    ! "$(TSLIB) : $(M) $(OBJ)\n"
+    ! "\t@echo. >$(LIBCMD)\n"
+    ! { obj asm : "\t@echo >>$(LIBCMD) -+%s\n",#>objext }
+    ! "\t@xlib /new /nologo /nobak $(TSLIB) @$(LIBCMD)\n"
+  !elsif env_target="x86os2" then
+    ! "\t@if exist $(TSLIB) del $(TSLIB)\n"
+    ! "\t@lib /nologo /noi $(TSLIB) @<<\n"
+    ! { obj : "+%s &\n",#>objext }
+    ! "+src\\OS2\\thunk16\\thunk.lib,,\n"
+    ! "<<\n"
+  !elsif env_target="powermac" then
+
+  !elsif (env_target="winnt") or \
+         (env_target="winntpp") or \
+         (env_target="ppcnt") or \
+         (env_target="winntpl") then
+    ! "\t@lib /nologo /out:$(TSLIB) @<<\n"
+    ! "$(OBJ)\n<<\n"
+  !elsif (env_target="hp9000") or \
+         (env_target="hp9gpp") or \
+         (env_target="sunosgpp") then
+    ! "\trm -f $(TSLIB)\n"
+    ! "\tar q $(TSLIB) $(OBJ)\n"
+    ! "\tar ts $(TSLIB)\n"
+  !elsif env_target="ppcdccnt" then
+    ! "\tif exist $(TSLIB) del $(TSLIB)\n"
+    ! { obj :"\tdar -qf $(TSLIB) %s\n",# }
+    ! "\tdar -sR $(TSLIB)\n"
+  !else
+    ! "\tar q $(TSLIB) $(OBJ)\n"
+  !end
+!elsif gendll then
+  !if env_target="x86nt" then
+    ! "$(TSLIB) : $(M) $(OBJ)\n"
+    ! "\txlink @<<\n"
+    ! "/sys=C\n"
+    !if (defined __XDS_SHELL__) and __XDS_SHELL__ then
+      ! "/shell\n"
+    !end
+    !if gendebug or genhistory or lineno then
+      ! "/debug\n"
+    !end
+    !if defined stacklimit then
+      ! "/stack=%s\n",stacklimit;
+    !else
+      ! "/stack=128K"
+    !end
+    !if not defined dllname then
+      !if project="" then
+        ! new dllname = noname00  
+      !else
+        ! new dllname = $(project)
+      !end
+    !end
+    ! "/name=%s\n",dllname#dllext
+    ! "/dll"
+    ! { edf : "=%s",#}
+    ! "\n"
+    ! { obj asm  : "%s\n",#>objext }
+    !if gendll then
+      ! "%s\n","xstartd"#libext
+    !else
+      ! "%s\n","xstart"#libext 
+    !end
+    !if defined usedll and usedll then
+      !if multithread then
+        ! "%s\n","xds25mi"#"lib"
+      !else
+        ! "%s\n","xds25i"#"lib"
+      !end
+    !else 
+      !if multithread then
+        ! "%s\n","libxdsmt"#"lib"
+      !else
+        ! "%s\n","libxds"#"lib"
+      !end
+    !end
+    ! "%s\n","import32"#"lib"
+    ! "<<\n"
+  !elsif env_target="x86os2" then
+    !"%s: $(OBJ)\n",dllname#dllext
+    !if linker = "xds" then
+      !"\txlink @<<\n"
+      !if (defined __XDS_SHELL__) and __XDS_SHELL__ then
+        ! "/shell\n"
+      !end
+      !if pm then
+        ! "/sys=pm\n"
+      !else
+        ! "/sys=vio\n"
+      !end
+      !if gendebug or genhistory or lineno then
+        ! "/debug\n"
+      !end
+      !if defined stacklimit then
+        ! "/stack=%s\n",stacklimit;
+      !else
+        ! "/stack=128K"
+      !end
+      !if not defined dllname then
+        !if project="" then
+          ! new dllname = noname00  
+        !else
+          ! new dllname = $(project)
+        !end
+      !end
+      ! "/name=%s\n",dllname#dllext
+      ! "/dll"
+      ! { edf : "=%s",#}
+      ! "\n"  
+      ! { obj : "%s\n",#>objext }
+      ! "%s\n","xstartd"#"lib"
+      ! "src\\OS2\\thunk16\\thunk.lib\n"
+      ! "%s\n","os2face"#"lib"
+      ! { lib : "%s\n",# }
+      ! { res : "%s\n",# }
+      ! "<<\n"
+    !elsif linker = "ibm" then
+      !"\tlink386 @<<\n"
+      !if lineno or gendebug or genhistory then
+        ! "/MAP /DE "
+      !end
+      !if pm then
+        ! "/PM:PM "
+      !else
+        ! "/PM:VIO "
+      !end 
+      ! "/NOLOGO /BAT /NON /NOI /NOO "
+      !if defined stacklimit then  
+         ! "/ST:%s",stacklimit;
+      !else
+        /ST:32768
+      !end
+      ! { obj : " %s",#>objext }
+      !if not defined dllname then
+        ! new dllname = $(project)
+      !end
+      ! ",\n%s,\n",dllname#>dllext
+      !if map or lineno or gendebug or genhistory then
+        ! ",\n"
+      !else
+        ! "nul,\n"
+      !end
+      ! "%s+\n","xstartd"#"lib"
+      ! "src\\OS2\\thunk16\\thunk.lib+\n"
+      ! "%s\n","os2face"#"lib"
+      ! { edf : "%s+\n",#}
+      ! "%s\n","expall"#"edf"
+      ! "<<\n"
+    !elsif linker = "watcom" then
+      !"\twlink @<<\n"
+      ! "form OS2 LX dll initinstance terminstance\n"
+      ! "segment type DATA NONSHARED\n"
+      ! "op case\n" 
+      ! "op el\n"
+      !if defined stacklimit then
+        ! "op stack=%s\n",stacklimit
+      !else
+        ! "op stack=32768\n"
+      !end
+      !if lineno or gendebug or genhistory then
+        ! "debug codeview\n"
+      !end
+      ! { obj : "file %s\n",#>objext }
+      !if not defined dllname then
+        ! new dllname = $(project)
+      !end
+      ! "name %s\n",dllname#>dllext
+      ! "lib %s\n","xstartd"#"lib"
+      ! "lib src\\OS2\\thunk16\\thunk.lib+\n"
+      ! "lib %s\n","os2face"#"lib"
+      ! "<<\n"
+    !end
+  !elsif env_target="winnt" then
+    ! "$(TSLIB) : $(M) $(OBJ)\n"
+    ! "\t@link.exe @<<\n"
+    ! "/nologo\n"
+    !if gendebug then
+      ! "/debug\n"  
+      ! "/incremental:yes\n"
+    !else
+      ! "/release\n"
+      ! "/incremental:no\n"
+    !end
+    ! "/subsystem:console\n"
+    !if (env_target="ppcnt") then
+      ! "/machine:PPC\n"
+    !else
+      ! "/machine:I386\n"
+    !end
+    ! "/stack:%s\n",stacklimit
+    ! "/dll\n"
+    ! "/implib:$(TSLIB)\n"
+    !if not defined dllname then
+      ! new dllname = $(project)
+    !end
+    ! '/out:%s\n',dllname#>dllext
+    ! "$(OBJ)\n"
+    ! "WINMM.LIB\n"
+    ! { res : '"%s"\n',# }
+    ! "<<\n"
+  !end
+!else
+  ! "$(TARGET) : $(OBJ) $(TSLIB)\n"
+  !if env_target="hp9gpp" then
+    ! "\tg++ -o $(TARGET) $(OBJ) $(TSLIB) -lm\n"
+  !elsif (env_target="linux") or (env_target="x86linux") or (env_target="aix") then
+    ! "\tgcc $(LFLAGS) -o $(TARGET) $(OBJFF) $(OBJ) $(TSLIB) -lm\n"
+  !elsif (env_target="msdos") or (env_target="x86")  then
+    ! "\t@sc -mx -L/STACK:%s $(OBJ) $(TSLIB) -o$(TARGET)\n",stacklimit
+  !elsif env_target="winntsc" then
+    ! "\t@sc -mn -L/STACK:%s $(OBJ) $(TSLIB) -o$(TARGET)\n",stacklimit
+  !elsif (env_target="watcom") or (env_target="x86dos") or \
+      (env_target="os2watcom") then
+    ! "\t@if exist xds.lnk @del xds.lnk\n"
+    ! "\t@%append xds.lnk op case\n"
+    ! "\t@%append xds.lnk op stack=%s\n",stacklimit
+    ! "\t@%append xds.lnk debug watcom all\n"
+    ! { obj : "\t@%append xds.lnk file %s\n",# }
+    ! "\t@%append xds.lnk name $(TARGET)\n"
+    ! "\t@%append xds.lnk lib $(TSLIB)\n"
+    ! "\t@wlink @xds.lnk\n"
+  !elsif env_target="watcomnt" then
+    ! "\t@if exist xds.lnk @del xds.lnk\n"
+    ! "\t@%append xds.lnk sys nt\n"
+    ! "\t@%append xds.lnk op case\n"
+    ! "\t@%append xds.lnk op stack=%s\n",stacklimit
+    ! "\t@%append xds.lnk runtime console\n"
+    ! "\t@%append xds.lnk debug watcom all\n"
+    ! { obj : "\t@%append xds.lnk file %s\n",# }
+    ! "\t@%append xds.lnk name $(TARGET)\n"
+    ! "\t@%append xds.lnk lib $(TSLIB)\n"
+    ! "\t@wlink @xds.lnk\n"
+  !elsif env_target="os2" then
+    ! "\t@bcc -e$(TARGET) $(OBJ) $(TSLIB)\n"
+  !elsif (env_target="os2icc") or (env_target="os2vacpp") then
+    ! '\t@echo >$(CMDFILE) -q -Ti- -Tm- -B"/ST:%s" -Fe$(TARGET)\n',stacklimit
+    ! '\t@echo >>$(CMDFILE) $(TSLIB)\n'
+    ! { imp oberon main : '\t@echo >>$(CMDFILE) %s\n',#>objext }
+    ! '\t@icc @$(CMDFILE)\n'
+  !elsif env_target="powermac" then
+   !elsif (env_target="sparcgpp") or (env_target="sunosgpp") then
+    ! "\tg++ -o $(TARGET) $(OBJ) $(TSLIB) -lm\n"
+  !elsif (env_target="sunos4") or (env_target="hpgcc") then
+    ! "\tgcc -o $(TARGET) $(OBJ) $(TSLIB) -lm\n"
+  !elsif (env_target="winnt")   or (env_target="winntpp") or \
+         (env_target="winntpl") or  (env_target="ppcnt") then
+    ! "\t@link.exe @<<\n"
+    ! "/nologo\n"
+    !if gendebug then
+      ! "/debug\n"  
+      ! "/incremental:yes\n"
+    !else
+      ! "/release\n"
+      ! "/incremental:no\n"
+    !end
+    ! "/subsystem:console\n"
+    !if (env_target="ppcnt") then
+      ! "/machine:PPC\n"
+    !else
+      ! "/machine:I386\n"
+    !end
+    ! "/stack:%s\n",stacklimit
+    ! '/out:"$(TARGET)"\n'
+    ! "$(OBJ)\n"
+    ! "$(TSLIB)\n"
+    ! "WINMM.LIB\n"
+    !if (env_target="ppcnt") then
+      !"LIBC.LIB\n"
+    !end
+    ! { res : '"%s"\n',# }
+    ! "<<\n"
+  !else
+    ! "\tcc -o $(TARGET) $(OBJ) $(TSLIB) -lm\n"
+  !end
+!end
+
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+!if (env_target="x86nt") or (env_target="x86os2") or (env_target="x86dos") then
+  ! { asm : "%-12s : $(M)",#>objext; \
+    " %s\n\t",#asmext; asmcomp,#asmext,#>objext; "\n\n" }
+  ! { c : "%-12s : $(M)",#>objext; \
+    " %s\n\t",#code; ccomp,#>objext,#code; "\n\n" }
+!elsif (env_target="linux") or (env_target="x86linux") then
+  ! { asm : "%-12s : $(M)",#>objext; " %s\n\t",#asmext; asmcomp,#>objext,#asmext; "\n\n" }
+  ! { c : { header : "%-24s : %s\n",^#>objext,#header } \
+    "%-24s : $(M) %s\n\t",#>objext,#; ccomp,#>objext,#; "\n\n" }
+!elsif (env_target="os2icc") or (env_target="os2vacpp") then
+  ! { c : "%-12s : ",#>objext; { header : "%s ",#header } \
+    "$(M) %s\n\t",#; ccomp,#>objext,#; "\n\n" }
+!else
+  ! { c : { header : "%-24s : %s\n",^#>objext,#header } \
+    "%-24s : $(M) %s\n\t",#>objext,#; ccomp,#>objext,#; "\n\n" }
+!end
+
+# end of makefile

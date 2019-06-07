@@ -1,0 +1,101 @@
+% Copyright (c) 1995 xTexh Ltd. Russia
+% Hady. 20.10.95
+% Project file for XDS Librarian.
+%
+% Valid modes are: work,enduser,demo
+%       The differences are: debug settings, lookup paths
+
+!if not defined mode then
+  !new mode = work
+!end
+
+-o2extensions+
+-o2isopragma+
+
+-heaplimit = 50000000
+
+% ======================================================
+% Files lookup settings
+% ======================================================
+-makefile+
+-changesym+ 
+
+% Output lookup settings
++makedirs
+
+-mkfname = xlib
+-mkfext  = lnk
+
+-lookup = *.exe = $!/workplace
+
+-lookup = *.obj = $!/ch
+-lookup = *.sym = $!/sym
+-lookup = *.lnk = $!/ch
+
+% Source lookup settings
+-lookup = *.ob2 = $!/src
+-lookup = *.def = $!/src
+-lookup = *.mod = $!/src
+
+!if env_target="x86nt" then
+  -link="xlink @%s",mkfname#mkfext
+!end
+
+% Runtime checks and debug settings
+!if mode = "release" then
+  -gendebug-
+  -lineno-
+  -genhistory-
+  -assert-
+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+
+  -debug:-
+
+!elsif mode = "work" then
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset-
+  -checknil+
+  -checkproc+
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+
+  -debug:-
+
+!else
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+
+  -debug:-
+!end
+
+
+!module xlib

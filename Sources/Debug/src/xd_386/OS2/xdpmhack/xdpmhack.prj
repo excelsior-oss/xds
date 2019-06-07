@@ -1,0 +1,51 @@
+-PM+
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if not defined placement then
+  !if (mode="enduser") then
+    -placement := release
+  !else
+    -placement := current
+  !end
+!end
+
+% lookup settings
+!if placement="release" then
+  -mkfname = $!/../../../../enduser/tmp/xdpmhack
+  -lookup = *.sym  = $!/../../../../enduser/tmp; $!/../../../../enduser/xds/sym/x86
+  -lookup = *.lib  = $!/../../../../enduser/xds/lib/x86
+  -lookup = *.obj  = $!/../../../../enduser/tmp
+  -lookup = *.exe  = $!/../../../../enduser/xds/bin
+!else
+  % current
+  -mkfname = xdpmhack
+  -lookup = *.sym  = sym
+  -lookup = *.obj  = BIN
+!end
+
+-lookup = *.mod = $!
+
+-m2extensions+
+
+!if mode="work" then
+  -gendebug+
+  -lineno+
+!else
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+!end
+!module xdpmhack

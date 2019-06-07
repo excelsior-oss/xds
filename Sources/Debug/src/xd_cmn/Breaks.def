@@ -1,0 +1,191 @@
+-- Высокоуровневая обработка остановов.
+-- Описание остановов по исполнению, доступу, условию.
+-- Установка остановов, удаление, поиск.
+
+DEFINITION MODULE Breaks;
+
+IMPORT sys := SYSTEM;
+
+IMPORT dt  := DI_Types;
+IMPORT kt  := KrnTypes;
+IMPORT eve := Events;
+
+IMPORT xStr;
+
+<* IF xd_batch_included THEN *>
+IMPORT pt  := PckTypes;
+<* END *>
+
+
+TYPE
+  OWNER_ID = ( None
+             , Dialog
+ <* IF xd_batch_included THEN *>
+             , Paket
+ <* END *>
+              );   (* Кто установил останов               *)
+
+
+  BREAK = RECORD
+            Active : BOOLEAN;  (* Активен ли останов                        *)
+            Sticky : BOOLEAN;  (* Останов не снимается после срабатывания   *)
+            Pass   : CARDINAL; (* Оставшееся число проходов до срабатывания *)
+            Index  : CARDINAL; (* Системно-зависимый идентификатор останова *)
+            CASE Owner: OWNER_ID OF
+            | None  :
+            | Dialog: Source_ID: CARDINAL;
+           <* IF xd_batch_included THEN *>
+            | Paket : BreakDesc: pt.BREAK_DESCRIPTION;
+           <* END *>
+            END;
+          END;
+
+  BREAK_KIND = (normal, watchpoint, counter);
+  BREAKPOINT = RECORD
+                 Break    : BREAK;
+                 Pos      : dt.POS;
+                 Line     : CARDINAL;     (* Номер строки             *)
+                 Addr     : kt.ADDRESS;  (* Адрес точки              *)
+                 Condition: xStr.STRING;  (* Выражение                *)
+                 Kind     : BREAK_KIND;
+                 init_value: CARDINAL;    (* начальное значение отложенной точки *)
+               END;
+
+  PBREAKPOINT = POINTER TO ARRAY OF BREAKPOINT;
+  BREAKPOINTS = RECORD
+                  Breakpoints: PBREAKPOINT;
+                  free       : CARDINAL;
+                END;
+
+
+  ACCESS_ID  = ( NoID
+               , Memory         (* Память                              *)
+              <* IF TARGET_VAX THEN *>
+               , Register       (* Регистр                             *)
+               , Port           (* Регистр внешнего устройства         *)
+              <* END *>
+               );
+
+CONST
+  PREV_VALUE_LENGTH = 4;
+
+TYPE
+  PREV_VALUE = ARRAY [0..PREV_VALUE_LENGTH-1] OF sys.CARD8;
+
+  ACCESS_DATA = RECORD
+                  CASE Access_ID: ACCESS_ID OF
+                  | NoID    :
+                  | Memory  : Location       : kt.ADDRESS;
+                              Len            : CARDINAL;
+                              Prev_value     : PREV_VALUE;
+                              Prev_value_long: xStr.STRING;
+                 <* IF TARGET_VAX THEN *>
+                  | Register: Reg_No         : CARDINAL;
+                              Prev_Reg_value : kt.REG_VALUE;
+                  | Port    : Dev_No : CARDINAL;
+                              Port_No: CARDINAL;
+                 <* END *>
+                  END;
+                END;
+
+  ACCESS_BREAK = RECORD
+                   Break      : BREAK;
+                   Access_Type: eve.ACCESS_TYPE;
+                   Access_Data: ACCESS_DATA;
+                 END;
+
+  PACCESS_BREAK = POINTER TO ARRAY OF ACCESS_BREAK;
+  ACCESS_BREAKS = RECORD
+                    AccessBreaks: PACCESS_BREAK;
+                    free        : CARDINAL;
+                  END;
+
+
+  CONDITION_BREAK = RECORD
+                      Break: BREAK;
+                      Expr : xStr.STRING;
+                    END;
+
+  PCONDITION_BREAK = POINTER TO ARRAY OF CONDITION_BREAK;
+  CONDITION_BREAKS = RECORD
+                       ConditionBreaks: PCONDITION_BREAK;
+                       free           : CARDINAL;
+                     END;
+
+
+VAR
+  Breakpoints    : BREAKPOINTS;        (* Точки останова      *)
+  AccessBreaks   : ACCESS_BREAKS;      (* Остановы по доступу *)
+  ConditionBreaks: CONDITION_BREAKS;   (* Условные остановы   *)
+
+
+(* Сравнение двух остановов, если "равны" вернет TRUE *)
+PROCEDURE CompareBreaks (break1, break2: BREAK): BOOLEAN;
+
+(* Сравнение двух точек останова, если "равны" вернет TRUE *)
+PROCEDURE CompareBreakpoints (breakpoint1, breakpoint2: BREAKPOINT): BOOLEAN;
+
+
+(* Добавляет точку остановаб при необходимости заменяет старую, если есть *)
+PROCEDURE Add_Breakpoint (BP: BREAKPOINT; replace: BOOLEAN; VAR index: CARDINAL): BOOLEAN;
+
+(* Удаляет точки останова по позиции *)
+PROCEDURE Delete_Breakpoint        (BreakPos: CARDINAL): BOOLEAN;
+
+(* Удаляет все точки останова *)
+PROCEDURE DeleteAll_Breakpoint     (): BOOLEAN;
+
+(* Ищет точку останова по индексу      *)
+(* Если найдена, вернет TRUE и позицию *)
+PROCEDURE FindByIndex_Breakpoint (Index: CARDINAL; VAR BreakPos: CARDINAL): BOOLEAN;
+
+PROCEDURE Enable_Breakpoint (BreakPos: CARDINAL): BOOLEAN;
+
+PROCEDURE Disable_Breakpoint (BreakPos: CARDINAL): BOOLEAN;
+
+(* Update breakpoints *)
+PROCEDURE Refresh_Breakpoints;
+
+
+PROCEDURE Add_AccessBreak          (VAR AB: ACCESS_BREAK): BOOLEAN;
+
+PROCEDURE Delete_AccessBreak       (BreakPos: CARDINAL): BOOLEAN;
+
+PROCEDURE DeleteAll_AccessBreak;
+
+PROCEDURE FindByIndex_AccessBreak  (Index: CARDINAL; VAR BreakPos: CARDINAL): BOOLEAN;
+
+PROCEDURE Clear_AccessBreak;
+-- нужно вызвать перед выполнением рестарта, затем вызвать Refresh_AccessBreak
+
+PROCEDURE Refresh_AccessBreak;
+
+
+(* Добавляет условный останов *)
+PROCEDURE Add_ConditionBreak       (CB: CONDITION_BREAK): BOOLEAN;
+
+(* Удаляет останов по номеру *)
+PROCEDURE Delete_ConditionBreak    (BreakPos: CARDINAL): BOOLEAN;
+
+(* Удаляет все остановы *)
+PROCEDURE DeleteAll_ConditionBreak (): BOOLEAN;
+
+(* Проверяет необходимость останова, начиная с позиции BreakPos *)
+(* Если вернет TRUE, то BreakPos - номер сработавшего останова  *)
+PROCEDURE NeedToStop (com: dt.ComNo; mod: dt.ModNo; VAR BreakPos: CARDINAL): BOOLEAN;
+
+(* Проверяет необходимость включения пошагового исполнения *)
+PROCEDURE NeedToStepMode (): BOOLEAN;
+
+
+PROCEDURE ClearBreaks;
+
+
+CONST
+  EmptyBREAK           = BREAK{ FALSE, FALSE, 0, 0, None};
+  EmptyBREAKPOINT      = BREAKPOINT{ EmptyBREAK, dt.Invalid_Position, 0, 0, NIL, normal, 0};
+  EmptyACCESS_DATA     = ACCESS_DATA{ NoID};
+  EmptyACCESS_BREAK    = ACCESS_BREAK{ EmptyBREAK, eve.Nothing, EmptyACCESS_DATA };
+  EmptyCONDITION_BREAK = CONDITION_BREAK{ EmptyBREAK, NIL };
+
+END Breaks.

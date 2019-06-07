@@ -1,0 +1,203 @@
+\chapter{Configuring H2D}
+\label{config}
+
+\section{Setting up system search path}
+\label{config:path}
+
+If you installed H2D as part of an XDS package, no additional setup
+is required. Otherwise you must tell your operating system
+where to find the executable before using H2D.
+Refer to the {\tt h2d.txt} file from the on-line documentation.
+
+\section{Working configuration}
+\label{config:files}
+
+The H2D working configuration includes an executable file and a set of
+system files:
+
+\begin{flushleft}
+\begin{tabular}{ll}
+\tt h2d.red & \See{Search path redirection file}{}{config:red} \\
+\tt h2d.cfg & \See{Configuration file}{}{config:cfg} \\
+\tt h2d.msg & \See{Message file}{}{config:msg}
+\end{tabular}
+\end{flushleft}
+
+Upon invocation, H2D tries to locate these files in the current
+directory and then in the directory where H2D executable
+resides. If a {\em redirection file}, {\tt h2d.red} is found,
+all other files are searched for/created using paths defined in it,
+otherwise the current directory is used for all input and output,
+except files specified with directories.
+
+The {\em configuration file} contains various H2D settings.
+If the configuration file is not found, default settings are used.
+
+The {\em message file} contains texts of error messages.
+
+\section{Redirection file}
+\label{config:red}
+\index{redirection file}
+\index{regular expressions}
+
+Upon activation, H2D looks for a file called {\tt h2d.red} --- the
+{\em redirection file}. This file defines directories in which all other
+files are searched for or created. A redirection file has to be placed
+in the current directory, otherwise the {\em master redirection file}
+from the directory where H2D executable resides is used.
+
+A redirection file consists of several {\em redirections}:
+
+\verb'    Redirection = Pattern "=" directory {";" directory}'
+
+{\tt Pattern} is a regular expression which all file names used by
+H2D will be compared with. A regular expression is a string containing
+certain special characters:
+\begin{center}
+\begin{tabular}{cl}
+\bf Sequence & \bf Denotes \\
+\hline
+\verb+*+     & an arbitrary sequence of any characters, possibly empty \\
+             & (equivalent to \verb|{\000-\377}| expression) \\
+\verb+?+     & any single character \\
+             & (equivalent  to \verb|[\000-\377]| expression) \\
+\verb+[...]+ & one of the listed characters \\
+\verb+{...}+ & an arbitrary sequence of the listed characters, possibly empty \\
+\verb+\nnn+  & the ASCII character with octal code \verb|nnn|, where n is \verb|[0-7]| \\
+\verb+&+     & the logical operation AND \\
+\verb+|+     & the logical operation OR  \\
+\verb+^+     & the logical operation NOT \\
+\verb+(...)+ & the priority of operations
+\end{tabular}
+\end{center}
+
+A  sequence of the  form \verb|a-b|  used  within  either
+\verb|[]| or \verb|{}| brackets denotes all characters from
+\verb|a| to \verb|b|.
+
+When H2D looks for or intends to create a file, its name is sequentially
+compared with all patterns from the top of the redirection file. A file
+is created in the first directory of the list corresponding to the matched pattern.
+A file is searched for in all directories in the list (from first to last)
+until it is found or the directory list is exhausted. If a match is not found,
+the file is created or searched for in the current directory. {\bf Note:}
+If a match is found, the current direcory is {\em not} searched unless it is
+explicitly specified in the directory list.
+
+It is possible to put comment lines into the redirection file. A
+comment line should be started with the \verb+%+ character.
+
+\subsection*{Example}
+
+\begin{verbatim}
+*.h       = h; .; c:\bc\include
+mac_*.def = macro;
+*.def     = def;
+mac_*.mod = macro;
+*.h2d     = h2d;
+\end{verbatim}
+
+\section{Configuration file}
+\label{config:cfg}
+
+The configuration file is used to set options which control various
+aspects of H2D behaviour: names of generated files, source/target language
+extensions, mapping of C base types to Modula-2 types etc. It should reside
+in the current directory or in the directory with H2D executable (the
+{\em master} configuration file). However, it is recommended to use
+a \ProjectFile{} instead of a local configuration file to specify
+options for a particular set of header files.
+
+An option is a pair ({\em name}, {\em value}). Every line in
+the configuration file may contain only one option setup directive.
+Arbitrary spaces are permitted. The \verb'%' character starts a
+one-line comment. Option setup directives have the following syntax:
+
+\verb'    Option = "-" name ("-" | "+" | "=" (string | integer))'
+
+The same syntax is used for command line options and in a \ProjectFile{}.
+Command-line options have the highest priority. Options specified
+in a project file override the configuration file settings.
+
+Options, their meanings and valid values are described in Chapter
+\ref{options}.
+
+\ifonline\else
+Figure \ref{config:cfg:example} contains a configuration file example.
+\fi
+
+\begin{figure}[bht]
+{\ifonline\else\small\fi
+\begin{verbatim}
+-DEFEXT  = def    % file extensions
+-HEADEXT = h
+-MODEXT  = d
+-PRJEXT  = prj
+-TREEEXT = inc
+-DIREXT  = dir
+
+-DEFPFX = h2d_    % prefix for output definition modules
+-MACPFX = m_      % prefix for macro prototype modules
+
+-BACKEND = COMMON % M2 compiler compatibility mode: C, NATIVE, COMMON
+-GENMACRO-        % do not generate macro prototype modules
+-GENWIDTH = 70    % maximum string length in output files
+-COMMENTPOS = 0   % comment position
+-CHANGEDEF+       % allow to overwrite existing definition modules
+-PROGRESS+        % enable progress indicator
+-CSTDLIB-         % do not set C standard library option
+-CPPCOMMENTS+     % recognize C++ comments
+-MERGEALL+        % merge all #included headers
+-GENSEP-          % separate merged headers with comments
+-GENLONGNAMES-    % prepen module name with directory names
+-GENENUM = CONST  % enum transtaltion mode: CONST, ENUM, AUTO
+-GENTREE+         % create file with include/merge tree
+-GENDIRS+         % extract non-standrard directives
+-GENROVARS+       % translate constants to read-only variables
+
+% C BASE TYPES SYNONYMS:
+
+-ctype = signed char        =  1, CHAR
+-ctype = signed int         =  4, SYSTEM.int
+  .  .  .
+-ctype = long float         =  8, UNDEF
+-ctype = long double        =  8, UNDEF
+
+% MODULA-2 TYPES:
+
+-m2type = INTEGER         = 4, SIGNED
+-m2type = SHORTINT        = 1, SIGNED
+  .  .  .
+-m2type = SYSTEM.SET32    = 4, SET
+-m2type = SYSTEM.int      = 4, SIGNED
+-m2type = SYSTEM.unsigned = 4, UNSIGNED
+\end{verbatim}
+} % end of \small
+\caption{Configuration file example}
+\label{config:cfg:example}
+\end{figure}
+
+\section{Customizing H2D messages}
+\label{config:msg}
+
+The file {\tt h2d.msg} contains error messages in the form
+
+\verb'    number text'
+
+The following is an excerpt from {\tt h2d.msg}:
+
+\begin{verbatim}
+    001 Can't open file %s
+       .  .  .
+    010 Invalid use of modifier
+       .  .  .
+\end{verbatim}
+
+Some messages contain format specifiers for additional arguments. In
+the example above, the message number 001 contains a {\tt \%s} specifier
+which is substituted with a file name when the message is printed.
+
+In order to use a language other than English for messages it is
+necessary to translate message texts, preserving error
+numbers and the number and {\em order} of format specifiers.
+

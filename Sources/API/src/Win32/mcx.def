@@ -1,0 +1,162 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] MCX;
+
+(************************************************************************
+*                                                                       *
+*   MCX.def -- This module defines the 32-Bit Windows MCX APIs          *
+*                                                                       *
+************************************************************************)
+
+FROM WinDef IMPORT BYTE, DWORD;
+
+(* Dial Options *)
+
+TYPE DIALOPTION_ENUM = (DIALOPTION__0, DIALOPTION__1,
+                        DIALOPTION__2, DIALOPTION__3,
+                        DIALOPTION__4, DIALOPTION__5,
+                        DIALOPTION__BILLING,           (* 6 - Supports wait for bong "$" *)
+                        DIALOPTION__QUIET,             (* 7 - Supports wait for quiet "@" *)
+                        DIALOPTION__DIALTONE);         (* 8 - Supports wait for dial tone "W" *)
+
+     DIALOPTION_SET = SET OF DIALOPTION_ENUM;
+
+CONST DIALOPTION_BILLING  = DIALOPTION_SET {DIALOPTION__BILLING }; (* 0x00000040 *)
+      DIALOPTION_QUIET    = DIALOPTION_SET {DIALOPTION__QUIET   }; (* 0x00000080 *)
+      DIALOPTION_DIALTONE = DIALOPTION_SET {DIALOPTION__DIALTONE}; (* 0x00000100 *)
+
+(* SpeakerVolume for MODEMDEVCAPS *)
+
+TYPE MDMVOLFLAG_ENUM = (MDMVOLFLAG__LOW,    (* 0 *)
+                        MDMVOLFLAG__MEDIUM, (* 1 *)
+                        MDMVOLFLAG__HIGH);  (* 2 *)
+
+     MDMVOLFLAG_SET = SET OF MDMVOLFLAG_ENUM;
+
+CONST MDMVOLFLAG_LOW      = MDMVOLFLAG_SET {MDMVOLFLAG__LOW   }; (* 0x00000001 *)
+      MDMVOLFLAG_MEDIUM   = MDMVOLFLAG_SET {MDMVOLFLAG__MEDIUM}; (* 0x00000002 *)
+      MDMVOLFLAG_HIGH     = MDMVOLFLAG_SET {MDMVOLFLAG__HIGH  }; (* 0x00000004 *)
+
+(* SpeakerMode for MODEMDEVCAPS *)
+
+TYPE MDMSPKRFLAG_ENUM = (MDMSPKRFLAG__OFF,        (* 0 *)
+                         MDMSPKRFLAG__DIAL,       (* 1 *)
+                         MDMSPKRFLAG__ON,         (* 2 *)
+                         MDMSPKRFLAG__CALLSETUP); (* 3 *)
+
+     MDMSPKRFLAG_SET = SET OF MDMSPKRFLAG_ENUM;
+
+CONST MDMSPKRFLAG_OFF       = MDMSPKRFLAG_SET {MDMSPKRFLAG__OFF      }; (* 0x00000001 *)
+      MDMSPKRFLAG_DIAL      = MDMSPKRFLAG_SET {MDMSPKRFLAG__DIAL     }; (* 0x00000002 *)
+      MDMSPKRFLAG_ON        = MDMSPKRFLAG_SET {MDMSPKRFLAG__ON       }; (* 0x00000004 *)
+      MDMSPKRFLAG_CALLSETUP = MDMSPKRFLAG_SET {MDMSPKRFLAG__CALLSETUP}; (* 0x00000008 *)
+
+(* Modem Options *)
+
+TYPE MDM_ENUM = (MDM__COMPRESSION,      (*  0 *)
+                 MDM__ERROR_CONTROL,    (*  1 *)
+                 MDM__FORCED_EC,        (*  2 *)
+                 MDM__CELLULAR,         (*  3 *)
+                 MDM__FLOWCONTROL_HARD, (*  4 *)
+                 MDM__FLOWCONTROL_SOFT, (*  5 *)
+                 MDM__CCITT_OVERRIDE,   (*  6 *)
+                 MDM__SPEED_ADJUST,     (*  7 *)
+                 MDM__TONE_DIAL,        (*  8 *)
+                 MDM__BLIND_DIAL,       (*  9 *)
+                 MDM__V23_OVERRIDE);    (* 10 *)
+
+     MDM_SET = SET OF MDM_ENUM;
+
+CONST MDM_COMPRESSION      = MDM_SET {MDM__COMPRESSION      }; (* 0x00000001 *)
+      MDM_ERROR_CONTROL    = MDM_SET {MDM__ERROR_CONTROL    }; (* 0x00000002 *)
+      MDM_FORCED_EC        = MDM_SET {MDM__FORCED_EC        }; (* 0x00000004 *)
+      MDM_CELLULAR         = MDM_SET {MDM__CELLULAR         }; (* 0x00000008 *)
+      MDM_FLOWCONTROL_HARD = MDM_SET {MDM__FLOWCONTROL_HARD }; (* 0x00000010 *)
+      MDM_FLOWCONTROL_SOFT = MDM_SET {MDM__FLOWCONTROL_SOFT }; (* 0x00000020 *)
+      MDM_CCITT_OVERRIDE   = MDM_SET {MDM__CCITT_OVERRIDE   }; (* 0x00000040 *)
+      MDM_SPEED_ADJUST     = MDM_SET {MDM__SPEED_ADJUST     }; (* 0x00000080 *)
+      MDM_TONE_DIAL        = MDM_SET {MDM__TONE_DIAL        }; (* 0x00000100 *)
+      MDM_BLIND_DIAL       = MDM_SET {MDM__BLIND_DIAL       }; (* 0x00000200 *)
+      MDM_V23_OVERRIDE     = MDM_SET {MDM__V23_OVERRIDE     }; (* 0x00000400 *)
+
+
+TYPE MODEMDEVCAPS =
+     RECORD
+            dwActualSize              : DWORD;  (* size of returned data, in bytes *)
+            dwRequiredSize            : DWORD;  (* total size of structure         *)
+            dwDevSpecificOffset       : DWORD;  (* offset of provider-defined data *)
+            dwDevSpecificSize         : DWORD;  (* size of provider-defined data   *)
+
+           (* product and version identification *)
+
+            dwModemProviderVersion    : DWORD;  (* provider version number *)
+            dwModemManufacturerOffset : DWORD;  (* offset of manufacturer name *)
+            dwModemManufacturerSize   : DWORD;  (* length of manufacturer name *)
+            dwModemModelOffset        : DWORD;  (* offset of model name *)
+            dwModemModelSize          : DWORD;  (* length of model name *)
+            dwModemVersionOffset      : DWORD;  (* offset of version name *)
+            dwModemVersionSize        : DWORD;  (* length of version name *)
+
+           (* local option capabilities *)
+
+            dwDialOptions             : DIALOPTION_SET;  (* bitmap of supported values *)
+            dwCallSetupFailTimer      : DWORD;           (* maximum in seconds *)
+            dwInactivityTimeout       : DWORD;           (* maximum in seconds *)
+            dwSpeakerVolume           : MDMVOLFLAG_SET;  (* bitmap of supported values *)
+            dwSpeakerMode             : MDMSPKRFLAG_SET; (* bitmap of supported values *)
+            dwModemOptions            : MDM_SET;         (* bitmap of supported values *)
+            dwMaxDTERate              : DWORD;           (* maximum value in bit/s *)
+            dwMaxDCERate              : DWORD;           (* maximum value in bit/s *)
+
+           (* Variable portion for proprietary expansion *)
+
+            abVariablePortion : ARRAY [0..0] OF BYTE;
+     END;
+     PMODEMDEVCAPS = POINTER TO MODEMDEVCAPS;
+
+(* SpeakerMode for MODEMSETTINGS *)
+
+TYPE MDMSPKR_ENUM = (MDMSPKR_OFF,        (* 0 *)
+                     MDMSPKR_DIAL,       (* 1 *)
+                     MDMSPKR_ON,         (* 2 *)
+                     MDMSPKR_CALLSETUP); (* 3 *)
+
+(* SpeakerVolume for MODEMSETTINGS *)
+
+TYPE MDMVOL_ENUM = (MDMVOL_LOW,    (* 0 *)
+                    MDMVOL_MEDIUM, (* 1 *)
+                    MDMVOL_HIGH);  (* 2 *)
+
+
+TYPE MODEMSETTINGS =
+     RECORD
+            dwActualSize             : DWORD;         (* size of returned data, in bytes *)
+            dwRequiredSize           : DWORD;         (* total size of structure *)
+            dwDevSpecificOffset      : DWORD;         (* offset of provider-defined data *)
+            dwDevSpecificSize        : DWORD;         (* size of provider-defined data *)
+
+      (* Static local options (read/write) *)
+
+            dwCallSetupFailTimer     : DWORD;         (* call setup timeout, in seconds *)
+            dwInactivityTimeout      : DWORD;         (* inactivity timeout, in tenths of seconds *)
+            dwSpeakerVolume          : MDMVOL_ENUM;   (* speaker volume level *)
+            dwSpeakerMode            : MDMSPKR_ENUM;  (* speaker mode *)
+            dwPreferredModemOptions  : MDM_SET;       (* bitmap specifying preferred options *)
+
+      (* negotiated options (read only) for current or last call *)
+
+            dwNegotiatedModemOptions : MDM_SET;      (* bitmap specifying actual options *)
+            dwNegotiatedDCERate      : DWORD;        (* DCE rate, in bits per second *)
+
+      (* Variable portion for proprietary expansion *)
+
+            abVariablePortion        : ARRAY [0..0] OF BYTE; (* variable-length data *)
+
+     END;
+     PMODEMSETTINGS = POINTER TO MODEMSETTINGS;
+
+
+END MCX.

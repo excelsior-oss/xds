@@ -1,0 +1,36 @@
+-- Выдача ошибок при работе в пакетном отладчике.
+
+DEFINITION MODULE Errors;
+
+IMPORT sys := SYSTEM;
+
+CONST
+  Max_Errors_limit = 100;  (* Макс. количесво ошибок до прекращения работы *)
+
+VAR
+  WasError     : BOOLEAN;  (* Признак завершения при ошибке *)
+  Errors_limit : CARDINAL; (* Макс. заданное число ошибок *)
+
+(* Увеличивает счетчик ошибок *)
+PROCEDURE IncErrors;
+
+(* Уменьшает счетчик ошибок *)
+PROCEDURE DecErrors;
+
+(* Устанавливает лимит ошибок равный нулю                           *)
+(* Если после этого вызвать Error, работа интерпретатора завершится *)
+PROCEDURE FatalError;
+
+(* Процедура для выдачи сообщений об ошибках.     *)
+PROCEDURE Error (error:CARDINAL; SEQ arg:sys.BYTE);
+
+(* Процедура для выдачи предупреждений. *)
+PROCEDURE Warning (warning:CARDINAL; SEQ arg:sys.BYTE);
+
+(* Процедура для выдачи предупреждений. *)
+PROCEDURE WarningStr (warning: ARRAY OF CHAR; SEQ arg:sys.BYTE);
+
+(* Выдает сообщение о количестве ошибок *)
+PROCEDURE FoundErrorsAndWarnings;
+
+END Errors.

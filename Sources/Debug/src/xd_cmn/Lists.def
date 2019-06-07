@@ -1,0 +1,55 @@
+-- Модуль для организации работы (добавление, проверка, удаление)
+-- с метками, со стеком вызовов процедур пакета, использования
+-- эквивалентных имен, обработке ошибок в пакете
+
+DEFINITION MODULE Lists;
+
+IMPORT krn := KrnTypes;
+
+VAR
+  Duplicate : BOOLEAN;
+
+(* Процедуры для работы с метками *)
+PROCEDURE PutLabel (st: ARRAY OF CHAR; paket, line: CARDINAL);
+PROCEDURE GetLabel (st: ARRAY OF CHAR; VAR paket, line: CARDINAL): BOOLEAN;
+PROCEDURE IsLabel  (st: ARRAY OF CHAR): BOOLEAN;
+
+(* Процедуры для работы со стеком вызовов *)
+PROCEDURE PopCall (VAR paket, line: CARDINAL);
+PROCEDURE PushCall (paket, line: CARDINAL; pr: BOOLEAN);
+PROCEDURE IsEmptyCall (): BOOLEAN;
+PROCEDURE IsGOSUBCall (): BOOLEAN;
+
+
+(* Процедуры для работы с эквивалентными именами *)
+PROCEDURE PutEquName (name: ARRAY OF CHAR; equname: ARRAY OF CHAR);
+PROCEDURE GetEquName (name: ARRAY OF CHAR; VAR equname: ARRAY OF CHAR);
+PROCEDURE IsEquName  (name: ARRAY OF CHAR): BOOLEAN;
+PROCEDURE IsEngaged  (name: ARRAY OF CHAR): BOOLEAN;
+PROCEDURE SetEngaged (name: ARRAY OF CHAR);
+PROCEDURE DelEngaged (name: ARRAY OF CHAR);
+PROCEDURE DelEquName (name: ARRAY OF CHAR);
+PROCEDURE EquNamesNo (): CARDINAL;
+PROCEDURE GetName    (i: CARDINAL; VAR name: ARRAY OF CHAR);
+
+
+(* Процедуры для работы с переходами по ошибке *)
+PROCEDURE PutJumpByError (N: CARDINAL; paket,line: CARDINAL) ;
+PROCEDURE GetJumpByError (N: CARDINAL; VAR paket,line: CARDINAL) : BOOLEAN;
+PROCEDURE DelJumpByError (N: CARDINAL);
+
+
+(* Процедуры для работы с точками останова *)
+PROCEDURE PutBreak (name: ARRAY OF CHAR; N: CARDINAL);
+PROCEDURE DelBreak (name: ARRAY OF CHAR);
+
+PROCEDURE GetBreakNumber (name: ARRAY OF CHAR; VAR N: CARDINAL): BOOLEAN;
+PROCEDURE GetBreakName   (VAR name: ARRAY OF CHAR; N: CARDINAL): BOOLEAN;
+
+
+(* Процедуры для работы с аргументами пакетного отладчика *)
+PROCEDURE PutArg (name: ARRAY OF CHAR);
+PROCEDURE GetArg (n: CARDINAL; VAR name: ARRAY OF CHAR): BOOLEAN;
+
+
+END Lists.

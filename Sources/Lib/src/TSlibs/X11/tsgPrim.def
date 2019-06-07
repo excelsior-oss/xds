@@ -1,0 +1,100 @@
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE tsgPrim;
+
+(*
+    Title: 	Top Speed Graph Primitives
+    Created:	Thu Oct 23 06:34:53 1997
+    Author: 	Igor L. Ziryanov
+		<ego@bink.xds.ru>
+*)
+
+IMPORT SYSTEM;
+
+TYPE
+  (* Graphical region *)
+  GReg = RECORD
+    x1, y1, x2, y2: INTEGER;
+  END;
+
+  (* Graphical window *)
+  GWin = RECORD
+    x, y: INTEGER;
+    w, h: LONGCARD;
+  END;
+
+  (* font description *)
+  GFont = RECORD
+    x, y, desc: LONGCARD;
+  END;
+
+  (* Pixel primitive *)
+  GPoint = RECORD
+    x, y: LONGCARD;
+    color: LONGCARD;
+  END;
+
+  (* Line primitive *)
+  GLine = RECORD
+    x1, y1, x2, y2: LONGCARD;
+    color: LONGCARD;
+  END;
+
+  (* Ellipse primitive *)
+  GEllipse = RECORD
+    x0, y0: LONGCARD;	-- center
+    a, b: LONGCARD;	-- semi axes (horizontal)
+    color: LONGCARD;
+    fill: BOOLEAN;
+  END;
+
+  (* Line primitive *)
+  GRect = RECORD
+    x1, y1, x2, y2: LONGCARD;
+    color: LONGCARD;
+    fill: BOOLEAN;
+  END;
+
+  (* Polygone primitives *)
+  GPolyArray = POINTER TO ARRAY [0..MAX(LONGINT)-1] OF LONGCARD;
+  GPoly = RECORD
+    n: LONGCARD;
+    px, py: GPolyArray;
+    color: LONGCARD;
+    fill: BOOLEAN;
+  END;
+
+  (* RawText primitive *)
+  GTextStr = POINTER TO ARRAY [0..MAX(LONGINT)-1] OF CHAR;
+  GText = RECORD
+    x, y: LONGCARD;
+    color: LONGCARD;
+    n: LONGCARD;
+    str: GTextStr;
+  END;
+
+  (* Cube primitive *)
+  GCube = RECORD
+    x1, y1, x2, y2: LONGCARD;
+    depth: LONGCARD;
+    color: LONGCARD;
+    fill: BOOLEAN;
+  END;
+
+  (* Flood fill primitive *)
+  GFloodFill = RECORD
+    x, y: LONGCARD;
+    color: LONGCARD;
+    bound: LONGCARD;
+  END;
+
+  (* Arc primitive *)
+  GArc = RECORD
+    x, y, w, h: LONGCARD;
+    sa, fa: LONGCARD;
+    color: LONGCARD;
+    fill: BOOLEAN;
+  END;
+
+END tsgPrim.

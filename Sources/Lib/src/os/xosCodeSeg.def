@@ -1,0 +1,21 @@
+(* Copyright (c) xTech 1995,97.  All Rights Reserved *)
+
+<* +M2EXTENSIONS *>
+DEFINITION MODULE xosCodeSeg; (* VitVit *)
+
+IMPORT SYSTEM;
+
+PROCEDURE calcCodeExtent ( mh :SYSTEM.ADDRESS; rva :CARDINAL; VAR from, to, sec :CARDINAL );
+(*
+  gets limits of a code segment and # of a corresponding section into EXE (DLL)
+
+  In:  mh  - a  module handle
+       rva - an arbitrary address in the code segment requred 
+
+  Out: from,to - (strict) limits of a code seg
+       sec     - # of section
+
+*) 
+
+
+END xosCodeSeg.

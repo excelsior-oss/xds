@@ -1,0 +1,226 @@
+(* vgakeyboard.def  Feb 18  12:3:31  1999 *)
+(* Copyright (c) 1999, JSC XDS *)
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: vgakeyboard.h *)
+
+DEFINITION MODULE ["C"] vgakeyboard;
+
+IMPORT SYSTEM;
+
+FROM vga IMPORT String;
+
+(*  Keyboard interface for svgalib.  *)
+(*  Can be used independently.  *)
+
+
+CONST 
+  SCANCODE_ESCAPE = 1;
+  SCANCODE_1 = 2;
+  SCANCODE_2 = 3;
+  SCANCODE_3 = 4;
+  SCANCODE_4 = 5;
+  SCANCODE_5 = 6;
+  SCANCODE_6 = 7;
+  SCANCODE_7 = 8;
+  SCANCODE_8 = 9;
+  SCANCODE_9 = 10;
+  SCANCODE_0 = 11;
+  SCANCODE_MINUS = 12;
+  SCANCODE_EQUAL = 13;
+  SCANCODE_BACKSPACE = 14;
+  SCANCODE_TAB = 15;
+  SCANCODE_Q = 16;
+  SCANCODE_W = 17;
+  SCANCODE_E = 18;
+  SCANCODE_R = 19;
+  SCANCODE_T = 20;
+  SCANCODE_Y = 21;
+  SCANCODE_U = 22;
+  SCANCODE_I = 23;
+  SCANCODE_O = 24;
+  SCANCODE_P = 25;
+  SCANCODE_BRACKET_LEFT = 26;
+  SCANCODE_BRACKET_RIGHT = 27;
+  SCANCODE_ENTER = 28;
+  SCANCODE_LEFTCONTROL = 29;
+  SCANCODE_A = 30;
+  SCANCODE_S = 31;
+  SCANCODE_D = 32;
+  SCANCODE_F = 33;
+  SCANCODE_G = 34;
+  SCANCODE_H = 35;
+  SCANCODE_J = 36;
+  SCANCODE_K = 37;
+  SCANCODE_L = 38;
+  SCANCODE_SEMICOLON = 39;
+  SCANCODE_APOSTROPHE = 40;
+  SCANCODE_GRAVE = 41;
+  SCANCODE_LEFTSHIFT = 42;
+  SCANCODE_BACKSLASH = 43;
+  SCANCODE_Z = 44;
+  SCANCODE_X = 45;
+  SCANCODE_C = 46;
+  SCANCODE_V = 47;
+  SCANCODE_B = 48;
+  SCANCODE_N = 49;
+  SCANCODE_M = 50;
+  SCANCODE_COMMA = 51;
+  SCANCODE_PERIOD = 52;
+  SCANCODE_SLASH = 53;
+  SCANCODE_RIGHTSHIFT = 54;
+  SCANCODE_KEYPADMULTIPLY = 55;
+  SCANCODE_LEFTALT = 56;
+  SCANCODE_SPACE = 57;
+  SCANCODE_CAPSLOCK = 58;
+  SCANCODE_F1 = 59;
+  SCANCODE_F2 = 60;
+  SCANCODE_F3 = 61;
+  SCANCODE_F4 = 62;
+  SCANCODE_F5 = 63;
+  SCANCODE_F6 = 64;
+  SCANCODE_F7 = 65;
+  SCANCODE_F8 = 66;
+  SCANCODE_F9 = 67;
+  SCANCODE_F10 = 68;
+  SCANCODE_NUMLOCK = 69;
+  SCANCODE_SCROLLLOCK = 70;
+  SCANCODE_KEYPAD7 = 71;
+  SCANCODE_CURSORUPLEFT = 71;
+  SCANCODE_KEYPAD8 = 72;
+  SCANCODE_CURSORUP = 72;
+  SCANCODE_KEYPAD9 = 73;
+  SCANCODE_CURSORUPRIGHT = 73;
+  SCANCODE_KEYPADMINUS = 74;
+  SCANCODE_KEYPAD4 = 75;
+  SCANCODE_CURSORLEFT = 75;
+  SCANCODE_KEYPAD5 = 76;
+  SCANCODE_KEYPAD6 = 77;
+  SCANCODE_CURSORRIGHT = 77;
+  SCANCODE_KEYPADPLUS = 78;
+  SCANCODE_KEYPAD1 = 79;
+  SCANCODE_CURSORDOWNLEFT = 79;
+  SCANCODE_KEYPAD2 = 80;
+  SCANCODE_CURSORDOWN = 80;
+  SCANCODE_KEYPAD3 = 81;
+  SCANCODE_CURSORDOWNRIGHT = 81;
+  SCANCODE_KEYPAD0 = 82;
+  SCANCODE_KEYPADPERIOD = 83;
+  SCANCODE_LESS = 86;
+  SCANCODE_F11 = 87;
+  SCANCODE_F12 = 88;
+  SCANCODE_KEYPADENTER = 96;
+  SCANCODE_RIGHTCONTROL = 97;
+  SCANCODE_CONTROL = 97;
+  SCANCODE_KEYPADDIVIDE = 98;
+  SCANCODE_PRINTSCREEN = 99;
+  SCANCODE_RIGHTALT = 100;
+  SCANCODE_BREAK = 101;   (*  Beware: is 119      *)
+  SCANCODE_BREAK_ALTERNATIVE = 119;   (*  on some keyboards!  *)
+  SCANCODE_HOME = 102;
+  SCANCODE_CURSORBLOCKUP = 103;   (*  Cursor key block  *)
+  SCANCODE_PAGEUP = 104;
+  SCANCODE_CURSORBLOCKLEFT = 105;   (*  Cursor key block  *)
+  SCANCODE_CURSORBLOCKRIGHT = 106;   (*  Cursor key block  *)
+  SCANCODE_END = 107;
+  SCANCODE_CURSORBLOCKDOWN = 108;   (*  Cursor key block  *)
+  SCANCODE_PAGEDOWN = 109;
+  SCANCODE_INSERT = 110;
+  SCANCODE_REMOVE = 111;
+  KEY_EVENTRELEASE = 0;
+  KEY_EVENTPRESS = 1;
+
+(*  Initialize keyboard handler (brings keyboard into RAW mode). Returns  *)
+(*  0 if succesful, -1 otherwise.  *)
+
+PROCEDURE keyboard_init (): INTEGER;
+
+(*  Similar, but returns console fd if succesful.  *)
+
+PROCEDURE keyboard_init_return_fd (): INTEGER;
+
+(*  Set event handler invoked by keyboard_update().  *)
+
+TYPE 
+  __keyboard_handler = PROCEDURE ( (* scancode *) INTEGER,
+                                   (* press *) INTEGER );
+
+PROCEDURE keyboard_seteventhandler ( handler: __keyboard_handler );
+
+(*  Return keyboard to normal state.  *)
+
+PROCEDURE keyboard_close;
+
+(*  Read raw keyboard device and handle events. Returns 0 if no event.  *)
+
+PROCEDURE keyboard_update (): INTEGER;
+
+(*  Similar to keyboard_update, but wait for an event to happen.  *)
+(*  [This doesn't seem to work very well -- use select on fd]  *)
+
+PROCEDURE keyboard_waitforupdate;
+
+(*  keyboard_init sets default event handler that keeps track of complete  *)
+(*  keyboard state:  *)
+(*  Result of keypressed.  *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  KEY_NOTPRESSED - : INTEGER;
+  KEY_PRESSED - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  KEY_NOTPRESSED = 0;
+  KEY_PRESSED = 1;
+
+<* END *>
+
+(*  Modes for translatekeys.  *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  TRANSLATE_CURSORKEYS - : INTEGER;
+  TRANSLATE_DIAGONAL - : INTEGER;
+  TRANSLATE_KEYPADENTER - : INTEGER;
+  DONT_CATCH_CTRLC - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  TRANSLATE_CURSORKEYS = 1;   (*  Map cursor block to keypad cursor.  *)
+  TRANSLATE_DIAGONAL = 2;   (*  Map keypad diagonal to keypad cursor.  *)
+  TRANSLATE_KEYPADENTER = 4;   (*  Map keypad enter to main enter key.  *)
+  DONT_CATCH_CTRLC = 8;   (*  Disable Crtl-C check.  *)
+
+<* END *>
+
+(*  Revert to default handler.  *)
+
+PROCEDURE keyboard_setdefaulteventhandler;
+
+(*  Return pointer to buffer holding state of each key (scancode).  *)
+(*  Value 1 corresponds to key that is pressed, 0 means not pressed.  *)
+
+PROCEDURE keyboard_getstate (): String;
+
+(*  Force keyboard state to nothing pressed (all zeroes).  *)
+
+PROCEDURE keyboard_clearstate;
+
+(*  Let default handler translate cursor key block events to numeric keypad  *)
+(*  cursor key events and other translations.  *)
+
+PROCEDURE keyboard_translatekeys ( mask: INTEGER );
+
+(*  Return nonzero if key is depressed.  *)
+
+PROCEDURE keyboard_keypressed ( scancode: INTEGER ): INTEGER;
+
+END vgakeyboard.

@@ -1,0 +1,160 @@
+% Project file for xProf trace execution utility
+% modes are: enduser, work
+
+!if not defined trialversion then
+  !new trialversion-
+!end
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if not defined placement then
+  !if (mode="enduser") then
+    -placement := release
+  !else
+    -placement := current
+  !end
+!end
+
+% output settings
+!if placement="release" then
+  -mkfname = $!/../../enduser/tmp/xprof
+  -lookup = *.sym  = $!/../../enduser/tmp; $!/../../enduser/xds/sym/x86
+  -lookup = *.lib  = $!/../../enduser/xds/lib/x86
+  -lookup = *.obj  = $!/../../enduser/tmp
+  -lookup = *.dbg  = $!/../../enduser/tmp
+  -lookup = *.exe  = $!/../../enduser/xds/bin
+!else
+  % work
+  -mkfname = xprof
+  -lookup = *.sym  = sym
+  -lookup = *.obj  = bin
+  -lookup = *.dbg  = dbg
+  -lookup = *.emf  = emf
+  -lookup = *.txt  = csv
+!end
+
+-m2cmpsym+
+-changesym+
+-m2extensions+
+-o2extensions-
+-m2addtypes+
+
+-gcthreshold =  96000000
+-heaplimit = 96000000
+
+-compilerheap = 16777216
+
+-makefile+
+-longname+
+
+-implib-
+-usedll+
+-gendll-
+-dllexport-
+
+-TARGET_VAX:-
+-TARGET_x86:+
+-TARGET_m68k:-
+
+-ONLY_REMOTE:+
+
+-DEST_XDS:+
+-DEST_K26:-
+
+-DEST_XDASM:-
+
+-SCHERN_K26:-
+
+!if not defined xd_batch_included then
+  -xd_batch_included:+
+!end
+
+!if not defined xd_batch_dlg_cmd then
+  -xd_batch_dlg_cmd:-
+!end
+
+
+% Source lookup settings
+!if placement="release" then
+  -lookup = *.def = src\profiler; src\xd_cmn; src\xd_enh; src\xd_rmt;
+  -lookup = *.mod = src\profiler; src\xd_cmn; src\xd_enh; src\xd_rmt;
+  !if TARGET_x86  then
+    -lookup = *.def = src\xd_386; 
+    -lookup = *.mod = src\xd_386;
+  !elsif TARGET_m68k then
+    -lookup = *.def = src\xd_m68k;
+    -lookup = *.mod = src\xd_m68k;
+  !end
+  !if env_target = "x86nt" then
+    -lookup = *.def = src\xd_386\win32;
+    -lookup = *.mod = src\xd_386\win32;
+  !elsif env_target = "x86os2" then
+    -lookup = *.def = src\xd_386\os2;
+    -lookup = *.mod = src\xd_386\os2;
+  !end
+  !if DEST_XDS  then
+    -lookup = *.def = src\xd_rts;
+  !end
+!elsif placement="current" then
+  -lookup = *.def = ..\src\profiler; ..\src\xd_cmn; ..\src\xd_enh; ..\src\xd_rmt;
+  -lookup = *.mod = ..\src\profiler; ..\src\xd_cmn; ..\src\xd_enh; ..\src\xd_rmt;
+  !if    TARGET_x86  then
+    -lookup = *.def = ..\src\xd_386;
+    -lookup = *.mod = ..\src\xd_386;
+  !elsif TARGET_m68k then
+    -lookup = *.def = ..\src\xd_m68k;
+    -lookup = *.mod = ..\src\xd_m68k;
+  !end
+  !if env_target = "x86nt" then
+    -lookup = *.def = ..\src\xd_386\win32;
+    -lookup = *.mod = ..\src\xd_386\win32;
+  !elsif env_target = "x86os2" then
+    -lookup = *.def = ..\src\xd_386\os2;
+    -lookup = *.mod = ..\src\xd_386\os2;
+  !end
+  !if DEST_XDS  then
+    -lookup = *.def = ..\src\xd_rts;
+  !end
+!end
+
+% Runtime checks and debug settings
+!if mode="enduser" then
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+
+  -xd_debug:-
+
+!elsif mode="work" then
+
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+
+  -dbgfmt = HLL
+  -xd_debug:+
+!end
+
+!module xprof.mod

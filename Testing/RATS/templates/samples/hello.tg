@@ -1,0 +1,33 @@
+TESTPREFIX "hello"
+STDOUT
+"Hello World!
+"
+
+TEMPLATE EXTENSION "mod"
+"
+MODULE <.name.>;
+
+<* +M2EXTENSIONS *>
+<.ref_aligned.>
+
+IMPORT SYSTEM;
+FROM Printf  IMPORT  printf;
+
+BEGIN
+  printf('Hello World!\n', 153);
+
+END <.name.>.
+"
+BEGIN
+  IF FEATURE('M2_MIPS') THEN
+      FOREACH  ref_aligned  IN
+        "<* -REF_ALIGNED *>"
+      , "<* +REF_ALIGNED *>"
+      DO
+          GENERATE RUN_OK;
+      END;
+  ELSE
+      ref_aligned := "";
+      GENERATE RUN_OK;
+  END;
+END

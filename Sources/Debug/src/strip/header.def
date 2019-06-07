@@ -1,0 +1,101 @@
+<* ALIGNMENT="1" *>
+
+DEFINITION MODULE Header;
+
+IMPORT sys := SYSTEM;
+
+
+TYPE
+  DB = sys.CARD8;
+  DW = sys.CARD16;
+  DD = sys.CARD32;
+
+  LX_HEADER = RECORD
+    signature: ARRAY [0..1] OF CHAR;
+    border     : DB;     (* byte ordering                             *)
+    worder     : DB;     (* word ordering                             *)
+    lefl       : DD;     (* Linear EXE Format Level                   *)
+    cpu        : DW;     (* Module CPU type                           *)
+    ostype     : DW;     (* Module OS type                            *)
+    mver       : DD;     (* Version of LX module                      *)
+    mflags     : BITSET; (* Flag bits for the module                  *)
+    mpages     : DD;     (* Number of pages in module                 *)
+    eipobj     : DD;     (* The Object number to which the Entry      *)
+                         (* Address is relative                       *)
+    eip        : DD;     (*  Entry address of module                  *)
+    espobj     : DD;     (* The Object number to  which the ESP is    *)
+                         (*  relative                                 *)
+    esp        : DD;     (* Starting stack address of module          *)
+    psize      : DD;     (* The size of one page for this system      *)
+    poffshift  : DD;     (* The shift left  bits  for  page offsets   *)
+    fupssize   : DD;     (* Total  size  of  the  fixup information   *)
+                         (* in bytes                                  *)
+    fupschsum  : DD;     (* Checksum for fixup information            *)
+    lderssize  : DD;     (* Size  of  memory  resident tables         *)
+    lderchsum  : DD;     (* Checksum   for  loader  section           *)
+    objtoffs   : DD;     (* Object Table offset                       *)
+    objinmod   : DD;     (* Object Table Count                        *)
+    objptoffs  : DD;     (* Object Page Table offset                  *)
+    objipoff   : DD;     (* Object  Iterated  Pages  offset           *)
+    restoffs   : DD;     (* Resource Table offset                     *)
+    restentr   : DD;     (* Number  of entries  in Resource Table     *)
+    resntoffs  : DD;     (* Resident Name Table offset                *)
+    enttoffs   : DD;     (* Entry Table offset                        *)
+    moddoffs   : DD;     (* Module  Format Directives Table offset    *)
+    moddirvs   : DD;     (* Number of Module Format Directives in     *)
+                         (* the Table                                 *)
+    fupptoffs  : DD;     (* Fixup Page Table offset                   *)
+    fuptroffs  : DD;     (* Fixup Record Table Offset                 *)
+    impmodoffs : DD;     (* Import  Module Name Table offset          *)
+    impmodentr : DD;     (* The number of entries in the Import       *)
+                         (* Module Name Table                         *)
+    impprtoffs : DD;     (* Import Procedure  Name Table offset       *)
+    ppchkoffs  : DD;     (* Per-Page  Checksum  Table offset          *)
+    dpoffs     : DD;     (* Data Pages Offset                         *)
+    numprelp   : DD;     (* Number of Preload pages for this module   *)
+    nonrestoffs: DD;     (* Non-Resident  Name  Table offset          *)
+    nonrestlen : DD;     (* Number of bytes in the Non-resident       *)
+                         (* name table                                *)
+    nrestchksum: DD;     (* Non-Resident  Name  Table Checksum        *)
+    autodsobj  : DD;     (* The Auto Data  Segment Object number      *)
+    debinfoffs : DD;     (* Debug Information offset                  *)
+    debinflen  : DD;     (* Debug Information length                  *)
+    ninstpp    : DD;     (* Instance  pages  in  preload section      *)
+    ninstdem   : DD;     (* Instance  pages  in  demand section       *)
+    heapsize   : DD;     (* Heap size added to the Auto DS Object     *)
+  END;
+
+  OBJ    = RECORD
+             vSize: DD;
+             rAddr: DD;
+             Flags: DD;
+             pInd : DD;
+             pEntr: DD;
+             Reserved: DD;
+           END;
+
+  STR = ARRAY [0..255] OF CHAR;
+
+
+VAR
+  Header: LX_HEADER;
+  Objects: POINTER TO ARRAY OF OBJ;
+
+
+CONST
+  EXT_EXE = "exe";
+  EXT_HDR = "hdr";
+  EXT_SDI = "xst";
+
+
+PROCEDURE CreateFileName (ext: ARRAY OF CHAR; VAR full_name: ARRAY OF CHAR);
+
+PROCEDURE GetFileName (VAR full_name: ARRAY OF CHAR): BOOLEAN;
+
+PROCEDURE SaveHeader (VAR full_name: ARRAY OF CHAR): BOOLEAN;
+
+PROCEDURE WriteHeader (VAR full_name: ARRAY OF CHAR): BOOLEAN;
+
+PROCEDURE ReadHeader (VAR full_name: ARRAY OF CHAR): BOOLEAN;
+
+END Header.

@@ -1,0 +1,411 @@
+% Copyright (c) 1999 XDS. All Rights Reserved.
+%
+% XDS TopSpeed-like library project file
+% mode     = debug ! nodebug ! work ! port ! user
+%
+% Some comments about modes:
+%     debug - used to build enduser versions of all executables
+%     nodebug - final enduser version
+%     work (default) - developers' version
+%     port - to port with __GEN_C__
+%     user - to create makefiles for enduser package
+
+!if not defined mode then
+  -mode := work
+!end
+!if not defined bits then
+  -bits :=
+!end
+!if not defined multithread then
+  -multithread:-
+!end
+
+!if not defined genlib then
+  -genlib:-
+!end
+!if not defined gendll then
+  -gendll:-
+!end
+!if not defined useedf then
+  -useedf:+
+!end
+!if not defined libname then
+  -libname:=
+!end
+
+!if not defined placement then
+  !if mode="user" then
+    -placement := makefile
+  !elsif (mode="debug") or (mode="nodebug") then
+    -placement := release
+  !else
+    -placement := current
+  !end
+!end
+
+!if (mode="enduser") or (mode="make_file") then
+  -opt_checks := none
+  -opt_debug  := none
+!elsif (mode="port") then
+  -opt_checks := full
+  -opt_debug  := full
+!elsif mode="debug" then
+  -opt_checks := min
+  -opt_debug  := full
+!else
+  -opt_checks := work
+  -opt_debug  := work
+  !if __GEN_C__ then
+    -gendate
+  !end
+!end
+
+!if (env_target="linux") or (env_target="x86linux") or (env_target="x86djgpp") then
+  -asmext=s
+!else
+  -asmext=asm
+!end
+
+!if (env_target="x86djgpp") then 
+  -objext=o
+  -libext=a
+  -target_fs=unix
+  -target_dosfs- 
+  -native_library:+ 
+!end
+
+!if backend="X86" then
+  -use_clibs:-
+!else
+  -use_clibs:+
+!end
+
+!if not defined native_library then
+  -native_library:-
+  % Libraries for native code, but built with converter.
+!end
+
+-compile=
+-makefile+
+-longname+
+-o2isopragma+
+
+!if __GEN_C__ then
+  -woff354+
+  !if (mode # "work") then
+    -comment
+  !end
+!end
+
+-__libsyms__:+
+
+% ======================================================
+% settings for equation "mkfname" and "mkfext"
+% NOTE: equation values are case sensitive
+% ======================================================
+-mkfext=mkf
+!if defined mkf_name and (mkf_name#"") then
+  -mkfname=$(mkf_name)
+!else
+  -mkfname=tslib
+!end
+
+-template = $!/xdsts.tem
+
+!if gendll then
+  -usedll+
+  -implib+
+  -dllexport+
+  !if multithread then
+    -dllname:=xts25m
+  !else
+    -dllname:=xts25
+  !end
+!else 
+  -genlib+
+  !if multithread then
+    -libname=libtsmt
+  !else
+    -libname=libts
+  !end
+!end
+
+% ======================================================
+% Target files lookup settings
+% ======================================================
+-changesym+
+-m2cmpsym+
+-xcomments+
+
+% Output lookup settings
++makedirs
+-makedef+
+
+
+!if __GEN_X86__ or native_library then
+  -xdsdir =
+  -tscpdir := 
+  -lookup = *.mkf = $!/ch/x86
+
+  -lookup = *.edi = $!/workplace/lib/x86
+  -lookup = *.dll = $!/workplace/lib/x86
+  -lookup = *.lib = $!/workplace/lib/x86
+
+  -lookup = *.sym = $!/sym/x86
+
+  -lookup = *.h   = $!/ch/x86
+  -lookup = *.lnk = $!/ch/x86
+  -lookup = *.obj = $!/ch/x86
+  -lookup = *.o   = $!/ch/x86
+  -lookup = *.tmp = $!/ch/x86
+  -lookup = *.dbg = $!/ch/x86
+
+!elsif (mode="make_file") then
+  !if target_os="unix" then
+    -xdsdir = ../..
+    -tscpdir := ../..
+  !else
+    -xdsdir = ..\..
+    -tscpdir := ..\..
+  !end
+
+  -lookup = *.mkf = 
+  -lookup = *.sym = ../../sym/C
+  -lookup = *.h   = ../../include
+  -lookup = *.c   = ../../C
+  -lookup = *.s   = ../../C
+  -lookup = *.obj = ../../C
+  -lookup = *.o   = ../../C
+  -lookup = *.lib = 
+
+!else
+  -xdsdir =
+  -tscpdir := 
+  -lookup = *.mkf = $!/workplace/lib/C
+
+  -lookup = *.edi = $!/workplace/lib/C
+  -lookup = *.dll = $!/workplace/lib/C
+  -lookup = *.lib = $!/workplace/lib/C
+
+  -lookup = *.sym = $!/sym/C
+
+  -lookup = *.h   = $!/include
+  -lookup = *.c   = $!/ch/C
+  -lookup = *.lnk = $!/ch/C
+  -lookup = *.obj = $!/ch/C
+  -lookup = *.o   = $!/ch/C
+  -lookup = *.tmp = $!/ch/C
+  -lookup = *.dbg = $!/ch/C
+!end
+
+
+% ======================================================
+% Lookup sources setup
+% ======================================================
+
+-lookup = *.def = $!/src/TSlibs;
+-lookup = *.mod = $!/src/TSlibs;
+!if backend="C" then
+  !if target_family="LINUX" then
+    -lookup = *.def = $!/src/TSlibs/Linux
+    -lookup = *.mod = $!/src/TSlibs/Linux
+    -lookup = *.c   = $!/src/TSlibs/Linux
+  !end
+  -lookup = *.def = $!/src/TSlibs/POSIX
+  -lookup = *.mod = $!/src/TSlibs/POSIX
+  -lookup = *.c   = $!/src/TSlibs/POSIX
+!else
+  !if    (target_family="WIN32") then
+    -lookup = *.def = $!/src/TSlibs/Win32
+    -lookup = *.mod = $!/src/TSlibs/Win32
+    -lookup = *.edf = $!/src/TSlibs/Win32
+  !elsif (target_family="OS2") then
+    -lookup = *.def = $!/src/TSlibs/OS2
+    -lookup = *.mod = $!/src/TSlibs/OS2
+    -lookup = *.edf = $!/src/TSlibs/OS2
+  !else
+    !if target_os="LINUX" then
+      -lookup = *.def = $!/src/TSlibs/Linux
+      -lookup = *.mod = $!/src/TSlibs/Linux
+      -lookup = *.c   = $!/src/TSlibs/Linux
+    !end
+    -lookup = *.def = $!/POSIX
+    -lookup = *.mod = $!/POSIX
+    -lookup = *.c   = $!/POSIX
+  !end
+!end
+
+!if (mode="port") then
+  -link =
+!elsif (env_host="winnt") or (env_host="winntpp") or (env_host="winntpl") then
+  -link = "nmake /nologo /f %s",mkfname#mkfext
+!elsif (env_host="os2icc") or (env_host="os2vacpp") then
+  -link = "nmake /f %s",mkfname#mkfext
+!elsif env_host="x86os2" then
+  -link = "nmake /nologo /f %s",mkfname#mkfext
+!elsif (env_host="watcom") or (env_host="watcomnt") or \
+       (env_host="x86dos") or (env_host="os2watcom") then
+  -link = "wmake -f %s",mkfname#mkfext
+!elsif env_host="x86nt" then
+   !if (gendll) then 
+     -link = "nmake /f %s",mkfname#mkfext
+   !else
+     -link = "nmake /f %s",mkfname#mkfext
+   !end
+!elsif env_host="x86djgpp" then
+  -link = "make -f %s",mkfname#mkfext
+!else
+  -link = "make -f %s",mkfname#mkfext
+!end
+
+!if opt_checks="full" then
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -checkdiv+
+  -checktype+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+  -xmm_debug:+
+!elsif opt_checks="min" then
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -checkdiv-
+  -checktype-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+  -xmm_debug:-
+!elsif opt_checks="none" then
+  -assert-
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -checkdiv-
+  -checktype-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+  -xmm_debug:-
+!else
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -checkdiv+
+  -checktype+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+  -xmm_debug:+
+!end
+
+!if    opt_debug="full" then
+  -gendebug+
+  -lineno+
+  !if backend#"C" then
+    -genframe+
+    -genhistory+
+  !end
+!elsif opt_debug="min" then
+  !if backend="C" then
+    -gendebug-
+    -lineno+
+  !else
+    -gendebug+
+    -lineno+
+    -genframe+
+    -genhistory+
+  !end
+!elsif opt_debug="none" then
+  -gendebug-
+  -lineno-
+  !if backend#"C" then
+    -genframe-
+    -genhistory-
+  !end
+!else
+  -gendebug+
+  -lineno+
+  !if backend#"C" then
+    -genframe+
+    -genhistory+
+  !end
+!end
+
+!if backend="C" then
+  !if bits="16" then
+    -index16+
+    -target16+
+    -m2base16+
+  !elsif bits="32m16" then
+    -index16-
+    -target16-
+    -m2base16+
+  !elsif env_target="msdos" then
+    -index16-
+    -target16-
+    -m2base16-
+  !end
+
+  -copyright=XDS v2.51: Copyright (c) Excelsior 1999-2001.
+
+  !if (env_target="msdos") then
+    -gencpp-
+  !end
+
+  -genctypes
+!end
+
+-m2cmpsym+
+-changesym+
+-compilerheap=36000000
+
+% ======================================================
+% ============= List of project modules ================
+% ======================================================
+
+!module BiosIO FIO FIOR Lib MATHLIB ShtHeap Str SysErr
+
+!if (backend="C") and ((target_family="OS2") or (target_family="WIN32")) then
+  % to avoid conflict with <io.h>
+  !module IO_  
+!else
+  !module IO
+!end
+
+!if (backend="x86") then
+  !module Window
+
+  !if (target_family="OS2") or (target_family="WIN32") then
+    !module MsMouse Graph
+  !end
+!end
+
+% ======================================================
+% DLL export definition
+% ======================================================
+
+!if (gendll and useedf) and (backend#"C") then
+  !if multithread then
+    !module xts25m.edf
+  !else
+    !module xts25.edf
+  !end
+!end

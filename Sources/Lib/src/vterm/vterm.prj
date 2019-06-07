@@ -1,0 +1,71 @@
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if (mode="debug") or (mode="work") then
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -checkdiv+
+  -checktype+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+!elsif mode="nodebug" then
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -checkdiv-
+  -checktype-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+!end
+
+!if (mode="debug") or (mode="work") then
+  -gendebug+
+  -lineno+
+  !if backend#"C" then
+    -genframe+
+    -genhistory+
+  !end
+!elsif (mode="nodebug") then
+  -gendebug-
+  -lineno-
+  !if backend#"C" then
+    -genframe-
+    -genhistory-
+  !end
+!end
+
+-multithread+
+
+-lookup = *.def = $!
+-lookup = *.mod = $!
+-lookup = *.tem = $!
+-lookup = *.obj = $!/../../ch/x86
+-lookup = *.rsp = $!/../../ch/x86
+-lookup = *.sym = $!/../../sym/x86
+-lookup = *.lib = $!/../../workplace/lib/x86
+
+-genlib+
+-libname = vterm
+-mkfname = vterm
+-mkfext  = rsp
+
+
+!if backend#"C" then
+  -genframe-
+  -genhistory-
+!end
+
+!module VTerm VTerm_t

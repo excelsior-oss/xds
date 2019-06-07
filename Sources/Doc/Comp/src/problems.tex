@@ -1,0 +1,40 @@
+\ifgenc
+\chapter{Possible Problems}\label{problems}
+\index{possible problems}
+
+\section{Warnings from C compiler}
+
+The produced C text should contain no errors,
+but various C compilers may produce different kinds of warnings.
+The most probable warnings are:
+\begin{itemize}
+\item
+Code has no effect;
+\item
+Variable (or parameter) is never used;
+\item
+Function should return a value.
+\end{itemize}
+Do not pay attention to these warnings.
+
+\section{Ordering of record fields}
+
+Some procedures from the run-time library are implemented
+under the assumption that the C compiler will not change the
+order of record fields. If your C compiler supports various
+ordering of structs please ensure that the appropriate
+C compiler option is switched ON.
+
+\section{Name collisions in C text}
+
+In some cases name collisions in generated C text are possible.
+If an identifier in your program coincides with an identifier
+from some standard header file append it to the {\bf\kwd{}} file.
+
+Some basic C compilers (or linkers) might truncate the names
+or external names. Use the {\bf GENIDLEN} equation to generate
+indetifiers of required length. See \ref{maptoc:idents}
+for further information.
+
+\fi % -------------- end ifgenc
+

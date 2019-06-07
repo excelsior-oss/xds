@@ -1,0 +1,35 @@
+\chapter{Oberon-2 Oakwood libraries}\label{lib:oak}
+
+{\em The Oakwood Guidelines for the Oberon-2 Compiler Developers}
+specifies a set of libraries that should be provided with all Oberon
+implementations. The current \xds{} release does not contain all these
+libraries yet. The following libraries are currently available:
+\begin{flushleft}
+\begin{tabular}{ll}
+\bf In        & input from a standard stream   \\
+\bf MathR     & mathematical functions for REAL  \\
+\bf MathL     & mathematical functions for LONGREAL  \\
+\bf MathC     & mathematical functions for COMPLEX  \\
+\bf MathLC    & mathematical functions for LONGCOMPLEX  \\
+\bf Out       & output to a standard stream    \\
+\bf O2Strings & simple manipulations for strings    \\
+\end{tabular}
+\end{flushleft}
+\lindex{MathR}
+\lindex{MathL}
+\lindex{MathC}
+\lindex{MathLC}
+\lindex{In}
+\lindex{Out}
+\lindex{O2Strings}
+
+The {\bf Math} library is renamed to {\bf MathR}, because it
+coincides with the POSIX {\tt math} library
+interface\ifcomment !!! (See \ref{lib:clib})\fi.
+The complex types and, hence, {\bf MathC} and
+{\bf MathLC} modules may be not available for other Oberon
+implementations.
+
+The {\bf Strings} library is renamed to {\bf O2Strings}, since
+it is not compatible with the correspondent ISO library.
+

@@ -1,0 +1,47 @@
+-- Функции для работы с файлами: преобразования имен файлов,
+-- расширений; модификации и сравнения времени создания
+
+DEFINITION MODULE File;
+
+(* Если расширения у имени файла нет, то добавляет его. *)
+PROCEDURE AddExtension ( VAR s : ARRAY OF CHAR ; ext : ARRAY OF CHAR ) ;
+
+(* Изменяет расширение имени файла на заданое *)
+PROCEDURE ChangeExtension ( VAR s : ARRAY OF CHAR ; ext : ARRAY OF CHAR ) ;
+
+(* Удаляет расширение у имени файла *)
+PROCEDURE RemoveExtension ( VAR s : ARRAY OF CHAR ) ;
+
+(* Возвращает расширение имени файла *)
+PROCEDURE GetExtension (file: ARRAY OF CHAR; VAR ext: ARRAY OF CHAR);
+
+(* Проверяет расширение имени файла, если совпало - TRUE *)
+PROCEDURE CompareExtension (file, ext:ARRAY OF CHAR) : BOOLEAN;
+
+(* Выделяет из полного пути имя диска,путь по каталогам,имя файла *)
+PROCEDURE SplitPath (st:ARRAY OF CHAR; VAR drive,head,tail:ARRAY OF CHAR);
+
+(* Выделяет из пути только имя файла *)
+PROCEDURE ExtractFileName (path: ARRAY OF CHAR; VAR fname: ARRAY OF CHAR);
+
+(* Время модификации файла *)
+PROCEDURE ModifyTime (fname: ARRAY OF CHAR) : CARDINAL;
+
+(* Сравнение времен модификации файлов: если f1 "старше" f2 - TRUE *)
+PROCEDURE FileOlderThan(fname1, fname2: ARRAY OF CHAR) : BOOLEAN;
+
+(* Преобразование из представления времени модификации файла,
+   принятого DOS (4 байта, значение "упаковано") в секунды    *)
+PROCEDURE DOS2SEC (t: CARDINAL) : CARDINAL;
+
+(* Преобразует имя файла по следующим правилам:                  *)
+(* ИмяФайла            -> ТекущаяДиректория'\'ИмяФайла           *)
+(* ЧастьПути_ИмяФайла  -> ТекущаяДиректория'\'ЧастьПути_ИмяФайла *)
+(* ИмяДиска_ПолныйПуть -> ИмяДиска_ПолныйПуть                    *)
+PROCEDURE ModifyFileName (fname: ARRAY OF CHAR; VAR fullname: ARRAY OF CHAR);
+
+
+(* Возвращает текущий раздлитель директорий в имени файла ('\' или '/'). *)
+PROCEDURE GetFileSepChar (): CHAR;
+
+END File.

@@ -1,0 +1,77 @@
+DEFINITION MODULE CallStk;
+
+IMPORT kt  := KrnTypes;
+IMPORT dt  := DI_Types;
+
+IMPORT xs  := xStr;
+
+
+TYPE
+  CALL = RECORD
+           call_addr: kt.ADDRESS;
+           Object   : dt.OBJECT;
+           Frame    : kt.ADDRESS;
+           Name     : xs.String;
+           com      : dt.ComNo;
+           mod      : dt.ModNo;
+           line     : dt.LineNo;
+         END;
+
+
+PROCEDURE GetCall (num: CARDINAL; VAR call: CALL);
+
+CONST
+  INVALID_FRAME = MAX(CARDINAL);
+
+(* Добавляет еще одну проверку на то, что при запуске программы *)
+(* из диалога, она должна исполняться в пошаговом режиме        *)
+PROCEDURE AddCall (Addr, frame: kt.ADDRESS);
+
+PROCEDURE GetFrame (level: CARDINAL; VAR frame: kt.ADDRESS): BOOLEAN;
+
+PROCEDURE PopCall ();
+
+-- Глубина стека вызовов
+PROCEDURE CallTop(): CARDINAL;
+
+(* Очистить структуру стека вызовов *)
+PROCEDURE ResetCallStack;
+
+(* Проверяет, если в стеке вызовов такой вызов, который *)
+(* соответствует указанной строку модуля в компоненте   *)
+PROCEDURE IsLineInCallStack (com: dt.ComNo; mod: dt.ModNo; line: dt.LineNo): BOOLEAN;
+
+(* Проверяет, если в стеке вызовов такой вызов, который *)
+(* соответствует указанному адресу                      *)
+PROCEDURE IsAddrInCallStack (addr: kt.ADDRESS): BOOLEAN;
+
+(* Проверяет, если в стеке вызовов такой вызов, который  *)
+(* соответствует указанному обьекту, начиная с заданного *)
+(* уровня, если найден, выдает его уровень               *)
+PROCEDURE GetObjectLevelInCallStack (first: CARDINAL; object: dt.OBJECT; VAR level: CARDINAL): BOOLEAN;
+
+
+<* IF DEST_XDS THEN *>
+
+(* Инициализировать стек вызовов *)
+PROCEDURE ScanCallStack;
+
+PROCEDURE SkipProcWithoutDebugInfo (VAR addr: kt.ADDRESS; VAR obj: dt.OBJECT): BOOLEAN;
+
+PROCEDURE GetFirstProc (VAR num: CARDINAL): BOOLEAN;
+
+PROCEDURE UnrollStack (num: CARDINAL; VAR addr: kt.ADDRESS; VAR obj: dt.OBJECT): BOOLEAN;
+
+<* END *>
+
+
+<* IF DEST_K26 THEN *>
+
+PROCEDURE PushCall(call_point, frame: kt.ADDRESS);
+
+PROCEDURE SkipMM(): kt.ADDRESS;
+
+<* END *>
+
+
+END CallStk.

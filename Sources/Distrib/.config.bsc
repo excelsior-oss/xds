@@ -1,0 +1,4 @@
+# XDS PowerPC: Build System Configuration
+
+# External files which are part of this component  
+UNIT_NAME=XDS-x86-Distrib

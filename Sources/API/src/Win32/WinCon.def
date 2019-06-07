@@ -1,0 +1,686 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] WinCon;
+
+(*
+    This module contains the public data structures, data types,
+    and procedures exported by the NT console subsystem.
+*)
+
+FROM WinDef  IMPORT SHORT, UINT, WORD, DWORD, BOOL, WCHAR,
+                    HANDLE, PSTR, PWSTR,
+                    PVOID, LPCVOID;
+FROM WinNT   IMPORT ACCESS_MASK, FILE_SHARE_MODE;
+FROM WinBase IMPORT PSECURITY_ATTRIBUTES;
+
+TYPE COORD = RECORD
+                    X : SHORT;
+                    Y : SHORT;
+             END;
+    PCOORD = POINTER TO COORD;
+
+TYPE SMALL_RECT = RECORD
+                         Left   : SHORT;
+                         Top    : SHORT;
+                         Right  : SHORT;
+                         Bottom : SHORT;
+                  END;
+    PSMALL_RECT = POINTER TO SMALL_RECT;
+   PCSMALL_RECT = POINTER TO SMALL_RECT;
+
+(*
+** ControlKeyState flags
+*)
+
+TYPE CONTROLKEYSTATE_ENUM = (
+      RIGHT__ALT_PRESSED,    (* 0 - the right alt key is pressed.  *)
+      LEFT__ALT_PRESSED,     (* 1 - the left alt key is pressed.   *)
+      RIGHT__CTRL_PRESSED,   (* 2 - the right ctrl key is pressed. *)
+      LEFT__CTRL_PRESSED,    (* 3 - the left ctrl key is pressed.  *)
+      SHIFT__PRESSED,        (* 4 - the shift key is pressed.      *)
+      NUMLOCK__ON,           (* 5 - the numlock light is on.       *)
+      SCROLLLOCK__ON,        (* 6 - the scrolllock light is on.    *)
+      CAPSLOCK__ON,          (* 7 - the capslock light is on.      *)
+      ENHANCED__KEY);        (* 8 - the key is enhanced.           *)
+
+TYPE CONTROLKEYSTATE_SET = SET OF CONTROLKEYSTATE_ENUM;
+
+CONST RIGHT_ALT_PRESSED  = CONTROLKEYSTATE_SET {RIGHT__ALT_PRESSED};  (* 0x0001 *)
+      LEFT_ALT_PRESSED   = CONTROLKEYSTATE_SET {LEFT__ALT_PRESSED};   (* 0x0002 *)
+      RIGHT_CTRL_PRESSED = CONTROLKEYSTATE_SET {RIGHT__CTRL_PRESSED}; (* 0x0004 *)
+      LEFT_CTRL_PRESSED  = CONTROLKEYSTATE_SET {LEFT__CTRL_PRESSED};  (* 0x0008 *)
+      SHIFT_PRESSED      = CONTROLKEYSTATE_SET {SHIFT__PRESSED};      (* 0x0010 *)
+      NUMLOCK_ON         = CONTROLKEYSTATE_SET {NUMLOCK__ON};         (* 0x0020 *)
+      SCROLLLOCK_ON      = CONTROLKEYSTATE_SET {SCROLLLOCK__ON};      (* 0x0040 *)
+      CAPSLOCK_ON        = CONTROLKEYSTATE_SET {CAPSLOCK__ON};        (* 0x0080 *)
+      ENHANCED_KEY       = CONTROLKEYSTATE_SET {ENHANCED__KEY};       (* 0x0100 *)
+
+TYPE KEY_EVENT_RECORD = RECORD
+                               bKeyDown         : BOOL;
+                               wRepeatCount     : WORD;
+                               wVirtualKeyCode  : WORD;
+                               wVirtualScanCode : WORD;
+                               uChar            : RECORD
+                                                  CASE : BOOLEAN OF
+                                                  | TRUE  : UnicodeChar : WCHAR;
+                                                  | FALSE : AsciiChar   : CHAR;
+                                                  END;
+                                                  END;
+                               dwControlKeyState     : CONTROLKEYSTATE_SET;
+                        END;
+    PKEY_EVENT_RECORD = POINTER TO KEY_EVENT_RECORD;
+
+(*
+** ButtonState flags
+*)
+
+TYPE BUTTONSTATE_ENUM = (FROM__LEFT_1ST_BUTTON_PRESSED,  (* 0 *)
+                         RIGHTMOST__BUTTON_PRESSED,      (* 1 *)
+                         FROM__LEFT_2ND_BUTTON_PRESSED,  (* 2 *)
+                         FROM__LEFT_3RD_BUTTON_PRESSED,  (* 3 *)
+                         FROM__LEFT_4TH_BUTTON_PRESSED); (* 4 *)
+     BUTTONSTATE_SET = SET OF BUTTONSTATE_ENUM;
+
+CONST FROM_LEFT_1ST_BUTTON_PRESSED = BUTTONSTATE_SET {FROM__LEFT_1ST_BUTTON_PRESSED}; (* 0x0001 *)
+      RIGHTMOST_BUTTON_PRESSED     = BUTTONSTATE_SET {RIGHTMOST__BUTTON_PRESSED    }; (* 0x0002 *)
+      FROM_LEFT_2ND_BUTTON_PRESSED = BUTTONSTATE_SET {FROM__LEFT_2ND_BUTTON_PRESSED}; (* 0x0004 *)
+      FROM_LEFT_3RD_BUTTON_PRESSED = BUTTONSTATE_SET {FROM__LEFT_3RD_BUTTON_PRESSED}; (* 0x0008 *)
+      FROM_LEFT_4TH_BUTTON_PRESSED = BUTTONSTATE_SET {FROM__LEFT_4TH_BUTTON_PRESSED}; (* 0x0010 *)
+
+(*
+** EventFlags
+*)
+
+TYPE EVENTFLAGS_ENUM = (MOUSE__MOVED,   (* 0 *)
+                        DOUBLE__CLICK,  (* 1 *)
+                        MOUSE__WHEELED);(* 2 *)
+
+     EVENTFLAGS_SET = SET OF EVENTFLAGS_ENUM;
+
+CONST MOUSE_MOVED  = EVENTFLAGS_SET {MOUSE__MOVED};   (* 0x0001 *)
+      DOUBLE_CLICK = EVENTFLAGS_SET {DOUBLE__CLICK};  (* 0x0002 *)
+
+TYPE MOUSE_EVENT_RECORD = RECORD
+                                 dwMousePosition   : COORD;
+                                 dwButtonState     : BUTTONSTATE_SET;
+                                 dwControlKeyState : CONTROLKEYSTATE_SET;
+                                 dwEventFlags      : EVENTFLAGS_SET;
+                          END;
+    PMOUSE_EVENT_RECORD = POINTER TO MOUSE_EVENT_RECORD;
+
+
+TYPE WINDOW_BUFFER_SIZE_RECORD = RECORD
+                                        dwSize : COORD;
+                                 END;
+    PWINDOW_BUFFER_SIZE_RECORD = POINTER TO WINDOW_BUFFER_SIZE_RECORD;
+
+TYPE MENU_EVENT_RECORD = RECORD
+                                dwCommandId : UINT;
+                         END;
+    PMENU_EVENT_RECORD = POINTER TO MENU_EVENT_RECORD;
+
+TYPE FOCUS_EVENT_RECORD = RECORD
+                                 bSetFocus : BOOL;
+                          END;
+    PFOCUS_EVENT_RECORD = POINTER TO FOCUS_EVENT_RECORD;
+
+(*
+**  EventType flags:
+*)
+
+(* This type hasn't been converted into setbecause it doesn't have set
+   semantics: only one bit may be set at a time; it is also intended to be used 
+   as a variant record key field which isn't allowed for set type
+*)
+
+TYPE  EVENTTYPE = WORD;
+
+CONST KEY_EVENT                = EVENTTYPE (0001H);
+      MOUSE_EVENT              = EVENTTYPE (0002H);
+      WINDOW_BUFFER_SIZE_EVENT = EVENTTYPE (0004H);
+      MENU_EVENT               = EVENTTYPE (0008h);
+      FOCUS_EVENT              = EVENTTYPE (0010H);
+
+TYPE INPUT_RECORD = RECORD
+       EventType : EVENTTYPE;
+       Event: RECORD
+              CASE : EVENTTYPE OF
+              | KEY_EVENT                : KeyEvent              : KEY_EVENT_RECORD;
+              | MOUSE_EVENT              : MouseEvent            : MOUSE_EVENT_RECORD;
+              | WINDOW_BUFFER_SIZE_EVENT : WindowBufferSizeEvent : WINDOW_BUFFER_SIZE_RECORD;
+              | MENU_EVENT               : MenuEvent             : MENU_EVENT_RECORD ;
+              | FOCUS_EVENT              : FocusEvent            : FOCUS_EVENT_RECORD;
+              END;
+              END;
+     END;
+     PINPUT_RECORD = POINTER TO INPUT_RECORD;
+
+(*
+** Attributes flags:
+*)
+
+<* PUSH *> <* SETSIZE = "2" *>
+
+TYPE CHAR_ATTRIBUTES_ENUM = (FOREGROUND__BLUE,       (* 0 - text color contains blue.        *)
+                             FOREGROUND__GREEN,      (* 1 - text color contains green.       *)
+                             FOREGROUND__RED,        (* 2 - text color contains red.         *)
+                             FOREGROUND__INTENSITY,  (* 3 - text color is intensified.       *)
+                             BACKGROUND__BLUE,       (* 4 - background color contains blue.  *)
+                             BACKGROUND__GREEN,      (* 5 - background color contains green. *)
+                             BACKGROUND__RED,        (* 6 - background color contains red.   *)
+                             BACKGROUND__INTENSITY); (* 7 - background color is intensified. *)
+
+       CHAR_ATTRIBUTES_SET = SET OF CHAR_ATTRIBUTES_ENUM;
+
+CONST FOREGROUND_BLUE      = CHAR_ATTRIBUTES_SET {FOREGROUND__BLUE};      (* 0001h *)
+      FOREGROUND_GREEN     = CHAR_ATTRIBUTES_SET {FOREGROUND__GREEN};     (* 0002h *)
+      FOREGROUND_RED       = CHAR_ATTRIBUTES_SET {FOREGROUND__RED};       (* 0004h *)
+      FOREGROUND_INTENSITY = CHAR_ATTRIBUTES_SET {FOREGROUND__INTENSITY}; (* 0008h *)
+      BACKGROUND_BLUE      = CHAR_ATTRIBUTES_SET {BACKGROUND__BLUE};      (* 0010h *)
+      BACKGROUND_GREEN     = CHAR_ATTRIBUTES_SET {BACKGROUND__GREEN};     (* 0020h *)
+      BACKGROUND_RED       = CHAR_ATTRIBUTES_SET {BACKGROUND__RED};       (* 0040h *)
+      BACKGROUND_INTENSITY = CHAR_ATTRIBUTES_SET {BACKGROUND__INTENSITY}; (* 0080h *)
+
+<* POP *>
+
+TYPE CHAR_INFO = RECORD
+                        Char: RECORD
+                              CASE : BOOLEAN OF
+                              | TRUE  : UnicodeChar : WCHAR;
+                              | FALSE : AsciiChar   : CHAR;
+                              END;
+                              END;
+                        Attributes : CHAR_ATTRIBUTES_SET;
+                 END;
+    PCHAR_INFO = POINTER TO CHAR_INFO;
+
+
+TYPE CONSOLE_SCREEN_BUFFER_INFO = RECORD
+                                         dwSize              : COORD;
+                                         dwCursorPosition    : COORD;
+                                         wAttributes         : CHAR_ATTRIBUTES_SET;
+                                         srWindow            : SMALL_RECT;
+                                         dwMaximumWindowSize : COORD;
+                                  END;
+    PCONSOLE_SCREEN_BUFFER_INFO = POINTER TO CONSOLE_SCREEN_BUFFER_INFO;
+
+TYPE CONSOLE_CURSOR_INFO = RECORD
+                                  dwSize   : DWORD;
+                                  bVisible : BOOL;
+                           END;
+    PCONSOLE_CURSOR_INFO = POINTER TO CONSOLE_CURSOR_INFO;
+
+(*
+** typedef for ctrl-c handler routines
+*)
+
+TYPE CTRL_TYPE = (CTRL_C_EVENT,         (* 0 *)
+                  CTRL_BREAK_EVENT,     (* 1 *)
+                  CTRL_CLOSE_EVENT,     (* 2 *)
+                  CTRL_TYPE_3,          (* 3 is reserved! *)
+                  CTRL_TYPE_4,          (* 4 is reserved! *)
+                  CTRL_LOGOFF_EVENT,    (* 5 *)
+                  CTRL_SHUTDOWN_EVENT); (* 6 *)
+
+TYPE PHANDLER_ROUTINE = PROCEDURE (CTRL_TYPE) : BOOL;
+
+(* Console mode flags *)
+
+TYPE CONSOLE_MODE_ENUM = (CONSOLE_MODE_0,
+                          CONSOLE_MODE_1,
+                          CONSOLE_MODE_2,
+                          CONSOLE_MODE_3,
+                          CONSOLE_MODE_4);
+
+    CONSOLE_MODE_SET = SET OF CONSOLE_MODE_ENUM;
+
+(*
+**  Input Mode flags:
+*)
+
+CONST ENABLE__PROCESSED_INPUT = CONSOLE_MODE_0;
+      ENABLE__LINE_INPUT      = CONSOLE_MODE_1;
+      ENABLE__ECHO_INPUT      = CONSOLE_MODE_2;
+      ENABLE__WINDOW_INPUT    = CONSOLE_MODE_3;
+      ENABLE__MOUSE_INPUT     = CONSOLE_MODE_4;
+
+TYPE INPUT_MODE_SET = CONSOLE_MODE_SET;
+
+CONST ENABLE_PROCESSED_INPUT = INPUT_MODE_SET {ENABLE__PROCESSED_INPUT}; (* 0x0001 *)
+      ENABLE_LINE_INPUT      = INPUT_MODE_SET {ENABLE__LINE_INPUT     }; (* 0x0002 *)
+      ENABLE_ECHO_INPUT      = INPUT_MODE_SET {ENABLE__ECHO_INPUT     }; (* 0x0004 *)
+      ENABLE_WINDOW_INPUT    = INPUT_MODE_SET {ENABLE__WINDOW_INPUT   }; (* 0x0008 *)
+      ENABLE_MOUSE_INPUT     = INPUT_MODE_SET {ENABLE__MOUSE_INPUT    }; (* 0x0010 *)
+
+(*
+** Output Mode flags:
+*)
+
+CONST ENABLE__PROCESSED_OUTPUT   = CONSOLE_MODE_0;
+      ENABLE__WRAP_AT_EOL_OUTPUT = CONSOLE_MODE_1;
+
+TYPE OUTPUT_MODE_SET = CONSOLE_MODE_SET;
+
+CONST ENABLE_PROCESSED_OUTPUT    = OUTPUT_MODE_SET {ENABLE__PROCESSED_OUTPUT};   (* 0x0001 *)
+      ENABLE_WRAP_AT_EOL_OUTPUT  = OUTPUT_MODE_SET {ENABLE__WRAP_AT_EOL_OUTPUT}; (* 0x0002 *)
+
+(*
+** direct API definitions.
+*)
+
+
+PROCEDURE PeekConsoleInputA (hConsoleInput : HANDLE;
+                             VAR Buffer    : ARRAY OF INPUT_RECORD;
+                             nLength       : DWORD;
+                             VAR NumberOfEventsRead : DWORD) : BOOL;
+
+PROCEDURE PeekConsoleInputW (hConsoleInput : HANDLE;
+                             VAR Buffer    : ARRAY OF INPUT_RECORD;
+                             nLength       : DWORD;
+                             VAR NumberOfEventsRead : DWORD) : BOOL;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST PeekConsoleInput = PeekConsoleInputW;
+<* ELSE *>
+      CONST PeekConsoleInput = PeekConsoleInputA;
+<* END *>
+
+PROCEDURE ReadConsoleInputA (hConsoleInput : HANDLE;
+                             VAR Buffer    : ARRAY OF INPUT_RECORD;
+                             nLength       : DWORD;
+                             VAR NumberOfEventsRead : DWORD) : BOOL;
+
+PROCEDURE ReadConsoleInputW (hConsoleInput : HANDLE;
+                             VAR Buffer    : ARRAY OF INPUT_RECORD;
+                             nLength       : DWORD;
+                             VAR NumberOfEventsRead : DWORD) : BOOL;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST ReadConsoleInput = ReadConsoleInputW;
+<* ELSE *>
+      CONST ReadConsoleInput = ReadConsoleInputA;
+<* END *>
+
+PROCEDURE WriteConsoleInputA (hConsoleInput : HANDLE;
+                              Buffer        : ARRAY OF INPUT_RECORD;
+                              nLength       : DWORD;
+                              VAR NumberOfEventsWritten : DWORD) : BOOL;
+
+PROCEDURE WriteConsoleInputW (hConsoleInput : HANDLE;
+                              Bufrer        : ARRAY OF INPUT_RECORD;
+                              nLength       : DWORD;
+                              VAR lpNumberOfEventsWritten : DWORD) : BOOL;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST WriteConsoleInput = WriteConsoleInputW;
+<* ELSE *>
+      CONST WriteConsoleInput = WriteConsoleInputA;
+<* END *>
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE rtlReadConsoleOutputA (hConsoleOutput : HANDLE;
+                                 VAR Buffer     : ARRAY OF CHAR_INFO;
+                                 dwBufferSize   : COORD;
+                                 dwBufferCoord  : COORD;
+                                 VAR ReadRegion : SMALL_RECT) : BOOL;
+
+PROCEDURE rtlReadConsoleOutputW (hConsoleOutput : HANDLE;
+                                 VAR Buffer     : ARRAY OF CHAR_INFO;
+                                 dwBufferSize   : COORD;
+                                 dwBufferCoord  : COORD;
+                                 VAR ReadRegion : SMALL_RECT) : BOOL;
+
+CONST ReadConsoleOutputA = rtlReadConsoleOutputA;
+      ReadConsoleOutputW = rtlReadConsoleOutputW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ReadConsoleOutput = ReadConsoleOutputW;
+<* ELSE *>
+      CONST ReadConsoleOutput = ReadConsoleOutputA;
+<* END *>
+<* ELSE *> (* BACKEND *)
+PROCEDURE ReadConsoleOutput (hConsoleOutput : HANDLE;
+                             VAR Buffer     : ARRAY OF CHAR_INFO;
+                             dwBufferSize   : COORD;
+                             dwBufferCoord  : COORD;
+                             VAR ReadRegion : SMALL_RECT) : BOOL;
+<* END *> (* BACKEND *)
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE rtlWriteConsoleOutputA (hConsoleOutput  : HANDLE;
+                                  Buffer          : ARRAY OF CHAR_INFO;
+                                  dwBufferSize    : COORD;
+                                  dwBufferCoord   : COORD;
+                                  VAR WriteRegion : SMALL_RECT) : BOOL;
+
+PROCEDURE rtlWriteConsoleOutputW (hConsoleOutput  : HANDLE;
+                                  Buffer          : ARRAY OF CHAR_INFO;
+                                  dwBufferSize    : COORD;
+                                  dwBufferCoord   : COORD;
+                                  VAR WriteRegion : SMALL_RECT) : BOOL;
+
+CONST WriteConsoleOutputA = rtlWriteConsoleOutputA;
+      WriteConsoleOutputW = rtlWriteConsoleOutputW;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST WriteConsoleOutput = WriteConsoleOutputW;
+<* ELSE *>
+      CONST WriteConsoleOutput = WriteConsoleOutputA;
+<* END *>
+<* ELSE *> (* BACKEND *)
+PROCEDURE WriteConsoleOutput (hConsoleOutput  : HANDLE;
+                              Buffer          : ARRAY OF CHAR_INFO;
+                              dwBufferSize    : COORD;
+                              dwBufferCoord   : COORD;
+                              VAR WriteRegion : SMALL_RECT) : BOOL;
+<* END *> (* BACKEND *)
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE rtlReadConsoleOutputCharacterA (hConsoleOutput : HANDLE;
+                                          VAR Character  : ARRAY OF CHAR;
+                                          nLength        : DWORD;
+                                          dwReadCoord    : COORD;
+                                          VAR NumberOfCharsRead : DWORD) : BOOL;
+
+PROCEDURE rtlReadConsoleOutputCharacterW (hConsoleOutput : HANDLE;
+                                          VAR Character  : ARRAY OF WCHAR;
+                                          nLength        : DWORD;
+                                          dwReadCoord    : COORD;
+                                          VAR NumberOfCharsRead : DWORD) : BOOL;
+
+CONST ReadConsoleOutputCharacterA = rtlReadConsoleOutputCharacterA;
+      ReadConsoleOutputCharacterW = rtlReadConsoleOutputCharacterW;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST ReadConsoleOutputCharacter = ReadConsoleOutputCharacterW;
+<* ELSE *>
+      CONST ReadConsoleOutputCharacter = ReadConsoleOutputCharacterA;
+<* END *>
+<* ELSE *> (* BACKEND *)
+PROCEDURE ReadConsoleOutputCharacter (hConsoleOutput : HANDLE;
+                                      VAR Character  : ARRAY OF WCHAR;
+                                      nLength        : DWORD;
+                                      dwReadCoord    : COORD;
+                                      VAR NumberOfCharsRead : DWORD) : BOOL;
+<* END *> (* BACKEND *)
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE rtlReadConsoleOutputAttribute (hConsoleOutput        : HANDLE;
+                                         VAR Attribute         : ARRAY OF CHAR_ATTRIBUTES_SET;
+                                         nLength               : DWORD;
+                                         dwReadCoord           : COORD;
+                                         VAR NumberOfAttrsRead : DWORD) : BOOL;
+
+CONST ReadConsoleOutputAttribute = rtlReadConsoleOutputAttribute;
+
+PROCEDURE rtlWriteConsoleOutputCharacterA (hConsoleOutput : HANDLE;
+                                           Character      : ARRAY OF CHAR;
+                                           nLength        : DWORD;
+                                           dwWriteCoord   : COORD;
+                                           VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+PROCEDURE rtlWriteConsoleOutputCharacterW (hConsoleOutput : HANDLE;
+                                           Character      : ARRAY OF WCHAR;
+                                           nLength        : DWORD;
+                                           dwWriteCoord   : COORD;
+                                           VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+CONST WriteConsoleOutputCharacterW = rtlWriteConsoleOutputCharacterW;
+      WriteConsoleOutputCharacterA = rtlWriteConsoleOutputCharacterA;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST WriteConsoleOutputCharacter = WriteConsoleOutputCharacterW;
+<* ELSE *>
+      CONST WriteConsoleOutputCharacter = WriteConsoleOutputCharacterA;
+<* END *>
+
+
+PROCEDURE rtlWriteConsoleOutputAttribute (hConsoleOutput : HANDLE;
+                                          Attribute      : ARRAY OF CHAR_ATTRIBUTES_SET;
+                                          nLength        : DWORD;
+                                          dwWriteCoord   : COORD;
+                                          VAR NumberOfAttrsWritten : DWORD) : BOOL;
+
+CONST WriteConsoleOutputAttribute = rtlWriteConsoleOutputAttribute;
+
+PROCEDURE rtlFillConsoleOutputCharacterA (hConsoleOutput : HANDLE;
+                                          cCharacter     : CHAR;
+                                          nLength        : DWORD;
+                                          dwWriteCoord   : COORD;
+                                          VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+PROCEDURE rtlFillConsoleOutputCharacterW (hConsoleOutput : HANDLE;
+                                          cCharacter     : WCHAR;
+                                          nLength        : DWORD;
+                                          dwWriteCoord   : COORD;
+                                          VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+CONST FillConsoleOutputCharacterA = rtlFillConsoleOutputCharacterA;
+      FillConsoleOutputCharacterW = rtlFillConsoleOutputCharacterW;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST FillConsoleOutputCharacter = FillConsoleOutputCharacterW;
+<* ELSE *>
+      CONST FillConsoleOutputCharacter = FillConsoleOutputCharacterA;
+<* END *>
+
+PROCEDURE rtlFillConsoleOutputAttribute (hConsoleOutput : HANDLE;
+                                      wAttribute     : CHAR_ATTRIBUTES_SET;
+                                      nLength        : DWORD;
+                                      dwWriteCoord   : COORD;
+                                      VAR NumberOfAttrsWritten : DWORD) : BOOL;
+
+CONST FillConsoleOutputAttribute = rtlFillConsoleOutputAttribute;
+
+<* ELSE *> (* BACKEND *)
+
+PROCEDURE ReadConsoleOutputAttribute (hConsoleOutput        : HANDLE;
+                                      VAR Attribute         : ARRAY OF CHAR_ATTRIBUTES_SET;
+                                      nLength               : DWORD;
+                                      dwReadCoord           : COORD;
+                                      VAR NumberOfAttrsRead : DWORD) : BOOL;
+
+PROCEDURE WriteConsoleOutputCharacter (hConsoleOutput : HANDLE;
+                                       Character      : ARRAY OF CHAR;
+                                       nLength        : DWORD;
+                                       dwWriteCoord   : COORD;
+                                       VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+PROCEDURE WriteConsoleOutputAttribute (hConsoleOutput : HANDLE;
+                                       Attribute      : ARRAY OF CHAR_ATTRIBUTES_SET;
+                                       nLength        : DWORD;
+                                       dwWriteCoord   : COORD;
+                                       VAR NumberOfAttrsWritten : DWORD) : BOOL;
+
+PROCEDURE FillConsoleOutputCharacter (hConsoleOutput : HANDLE;
+                                      cCharacter     : CHAR;
+                                      nLength        : DWORD;
+                                      dwWriteCoord   : COORD;
+                                      VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+PROCEDURE FillConsoleOutputAttribute (hConsoleOutput : HANDLE;
+                                      wAttribute     : CHAR_ATTRIBUTES_SET;
+                                      nLength        : DWORD;
+                                      dwWriteCoord   : COORD;
+                                      VAR NumberOfAttrsWritten : DWORD) : BOOL;
+<* END *> (* BACKEND *)
+
+PROCEDURE GetConsoleMode (hConsoleHandle : HANDLE;
+                          VAR Mode       : CONSOLE_MODE_SET) : BOOL;
+
+PROCEDURE GetNumberOfConsoleInputEvents (hConsoleInput      : HANDLE;
+                                         VAR NumberOfEvents : DWORD) : BOOL;
+
+PROCEDURE GetConsoleScreenBufferInfo (hConsoleOutput : HANDLE;
+                                      VAR ConsoleScreenBufferInfo : CONSOLE_SCREEN_BUFFER_INFO
+                                     ) : BOOL;
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE rtlGetLargestConsoleWindowSize (hConsoleOutput : HANDLE) : COORD;
+CONST GetLargestConsoleWindowSize = rtlGetLargestConsoleWindowSize;
+<* ELSE *>
+PROCEDURE GetLargestConsoleWindowSize (hConsoleOutput : HANDLE) : COORD;
+<* END *>
+
+PROCEDURE GetConsoleCursorInfo (hConsoleOutput : HANDLE;
+                                VAR ConsoleCursorInfo : CONSOLE_CURSOR_INFO) : BOOL;
+
+PROCEDURE GetNumberOfConsoleMouseButtons (VAR NumberOfMouseButtons : DWORD) : BOOL;
+
+PROCEDURE SetConsoleMode (hConsoleHandle : HANDLE;
+                          dwMode         : CONSOLE_MODE_SET) : BOOL;
+
+PROCEDURE SetConsoleActiveScreenBuffer (hConsoleOutput : HANDLE) : BOOL;
+
+PROCEDURE FlushConsoleInputBuffer (hConsoleInput : HANDLE) : BOOL;
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE rtlSetConsoleScreenBufferSize (hConsoleOutput : HANDLE;
+                                         dwSize         : COORD) : BOOL;
+CONST SetConsoleScreenBufferSize = rtlSetConsoleScreenBufferSize;
+PROCEDURE rtlSetConsoleCursorPosition (hConsoleOutput   : HANDLE;
+                                       dwCursorPosition : COORD) : BOOL;
+CONST SetConsoleCursorPosition = rtlSetConsoleCursorPosition;
+<* ELSE *>
+PROCEDURE SetConsoleScreenBufferSize (hConsoleOutput : HANDLE;
+                                      dwSize         : COORD) : BOOL;
+PROCEDURE SetConsoleCursorPosition (hConsoleOutput   : HANDLE;
+                                    dwCursorPosition : COORD) : BOOL;
+<* END *>
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE SetConsoleCursorInfo (hConsoleOutput    : HANDLE;
+                                ConsoleCursorInfo : CONSOLE_CURSOR_INFO) : BOOL;
+<* ELSE *>
+PROCEDURE SetConsoleCursorInfo (hConsoleOutput    : HANDLE;
+                                ConsoleCursorInfo : PCONSOLE_CURSOR_INFO) : BOOL;
+<* END *>
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE rtlScrollConsoleScreenBufferA (hConsoleOutput      : HANDLE;
+                                         ScrollRectangle     : SMALL_RECT;
+                                         ClipRectangle       : PCSMALL_RECT; (* IN *) (* can be NIL *)
+                                         dwDestinationOrigin : COORD;
+                                         Fill                : CHAR_INFO) : BOOL;
+
+PROCEDURE rtlScrollConsoleScreenBufferW (hConsoleOutput      : HANDLE;
+                                         ScrollRectangle     : SMALL_RECT;
+                                         ClipRectangle       : PCSMALL_RECT; (* IN *) (* can be NIL *)
+                                         dwDestinationOrigin : COORD;
+                                         Fill                : CHAR_INFO) : BOOL;
+
+CONST ScrollConsoleScreenBufferA = rtlScrollConsoleScreenBufferA;
+      ScrollConsoleScreenBufferW = rtlScrollConsoleScreenBufferW;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST ScrollConsoleScreenBuffer = ScrollConsoleScreenBufferW;
+<* ELSE *>
+      CONST ScrollConsoleScreenBuffer = ScrollConsoleScreenBufferA;
+<* END *>
+<* ELSE *>
+PROCEDURE ScrollConsoleScreenBuffer (hConsoleOutput      : HANDLE;
+                                     ScrollRectangle     : PCSMALL_RECT;
+                                     ClipRectangle       : PCSMALL_RECT; (* IN *) (* can be NIL *)
+                                     dwDestinationOrigin : COORD;
+                                     Fill                : PCHAR_INFO) : BOOL;
+<* END *>
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE SetConsoleWindowInfo (hConsoleOutput : HANDLE;
+                                bAbsolute      : BOOL;
+                                ConsoleWindow  : SMALL_RECT) : BOOL;
+<* ELSE *>
+PROCEDURE SetConsoleWindowInfo (hConsoleOutput : HANDLE;
+                                bAbsolute      : BOOL;
+                                ConsoleWindow  : PSMALL_RECT) : BOOL;
+<* END *>
+
+PROCEDURE SetConsoleTextAttribute (hConsoleOutput : HANDLE;
+                                   wAttributes    : CHAR_ATTRIBUTES_SET) : BOOL;
+
+PROCEDURE SetConsoleCtrlHandler (HandlerRoutine : PHANDLER_ROUTINE;
+                                 Add            : BOOL) : BOOL;
+
+PROCEDURE GenerateConsoleCtrlEvent (dwCtrlEvent      : CTRL_TYPE;
+                                    dwProcessGroupId : DWORD) : BOOL;
+
+
+PROCEDURE AllocConsole () : BOOL;
+PROCEDURE FreeConsole  () : BOOL;
+
+PROCEDURE GetConsoleTitleA (lpConsoleTitle : PSTR;
+                            nSize          : DWORD) : DWORD;
+
+PROCEDURE GetConsoleTitleW (lpConsoleTitle : PWSTR;
+                            nSize          : DWORD) : DWORD;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST GetConsoleTitle = GetConsoleTitleW;
+<* ELSE *>
+      CONST GetConsoleTitle = GetConsoleTitleA;
+<* END *>
+
+PROCEDURE SetConsoleTitleA (ConsoleTitle : ARRAY OF CHAR) : BOOL;
+
+PROCEDURE SetConsoleTitleW (ConsoleTitle : ARRAY OF WCHAR) : BOOL;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST SetConsoleTitle = SetConsoleTitleW;
+<* ELSE *>
+      CONST SetConsoleTitle = SetConsoleTitleA;
+<* END *>
+
+PROCEDURE ReadConsoleA (hConsoleInput         : HANDLE;
+                        lpBuffer              : PVOID;
+                        nNumberOfCharsToRead  : DWORD;
+                        VAR NumberOfCharsRead : DWORD;
+                        Reserved              : PVOID) : BOOL;
+
+PROCEDURE ReadConsoleW (hConsoleInput         : HANDLE;
+                        lpBuffer              : PVOID;
+                        nNumberOfCharsToRead  : DWORD;
+                        VAR NumberOfCharsRead : DWORD;
+                        Reserved              : PVOID) : BOOL;
+
+<* IF DEFINED  (UNICODE) THEN *>
+      CONST ReadConsole = ReadConsoleW;
+<* ELSE *>
+      CONST ReadConsole = ReadConsoleA;
+<* END *>
+
+PROCEDURE WriteConsoleA (hConsoleOutput           : HANDLE;
+                         Buffer                   : LPCVOID;
+                         nNumberOfCharsToWrite    : DWORD;
+                         VAR NumberOfCharsWritten : DWORD;
+                         Reserved                 : PVOID) : BOOL;
+
+PROCEDURE WriteConsoleW (hConsoleOutput           : HANDLE;
+                         Buffer                   : LPCVOID;
+                         nNumberOfCharsToWrite    : DWORD;
+                         VAR NumberOfCharsWritten : DWORD;
+                         Reserved                 : PVOID) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST WriteConsole = WriteConsoleW;
+<* ELSE *>
+      CONST WriteConsole = WriteConsoleA;
+<* END *>
+
+CONST CONSOLE_TEXTMODE_BUFFER = 1;
+
+PROCEDURE CreateConsoleScreenBuffer (DesiredAccess : ACCESS_MASK;
+                                     dwShareMode   : FILE_SHARE_MODE;
+                                     lpSecurityAttributes : PSECURITY_ATTRIBUTES; (* IN *)
+                                     dwFlags       : DWORD;
+                                     lpScreenBufferData : PVOID) : HANDLE;
+
+PROCEDURE GetConsoleCP () : UINT;
+PROCEDURE SetConsoleCP (wCodePageID : UINT) : BOOL;
+PROCEDURE GetConsoleOutputCP () : UINT;
+PROCEDURE SetConsoleOutputCP (wCodePageID : UINT) : BOOL;
+
+
+END WinCon.

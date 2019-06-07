@@ -1,0 +1,128 @@
+% Project file for XD transport
+% modes are: enduser, work
+
+!if not defined trialversion then
+  !new trialversion-
+!end
+
+!if defined transport then
+
+  !if not defined mode then
+    -mode := work
+  !end
+
+  !if not defined placement then
+    !if (mode="enduser") then
+      -placement := release
+    !else
+      -placement := current
+    !end
+  !end
+
+  -m2extensions+
+  -o2extensions-
+  -m2addtypes+
+
+  -implib-
+  -usedll+
+
+  -gendll+
+  -dllexport+
+
+
+  % ======================================================
+  % Files lookup settings
+  % ======================================================
+  -m2cmpsym+
+  -changesym+
+  -makefile+
+  -longname+
+
+  % output settings
+  !if transport = "tcp" then
+    -mkfname = xd_t_tcp
+  !elsif transport = "tmp" then
+    -mkfname = xd_t_tmp
+  !end
+
+  -lookup = *.exe = $!/workplace
+  -lookup = *.dll = $!/workplace
+
+  -lookup = *.lnk = ch
+  -lookup = *.obj = ch
+  -lookup = *.sym = sym
+
+  !if env_target = "x86os2" then
+    -lookup = *.lib  = $!/tcp_lib;   
+  !end
+
+  % Source lookup settings
+  -lookup = *.def = $!\src\xd_rmt;
+  -lookup = *.mod = $!\src\xd_rmt;
+  -lookup = *.edf = $!\src\xd_rmt;
+  !if transport = "tcp" then
+    !if env_target = "x86nt" then
+      -lookup = *.def = $!\src\xd_rmt\win32;
+      -lookup = *.mod = $!\src\xd_rmt\win32;
+    !elsif env_target = "x86os2" then
+      -lookup = *.def = $!\src\xd_rmt\os2;
+      -lookup = *.mod = $!\src\xd_rmt\os2;
+    !end
+  !elsif transport = "tmp" then
+    -lookup = *.mod = $!\src\xd_rmt\template;
+  !end
+
+  -gcthreshold =  96000000
+  -heaplimit = 96000000
+
+  -compilerheap = 16777216
+
+
+  % Runtime checks and debug settings
+  !if mode="enduser" then
+    -gendebug+
+    -lineno+
+    -genhistory+
+    -assert+
+    -checkindex-
+    -checkdindex-
+    -checkrange-
+    -checkset-
+    -checknil-
+    -checkproc-
+    -ioverflow-
+    -coverflow-
+    -foverflow-
+    -xd_debug:-
+  !elsif mode="work" then
+    -gendebug+
+    -lineno+
+    -genhistory+
+    -assert+
+    -checkindex+
+    -checkdindex+
+    -checkrange+
+    -checkset+
+    -checknil+
+    -checkproc+
+    -ioverflow+
+    -coverflow+
+    -foverflow+
+    -dbgfmt = HLL
+    -xd_debug:+
+  !end
+
+  !if transport = "tcp" then
+    -dllname:=xd_t_tcp
+    !if env_target = "x86nt" then
+      !module xd_trans.mod xd_trans.edf
+    !elsif env_target = "x86os2" then
+      -lookup=*.lib=$(LIB)
+      !module xd_trans.mod xd_trans.edf tcp32dll.lib so32dll.lib
+    !end
+  !elsif transport = "tmp" then
+    -dllname:=xd_t_tmp
+    !module xd_trans.mod xd_trans.edf
+  !end
+
+!end

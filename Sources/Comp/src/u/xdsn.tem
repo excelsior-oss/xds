@@ -1,0 +1,59 @@
+!if defined library and library then
+  ! "#M\t= %s\n",mkfname#>mkfext
+  ! "LIBCMD\t= %s\n","libxds"#>"lnk"
+  ! "XDSLIB\t= %s\n","libxds"#>libext
+  !if not defined implib then
+    !new implib=ch\xlibnt.lib
+  !end
+  !  "IMPLIBR\t= %s\n",implib
+
+  !new asmcomp = wasm -3s -d1 -mf -zq -fo=%s %s
+  !new ccomp = @command /c echo $*\n\t@wcc386\
+  -s -d2 -mf -hc -3s -fp3 -za -zm -zq -omiler -s  -7 -I$(INCL) -fo%s %s
+
+  ! "# ------------------ objects enumeration ------------------\n"
+  ! "#                    -------------------\n\n"
+
+  ! "OBJ="; { obj asm : " \\\n\t%s",#>objext }
+  ! "\n"
+
+  ! "# ------------------- target make rules -------------------\n"
+  ! "#                     -----------------\n\n"
+
+  !if env_target="x86nt" then
+    ! "$(XDSLIB) : $(M) $(OBJ) $(IMPLIBR)\n"
+  !else
+    ! "$(XDSLIB) : $(M) $(OBJ)\n"
+  !end
+  ! "\t@echo >$(LIBCMD) /safe-\n"
+  ! { obj asm : "\t@echo >>$(LIBCMD) -+%s\n",#>objext }
+  !if env_target="x86nt" then
+    ! "\t@echo >>$(LIBCMD) -+$(IMPLIBR)\n"
+  !end
+  ! "\t@xlib /new /logo- $(XDSLIB) @$(LIBCMD)\n"
+
+  ! "# ----------------- Dependancy information ----------------\n"
+  ! "#                   ----------------------\n\n"
+  ! { asm : "%-12s : $(M)",#>objext; \
+    " %s\n\t",#asmext; asmcomp,#>objext,#asmext; "\n\n" }
+  ! { c : "%-12s : $(M)",#>objext; \
+    " %s\n\t",#code; ccomp,#>objext,#code; "\n\n" }
+  ! "$(IMPLIBR) : %s\n","xlibnt"#"idf"
+  ! "\txlib /implib /safe- /logo- $(IMPLIBR) %s\n\n","xlibnt"#"idf"
+
+  !"# end of makefile\n"
+
+!else
+  ! "/name=%s\n",project#>exeext
+  ! "%s\n","libxds"#libext
+  !if defined stacklimit then
+    ! "/stack=%s\n",stacklimit
+  !else
+    ! "/stack=128K\n"
+  !end
+  !if gendebug or genhistory or lineno then
+    ! "/debug\n"
+  !end
+  ! "/sys=C\n"
+  ! { imp main oberon : "%s\n",#>objext }
+!end

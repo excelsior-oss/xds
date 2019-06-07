@@ -1,0 +1,69 @@
+TESTPREFIX "sieve"
+STDOUT
+"Iterations 10
+There are 1900 primes in range 1..16384
+"
+
+TEMPLATE EXTENSION "mod"
+"
+
+<* +M2EXTENSIONS *>
+<.ref_aligned.>
+
+MODULE <.name.>;
+
+FROM Printf  IMPORT  printf;
+
+CONST
+  SIZE = 8190;
+
+  maxiter = 10;
+
+
+VAR
+  iter, count: CARDINAL;
+  flags: ARRAY [0..SIZE] OF BOOLEAN;
+
+PROCEDURE iteration;
+VAR
+  i, k, prime: CARDINAL;
+BEGIN
+  FOR i := 0 TO SIZE DO
+    flags[i] := TRUE;
+  END;
+  count := 0;
+  FOR i := 0 TO SIZE DO
+    IF flags[i] THEN
+      prime := i * 2 + 3;
+      k := i + prime;
+      WHILE k <= SIZE DO
+        flags[k] := FALSE;
+        INC (k, prime);
+      END;
+      INC (count)
+    END
+  END
+END iteration;
+
+BEGIN
+  printf ('Iterations %d\n', maxiter);
+  count := 0;
+  FOR iter := 1 TO maxiter DO iteration END;
+  printf ('There are %d primes in range 1..%d\n', count+1, SIZE*2+4);
+END <.name.>.
+
+"
+BEGIN
+  IF FEATURE('M2_MIPS') THEN
+      FOREACH  ref_aligned  IN
+        "<* -REF_ALIGNED *>"
+      , "<* +REF_ALIGNED *>"
+      DO
+          GENERATE RUN_OK;
+      END;
+  ELSE
+      ref_aligned := "";
+      GENERATE RUN_OK;
+  END;
+END
+

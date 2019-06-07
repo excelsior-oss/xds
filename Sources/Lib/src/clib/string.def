@@ -1,0 +1,34 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE [2] string;
+
+FROM SYSTEM IMPORT ADDRESS, int, size_t;
+
+PROCEDURE memchr(s: ADDRESS; c: int; n: size_t): ADDRESS;
+PROCEDURE memcmp(s1,s2: ADDRESS; n: size_t): int;
+PROCEDURE memcpy(dest,src: ADDRESS; n: size_t): ADDRESS;
+PROCEDURE memmove(dest,src: ADDRESS; n: size_t): ADDRESS;
+PROCEDURE memset(s: ADDRESS; c: int; n: size_t): ADDRESS;
+
+PROCEDURE strcat(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strchr(s: ARRAY OF CHAR; c: int): ADDRESS;
+PROCEDURE strcmp(s1,s2: ARRAY OF CHAR): int;
+PROCEDURE strcpy(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strcspn(s1,s2: ARRAY OF CHAR): size_t;
+PROCEDURE strerror(errnum: int): ADDRESS;
+
+PROCEDURE strlen(s: ARRAY OF CHAR): size_t;
+PROCEDURE strncat(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR; n: size_t): ADDRESS;
+PROCEDURE strncmp(s1,s2: ARRAY OF CHAR; n: CARDINAL): int;
+PROCEDURE strncpy(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR; n: size_t): ADDRESS;
+PROCEDURE strpbrk(s1,s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strrchr(s: ARRAY OF CHAR; c: int): ADDRESS;
+PROCEDURE strspn(s1,s2: ARRAY OF CHAR): size_t;
+PROCEDURE strstr(s1,s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strtok(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strxfrm(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR; size: size_t): size_t;
+PROCEDURE strcoll(s1,s2: ARRAY OF CHAR): int;
+
+END string.

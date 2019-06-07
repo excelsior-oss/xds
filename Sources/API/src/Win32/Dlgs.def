@@ -1,0 +1,224 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] Dlgs;
+
+FROM WinDef IMPORT BYTE;
+
+(*---------------------------------------------------------------------------*)
+(* Dlgs.def : UI dialog header                                               *)
+(*---------------------------------------------------------------------------*)
+
+(*----Constants--------------------------------------------------------------*)
+
+CONST ctlFirst    = 0400h;
+      ctlLast     = 04ffh;
+
+    (* Push buttons *)
+
+      psh1        = 0400h;
+      psh2        = 0401h;
+      psh3        = 0402h;
+      psh4        = 0403h;
+      psh5        = 0404h;
+      psh6        = 0405h;
+      psh7        = 0406h;
+      psh8        = 0407h;
+      psh9        = 0408h;
+      psh10       = 0409h;
+      psh11       = 040ah;
+      psh12       = 040bh;
+      psh13       = 040ch;
+      psh14       = 040dh;
+      psh15       = 040eh;
+      pshHelp     = psh15;
+      psh16       = 040fh;
+
+    (* Checkboxes *)
+
+      chx1        = 0410h;
+      chx2        = 0411h;
+      chx3        = 0412h;
+      chx4        = 0413h;
+      chx5        = 0414h;
+      chx6        = 0415h;
+      chx7        = 0416h;
+      chx8        = 0417h;
+      chx9        = 0418h;
+      chx10       = 0419h;
+      chx11       = 041ah;
+      chx12       = 041bh;
+      chx13       = 041ch;
+      chx14       = 041dh;
+      chx15       = 041eh;
+      chx16       = 041fh;
+
+    (* Radio buttons *)
+
+      rad1        = 0420h;
+      rad2        = 0421h;
+      rad3        = 0422h;
+      rad4        = 0423h;
+      rad5        = 0424h;
+      rad6        = 0425h;
+      rad7        = 0426h;
+      rad8        = 0427h;
+      rad9        = 0428h;
+      rad10       = 0429h;
+      rad11       = 042ah;
+      rad12       = 042bh;
+      rad13       = 042ch;
+      rad14       = 042dh;
+      rad15       = 042eh;
+      rad16       = 042fh;
+
+    (* Groups, frames, rectangles, and icons *)
+
+      grp1        = 0430h;
+      grp2        = 0431h;
+      grp3        = 0432h;
+      grp4        = 0433h;
+      frm1        = 0434h;
+      frm2        = 0435h;
+      frm3        = 0436h;
+      frm4        = 0437h;
+      rct1        = 0438h;
+      rct2        = 0439h;
+      rct3        = 043ah;
+      rct4        = 043bh;
+      ico1        = 043ch;
+      ico2        = 043dh;
+      ico3        = 043eh;
+      ico4        = 043fh;
+
+    (* Static text *)
+
+      stc1        = 0440h;
+      stc2        = 0441h;
+      stc3        = 0442h;
+      stc4        = 0443h;
+      stc5        = 0444h;
+      stc6        = 0445h;
+      stc7        = 0446h;
+      stc8        = 0447h;
+      stc9        = 0448h;
+      stc10       = 0449h;
+      stc11       = 044ah;
+      stc12       = 044bh;
+      stc13       = 044ch;
+      stc14       = 044dh;
+      stc15       = 044eh;
+      stc16       = 044fh;
+      stc17       = 0450h;
+      stc18       = 0451h;
+      stc19       = 0452h;
+      stc20       = 0453h;
+      stc21       = 0454h;
+      stc22       = 0455h;
+      stc23       = 0456h;
+      stc24       = 0457h;
+      stc25       = 0458h;
+      stc26       = 0459h;
+      stc27       = 045ah;
+      stc28       = 045bh;
+      stc29       = 045ch;
+      stc30       = 045dh;
+      stc31       = 045eh;
+      stc32       = 045fh;
+
+    (* Listboxes *)
+
+      lst1        = 0460h;
+      lst2        = 0461h;
+      lst3        = 0462h;
+      lst4        = 0463h;
+      lst5        = 0464h;
+      lst6        = 0465h;
+      lst7        = 0466h;
+      lst8        = 0467h;
+      lst9        = 0468h;
+      lst10       = 0469h;
+      lst11       = 046ah;
+      lst12       = 046bh;
+      lst13       = 046ch;
+      lst14       = 046dh;
+      lst15       = 046eh;
+      lst16       = 046fh;
+
+    (* Combo boxes *)
+
+      cmb1        = 0470h;
+      cmb2        = 0471h;
+      cmb3        = 0472h;
+      cmb4        = 0473h;
+      cmb5        = 0474h;
+      cmb6        = 0475h;
+      cmb7        = 0476h;
+      cmb8        = 0477h;
+      cmb9        = 0478h;
+      cmb10       = 0479h;
+      cmb11       = 047ah;
+      cmb12       = 047bh;
+      cmb13       = 047ch;
+      cmb14       = 047dh;
+      cmb15       = 047eh;
+      cmb16       = 047fh;
+
+    (* Edit controls *)
+
+      edt1        = 0480h;
+      edt2        = 0481h;
+      edt3        = 0482h;
+      edt4        = 0483h;
+      edt5        = 0484h;
+      edt6        = 0485h;
+      edt7        = 0486h;
+      edt8        = 0487h;
+      edt9        = 0488h;
+      edt10       = 0489h;
+      edt11       = 048ah;
+      edt12       = 048bh;
+      edt13       = 048ch;
+      edt14       = 048dh;
+      edt15       = 048eh;
+      edt16       = 048fh;
+
+    (* Scroll bars *)
+
+      scr1        = 0490h;
+      scr2        = 0491h;
+      scr3        = 0492h;
+      scr4        = 0493h;
+      scr5        = 0494h;
+      scr6        = 0495h;
+      scr7        = 0496h;
+      scr8        = 0497h;
+
+(* These dialog resource ordinals really start at 0x0600, but the
+ * RC Compiler can't handle hex for resource IDs, hence the decimal.
+ *)
+      FILEOPENORD      = 1536;
+      MULTIFILEOPENORD = 1537;
+      PRINTDLGORD      = 1538;
+      PRNSETUPDLGORD   = 1539;
+      FINDDLGORD       = 1540;
+      REPLACEDLGORD    = 1541;
+      FONTDLGORD       = 1542;
+      FORMATDLGORD31   = 1543;
+      FORMATDLGORD30   = 1544;
+      PAGESETUPDLGORD  = 1546;
+
+
+(*----Types------------------------------------------------------------------*)
+
+TYPE CRGB = RECORD
+                   bRed   : BYTE;
+                   bGreen : BYTE;
+                   bBlue  : BYTE;
+                   bExtra : BYTE;
+            END;
+
+END Dlgs.
+

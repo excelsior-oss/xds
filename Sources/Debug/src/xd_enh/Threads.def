@@ -1,0 +1,48 @@
+-- Содержит определение типов, необходимых для работы
+-- со thread'ами. Типы являются системно-зависимыми.
+-- Предоставляет также набор процедур для поддержания
+-- структур, хранящих информацию о thread
+
+DEFINITION MODULE Threads;
+
+
+IMPORT Def_Thrs;
+IMPORT Krn_Thrs;
+
+
+CONST
+  GetThreadDescription = Krn_Thrs.GetThreadDescription;
+
+  SwitchToThread       = Krn_Thrs.SwitchToThread;
+
+  SuspendThread        = Krn_Thrs.SuspendThread;
+
+  ResumeThread         = Krn_Thrs.ResumeThread;
+
+
+
+TYPE
+  PATHREADS = POINTER TO ARRAY OF Def_Thrs.THREAD;
+
+  THREADS = RECORD
+              Count  : CARDINAL;
+              Threads: PATHREADS;
+            END;
+
+VAR
+  Threads-: THREADS;
+
+
+PROCEDURE NThreads (): CARDINAL;
+
+PROCEDURE NewThread  (): Krn_Thrs.THREAD_INX;
+
+PROCEDURE AddThread  (thread: Def_Thrs.THREAD): Krn_Thrs.THREAD_INX;
+
+PROCEDURE ThreadKilled (thread: Krn_Thrs.THREAD_INX);
+
+PROCEDURE ClearThreads;
+
+
+
+END Threads.

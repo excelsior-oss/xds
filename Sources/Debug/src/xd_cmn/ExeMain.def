@@ -1,0 +1,167 @@
+-- Содержить ряд переменных, отражающих состояние программы
+-- с точки зрения исполнения.
+--
+-- Процедуры для запуска/продолжения исполнения программы.
+-- Исполнение продолжается до возникновения события, после чего
+-- происходит обработка очереди событий и исполнение отлаживаемой
+-- программы либо продолжается, либо останавливается.
+--
+-- Процедуры для установки/проверки/удалении/восстановлении/снятии
+-- точки останова (постоянной или времменной).
+--
+-- Высокоуровневый дисассемблирование команды по адресу,
+-- результат - изображение команды и ее длина.
+
+DEFINITION MODULE ExeMain;
+
+IMPORT KrnTypes;
+IMPORT DI_Types;
+
+IMPORT Events;
+
+IMPORT xStr;
+
+(* Выдача ошибок и предупреждений в процессе загрузки и чтения отл. информации *)
+
+TYPE
+  MESSAGE_PROC = PROCEDURE (ARRAY OF CHAR);
+
+
+VAR
+  ExecAddr  : KrnTypes.ADDRESS; -- Исполняемый адрес
+  ExecComp  : CARDINAL;         -- Исполняемая компонента
+  ExecMod   : CARDINAL;         -- Исполняемый модуль
+  ExecLine  : CARDINAL;         -- Исполняемая строка
+  ExecScope : DI_Types.OBJECT;  -- Текущая область видимости
+
+  (* При исполнении программы была обнаружена точка останова *)
+  WasBreakpoint: CARDINAL;
+
+  (* Программа исполняется для пропуска стартового кода *)
+  (* Если программа завершается во время такого         *)
+  (* исполнения, это означает, что произошла ошибка     *)
+  ProgramSkipToMainEntry: BOOLEAN;
+VAR
+ JumpToMainEntry: BOOLEAN;
+ JumpToProgramEntry: BOOLEAN;
+
+(* Исполнить программу до точки входа *)
+PROCEDURE SkipToMain;
+
+(* Рестарт программы *)
+PROCEDURE Restart (): BOOLEAN;
+
+(* Продолжить исполнение программы с текущего значения счетчика комманд       *)
+(* Исполнение продолжается до возникновения события из множества Stop_Events, *)
+(* после чего происходит обработка очереди событий и исполнение отлаживаемой  *)
+(* программы продолжается. Для останова исполнения программы следует          *)
+(* использовать StopExec (см. ниже)                                           *)
+PROCEDURE Go;
+
+
+(* Обрабатывает очередь событий, пока она не пуста или какая-либо реакция *)
+(* не останавливает обработку очереди                                     *)
+PROCEDURE ProcessEvents;
+
+
+(* Отгрузить программу *)
+PROCEDURE UnloadProgram;
+
+
+TYPE
+  EVENTS_SET = SET OF Events.EVENT_TYPE;
+
+VAR
+  Stop_Events: EVENTS_SET;
+
+(* Включение типа события в это множество приводит к тому, что при возникновении    *)
+(* события соответствующего типа в отлаживаемой программе цикл исполнения           *)
+(* приостановится до обработки накопленной очереди событий.                         *)
+(* !!! КРАЙНЕ НЕ РЕКОМЕНДУЕТСЯ ВЫКЛЮЧАТЬ из этого множества типы событий:           *)
+(* Break, Step, WrProt, User, ProgInt, OutMem  которые предвключены в это множество *)
+(* !!! Если это все таки захочется сделать, то НУЖНО ОЧЕНЬ КРЕПКО ПОДУМАТЬ          *)
+
+
+(* Остановить цикл исполнения отлаживаемой программы                *)
+(* Эта процедура вызывается из обрабочика реакции на событие.       *)
+
+   PROCEDURE StopExec;
+
+
+(* Процедура должна вызываться из реакции на событие                   *)
+(* Ее дейсвие заключается в том, что после дообработки всей цепочки    *)
+(* реакций на обрабатываемое событие, прервутся цикл обработки очереди *)
+(* и цикл исполнения отлаживаемой программы. Если очередь после такого *)
+(* выхода из ExeMain.Go, останется не пустой, то при очередном вызове  *)
+(* Go перед запуском отлаживаемой программы очередь дообработается     *)
+
+   PROCEDURE StopQueueProc;
+
+
+(* Включение/выключение покомандного исполнения *)
+PROCEDURE TurnStepModeOn;
+PROCEDURE TurnStepModeOff;
+
+
+(* Установка/проверка/удаление/восстановление/снятие точки останова *)
+(* по адресу. Запись о точке останова заносится в таблицу           *)
+
+PROCEDURE SetBreakPoint    (addr: KrnTypes.ADDRESS; VAR Index: CARDINAL): BOOLEAN;
+
+PROCEDURE IsBreakPoint (addr: KrnTypes.ADDRESS; VAR Index: CARDINAL): BOOLEAN;
+
+PROCEDURE ClearBreakPoint  (Index: CARDINAL): BOOLEAN;
+
+PROCEDURE UpdateBreakPoint (Index: CARDINAL): BOOLEAN;
+
+PROCEDURE RemoveBreakPoint (VAR Index: CARDINAL): BOOLEAN;
+
+PROCEDURE BreakPointOpCode (Index: CARDINAL; VAR opcode: CARDINAL): BOOLEAN;
+
+
+(* Установка/проверка/удаление/восстановление/снятие временной точки *)
+(* останова по адресу. Временная точка может быть только одна        *)
+
+CONST
+  TmpBreakpointIndex = MAX(CARDINAL)-1;
+
+PROCEDURE SetTmpBreakPoint (addr: KrnTypes.ADDRESS): BOOLEAN;
+
+PROCEDURE RemoveTmpBreakPoint;
+
+PROCEDURE IsTmpBreakPoint (addr: KrnTypes.ADDRESS): BOOLEAN;
+
+PROCEDURE UpdateTmpBreakPoint (): BOOLEAN;
+
+PROCEDURE ClearTmpBreakPoint;
+
+
+
+(* Установка точки останова по адресу. При достижениие заданного *)
+(* адреса исполнение программы будет прервано                    *)
+
+PROCEDURE SetAbsBreakPoint (addr: KrnTypes.ADDRESS): BOOLEAN;
+
+
+
+(* PROCEDURE DisasmInstr (    addr: typ.ADDRESS;                   *)
+(*                            mode: BOOLEAN;                       *)
+(*                        VAR  asm: ARRAY OF CHAR;                 *)
+(*                        VAR  len: CARDINAL): BOOLEAN;            *)
+(* Дисассемблирование команды по адресу, результат - изображение   *)
+(* команды и ее длина. При успешном дисассемблировании вернет TRUE *)
+(* при невозможности - FALSE                                       *)
+
+   PROCEDURE DisasmInstr (    addr: KrnTypes.ADDRESS;
+                              curr: BOOLEAN;
+                          VAR  asm, info: ARRAY OF CHAR;
+                          VAR  len: CARDINAL): BOOLEAN;
+
+
+
+(* По номеру регистра выдать его имя *)
+
+PROCEDURE GetRegName (RegNo: CARDINAL; VAR RegName: ARRAY OF CHAR): BOOLEAN;
+
+
+END ExeMain.

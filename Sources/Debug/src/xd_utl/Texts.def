@@ -1,0 +1,88 @@
+-- Модуль предоставляет абстрактное понятие
+-- текста и набор процедур для работы с ним
+
+DEFINITION MODULE Texts;
+
+IMPORT sys := SYSTEM;
+
+IMPORT xs := xStr;
+
+TYPE
+  txt_ptr = xs.txt_ptr;
+  String  = xs.String;
+
+TYPE
+  TEXT;  (* занумерованная последовательность строк *)
+         (* нумера строк от 0 до LastLine(...)-1    *)
+VAR
+  nil: TEXT;
+
+(* Создается новый текст *)
+PROCEDURE New (VAR t: TEXT);
+
+(* Создается новый текст на базе указанного файла *)
+(* Текст ищется по red-файлу                      *)
+PROCEDURE Open (VAR t: TEXT; name: ARRAY OF CHAR);
+
+(* Указанный текст уничтожается *)
+PROCEDURE Close (VAR t: TEXT);
+
+(* Выдает количество строк в тексте *)
+(* Если вернет 0 - строк нет        *)
+PROCEDURE LastLine (t: TEXT): CARDINAL;
+
+(* Выдает указатель на i-тую строку текста t *)
+(* если строки нет, то выдает пустую строку  *)
+PROCEDURE GetLine (t: TEXT; i: CARDINAL; VAR s: txt_ptr);
+
+(* Добавляет строку в конец текста *)
+PROCEDURE AddLine (t: TEXT; s: ARRAY OF CHAR; SEQ args: sys.BYTE);
+
+(* Вставляет строку в текст перед указанной строкой *)
+(* Если такой строки нет, добавляет в конец текста *)
+PROCEDURE InsLine (t: TEXT; i: CARDINAL; s: ARRAY OF CHAR; SEQ args: sys.BYTE);
+
+(* Удаляет строку из текста *)
+PROCEDURE DelLine (t: TEXT; i: CARDINAL);
+
+(* Выдает ПОЛНОЕ имя указанного текста *)
+PROCEDURE GetName (t: TEXT; VAR name: txt_ptr);
+
+(* Устанавливает имя для указанного текста *)
+PROCEDURE SetName (t: TEXT; name: ARRAY OF CHAR);
+
+(* Выдает размер указанного текста *)
+PROCEDURE GetSize (t: TEXT): CARDINAL;
+
+(* ------------ О б р а б о т к а   о ш и б о к --------- *)
+
+TYPE
+  ErrorProc = PROCEDURE( (*file_name:*) ARRAY OF CHAR);
+
+VAR
+  dummyNotFound  : ErrorProc;   (* файл не найден *)
+  dummyReadError : ErrorProc;   (* ошибка чтения  *)
+  dummyFileEmpty : ErrorProc;   (* файл пустой    *)
+
+  NotFound       : ErrorProc;   (* файл не найден *)
+  ReadError      : ErrorProc;   (* ошибка чтения  *)
+  FileEmpty      : ErrorProc;   (* файл пустой    *)
+
+
+
+TYPE
+  SEQ_TEXT;
+
+VAR
+  seq_nil: SEQ_TEXT;
+
+PROCEDURE SeqOpen (VAR t: SEQ_TEXT; name: ARRAY OF CHAR);
+
+PROCEDURE SeqClose (VAR t: SEQ_TEXT);
+
+PROCEDURE SeqStatus (t: SEQ_TEXT): BOOLEAN;
+
+PROCEDURE SeqReadString (VAR t: SEQ_TEXT; VAR s: ARRAY OF CHAR);
+
+
+END Texts.

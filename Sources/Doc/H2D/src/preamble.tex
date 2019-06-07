@@ -1,0 +1,24 @@
+\newcommand{\BookName}{H2D User's Guide}
+\ifonline\title{H2D User's Guide}\fi
+
+% \def\epsfsize#1#2{\ifnum#1>\hsize\hsize\else#1\fi}  % smaller of natural, hsize
+
+\commontrue
+\makeindex
+
+\newcommand{\ProjectFile}{\ifonline
+\ref[project file]{project}\else
+{\em project file} (see Chapter \ref{project})\fi}
+
+\newcommand{\PPDir}[1]{\ifonline
+{\tt \ref[\##1 directive]{rules:nonstandard:#1}}\else
+{\tt \##1} directive (see \ref{rules:nonstandard:#1})\fi}
+
+\newcommand{\ProjDir}[1]{\ifonline
+{\tt \ref[!#1 directive]{project:#1}}\else
+{\tt !#1} directive (see \ref{project:#1})\fi}
+
+\newcommand{\Sep}{\rule{\textwidth}{0.25 mm}}
+
+
+

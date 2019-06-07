@@ -1,0 +1,5 @@
+-- Обработчик окна пабликов
+
+DEFINITION MODULE Publics;
+
+END Publics.

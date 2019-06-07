@@ -1,0 +1,2885 @@
+\chapter{\XDS{} Modula-2}\label{m2}\index{Modula-2}
+
+This chapter covers details of the \XDS{} implementation of
+the \mt{} language. In the standard
+mode\footnote{When options \OERef{M2EXTENSIONS} and \OERef{M2ADDTYPES}
+are OFF} \xds{} \mt{} complies with ISO 10514 (See
+the statement of compliance and further details in \ref{m2:ISO}).
+The compatibility rules are described in \ref{m2:ISO:comp}. The
+differences between ISO \mt{} and the language described in
+the 4th edition of Wirth's ``Programming in Modula-2'' 
+\ifonline\else\cite{PIM}\fi % !!!
+are listed in \ref{m2:ISO:features}. Language extensions are
+described in \ref{m2:ext}.
+
+\section{ISO Standard compliance}\label{m2:ISO}
+
+\xds{} \mt{} partially complies with the requirements
+of ISO 10514. The details of non-conformities are as follows:
+\begin{itemize}
+\item Not all libraries are available in the current release.
+\item The current release may impose some restrictions
+      on using new language features.
+\end{itemize}
+See Chapter \ref{limits} for further details.
+
+\subsection{Ordering of declarations}\label{m2:dcl:order}
+
+\xds{} \mt{} is a so-called `single-pass' implementation. It
+means that all identifiers must be declared before use.
+According to the International Standard this
+{\em declare-before-use} approach is perfectly valid. The
+alternative approach, ({\em declare-before-use-in-declarations}), can
+be used in so-called `multi-pass' implementations.
+
+A forward declaration must be used to allow forward references
+to a procedure which actual declaration appears later in the
+source text.
+
+\Example
+\begin{verbatim}
+PROCEDURE a(x: INTEGER); FORWARD;
+(* FORWARD declaration *)
+
+PROCEDURE b(x: INTEGER);
+BEGIN
+  a(x-1);
+END b;
+
+PROCEDURE a(n: INTEGER);
+(* proper procedure declaration *)
+BEGIN
+  b(n-1);
+END a;
+\end{verbatim}
+
+To provide source compatibility between `single-pass' and
+`multi-pass' implementations, the Standard requires that all
+conforming `multi-pass' implementations accept and correctly
+process the \verb'FORWARD' directive.
+
+%\section{Implementation-defined features}
+%
+% The value of empty string is 0C.
+
+\section{New language's features}\label{m2:ISO:features}
+
+The  language  described  in the International Standard varies in
+many details from the one described in Wirth's ``Programming
+in Modula-2''\ifonline\else\cite{PIM}\fi. % !!!
+
+The most important innovations are
+\begin{itemize}
+\item complex numbers
+\item module finalization
+\item exception handling
+\item array and record constructors
+\item four new system modules
+\item standard library
+\end{itemize}
+
+{\bf Note:}  The system modules (except the module {\tt SYSTEM})
+are not embedded in the compiler and are implemented as separate
+modules.
+
+\subsection{Lexis}
+
+The ISO \mt{} has some new keywords
+\ifonline\else (table \ref{table:m2:ISO:keywords},
+page \pageref{table:m2:ISO:keywords})\fi{}
+and pervasive identifiers
+\ifonline\else (table \ref{table:m2:ISO:pervasive},
+page \pageref{table:m2:ISO:pervasive})\fi,
+and provides alternatives for some symbols
+\ifonline\else(table \ref{table:m2:ISO:alt},
+page \pageref{table:m2:ISO:alt})\fi.
+It also introduces the syntax for source code directives (or pragmas):
+
+\verb'    Pragma = "<*" pragma_body "*>"'
+
+The Standard does not specify a syntax of \verb|pragma_body|.
+In \XDS{}, source code directives are used for in-line option setting
+and for conditional compilation.
+See \ref{m2:pragmas:inline} for further details.
+
+\begin{table}[bht]
+\footnotesize
+\begin{center}
+\ifonline
+\begin{tabular}{lll}
+\else
+\begin{tabular}{p{3.4cm}p{3.4cm}p{3.4cm}}
+\fi
+AND             & ARRAY                     &       BEGIN           \\
+BY              & CASE                      &       CONST           \\
+DEFINITION      & DIV                       &       DO              \\
+ELSE            & ELSIF                     &       END             \\
+EXIT            & \See{EXCEPT}{}{m2:ISO:exc} &       EXPORT          \\
+\See{FINALLY}{}{m2:ISO:final} & FOR         &       \See{FORWARD}{}{m2:dcl:order}  \\
+FROM            & IF                        &       IMPLEMENTATION  \\
+IMPORT          & IN                        &       LOOP            \\
+MOD             & MODULE                    &       NOT             \\
+OF              & OR                        & \See{PACKEDSET}{}{m2:ISO:sets} \\
+POINTER         & PROCEDURE                 & QUALIFIED             \\
+RECORD          & \See{REM}{}{m2:ISO:rem}    & \See{RETRY}{}{m2:ISO:exc} \\
+REPEAT          & RETURN                    & SET                   \\
+THEN            & TO                        & TYPE                  \\
+UNTIL           & VAR                       & WHILE                 \\
+WITH            
+\end{tabular}
+\end{center}
+\caption{Modula-2 keywords}\label{table:m2:ISO:keywords}
+\end{table}
+
+\begin{table}[hbtp] \tt
+\footnotesize
+\begin{center}
+\begin{tabular}{p{5.0cm}p{5.0cm}}
+ABS             & BITSET    \\
+BOOLEAN         & CARDINAL  \\
+CAP             & CHR             \\
+CHAR            & COMPLEX (\ref{m2:ISO:complex})  \\
+CMPLX (\ref{m2:ISO:complex})  &  DEC             \\
+DISPOSE         & EXCL            \\
+FALSE           & FLOAT     \\
+HALT            & HIGH      \\
+IM (\ref{m2:ISO:complex})       & INC             \\
+INCL            & INT (\ref{m2:ISO:conv})      \\
+INTERRUPTIBLE (\ref{m2:ISO:prot})  & INTEGER   \\
+LENGTH (\ref{m2:ISO:strings})   & LFLOAT (\ref{m2:ISO:conv})         \\
+LONGCOMPLEX (\ref{m2:ISO:complex})    & LONGREAL  \\
+MAX             & MIN             \\
+NEW             & NIL             \\
+ODD             & ORD             \\
+PROC            & PROTECTION (\ref{m2:ISO:prot})     \\
+RE (\ref{m2:ISO:complex})       & REAL            \\
+SIZE            & TRUE      \\
+TRUNC           & UNINTERRUPTIBLE (\ref{m2:ISO:prot}) \\
+VAL              \\
+\end{tabular}
+\end{center}
+\caption{Modula-2 pervasive identifiers}\label{table:m2:ISO:pervasive}
+\end{table}
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{clc}
+\bf Symbol  & \bf Meaning    & \bf Alternative  \\
+\hline
+  \verb+[+  & left bracket   & \verb+(!+        \\
+  \verb+]+  & right bracket  & \verb+!)+        \\
+  \verb+{+  & left brace     & \verb+(:+        \\
+  \verb+}+  & right brace    & \verb+:)+        \\
+  \verb+|+  & case separator & \verb+!+         \\
+  \verb+^+  & dereference    & \verb+@+         \\
+\end{tabular}
+\end{center}
+\caption{Modula-2 alternative symbols}\label{table:m2:ISO:alt}
+\end{table}
+
+\subsection{Complex types}\label{m2:ISO:complex}
+\index{Modula-2!complex types}
+\index{COMPLEX}\index{complex numbers}
+
+Types \verb'COMPLEX' and \verb'LONGCOMPLEX' can be used to represent complex
+numbers.  These types differ in a the range and precision. The
+\verb'COMPLEX' type is defined as a \verb'(REAL,REAL)' pair, while \verb'LONGCOMPLEX'
+consists of a pair of \verb'LONGREAL' values.
+
+There is no notation for a complex literal. A complex value can
+be obtained by applying the standard function {\tt CMPLX} to two reals.
+If both {\tt CMPLX} arguments are real constants the result is the
+complex constant.
+
+\verb'    CONST i = CMPLX(0.0,1.0);'
+
+If both expressions are of the \verb'REAL' type, or if one is of the
+\verb'REAL' type and the other is a real constant, the function returns
+a \verb'COMPLEX' value. If both expressions are of the \verb'LONGREAL' type,
+or if one is of the \verb'LONGREAL' type and the other is a real constant
+the function returns a \verb'LONGCOMPLEX' value. The following table
+summarizes the permitted types and the result type:
+\begin{center}
+\small \tt
+\begin{tabular}{l|lll}
+              & REAL     & LONGREAL    & real constant    \\
+\hline
+REAL          & REAL     & error       & COMPLEX          \\
+LONGREAL      & error    & LONGCOMPLEX & LONGCOMPLEX      \\
+real constant & COMPLEX  & LONGCOMPLEX & complex constant
+\end{tabular}
+\end{center}
+
+Standard functions {\tt RE} and {\tt IM} can be used to obtain
+a real or imaginary part of a value of a complex type. Both
+functions have one formal parameter. If the actual parameter is of the \verb'COMPLEX'
+type, both functions return a \verb'REAL' value; if the parameter is of
+the \verb'LONGCOMPLEX' type, functions return a \verb'LONGREAL' value; otherwise the
+parameter should be a complex constant and functions return a real
+constant.
+
+\verb'    CONST one = IM(CMPLX(0.0,1.0));'
+
+There are four arithmetic binary operators for operands of a complex
+type: addition (\verb|+|), subtraction (\verb|-|), multiplication
+(\verb|*|), and division (\verb|/|). The following table indicates
+the result of an operation for permitted combinations:
+
+\begin{center}
+\small \tt
+\begin{tabular}{l|lll}
+                 & COMPLEX  & LONGCOMPLEX & complex constant \\
+\hline
+COMPLEX          & COMPLEX  & error       & COMPLEX          \\
+LONGCOMPLEX      & error    & LONGCOMPLEX & LONGCOMPLEX      \\
+complex constant & COMPLEX  & LONGCOMPLEX & complex constant \\
+\end{tabular}
+\end{center}
+
+There are two arithmetic unary operators that can be applied to
+the values of a complex type: identity (\verb|+|) and negation
+(\verb|-|). The result is of the operand's type.
+
+Two complex comparison operators are provided for operands of
+complex type: equality (\verb'=') and inequality (\verb'<>').
+
+\Example
+\begin{verbatim}
+    PROCEDURE abs(z: COMPLEX): REAL;
+    BEGIN
+      RETURN RealMath.sqrt(RE(z)*RE(z)+IM(z)*IM(z))
+    END abs;
+\end{verbatim}
+
+\subsection{Sets and packedsets}\label{m2:ISO:sets}
+\index{Modula-2!PACKEDSET}
+
+A set or packedset\footnote{Packedset types are innovated in
+the Standard.} type defines a new elementary type whose set of values is
+the power set of an associated ordinal type called the {\em base
+type} of the set or packedset type.
+
+\begin{verbatim}
+    SetType       = SET OF Type;
+    PackedsetType = PACKEDSET OF Type;
+\end{verbatim}
+
+The International Standard does not require a specific
+representation for set types. Packedset types representation
+has to be mapped to the individual bits of a
+particular underlying architecture. The standard type \verb'BITSET' is a
+predefined packedset type.
+
+The current \xds{} implementation does not distinguish between
+set and packedset types. A set of at least 256 elements can be
+defined.
+
+All set operators, namely union (\verb|+|), difference (\verb|-|),
+intersection (\verb|*|), and symmetrical difference (\verb|/|), can
+be applied to the values of both set and packedset types.
+
+\begin{verbatim}
+    TYPE
+      CharSet = SET OF CHAR;
+      ByteSet = PACKEDSET OF [-127..128];
+
+    VAR
+      letters, digits, alphanum: CharSet;
+      neg, pos, zero : ByteSet;
+     .  .  .
+    letters  := CharSet{'a'..'z','A'..'Z'};
+    digits   := CharSet{'0'..'9'};
+    alphanum := letters + digits;
+
+    neg := ByteSet{-127..-1}; pos := ByteSet{1..127};
+    zero := ByteSet{-127..128}-neg-pos;
+\end{verbatim}
+
+\subsection{Strings}\label{m2:ISO:strings}
+\index{Modula-2!string concatenation}
+
+For operands of the string literal type, the string concatenation
+operation is defined, denoted by the symbol \verb|"+"|. {\bf Note:}
+a character number literal (e.g. \verb'15C') denotes a value of a literal
+string type of length 1. The empty string is compatible with the
+type \verb'CHAR' and has a value equal to the string terminator (\verb'0C').
+
+\begin{verbatim}
+    CONST
+      CR = 15C;
+      LF = 12C;
+      LineEnd = CR + LF;
+      Greeting = "hello " + "world" + LineEnd;
+\end{verbatim}
+
+The new standard function \verb'LENGTH' can be used to obtain the length
+of a string value.
+
+\verb'    PROCEDURE LENGTH(s: ARRAY OF CHAR): CARDINAL;'
+
+\subsection{Value constructors}\label{m2:ISO:aggregates}
+\index{Modula-2!value constructors}
+\index{value constructors}
+
+A value constructor is an expression denoting a value of an array
+type, a record type, or a set type. In case of array
+constructors and record constructors a list of values, known as
+{\em structure components}, is specified to define the values of
+components of an array value or the fields of a record value.
+In case of a set constructor, a list of members is specified,
+whose elements define the elements of the set value.
+
+\begin{verbatim}
+    ValueConstructor = ArrayValue
+                     | RecordValue
+                     | SetValue.
+    ArrayValue  = TypeIdentifier "{"
+                  ArrayComponent { "," ArrayComponent }
+                  "}".
+    ArrayComponent = Component [ BY RepeatCount ].
+    Component   = Expression.
+    RepeatCount = ConstExpression.
+    RecordValue = TypeIdentifier "{"
+                  Component { "," Component }
+                  "}".
+\end{verbatim}
+
+Set constructors are described in PIM.
+
+The total number of components of an array constructor must
+be exactly the same as the number of array's elements (taking into
+account repetition factors). Each component must be
+assignment compatible with the array base type.
+
+The number of components of a record constructor must be exactly
+the same as the number of fields. Each component must be an assignment
+compatible with the type of the field.
+
+A special case is a record constructor for a record with variant
+parts. If the $n$-th field is the tag field the $n$-th component
+must be a constant expression. If there is no ELSE variant part
+associated with the tag field, then the variant associated with the
+value of expression should exist. If no variant is associated with
+the value, then the fields of the ELSE variant part should be
+included in the sequence of components.
+
+The constructor's components may themselves contain lists of
+elements, and such nested constructs need not specify a type
+identifier. This relaxation is necessary for multi-dimensional
+arrays, where the types of the inner components may be anonymous.
+
+\Examples
+\begin{verbatim}
+    TYPE
+      String = ARRAY [0..15] OF CHAR;
+      Person = RECORD
+        name: String;
+        age : CARDINAL;
+      END;
+      Vector = ARRAY [0..2] OF INTEGER;
+      Matrix = ARRAY [0..2] OF Vector;
+
+    VAR
+      string: String;
+      person: Person;
+      vector: Vector;
+      matrix: Matrix;
+       .  .  .
+    BEGIN
+       .  .  .
+      string:=String{" " BY 16};
+      person:=Person{"Alex",32};
+      vector:=Vector{1,2,3};
+      matrix:=Matrix{vector,{4,5,6},Vector{7,8,9}};
+      matrix:=Matrix{vector BY 3};
+\end{verbatim}
+
+\subsection{Multi-dimensional open arrays}
+\index{Modula-2!open arrays}
+
+According to the International Standard, parameters of a
+multi-dimensional open array type are allowed:
+
+\begin{verbatim}
+    PROCEDURE Foo(VAR matrix: ARRAY OF ARRAY OF REAL);
+      VAR i,j: CARDINAL;
+    BEGIN
+      FOR i:=0 TO HIGH(matrix) DO
+        FOR j:=0 TO HIGH(matrix[i]) DO
+          ... matrix[i,j] ...
+        END;
+      END;
+    END Foo;
+
+    VAR a: ARRAY [0..2],[0..2] OF REAL;
+
+    BEGIN
+      Foo(a);
+    END ...
+\end{verbatim}
+
+\subsection{Procedure type declarations}\label{m2:ISO:proc_dcl}
+
+A procedure type identifier may be used in declaration of the type itself.
+This feature is used in the Standard Library. See, for example,
+modules {\tt ConvTypes} and {\tt WholeConv}.
+
+\begin{verbatim}
+    TYPE
+      Scan = PROCEDURE (CHAR; VAR Scan);
+      Func = PROCEDURE (INTEGER): Func;
+\end{verbatim}
+
+\subsection{Procedure constants}\label{m2:ISO:proc_const}
+
+A constant expression may contain values of procedure types, or
+structured values whose components are values of procedure types.
+Procedure constants may be used as a mechanism for procedure
+renaming. In a definition module it is possible to export a renamed
+version of the imported procedure.
+
+\Examples
+\begin{verbatim}
+    TYPE ProcTable = ARRAY [0..3] OF PROC;
+
+    CONST
+      WS = STextIO.WriteString;
+      Table = ProcTable{Up,Down,Left,Right};
+\end{verbatim}
+
+\subsection{Whole number division}\label{m2:ISO:rem}
+
+Along with {\tt DIV} and {\tt MOD} the International Standard
+includes two additional operators for whole number division:
+`\verb+/+' and {\tt REM}.
+
+Operators {\tt DIV} and {\tt MOD} are defined for positive
+divisors only, while `\verb+/+' and {\tt REM} can be used for
+both negative and positive divisors.
+
+The language exception {\tt wholeDivException} (See \ref{m2:ISO:exc})
+is raised if:
+\begin{itemize}
+\item the second operand is zero (for all four operators)
+\item the second operand of {\tt DIV} or {\tt MOD} is negative.
+\end{itemize}
+
+For the given {\tt lval} and {\tt rval}
+
+\verb'    quotient  := lval / rval;'\\
+\verb'    remainder := lval REM rval;'
+
+the following is true (for all non-zero values of {\tt rval}):
+\begin{itemize}
+\item \verb'lval = rval * quotient + remainder'
+
+\item the value of {\tt remainder} is either zero, or an integer of
+the same sign as {\tt lval} and of a smaller absolute value than {\tt rval}.
+\end{itemize}
+
+For the given {\tt lval} and {\tt rval}
+
+\verb'    quotient := lval DIV rval;'\\
+\verb'    modulus  := lval MOD rval;'
+
+the following is true (for all positive values of {\tt rval}):
+\begin{itemize}
+\item \verb'lval = rval * quotient + modules'
+
+\item the value of {\tt modulus} is a non-negative integer
+less than {\tt rval}.
+\end{itemize}
+
+Operations are exemplified in the following table:
+\begin{center}
+\begin{tabular}{c|c|c|c|c}
+{\em op} & 31 {\em op} 10 & 31 {\em op} (-10) & (-31) {\em op} 10 & (-31) {\em op} (-10) \\
+\hline
+\verb+/+ &  3  & -3         &  -3  & 3          \\
+\tt REM  &  1  & 1          &  -1  & -1         \\
+\tt DIV  &  3  & exception  &  -4  & exception  \\
+\tt MOD  &  1  & exception  &   9  & exception  \\
+\end{tabular}
+\end{center}
+
+\subsection{Type conversions}\label{m2:ISO:conv}
+
+The language includes the following type conversion
+functions: {\tt CHR}, {\tt FLOAT}, {\tt INT}, {\tt LFLOAT}, {\tt
+ORD}, {\tt TRUNC} and {\tt VAL}. The functions {\tt INT} and {\tt
+LFLOAT} are not described in PIM.
+
+All the type conversion functions (except {\tt VAL}) have a single
+parameter and can be expressed in terms of the {\tt VAL}
+function.
+\begin{center}
+\begin{tabular}{lll}
+\bf Function    & \bf Parameter   & \bf Equals to       \\
+\hline
+\tt CHR(x)      & whole           & \tt VAL(CHAR,x)     \\
+\tt FLOAT(x)    & real or whole   & \tt VAL(REAL,x)     \\
+\tt INT(x)      & real or ordinal & \tt VAL(INTEGER,x)  \\
+\tt LFLOAT(x)   & real or whole   & \tt VAL(LONGREAL,x) \\
+\tt ORD(x)      & ordinal         & \tt VAL(CARDINAL,x) \\
+\tt TRUNC(x)    & real            & \tt VAL(CARDINAL,x) \\
+\end{tabular}
+\end{center}
+
+The function \verb'VAL' can be used to obtain a value of the specified
+scalar type from an expression of a scalar type. The function has
+two parameters. The first parameter should be a type parameter
+that denotes a scalar type. If the type is a subrange type, the
+result of \verb'VAL' has the host type of the subrange type, otherwise
+it has the type denoted by the type parameter.
+
+The second parameter should be an expression of a scalar type
+and at least one of the restriction shall hold:
+\begin{itemize}
+\item the result type and the type of the expression are identical
+\item both the result type and the type of the expression are whole or
+      real
+\item the result type or the type of the expression is a whole type
+\end{itemize}
+
+In the following table, $\surd$ denotes a valid combination of types
+and $\times$ denotes an invalid combination:
+\begin{center}
+\begin{tabular}{l|ccccc} \hline
+the type of & \multicolumn{5}{c}{the type denoted by the type parameter} \\
+expression  & whole   & real     & \tt CHAR &\tt BOOLEAN  & enumeration \\
+\hline
+whole type  & $\surd$ & $\surd$  & $\surd$  & $\surd$  & $\surd$  \\
+real type   & $\surd$ & $\surd$  & $\times$ & $\times$ & $\times$ \\
+\tt CHAR    & $\surd$ & $\times$ & $\surd$  & $\times$ & $\times$ \\
+\tt BOOLEAN & $\surd$ & $\times$ & $\times$ & $\surd$  & $\times$ \\
+enumeration & $\surd$ & $\times$ & $\times$ & $\times$ & $\surd$  \\
+\end{tabular}
+\end{center}
+
+An exception is raised if the value of \verb'x' is outside the range of
+the type \verb'T' in the call {\tt VAL(T,x)}. If {\tt x} is of a real type,
+the calls {\tt VAL(INTEGER,x)} and {\tt VAL(CARDINAL,x)} both
+truncate the value of {\tt x}.
+
+\subsection{NEW and DISPOSE}\label{m2:ISO:NEW}
+\index{Modula-2!NEW and DISPOSE}
+\index{NEW (M2)}\index{DISPOSE}
+\index{memory management}
+
+The standard procedures \verb'NEW' and \verb'DISPOSE' are back in the language.
+Calls of \verb'NEW' and \verb'DISPOSE' are substituted by calls of {\tt
+ALLOCATE} and {\tt DEALLOCATE} which should be visible at the
+current scope. The compiler checks compatibility of these
+substitution procedures with the expected formal type:
+
+\verb'    PROCEDURE ALLOCATE(VAR a: ADDRESS; size: CARDINAL);'\\
+\verb'    PROCEDURE DEALLOCATE(VAR a: ADDRESS; size: CARDINAL);'
+
+As a rule, the procedures {\tt ALLOCATE} and {\tt DEALLOCATE} declared
+in the module {\tt Storage} are used. These procedures are made
+visible by including the import list:
+
+\verb'    FROM Storage IMPORT ALLOCATE, DEALLOCATE;'
+
+When language extensions are enabled, the procedures {\tt NEW} and
+{\tt DISPOSE} can be applied to dynamic arrays. See \ref{m2:ext:NEW}
+for further details.
+
+See also the \OERef{STORAGE} option.
+
+\subsection{Finalization}\label{m2:ISO:final}
+\index{finalization}
+
+A special mechanism called {\em finalization} is provided to
+perform certain operations during program termination.
+
+A module declaration contains an optional finalization body, which
+is executed during program termination for static modules (See
+\ref{m2:ISO:termination}) or dynamic module finalization.
+
+\begin{verbatim}
+    ModuleBody = [ BEGIN BlockBody
+                 [ FINALLY BlockBody ] ] END
+    BlockBody  = NormalPart
+                 [ EXCEPT ExceptionalPart ].
+    NormalPart = StatementSequence.
+    ExceptionalPart = StatementSequence.
+\end{verbatim}
+{\bf Note:} the \verb'RETURN' statement can be used in a {\tt BlockBody}.
+
+Consider the following example:
+
+\begin{verbatim}
+    MODULE Test;
+
+     .  .  .
+
+    VAR cid: StreamFile.ChanId;
+
+    BEGIN
+      StreamFile.Open(cid,"tmp",flags,res);
+      Process(cid);
+    FINALLY
+      StreamFile.Close(cid);
+    END Test
+\end{verbatim}
+
+If the {\tt Test} module is declared in a procedure block, then
+the initialization body will be executed on a call of the
+procedure, while the finalization body is executed upon return
+from the procedure.
+
+If the {\tt Test} module is a static module, its finalization
+will be executed during program termination.
+
+In any case, finalization bodies are executed in reverse
+order with respect to their initializations.
+
+In the following example, finalization of a local module
+is used to restore context:
+
+\begin{verbatim}
+    VAR state: State;
+
+    PROCEDURE Foo;
+
+      MODULE AutoSave;
+        IMPORT state, State;
+        VAR save: State;
+      BEGIN
+        save:=state; (* save state *)
+        state:=fooState;
+      FINALLY
+        state:=save; (* restore state *)
+      END AutoSave;
+
+    BEGIN
+      ... process ...
+    END Foo;
+\end{verbatim}
+
+The initialization part of the {\tt AutoSave} module will be
+executed before any statement in the {\tt Foo} body and finalization
+part will be executed directly before returning from a call of {\tt
+Foo}.
+
+\subsection{Exceptions}\label{m2:ISO:exc}
+\index{exceptions}\index{Modula-2!exceptions}
+
+An exception handling mechanism is now included in the language.
+Both user-defined exceptions and language exceptions can be
+handled. There is no special exception type; an exception is
+identified by a pair: exception source value and cardinal
+value. Two keywords (\verb'EXCEPT' and \verb'RETRY') are added to the
+language. The essential part of exception handling is provided in
+two system modules: {\tt EXCEPTIONS} and {\tt M2EXCEPTION}.
+
+The {\tt EXCEPTIONS} module provides facilities for raising and
+identifying the user-defined exceptions, for reporting their
+occurrence, and for making enquiries concerning the execution
+state of the current coroutine.
+
+The {\tt M2EXCEPTION} module provides facilities for identifying
+language exceptions that have been raised.
+
+A procedure body, an initialization or finalization part of a module
+body may contain an exceptional part.
+\begin{verbatim}
+    BlockBody  = NormalPart [ EXCEPT ExceptionalPart ].
+    NormalPart = StatementSequence.
+    ExceptionalPart = StatementSequence.
+\end{verbatim}
+
+Example:
+
+\begin{verbatim}
+    PROCEDURE Div(a,b: INTEGER): INTEGER;
+    BEGIN
+      RETURN a DIV b      (* try to divide *)
+    EXCEPT
+      RETURN MAX(INTEGER) (* if exception *)
+    END Fly;
+\end{verbatim}
+
+When an exception is raised (explicitly or implicitly) the
+`nearest' (in terms of procedure calls) exceptional part in the
+current coroutine receives control. Each coroutine is
+executed initially in the normal state. If an exception is raised, the
+coroutine state switches to the exceptional state. If there is no
+exceptional part, raising of an exception is a termination event
+(See \ref{m2:ISO:termination}).
+
+A procedure with an exceptional part is executed in the normal
+state. The state is restored after block execution. A
+procedure without an exceptional part is executed in the state of
+the caller.
+
+If an exception is raised in the state of exceptional execution
+it is re-raised in the calling context. In this case finalization
+of local modules and restoring protection (See \ref{m2:ISO:prot})
+will not take place.
+
+An additional statement (\verb'RETRY') can be used in the exceptional
+part. Execution of the \verb'RETRY' statement causes the normal part to
+be re-executed in the normal state.
+
+Execution of the \verb'RETURN' statement in the exceptional part
+causes switch to the normal state.
+
+If neither \verb'RETURN' nor \verb'RETRY' was executed in the exceptional part,
+the exceptional completion will occur. In this case after
+finalization of local modules (if any) and restoring protection
+state (if necessary), the exception will be re-raised.
+
+\Example
+\begin{verbatim}
+    PROCEDURE Foo;
+    BEGIN
+      TryFoo(...);
+    EXCEPT
+      IF CanBeRepaired() THEN
+        Repair;
+        RETRY;  (* re-execute the normal part *)
+      ELSIF CanBeProcessed() THEN
+        Process;
+        RETURN; (* exception is handled *)
+      ELSE
+        (* exception will be automatically re-raised *)
+      END;
+    END Foo;
+\end{verbatim}
+
+\subsection{The system module EXCEPTIONS}
+\label{m2:ISO:exceptions}
+\index{EXCEPTIONS}
+\index{system modules!EXCEPTIONS}
+\index{Modula-2!EXCEPTIONS}
+
+The module {\tt EXCEPTIONS} provides facilities for raising user's
+exceptions and for making enquiries concerning the current
+execution state.
+
+User-defined exceptions are identified uniquely by a pair
+(exception source, number). When the source of a used-defined
+exception is a separate module, it prevents the defined
+exceptions of the module from being raised directly by other
+sources. See e.g. the module {\tt Storage}.
+
+\verb'    TYPE ExceptionSource;'
+
+\index{ExceptionSource}
+\index{EXCEPTIONS!ExceptionSource}
+Values of the opaque type {\tt ExceptionSource} are used to
+identify the source of exceptions raised;
+they should be allocated before usage.
+
+\verb'    TYPE ExceptionNumber = CARDINAL;'
+
+\index{ExceptionNumber}
+\index{EXCEPTIONS!ExceptionNumber}
+Values of the type {\tt ExceptionNumber} are used to
+distinguish between different exceptions of one source.
+
+\verb'    PROCEDURE AllocateSource(VAR newSource: ExceptionSource);'
+
+\index{AllocateSource}
+\index{EXCEPTIONS!AllocateSource}
+The procedure allocates an unique value of the type {\tt
+ExceptionSource}. The procedure is normally called during
+initialization of a module, and the resulting value is then
+used in all calls of {\tt RAISE}. If an unique value cannot be
+allocated the language exception {\tt exException} is raised
+(See \ref{m2:m2exception}).
+
+\begin{verbatim}
+   PROCEDURE RAISE(source: ExceptionSource;
+                   number: ExceptionNumber;
+                  message: ARRAY OF CHAR);
+\end{verbatim}
+
+\index{RAISE}
+\index{EXCEPTIONS!RAISE}
+A call to \verb'RAISE' associates the given values of exception
+\verb'source', \verb'number', and \verb'message'
+with the current context and raises an exception.
+
+The function {\tt CurrentNumber} can be used to obtain the
+exception number for the current exception.
+
+\begin{verbatim}
+    PROCEDURE CurrentNumber
+       (source: ExceptionSource): ExceptionNumber;
+\end{verbatim}
+
+\index{CurrentNumber}
+\index{EXCEPTIONS!CurrentNumber}
+If the calling coroutine is in the exceptional execution state
+because of raising an exception from {\tt source}, the procedure
+returns the corresponding number, and otherwise raises an
+exception.
+
+The procedure {\tt GetMessage} can be used to obtain the message
+passed when an exception was raised. This may give further
+information about the nature of the exception.
+
+\verb'    PROCEDURE GetMessage(VAR text: ARRAY OF CHAR);'
+
+\index{GetMessage}
+\index{EXCEPTIONS!GetMessage}
+If the calling coroutine is in the exceptional execution state, the
+procedure returns the (possibly truncated) string associated with the
+current context. Otherwise, in the normal execution state, it returns the
+empty string.
+
+\begin{verbatim}
+    PROCEDURE IsCurrentSource
+            (source: ExceptionSource): BOOLEAN;
+\end{verbatim}
+
+\index{IsCurrentSource}
+\index{EXCEPTIONS!IsCurrentSource}
+If the current coroutine is in the exceptional execution state
+because of raising an exception from \verb'source',
+the procedure returns \verb'TRUE', and \verb'FALSE' otherwise.
+
+\verb'    PROCEDURE IsExceptionalExecution (): BOOLEAN;'
+
+\index{IsExceptionalExecution}
+\index{EXCEPTIONS!IsExceptionalExecution}
+If the current coroutine is in the exceptional execution state
+because of raising an exception, the procedure returns \verb'TRUE', and
+\verb'FALSE' otherwise.
+
+The following example illustrates the recommended form of a library
+module and usage of procedures from {\tt EXCEPTIONS}.
+\begin{verbatim}
+    DEFINITION MODULE FooLib;
+
+    PROCEDURE Foo;
+    (* Raises Foo exception if necessary *)
+
+    PROCEDURE IsFooException(): BOOLEAN;
+    (* Returns TRUE, if the calling coroutine is in
+       exceptional state because of the raising of
+       an exception from Foo, and otherwise returns FALSE.
+    *)
+
+    END FooLib.
+
+    IMPLEMENTATION MODULE FooLib;
+
+    IMPORT EXCEPTIONS;
+
+    VAR source: EXCEPTIONS.ExceptionSource;
+
+    PROCEDURE Foo;
+    BEGIN
+      TryFoo(...);
+      IF NOT done THEN
+        EXCEPTIONS.RAISE(source,0,"Foo exception");
+      END;
+    END Foo;
+
+    PROCEDURE IsFooException(): BOOLEAN;
+    BEGIN
+      RETURN EXCEPTIONS.IsCurrentSource(source)
+    END IsLibException;
+
+    BEGIN
+      EXCEPTIONS.AllocateSource(source)
+    END FooLib.
+\end{verbatim}
+
+If we want to distinguish the exceptions raised in the {\tt FooLib}
+we will append an enumeration type and an additional
+enquiry procedure in the {\tt FooLib} definition:
+\begin{verbatim}
+    TYPE FooExceptions = (fault, problem);
+
+    PROCEDURE FooException(): FooExceptions;
+\end{verbatim}
+The {\tt FooException} procedure can be implemented as follows:
+\begin{verbatim}
+    PROCEDURE FooException(): FooExceptions;
+    BEGIN
+      RETURN VAL(FooExceptions,
+                 EXCEPTIONS.CurrentNumber(source))
+    END FooException;
+\end{verbatim}
+
+The {\tt Client} module illustrates the usage of the library module
+\verb'FooLib':
+
+\begin{verbatim}
+    MODULE Client;
+
+    IMPORT  FooLib, EXCEPTIONS, STextIO;
+
+    PROCEDURE ReportException;
+      VAR s: ARRAY [0..63] OF CHAR;
+    BEGIN
+      EXCEPTIONS.GetMessage(s);
+      STextIO.WriteString(s);
+      STextIO.WriteLn;
+    END ReportException;
+
+    PROCEDURE TryFoo;
+    BEGIN
+      FooLib.Foo;
+    EXCEPT
+      IF FooLib.IsFooException() THEN
+        ReportException;
+        RETURN; (* exception is handled *)
+      ELSE
+        (* Exception will be re-raised *)
+      END
+    END TryFoo;
+
+    END Client.
+\end{verbatim}
+
+\subsection{The system module M2EXCEPTION}\label{m2:m2exception}
+\index{M2EXCEPTION@{\bf M2EXCEPTION}}
+\index{system modules!M2EXCEPTION}
+\index{Modula-2!M2EXCEPTION}
+
+The system module {\tt M2EXCEPTION} provides language exceptions
+identification facilities. The language (which includes the
+system modules) is regarded as one source of exceptions.
+
+The module exports the enumeration type {\tt M2Exceptions},
+used to distinguish language exceptions,
+and two enquiry functions.
+
+\begin{verbatim}
+    TYPE
+      M2Exceptions =
+        (indexException,      rangeException,
+         caseSelectException, invalidLocation,
+         functionException,   wholeValueException,
+         wholeDivException,   realValueException,
+         realDivException,    complexValueException,
+         complexDivException, protException,
+         sysException,        coException,
+         exException
+        );
+\end{verbatim}
+
+\verb'    PROCEDURE IsM2Exception(): BOOLEAN;'
+
+\index{IsM2Exception}
+\index{M2EXCEPTION!IsM2Exception}
+If the current coroutine is in the exceptional execution state
+because of the raising of a language exception, the procedure returns
+\verb'TRUE', and \verb'FALSE' otherwise.
+
+\verb'    PROCEDURE M2Exception(): M2Exceptions;'
+
+\index{M2Exception}
+\index{M2EXCEPTION!M2Exception}
+If the current coroutine is in the exceptional execution state
+because of the raising of a language exception, the procedure returns the
+corresponding enumeration value, and otherwise raises an
+exception.
+
+The following description lists all language exceptions
+(in alphabetical order) along with the circumstances under which
+they are detected. {\bf Note:} Compiler options
+can be used to control detection of some exceptions
+(See Chapter \ref{options}).
+Detection of some exceptions is not required by the Standard, however
+such exceptions can be detected on some platforms
+(See Chapter \ref{limits}).
+\begin{description}
+\item[caseSelectException] \mbox{}
+\index{caseSelectException}
+\index{M2EXCEPTION!caseSelectException}
+
+         Case selector is out of range and the \verb'ELSE' clause does not exist.
+
+\item[coException] \mbox{}
+\index{M2EXCEPTION!coException}
+
+        The system module \See{{\bf COROUTINES}}{}{m2:ISO:coroutines}
+        exceptions:
+        \begin{itemize}
+        \item RETURN from a coroutine other than the main coroutine
+        \item size of the supplied workspace is smaller than the
+              minimum required (See description of the procedure
+              \Ref{{\tt NEWCOROUTINE}}{m2:ISO:coroutines})
+        \item the caller is not attached to the source of
+              interrupts (See description of the procedure
+              \Ref{{\tt HANDLER}}{m2:ISO:coroutines})
+        \item coroutine workspace overflow
+        \end{itemize}
+
+\item[complexDivException] \mbox{}
+\index{M2EXCEPTION!complexDivException}
+
+        Divide by zero in a complex number expression.
+
+\item[complexValueException] \mbox{}
+\index{M2EXCEPTION!complexValueException}
+
+        Overflow in evaluation of a complex number expression.
+
+\item[exException] \mbox{}
+\index{M2EXCEPTION!exException}
+
+        A system module \Ref{{\bf EXCEPTIONS}}{m2:ISO:exceptions}
+        or {\bf M2EXCEPTION} exception:
+        \begin{itemize}
+        \item exception identity is enquired in the normal execution state
+              (See {\tt CurrentNumber})
+        \item exception identity enquiry to a wrong source
+              (See {\tt CurrentNumber})
+        \item no further exception source values can be allocated
+              (See {\tt AllocateSource})
+        \end{itemize}
+
+\item[functionException] \mbox{}
+\index{M2EXCEPTION!functionException}
+
+        No \verb'RETURN' statement before the end of a function.
+
+\item[indexException] \mbox{}
+\index{M2EXCEPTION!indexException}
+
+        Array index out of range.
+        See options \OERef{CHECKINDEX} and \OERef{CHECKDINDEX}.
+
+\item[invalidLocation] \mbox{}
+\index{M2EXCEPTION!invalidLocation}
+
+        Attempt to dereference \verb'NIL' or an uninitialized pointer.
+        See the option \OERef{CHECKNIL}.
+
+\item[protException] \mbox{}
+\index{M2EXCEPTION!protException}
+
+        The given protection is less restrictive than the current protection.
+
+\item[rangeException] \mbox{}
+\index{M2EXCEPTION!rangeException}
+
+        Range exception (See the \OERef{CHECKRANGE} option):
+        \begin{itemize}
+        \item assignment value is out of range of the target's type
+        \item structure component value is out of range
+        \item expression cannot be converted to the new type
+        \item value to be included/excluded is not of the
+              base type of the set (See also the \OERef{CHECKSET} option)
+        \item return value is out of range
+        \item set value is out of range
+              (See also the \OERef{CHECKSET} option)
+        \item tag value is out of range (in a variant record).
+        \end{itemize}
+
+\item[realDivException] \mbox{}
+\index{M2EXCEPTION!realDivException}
+
+        Divide by zero in a real number expression.
+
+\item[realValueException] \mbox{}
+\index{M2EXCEPTION!realValueException}
+
+        Overflow in evaluation of a real number expression.
+
+\item[sysException] \mbox{}
+\index{M2EXCEPTION!sysException}
+
+        The system module {\bf SYSTEM} exceptions.
+        {\bf Note:} All these exceptions are non-mandatory.
+        \begin{itemize}
+        \item invalid use of {\tt ADDADR}, {\tt SUBADR} or {\tt DIFADR}
+        \item the result of {\tt MAKEADR} is out of the address range
+        \item alignment problem with {\tt CAST}
+        \item the result of {\tt CAST} is not a valid representation
+              for the target type
+        \end{itemize}
+
+\item[wholeDivException] \mbox{}
+\index{M2EXCEPTION!wholeDivException}
+
+        Whole division exception:
+        \begin{itemize}
+        \item divided by zero in evaluation of a whole number
+              expression
+        \item the second operand of \verb'DIV' or \verb'MOD' is negative
+              (See the \OERef{CHECKDIV} option)
+        \end{itemize}
+
+\item[wholeValueException] \mbox{}
+\index{M2EXCEPTION!wholeValueException}
+
+        Overflow in evaluation of a whole number expression.
+\end{description}
+
+\paragraph{An example of language exception handling}
+\begin{verbatim}
+    PROCEDURE Div(a,b: INTEGER): INTEGER;
+    BEGIN
+      RETURN a DIV b
+    EXCEPT
+      IF IsM2Exception() THEN
+        IF M2Exception() = wholeDivException THEN
+          IF a < 0 THEN RETURN MIN(INTEGER)
+          ELSE          RETURN MAX(INTEGER)
+          END;
+        END;
+      END;
+    END Div;
+\end{verbatim}
+
+\subsection{Termination}\label{m2:ISO:termination}
+
+During the program termination, finalizations of those static
+modules that have started initialization are executed in
+reverse order with respect to their initializations (See also
+\ref{m2:ISO:final}). The static modules are the program module,
+the implementation modules, and any local modules declared in the
+module blocks of these modules.
+
+Program termination starts from the first occurrence of the
+following event:
+\begin{enumerate}
+\item end of the program module body is reached
+\item a \verb'RETURN' statement is executed in the program module body
+\item the standard procedure \verb'HALT' is called
+\item an exception was raised and is not handled
+\end{enumerate}
+
+The system module {\tt TERMINATION}
+\index{Modula-2!TERMINATION}
+\index{system modules!TERMINATION}
+\index{TERMINATION@{\bf TERMINATION}}
+provides facilities for enquiries concerning
+the occurrence of termination events.
+
+\verb'    PROCEDURE IsTerminating(): BOOLEAN;'
+
+Returns \verb'TRUE' if any coroutine has inititated
+program termination and \verb'FALSE' otherwise.
+
+\verb'    PROCEDURE HasHalted(): BOOLEAN;'
+
+Returns \verb'TRUE' if a call of \verb'HALT'
+has been made and \verb'FALSE' otherwise.
+
+\subsection{Coroutines}\label{m2:ISO:coroutines}
+
+The system module {\tt COROUTINES} provides facilities for
+coroutines creation, explicit control transfer between
+coroutines, and interrupts handling.
+\index{system modules!COROUTINES}
+\index{Modula-2!COROUTINES}
+\index{COROUTINES@{\bf COROUTINES}}
+{\bf Note:} Some features can be unavailable in the current release.
+See Chapter \ref{limits} for details.
+
+Values of the type {\tt COROUTINE} are created dynamically by a
+call of {\tt NEWCOROUTINE} and identify the coroutine in
+subsequent operations. A particular coroutine is identified by
+the same value of the coroutine type throughout the lifetime of
+that coroutine.
+
+\verb'    TYPE COROUTINE;'
+
+The correspondent type was called {\tt PROCESS} in PIM.
+From the third edition of PIM, the {\tt ADDRESS} type was used
+to identify a coroutine.
+
+\begin{verbatim}
+    PROCEDURE NEWCOROUTINE(
+                    procBody: PROC;
+                    workspace: SYSTEM.ADDRESS;
+                    size: CARDINAL;
+                    VAR cr: COROUTINE
+                    [; initProtection: PROTECTION]);
+\end{verbatim}
+Creates a new coroutine whose body is given by {\tt procBody}, and
+returns the identity of the coroutine in {\tt cr}. {\tt
+workspace} is a pointer to the work space allocated to the
+coroutine; {\tt size} specifies the size of that workspace in
+terms of \verb'SYSTEM.LOC'. {\tt initProtection} is an optional
+parameter that specifies the initial protection level of the
+coroutine.
+
+An exception is raised (See {\tt coException}) if the value of {\tt
+size} is less than the minimum workspace size.
+
+If the optional parameter is omitted, the initial protection of
+the coroutine is given by the current protection of the caller.
+
+The created coroutine is initialized in such a way that when
+control is first transferred to that coroutine, the procedure
+given by {\tt procBody} is called in a normal state. The exception
+({\tt coException})  is raised when the {\tt procBody} procedure
+attempts to return to its caller. Since the caller has no
+exception handler, raising this exception is a termination
+event.
+
+The procedure {\tt TRANSFER} can be used to transfer control
+from one coroutine to another.
+
+\verb'    PROCEDURE TRANSFER (VAR from: COROUTINE; to: COROUTINE);'
+
+Returns the identity of the calling coroutine in {\tt from} and
+transfers control to the coroutine specified by {\tt to}.
+
+\verb'    PROCEDURE CURRENT (): COROUTINE;'
+
+Returns the identity of the calling coroutine.
+
+\subsubsection{Interrupt handling}
+\index{interrupt handling}
+
+The {\tt INTERRUPTSOURCE} type is used to identify interrupts.
+
+\verb'    TYPE INTERRUPTSOURCE = INTEGER;'
+
+Programs that use the interrupt handling facilities may be non-portable
+since the type is implementation-defined.
+
+\verb'    PROCEDURE ATTACH(source: INTERRUPTSOURCE);'
+
+Associates the specified source of interrupts with the calling
+coroutine. More than one source of interrupts may be associated
+with a single coroutine.
+
+\verb'    PROCEDURE DETACH(source: INTERRUPTSOURCE);'
+
+Dissociates the specified source of interrupts from the calling
+coroutine. The call has no effect if the coroutine is not associated
+with source.
+
+\verb'    PROCEDURE IsATTACHED(source: INTERRUPTSOURCE): BOOLEAN;'
+
+Returns TRUE if and only if the specified source of interrupts is
+currently associated with a coroutine; otherwise returns FALSE.
+
+\verb'    PROCEDURE HANDLER(source: INTERRUPTSOURCE): COROUTINE;'
+
+Returns the coroutine, if any, that is associated with the source
+of  interrupts.  The result is undefined if there is no coroutine
+associated with the source.
+
+\verb'    PROCEDURE IOTRANSFER(VAR from: COROUTINE;'\\
+\verb'                               to: COROUTINE);'
+
+Returns the identity of the calling coroutine in {\tt from} and
+transfers control to the coroutine specified by {\tt to}. On
+occurrence of an interrupt, associated with the caller, control is
+transferred back to the caller, and {\tt from} returns the identity
+of the interrupted coroutine. An exception is raised if the calling
+coroutine is not associated with a source of interrupts.
+
+\subsubsection{Protection}\label{m2:ISO:coroutines:prot}
+
+See section \ref{m2:ISO:prot} for information about the type \verb'PROTECTION'.
+
+\verb'    PROCEDURE LISTEN(prot: PROTECTION);'
+
+Momentarily changes protection of the calling coroutine to {\tt prot},
+usually lowering it so as to allow an interrupt request to be granted.
+
+\verb'    PROCEDURE PROT(): PROTECTION;'
+
+Returns protection of the calling coroutine.
+
+\subsection{Protection}\label{m2:ISO:prot}
+
+A program module, implementation module or local module may
+specify, by including protection in its heading, that
+execution of the enclosed statement sequence is protected.
+
+\begin{verbatim}
+    ModuleHeading = MODULE ident [ Protection ] ";".
+    Protection    = [ ConstExpression ].
+\end{verbatim}
+
+A module with protection in its heading is called a directly
+protected module. A directly protected procedure is an exported
+procedure declared in a protected module.
+
+Protection of a module is provided by surrounding the externally
+accessible procedures and module body by calls of access control
+procedures. The value of the protection expression is passed to the
+call of access control procedures as an actual parameter.
+
+The protection expression should be of the \verb'PROTECTION' type. The
+\verb'PROTECTION' type is an elementary type with at least two values:
+{\tt INTERRUPTIBLE} and {\tt UNINTERRUPTIBLE}.
+
+Operators \verb+<+, \verb+>+, \verb+<=+ and \verb+>=+ can be used
+to compare values of the \verb'PROTECTION' type.
+If $x$ is a value of \verb'PROTECTION' type, then $x$ satisfies the conditions:
+\begin{center}
+        {\tt UNINTERRUPTIBLE} $\leq x\leq$ {\tt INTERRUPTIBLE}
+\end{center}
+
+\section{Standard procedures}\label{m2:stdproc}
+\index{Modula-2!standard procedures}
+\index{standard procedures!Modula-2}
+
+\begin{table}[hbt]
+\begin{center}
+\begin{tabular}{clp{8cm}}
+&\bf Procedure &\bf  Meaning \\ \hline
+$\surd$ & \tt ASSERT(x[,n]) & Terminates the program
+                 if x$\neq$\verb'TRUE' (See \ref{m2:ext:ASSERT})       \\ \index{ASSERT}
+$\surd$ & \tt  COPY(x,v)     & Copies a string: \verb|v := x|       \\ \index{COPY}
+&\tt DEC(v[,n])    & \verb|v := v - n|, default n=1             \\ \index{DEC}
+&\tt DISPOSE(v)    & Deallocates v\^{} (See \ref{m2:ISO:NEW}) \\ \index{DISPOSE}
+&\tt EXCL(v,n)     & \verb|v := v - {n}| \\                    \index{EXCL}
+&\tt HALT          & Terminates program execution
+                 (See \ref{m2:ext:HALT}) \\                    \index{HALT}
+&\tt INC(v[,n])    & \verb|v := v + n|, default n=1 \\         \index{INC}
+&\tt INCL(v,n)     & \verb|v := v + {n}| \\                    \index{INCL}
+&\tt NEW(v)        & Allocates v\^{} (See \ref{m2:ISO:NEW}) \\
+$\surd$ & \tt NEW(v,$x_0$...$x_n$) & Allocates v\^{} of
+        length $x_0$...$x_n$  (See \ref{m2:ext:NEW}) \\  % \ldots !!!
+\end{tabular}
+\end{center}
+\caption{Modula-2 proper procedures}\label{table:m2:stdproc}
+\end{table}
+
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{clp{8cm}}
+&\bf Function &\bf  Meaning \\  \hline
+&\tt ABS(x)   & Absolute value of $x$ \\              \index{ABS}
+$\surd$&\tt ASH(x,n) & Arithmetic shift    \\              \index{ASH}
+&\tt CAP(x)   & Corresponding capital letter    \\  \index{CAP}
+&\tt CHR(x)   & Character with the ordinal number $x$ \\  \index{CHR}
+&\tt CMPLX(x,y) & Complex number with real part $x$
+                  and imaginary part $y$           \\ \index{CMPLX}
+$\surd$&\tt ENTIER(x) & Largest integer not greater than $x$ \\ \index{ENTIER}
+&\tt FLOAT(x) &\tt  VAL(REAL,x) \\                     \index{FLOAT}
+&\tt HIGH(v)  &  High bound of the index of $v$  \\    \index{HIGH}
+&\tt IM(x)    & Imaginary part of a complex $x$ \\         \index{IM}
+&\tt INT(x)   &\tt VAL(INTEGER,x)          \\         \index{INT}
+$\surd$&\tt LEN(v[,n]) &  Length of an array
+           in the dimension $n$ (default=0) \\    \index{LEN}
+&\tt LENGTH(x) & String length           \\         \index{LENGTH}
+&\tt LFLOAT(x) &\tt VAL(LONGREAL,x) \\                 \index{LFLOAT}
+&\tt MAX(T)   &  Maximum value of type $T$ \\         \index{MAX}
+&\tt MIN(T)   &  Minimum value of type $T$ \\         \index{MIN}
+&\tt ODD(x)   & $x$ MOD 2 = 1 \\                      \index{ODD}
+&\tt ORD(x)   &\tt VAL(CARDINAL,x)    \\               \index{ORD (M2)}
+&\tt RE(x)    & Real part of a complex $x$ \\         \index{RE}
+&\tt SIZE(T)  & The number of storage units,
+               required by a variable of type $T$  \\ \index{SIZE}
+&\tt TRUNC(x) & Truncation to the integral part      \\ \index{TRUNC}
+&\tt VAL(T,x) & Type conversion            \index{VAL (M2)}
+\end{tabular}
+\end{center}
+\caption{Modula-2 function procedures}\label{table:m2:stdfunc}
+\end{table}
+
+This section briefly describes the set of
+standard procedures and functions. Some of them are not
+defined in the International Standard and are
+available only if the option \OERef{M2EXTENSIONS} is set.
+The procedure \See{{\tt HALT}}{}{m2:ext:HALT} may have
+an additional parameter, if the extensions are enabled .
+
+In the tables (\ref{table:m2:stdproc} and
+\ref{table:m2:stdfunc}) of predefined procedures, $v$ stands for a
+designator, $x$, $y$ and $n$ --- for expressions, $T$ --- for a
+type. Non-standard procedures are marked with $\surd$.
+
+The procedure {\tt COPY} and the functions {\tt ASH}, {\tt ENTIER} and
+{\tt LEN} are described in {\em The Oberon-2 Report}.      % !!!
+
+\section{Compatibility}\label{m2:ISO:comp}
+
+This section describes compatibility between entities of
+different types. There are three forms of compatibility:
+\begin{itemize}
+\item expression compatibility (specifying the types that may be
+      combined in expressions);
+\item assignment compatibility (specifying the type of a value
+        that may be assigned to a variable);
+\item parameter compatibility (specifying the type of an actual
+        parameter that may be passed to a formal parameter).
+\end{itemize}
+The rules for parameter compatibility are relaxed in the case
+where a formal parameter is of a system storage type. This
+variation is known as the system parameter compatibility.
+
+In most cases the compatibility rules are the same as described
+in PIM. However, we suppose to explicitly list all the
+rules.
+
+\subsection{Expression compatibility}\label{m2:ISO:comp:expr}
+
+Two expressions $a$ and $b$ of types $T_a$ and $T_b$
+are {\em expression compatible} if any of the following
+statement is true:
+\renewcommand{\theenumi}{\alph{enumi}}
+\begin{enumerate}
+\item The types $T_a$ and $T_b$ are identical.
+        {\bf Note:} If a type is a subrange type, then only its host type
+        matters, therefore values of subranges of the same host
+        type are expression compatible with each other and with
+        the host type.
+
+\item A type of one expression is a complex type, and the other
+      expression is a complex constant.
+
+\item A type of one expression is a real type, and the other
+      expression is a real constant.
+
+\item A type of one expression is a whole type, and the other
+      expression is a whole constant.
+
+\item A type of one expression is character, and the other
+      expression is a string literal of length 0 or 1.
+      See also \ref{m2:ISO:strings}.
+
+\begin{verbatim}
+    VAR
+      char: CHAR;
+      ...
+      WHILE (char # '') & (char # ".") DO
+      ...
+\end{verbatim}
+
+\end{enumerate}
+\renewcommand{\theenumi}{\arabic{enumi}}
+
+\subsection{Assignment compatibility}\label{m2:ISO:comp:assign}
+
+An expression $e$ of type $T_e$ is {\em assignment compatible}
+with the variable $v$ of type $T_v$ if one of the following
+conditions holds\footnote{
+For an expression of a subrange type only
+host type matters.
+}:
+\renewcommand{\theenumi}{\alph{enumi}}
+\begin{enumerate}
+\item   $T_v$ is identical to the type $T_e$, and the type is not
+        an open array type.
+
+\item   $T_v$ is a subrange of the type $T_e$.
+
+\item   $T_v$ is the CARDINAL type or a subrange of the CARDINAL type
+        and $T_e$ is the INTEGER type or $e$ is a whole constant.
+
+\item   $T_v$ is the INTEGER type or a subrange of the INTEGER type
+        and $T_e$ is the CARDINAL type or $e$ is a whole constant.
+
+\item   $T_v$ is a real type and $e$ is a real constant.
+
+\item   $T_v$ is a complex type and $e$ is a complex constant.
+
+\item   $T_v$ is a pointer type and $e$ is NIL.
+
+\item   $T_v$ is a procedure type and $e$ is the designator
+        of a procedure which has the same structure as
+        the procedure type $T_v$ and which has been declared
+        at level 0.
+
+\item   $T_v$ is the character type or a subrange of
+        the character type and $e$ is a string literal of length 0 or 1.
+
+\item   $T_v$ is an array type having the character type as its
+        component type, and $e$ is a string literal of length
+        less then or equal to the number of components in arrays of type
+        $T_v$\footnote{A string literal is not assignment compatible
+        with an array whose component's type is a subrange of
+        the character type.}.
+
+\item   $T_v$ is the address type and $T_e$ is a pointer type or
+        $T_e$ is the address type and $T_v$ is a pointer type.
+
+\end{enumerate}
+\renewcommand{\theenumi}{\arabic{enumi}}
+
+\subsection{Value parameter compatibility}
+
+A formal type is {\em value parameter compatible} with an actual
+expression if any of the following statements is true:
+\renewcommand{\theenumi}{\alph{enumi}}
+\begin{enumerate}
+\item   The formal type is constructed from a system storage type
+        and is system parameter compatible with the expression.
+
+\item   The formal parameter is an open array, the actual
+        parameter is an array type and the component type
+        of the formal type is value parameter compatible
+        with the component type of the actual type
+        \footnote{A formal array parameter with the component's type $T$
+        is not parameter compatible with the actual parameter of type $T$.}.
+
+\item   The formal type is assignment compatible with the actual
+        parameter.
+\end{enumerate}
+\renewcommand{\theenumi}{\arabic{enumi}}
+
+\subsection{Variable parameter compatibility}
+
+A formal type is {\em variable parameter compatible} with an actual
+variable if any of the following statements is true:
+\renewcommand{\theenumi}{\alph{enumi}}
+\begin{enumerate}
+\item   The formal type is constructed from a system storage type
+        and is system parameter compatible with the expression.
+
+\item   The formal parameter is an open array, the actual
+        parameter is an array type and the component's type
+        of the formal type is variable parameter compatible
+        with the component's type of the actual parameter type.
+
+\item   The formal type is identical to the actual parameter type.
+\end{enumerate}
+\renewcommand{\theenumi}{\arabic{enumi}}
+
+\subsection{System parameter compatibility}\label{m2:ISO:comp:system}
+
+A formal type is {\em system parameter compatible} with an actual
+parameter if any of the following statements is true:
+\renewcommand{\theenumi}{\alph{enumi}}
+\begin{enumerate}
+\item   The formal parameter is of the SYSTEM.LOC type
+        and the actual
+        parameter is of any type $T$ such that {\tt SIZE(T)} is equal to 1.
+
+\item   The formal parameter is of the type
+
+\verb'    ARRAY [0..n-1] OF SYSTEM.LOC'
+
+        and the actual parameter is of any type $T$ such
+        that {\tt SIZE(T)} is equal to {\tt n}.
+
+\item   The formal parameter is of the open array type
+
+\verb'    ARRAY OF SYSTEM.LOC'
+
+        and the actual parameter is of any type but not numeric literal.
+
+\item   The formal parameter is of the multi-dimensional open array type
+
+\verb'    ARRAY OF ARRAY [0..n-1] OF SYSTEM.LOC'
+
+        and the actual parameter is of any type $T$ such
+        that {\tt SIZE(T)} is a multiple of {\tt n}.
+
+\end{enumerate}
+\renewcommand{\theenumi}{\arabic{enumi}}
+
+\iftopspeed\else
+%------------------------------------------------------------------------------
+\subsection{Function calls in designators}
+
+If the option \OERef{M2EXTENSIONS} is set ON, \xds{} recognizes function 
+procedure calls in designators, including  predefined, SYSTEM, and type 
+transfer procedures:
+
+\begin{verbatim}
+    CurPos(point[i,j])^.x
+    GetCurDate().year
+    REC_PTR(adr)^.field
+\end{verbatim}
+
+%------------------------------------------------------------------------------
+\subsection{Open arrray parameter compatibility}
+
+If the option \OERef{M2EXTENSIONS} is set ON, an expression of type \verb'T' 
+can be substituted as a parameter whose formal type is \verb'ARRAY OF T'. 
+
+%------------------------------------------------------------------------------
+\subsection{Bitwise operations on cardinals}
+
+If the option \OERef{M2EXTENSIONS} is set ON, bitwise operations 
+\verb'AND', \verb'OR', and \verb'NOT' are enabled to be applied to cardinals.
+
+%------------------------------------------------------------------------------
+\subsection{Logical shift operators}
+
+The '\verb'<<'' and '\verb'>>'' infix operators of logical
+left/right shift, defined for cardinal types, are available in
+\XDS{} if the option \OERef{M2EXTENSIONS} is set ON.
+
+\fi % \iftopspeed\else
+
+
+%------------------------------------------------------------------------------
+\section{The Modula-2 module SYSTEM}
+\label{m2:ISO:system}
+\index{Modula-2!SYSTEM}\index{SYSTEM@{\bf SYSTEM}}
+\index{system modules!SYSTEM (M2)}
+
+The module {\bf SYSTEM} provides the low-level facilities for
+gaining an access to the address and underlying storage of
+variables, performing address arithmetic operations and
+manipulating the representation of values. Program that use
+these facilities may be non-portable.
+
+This module does not exist in the same sense as other libraries
+but is hard-coded into the compiler itself. To use the facilities
+provided, however, identifiers must be imported in a usual way.
+
+Some of the {\bf SYSTEM} module procedures are generic procedures that
+cannot be explicitly declared, i.e. they apply to classes of
+operand types or have several possible forms of a parameter list .
+
+The {\bf SYSTEM}  module is the only module specified in the
+International  Standard  that  can  be  extended  in  the
+implementation. The \XDS{} {\bf SYSTEM} module provides additional
+types and procedures.
+
+{\bf Note:} The module {\bf SYSTEM} is different in \ot{}.
+See \ref{o2:system} for details.
+
+{\small
+\begin{verbatim}
+DEFINITION MODULE SYSTEM;
+
+CONST
+  BITSPERLOC  = 8;
+  LOCSPERWORD = 4;
+  LOCSPERBYTE = 1;
+
+TYPE
+  LOC;
+  ADDRESS = POINTER TO LOC;
+  WORD = ARRAY [0 .. LOCSPERWORD-1] OF LOC;
+  BYTE = LOC;
+
+PROCEDURE ADDADR(addr: ADDRESS; offset: CARDINAL): ADDRESS;
+PROCEDURE SUBADR(addr: ADDRESS; offset: CARDINAL): ADDRESS;
+PROCEDURE DIFADR(addr1, addr2: ADDRESS): INTEGER;
+
+PROCEDURE MAKEADR(val: <whole type>): ADDRESS;
+
+PROCEDURE ADR(VAR v: <anytype>): ADDRESS;
+
+PROCEDURE REF(VAR v: <anytype>): POINTER TO <type of the parameter>;
+
+PROCEDURE ROTATE(val: <a packedset type>;
+                 num: INTEGER): <type of the first parameter>;
+
+PROCEDURE SHIFT(val: <a packedset type>;
+                num: INTEGER): <type of the first parameter>;
+
+PROCEDURE CAST(<targettype>;
+               val: <anytype>): <targettype>;
+
+PROCEDURE TSIZE (<type>; ... ): CARDINAL;
+
+(*------------------------------------------------------- *)
+(* -------------- non-standard features ----------------- *)
+
+TYPE
+  INT8   = <integer 8-bits type>;
+  INT16  = <integer 16-bits type>;
+  INT32  = <integer 32-bits type>;
+  CARD8  = <cardinal 8-bits type>;
+  CARD16 = <cardinal 16-bits type>;
+  CARD32 = <cardinal 32-bits type>;
+  BOOL8  = <boolean 8-bits type>;
+  BOOL16 = <boolean 16-bits type>;
+  BOOL32 = <boolean 32-bits type>;
+  INDEX  = <type of index>
+  DIFADR_TYPE = <type that DIFADR function returns>
+
+TYPE (* for use in Oberon *)
+  INT  = <Modula-2 INTEGER type>;
+  CARD = <Modula-2 CARDINAL type>;
+
+TYPE (* for interfacing to C *)
+  int      = <C int type>;
+  unsigned = <C unsigned type>;
+  size_t   = <C size_t type>;
+  void     = <C void type>;
+
+PROCEDURE MOVE(src,dest: ADDRESS; size: CARDINAL);
+PROCEDURE FILL(adr : ADDRESS; val : BYTE; size : CARDINAL;);
+
+PROCEDURE GET(adr: ADDRESS; VAR var: SimpleType);
+PROCEDURE PUT(adr: ADDRESS; var: SimpleType);
+
+PROCEDURE CC(n: CARDINAL): BOOLEAN;
+
+END SYSTEM.
+\end{verbatim}
+} % small
+
+\subsection{System types}\label{m2:system:types}
+\index{system types}
+
+\begin{description}
+\item[LOC] \mbox{}  \index{LOC}
+
+        Values  of the {\tt LOC} type are the uninterpreted contents of
+        the   smallest   addressable  unit  of  a  storage  in
+        implementation. The value of the call {\tt TSIZE(LOC)} is
+        therefore equal to one.
+
+        The  type  {\tt LOC}  was  introduced as a mechanism to resolve
+        the problems  with  {\tt  BYTE}  and  {\tt  WORD}  types. Its
+        introduction  allows  a consistent handling of both these
+        types,  and enables also {\tt WORD}-like types to
+        be further introduced, eg:
+
+\verb'    TYPE WORD16 = ARRAY [0..1] OF SYSTEM.LOC;'
+
+        The only operation directly defined for the {\tt LOC} type is
+        an assignment. There are special rules affecting parameter
+        compatibility for system storage types. See
+        \ref{m2:ISO:comp:system} for further details.
+
+\item[BYTE] \mbox{}  \index{BYTE}
+
+        {\tt BYTE}  is defined as {\tt LOC} and has all the properties of the
+        type {\tt LOC}.
+
+\item[WORD] \mbox{} \index{WORD}
+
+        The type {\tt WORD} is defined as
+
+\verb'    CONST LOCSPERWORD = 4;'\\
+\verb'    TYPE WORD = ARRAY [0..LOCSPERWORD-1] OF LOC;'
+
+        and the value of the call {\tt TSIZE(WORD)} is equal to
+        {\tt LOCSPERWORD}.
+
+        The  only  operation  directly defined for the {\tt WORD}
+        type is an assignment.  There  are special rules affecting
+        parameter compatibility    for    system    storage
+        types.   See \ref{m2:ISO:comp:system} for further details.
+
+\item[ADDRESS] \mbox{} \index{ADDRESS}
+
+        The type \verb'ADDRESS' is defined as
+
+\verb'    TYPE ADDRESS = POINTER TO LOC;'
+
+        The \verb'ADDRESS' type is an assignment compatible  with  all
+        pointer types and vice versa (See
+        \ref{m2:ISO:comp:assign}). A formal variable parameter of
+        the \verb'ADDRESS' type is a parameter compatible with an actual
+        parameter of any pointer type.
+
+        Variables of type \verb'ADDRESS' are no longer expression
+        compatible with \verb'CARDINAL' (as it was in PIM) and they cannot
+        directly occur in expressions that include arithmetic
+        operators. Functions {\tt ADDADR}, {\tt SUBADR} and {\tt
+        DIFADR} were introduced for address arithmetic.
+
+\item[Whole system types] \mbox{}   \index{fixed size types}
+
+        Types {\tt INT8}, {\tt CARD8}, {\tt INT16}, {\tt CARD16},
+        {\tt  INT32},  {\tt  CARD32} are guaranteed to contain 8,
+        16,  or  32  bits  respectively.
+
+        These types are introduced to simplify constructing the
+        interfaces for foreign libraries   (See   Chapter
+        \ref{multilang}).  Types  {\tt  SHORTINT}, {\tt LONGINT},
+        {\tt  SHORTCARD},  {\tt  LONGCARD}  are  synonyms of {\tt
+        INT8},   {\tt   INT32},   {\tt   CARD8},   {\tt   CARD32},
+        respectively  (See  also  the  \OERef{M2ADDTYPES} option).
+        Types  {\tt  INTEGER}  and {\tt CARDINAL} are synonyms of
+        {\tt   INT16}/{\tt  INT32},  {\tt  CARD16}/{\tt  CARD32},
+        depending on the target platform. See also the \OERef{M2BASE16} option.
+
+        These types are not described in the International
+        Standard.
+
+\item[Boolean system types] \mbox{}
+
+        Types {\tt BOOL8}, {\tt BOOL16}, and {\tt BOOL32} are guaranteed
+        to contain 8,16 and 32 bits respectively. By default
+        the compiler uses {\tt BOOL8} type for BOOLEAN.
+        In some cases (e.g. in the interface to the Windows API) {\tt BOOL16}
+        or {\tt BOOL32} should be used instead.
+
+        These types are not described in the International
+        Standard.
+
+
+\item[Bitset system types] \mbox{}
+
+        Types {\tt SET8}, {\tt SET16}, and {\tt SET32} are guaranteed
+        to contain 8,16 and 32 bits respectively.
+        The predefined type \verb'BITSET' is a synonym for
+        \verb'SYSTEM.SET16' or \verb'SYSTEM.SET32', depending
+        on the target platform. See also the \OERef{M2BASE16} option.
+
+        These types are not described in the International
+        Standard.
+
+\item[Modula-2 whole types] \mbox{}
+
+        Types {\tt INT} and {\tt CARD} are equal to \mt{} {\tt INTEGER}
+        and {\tt CARDINAL} types, respectively. These types can
+        be used in \ot{} in order to use \mt{} procedures
+        in a portable way. See \ref{multilang:m2o2} for further details.
+
+        These types are not described in the International
+        Standard.
+
+\item[Interface to C] \mbox{}
+
+        Types  {\tt int},  {\tt unsigned}, \verb|size_t| and {\tt
+        void} are introduced to simplify interfacing to C
+        libraries. See \ref{multilang:C} for further details.
+
+\end{description}
+
+\subsection{System functions}\label{m2:sysfunc}
+\index{Modula-2!system functions}
+
+\index{address arithmetic}
+
+\verb'    PROCEDURE ADDADR(addr: ADDRESS;'\\
+\verb'                     offs: CARDINAL): ADDRESS;'
+
+\index{SYSTEM!ADDADR}
+Returns an address given by {\tt (addr + offs)}.
+The subsequent use of the calculated address may raise an exception.
+
+\verb'    PROCEDURE SUBADR(addr: ADDRESS;'\\
+\verb'                     offs: CARDINAL): ADDRESS;'
+
+\index{SYSTEM!SUBADR}
+Returns an address given by {\tt (addr - offs)}.
+The subsequent use of the calculated address may raise an exception.
+
+\ifgenc
+The result of functions {\tt ADDADR} and {\tt SUBADR} is meaningful
+if {\tt addr} points into some object and the calculated address
+points into the same object or points to the next byte after
+the object.
+\fi
+
+\verb'    PROCEDURE DIFADR(addr1,addr2: ADDRESS): INTEGER;'
+
+\index{SYSTEM!DIFADR}
+Returns the difference between addresses {\tt (addr1 - addr2)}.
+
+\ifgenc
+The result of this function is meaningful if
+\verb|addr1| and \verb|addr2| point into the same
+object or to the next byte after the object.
+\fi
+
+\verb'    PROCEDURE MAKEADR(val: <whole type>): ADDRESS;'
+
+The function is used to construct a value of the ADDRESS type
+from the value of a whole type.
+
+{\bf Note:} The International Standard
+does not define the number and types of the parameters.
+Programs that use this procedure may be non-portable.
+
+\verb'    PROCEDURE ADR(VAR v: <any type>): ADDRESS;'
+
+\index{SYSTEM!ADR (M2)}
+Returns the address of the variable {\tt v}.
+
+\verb'    PROCEDURE CAST(<type>; x: <any type>): <type>;'
+
+\index{SYSTEM!CAST}
+The function {\tt CAST} can be used (as a type transfer function)
+to interpret a value of any type other than a numeric literal
+value as a value of another type
+\footnote{The International Standard forbids the use of
+the PIM style type transfer, like {\tt CARDINAL(x)}.}.
+
+The  value  of  the  call  {\tt  CAST(Type,val)}  is an unchecked
+conversion of {\tt val} to the type {\tt Type}.
+If {\tt SIZE(val) = TSIZE(Type)},
+the  bit pattern representation of the result is
+the  same  as  the  bit  pattern  representation  of  {\tt  val};
+otherwise the result and the value of {\tt val} have the same bit
+pattern  representation  for  a  size equal to the smaller of the
+numbers of storage units.
+
+The given implementation may forbid some combinations  of
+parameter types.
+
+{\bf Note:} In \ot{} module SYSTEM, the respective procedure
+is called \verb'VAL'.
+
+\verb'    PROCEDURE TSIZE(Type; ... ): CARDINAL;'
+
+\index{SYSTEM!TSIZE}
+Returns the number of storage units (\verb'LOC's) used to
+store the value of the specified type. The extra parameters,
+if present, are used to distinguish variants in a variant
+record and must be constant expressions\footnote{Those constant
+expressions are ignored in the current release.}.
+
+\Example
+\begin{verbatim}
+    TYPE
+      R = RECORD
+        CASE i: INTEGER OF
+          |1: r: REAL;
+          |2: b: BOOLEAN;
+        END;
+      END;
+
+      ... TSIZE(R,1) ...
+
+\end{verbatim}
+
+The value of {\tt TSIZE(T)} is equal to {\tt SIZE(T)}.
+
+\subsubsection{Packedset functions}
+
+Values of packedset types are represented as sequences of bits\footnote{The current
+implementation does not distinguish between set and packedset types.}.
+The bit number 0 is the least significant bit
+for a given platform. The following is true, where {\tt v} is a variable
+of the type {\tt CARDINAL}:
+\begin{verbatim}
+    CAST(CARDINAL,BITSET{0}) = VAL(CARDINAL,1)
+    SHIFT(CAST(BITSET,v),1)  = v * 2
+    SHIFT(CAST(BITSET,v),-1) = v DIV 2
+\end{verbatim}
+
+{\bf Note:} The functions {\tt ROTATE} and {\tt SHIFT} can be applied
+to a set with size less than or equal to the size of {\tt BITSET}.
+
+\verb'    PROCEDURE ROTATE(x: T; n: integer): T;'
+
+\index{SYSTEM!ROTATE}
+Returns the value of \verb|x| rotated \verb|n| bits to the left (for
+positive \verb|n|) or to the right (for negative \verb|n|).
+
+\verb'    PROCEDURE SHIFT(x: T; n: integer): T;'
+
+\index{SYSTEM!SHIFT}
+Returns the value of \verb|x| logically shifted \verb|n| bits to
+the left (for positive \verb|n|) or to the right (for negative
+\verb|n|).
+
+{\bf Warning:} The result of \verb'SHIFT(x,n)' , where \verb'n' is greater 
+than the number of elements in \verb'T', is undefined.
+
+\subsubsection{Non-standard functions}
+\label{m2:sysfunc:nonstandard}
+
+\verb'    PROCEDURE CC(n: whole constant): BOOLEAN;'
+
+\index{SYSTEM!CC}
+
+\ifcomment
+Returns TRUE if the corresponding condition flag is set ($0\leq n\leq 15$).
+See table \ref{table:cc} for further information.
+\begin{center}
+\begin{table}
+\begin{flushleft}
+\begin{tabular}{|r|l|}\hline
+\bf Condition    &\bf Meaning \\ \hline
+ 0 &   overflow flag                    \\
+ 1 &   not overflow flag                \\
+ 2 &   carry flag                       \\
+ 3 &   unsigned greater or equal        \\
+ 4 &   equal                            \\
+ 5 &   not equal                        \\
+ 6 &   unsigned less or equal           \\
+ 7 &   unsigned greater                 \\
+ 8 &   sign flag                        \\
+ 9 &   not sign flag                    \\
+10 &   parity flag                      \\
+11 &   not parity flag                  \\
+12 &   signed less                      \\
+13 &   signed greater or equal          \\
+14 &   signed less or equal             \\
+15 &   signed greater                   \\
+\hline
+\end{tabular}
+\end{flushleft}
+\caption{Condition flags}\label{table:cc}
+\end{table}
+\end{center}
+\else
+Returns TRUE if the corresponding condition flag is set.
+The function is not implemented in the current release.
+\fi
+
+\verb'    PROCEDURE REF(VAR v: <anytype>):'\\
+\verb'                  POINTER TO <type of the parameter>;'
+
+\index{SYSTEM!REF (M2)}
+
+Returns the pointer to the variable {\tt v}. See also
+\ref{multilang:parmcomp}.
+
+\verb'    PROCEDURE BIT(adr: T; bit: INTEGER): BOOLEAN;'
+
+\index{SYSTEM!BIT}
+Returns bit \verb|n| of \verb|Mem[adr]|.
+\verb|T| is either ADDRESS or whole type.
+
+\subsection{System procedures}
+\index{Modula-2!system procedures}
+\label{m2:system_procs}
+
+{\bf Note:} all these procedures are non-standard.
+
+\verb'    PROCEDURE MOVE (src, dst: ADDRESS; size: CARDINAL);'
+
+\index{SYSTEM!MOVE}
+Copies \verb|size| bytes from the memory location specified
+by \verb|src| to the memory location specified by \verb|dst|.
+
+{\bf Warning:} No check for area overlap is performed. The behaviour
+of \verb'SYSTEM.MOVE' in case of overlapping areas is undefined.
+
+\verb'    PROCEDURE FILL(adr : ADDRESS; val : BYTE; size : CARDINAL;);'
+
+\index{SYSTEM!FILL}
+Fills the memory block of size \verb'size' starting from the memory
+location specified by \verb'adr' with the value of \verb'val'
+\ifgencode
+using a very efficient code.
+\else
+using the \verb'memset' C library function.
+\fi
+
+\verb'    PROCEDURE GET (adr: ADDRESS; VAR v: SimpleType);'\\
+\verb'    PROCEDURE PUT (adr: ADDRESS;     x: SimpleType);'
+
+\index{SYSTEM!GET}\index{SYSTEM!PUT}
+Gets/puts a value from/to address specified by \verb|adr|.
+The second parameter cannot be of a record or array type.
+
+\begin{verbatim}
+    VAR i: INTEGER;
+
+      GET (128, i);   (* get system cell value *)
+      i := i+20;      (* change it             *)
+      PUT (128, i);   (* and put back          *)
+\end{verbatim}
+
+\verb'    PROCEDURE CODE(...);'
+
+\index{SYSTEM!CODE}
+\ifgencode
+The procedure is intended to embed a sequence of machine
+instructions  directly into the generated code. The procedure is not
+implemented in the current release.
+\fi
+\ifgenc
+The CODE procedure accepts a sequence of strings as its
+parameter. This procedure inserts a string which is the concatenation
+of the parameters into the generated C code.
+
+\Example
+\begin{verbatim}
+    PROCEDURE disable;      (* disable interrupts *)
+    BEGIN
+      SYSTEM.CODE ("asm di;");
+    END disable;
+\end{verbatim}
+will produce
+
+\verb'    asm di;'
+
+\fi
+
+%----------------------------------------------------------------
+
+\section{Language extensions}\label{m2:ext}
+
+{\bf Warning:} Using extensions may cause problems with software
+portability to other compilers.
+
+In the standard mode the \xds{} \mt{} compiler is ISO compliant
+(See \ref{m2:ISO}). A set of language extensions may be enabled
+using the \OERef{M2EXTENSIONS} and \OERef{M2ADDTYPES} options.
+
+The main purposes of supporting the language extensions are:
+\begin{itemize}
+\item to improve interfacing with other languages
+      (See Chapter \ref{multilang})
+\item to simplify migration from \mt{} to \ot{}
+\item to implement some useful features not found in ISO \mt{}
+\item to provide backward compatibility with previous releases
+\end{itemize}
+
+\subsection{Lexical extensions}
+\index{Modula-2!lexical extensions}
+
+\subsubsection{Comments}
+
+\mextonly
+
+As well as \verb|(**)|, there is another valid format for comments in
+the source texts. The portion of a line from ``\verb|--|''
+to the end is considered as a comment.
+
+\begin{verbatim}
+      VAR i: INTEGER; -- this is a comment
+    --(*
+      i:=0; (* this line will be compiled *)
+    --*)
+\end{verbatim}
+
+\subsubsection{Numeric constants}
+
+\mextonly
+
+Both \mt{} and \ot{}  syntax rules for the numeric and character
+representations may be used.
+
+\begin{verbatim}
+    Number      = [ "+" | "-" ] Integer | Real.
+    Integer     = digit { digit }
+                | octalDigit { octalDigit } "B"
+                | digit { hexDigit } "X".
+    Real        = digit { digit } "." { digit } [ ScaleFactor ].
+    ScaleFactor = ( "E" | "D" ) [ "+" | "-" ] digit {digit}.
+
+    Character   = '"' char '"' | "'" char "'"
+                | digit {hexDigit} "H"
+                | octalDigit {octalDigit} "C".
+\end{verbatim}
+
+\Examples
+\begin{verbatim}
+    1991        1991 (decimal)
+    0DH         13   (decimal)
+    15B         13   (decimal)
+    41X         "A"
+    101C        "A"
+\end{verbatim}
+
+{\bf Note:} the symbol "\verb'D'" in a \verb'ScaleFactor'
+denotes a \verb'LONGREAL' value.
+
+\subsection{Additional numeric types}\label{m2:ext:numeric}
+\index{Modula-2!numeric types}
+
+\maddonly
+
+The compiler option \OERef{M2ADDTYPES} introduces
+the following additional numeric types:
+
+\ifonline
+\begin{flushleft}
+\begin{tabular}{lll}
+1. &\bf SHORTINT  & integers between $-128$ and $127$           \\
+2. &\bf LONGINT   & integers between $-2**31$ and $2**31-1$     \\
+3. &\bf SHORTCARD & unsigned integers between $0$ and $255$     \\
+4. &\bf LONGCARD  & unsigned integers between $0$ and $2**32-1$ \\
+\end{tabular}
+\end{flushleft}
+\else
+\begin{flushleft}
+\begin{tabular}{lll}
+1. &\bf SHORTINT  & integers between $-128$ and $127$            \\
+2. &\bf LONGINT   & integers between $-2^{31}$ and $2^{31}-1$    \\
+3. &\bf SHORTCARD & unsigned integers between $0$ and $255$      \\
+4. &\bf LONGCARD  & unsigned integers between $0$ and $2^{32}-1$ \\
+\end{tabular}
+\end{flushleft}
+\fi
+
+The following terms for groups of types will be used:
+\begin{flushleft}
+{\em Real  types\/} for (\verb'REAL', \verb'LONGREAL')                       \\
+{\em Integer  types\/} for (\verb'SHORTINT', \verb'INTEGER', \verb'LONGINT')        \\
+{\em Cardinal types\/} for (\verb'SHORTCARD', \verb'CARDINAL', \verb'LONGCARD')     \\
+{\em Whole    types\/} for {\em integer\/} and {\em cardinal types} \\
+{\em Numeric  types\/} for {\em whole\/} and {\em real types}          \\
+\end{flushleft}
+
+All integer types are implemented as subranges of
+internal compiler integer types. Therefore, according to the
+compatibility rules (See \ref{m2:ISO:comp}), the values of different
+integer types can be mixed in the expressions. The same holds for
+cardinal  types. A mixture of integer and cardinal types
+is not allowed in expressions. As in \ot{}, the numeric types form a
+hierarchy, and larger types include (i.e. can accept the values
+of) smaller types:
+$$
+\mbox{{\tt LONGREAL}} \subseteq \mbox{{\tt REAL}} \subset \mbox{\em whole types}
+$$
+
+Type compatibility in expressions is extended according to the
+following rules (See \ref{m2:ISO:comp:expr}):
+\begin{itemize}
+\item   The  type of the result of an arithmetic or relation
+        operation is the smallest type which includes the types
+        of both operands.
+
+\item   Before the operation, the values of  both  operands  are
+        converted to the result's type.
+\end{itemize}
+
+For instance, if the following variables are defined:
+\begin{verbatim}
+     s: SHORTCARD;
+     c: CARDINAL;
+     i: INTEGER;
+     l: LONGINT;
+     r: REAL;
+     lr: LONGREAL;
+\end{verbatim}
+then
+\begin{center}
+\begin{tabular}{lll}
+\bf Expression &\bf Meaning &\bf Result type \\ \hline
+\tt s + c        &\tt VAL(CARDINAL,s) + c       & CARDINAL \\
+\tt l * i        &\tt l * VAL(LONGINT,i)        & LONGINT \\
+\tt r + 1        &\tt r + VAL(REAL,1)           & REAL    \\
+\tt r = s        &\tt r = VAL(REAL,s)           & BOOLEAN \\
+\tt r + lr       &\tt VAL(LONGREAL,r) + lr      & LONGREAL \\
+\tt c + i        &\tt not allowed               &           \\
+\end{tabular}
+\end{center}
+
+The assignment compatibility rules  are  also  extended  (See
+\ref{m2:ISO:comp:assign}),  so an expression $e$ of type $T_e$ is
+assignment  compatible with a variable $v$ of type $T_v$ if $T_e$
+and $T_v$ are of numeric types and $T_v$ includes $T_e$. Cardinal
+types  and integer types are assignment compatible. The compiler
+generates the range checks whenever necessary.
+
+\paragraph{Examples (see declarations above):}
+\begin{center}
+\begin{tabular}{ll}
+\bf Statement &\bf Comment \\ \hline
+\tt i:=c;     & {\tt INTEGER} and {\tt CARDINAL} are assignment compatible \\
+\tt i:=s;     & {\tt INTEGER} and {\tt SHORTCARD} are assignment compatible \\
+\tt l:=i;     & {\tt LONGINT} and {\tt INTEGER} are subranges of the same
+                host type                                                  \\
+\tt r:=i;     & {\tt REAL}$\subset$ {\tt INTEGER}                           \\
+\tt r:=c;     & {\tt REAL}$\subset$ {\tt CARDINAL}                          \\
+\tt lr:=r;    & {\tt LONGREAL}$\subseteq$ {\tt REAL}                          \\
+\end{tabular}
+\end{center}
+
+\subsection{Type casting}
+
+\mextonly
+
+In ISO Modula-2, the second parameter of the \verb'SYSTEM.CAST' procedure
+can not be a numeric literal. \XDS{} provides numeric literal casting as
+an extension:
+
+\begin{verbatim}
+    VAR
+      c: CARDINAL;
+    BEGIN
+      (* Ok if M2EXTENSIONS is ON *)
+      c := SYSTEM.CAST(CARDINAL,-1); 
+\end{verbatim}
+
+\subsection{Assignment compatibility with BYTE}
+
+\mextonly
+
+An expression of type {\tt CHAR}, {\tt BOOLEAN}, {\tt SHORTCARD}, {\tt SHORTINT},
+{\tt SYSTEM.INT8}, or {\tt SYSTEM.CARD8} can
+be  assigned to a variable of type  {\tt BYTE} or passed as an actual
+parameters to a formal parameter of type {\tt BYTE}.
+
+\subsection{Dynamic arrays}\label{m2:ext:dynarrs}
+\index{Modula-2!dynamic arrays}
+
+\mextonly
+
+\xds{} allows \ot{} style dynamic arrays to be used
+according to the \ot{} rules.
+
+An open array is an array type with no lower and upper bound
+specified, i.e. ARRAY OF SomeType. Open arrays may be used only
+in procedure parameter lists or as a pointer base type.
+
+\verb'    TYPE String = POINTER TO ARRAY OF CHAR;'
+
+Neither variables nor record fields may be
+of open array type.
+
+If the designator type is formally an open array, then the only
+operations allowed with it are indexing and passing it to a
+procedure.
+
+The extended versions of standard procedures {\tt NEW} and
+{\tt DISPOSE} can be used to create and delete the dynamic arrays
+(See \ref{m2:ext:NEW}).
+
+\Example
+\begin{verbatim}
+    TYPE
+      VECTOR = ARRAY OF REAL;
+        (* 1-dim open array *)
+      Vector = POINTER TO VECTOR;
+        (* pointer to open array *)
+      MATRIX = ARRAY OF VECTOR;
+        (* 2-dim open array *)
+      Matrix = POINTER TO MATRIX;
+        (* pointer to this *)
+
+    VAR
+       v: Vector;
+       m: Matrix;
+
+    PROCEDURE ClearVector(VAR v: VECTOR);
+      VAR i: CARDINAL;
+    BEGIN
+      FOR i := 0 TO HIGH (v) DO v[i] := 0 END;
+    END ClearVector;
+
+    PROCEDURE ClearMatrix(VAR m: Matrix);
+      VAR i: CARDINAL;
+    BEGIN
+      FOR i := 0 TO HIGH (m) DO ClearVector(m[i]) END;
+    END ClearMatrix;
+
+    PROCEDURE Test;
+    BEGIN
+      NEW(v, 10);
+      NEW(m, 10, 20);
+      ClearVector(v^);
+      ClearMatrix(m^);
+      v^[0] := 1;
+      m^[1][1] := 2;
+      m^[2,2] := 1000;
+      DISPOSE(v);
+      DISPOSE(m);
+    END Test;
+\end{verbatim}
+
+\subsection{Constant array constructors}\label{m2:constarrays}
+\index{Modula-2!array constructors}
+\mextonly
+
+\xds{} allows the declaration of constant arrays in the form
+
+\verb'    ARRAY OF QualIdent "{" ExprList "}"'
+
+{\tt QualIdent} should refer to a basic type, range or enumeration  type,  and
+all expressions within {\tt ExprList} should be of that type.
+
+{\bf Note:} structured types and non-constant expressions
+are not allowed.
+
+The actual type of such a constant is \verb|ARRAY [0..n] OF QualIdent|,
+where \verb|n+1| is the number
+of expressions in \verb'ExprList'.
+
+\verb'    CONST table = ARRAY OF INTEGER {1, 2+3, 3};'
+
+Constant arrays are subject to the same rules as all other constants,
+and may be read as a normal array.
+
+In some cases constructors of this form are more convenient than
+ISO standard value constructors (See \ref{m2:ISO:aggregates}),
+because you do not need to declare a type and to calculate
+manually the number of expressions. However, to make your
+programs more portable, we recommend to use the standard features.
+
+\subsection{Set complement}\index{Modula-2!set complement}
+
+\mextonly
+
+As in \ot{}, an unary minus applied to a set denotes the complement
+of that set, i.e. $-x$ is the set of all values which are not the elements
+of $x$.
+
+\begin{verbatim}
+    TYPE SmallSet = SET OF [0..5];
+    VAR x, y: SmallSet;
+    BEGIN
+      x := SmallSet{1,3,5};
+      y := -x;                  (* y = {0, 2, 4} *)
+      y := SmallSet{0..5} - x;  (* y = {0, 2, 4} *)
+    END;
+\end{verbatim}
+
+
+%----------------------------------------------------------------
+\subsection{Volatile declarations}\label{m2:ext:volatile}
+\index{volatile declarations}
+\index{Modula-2!volatile declarations}
+
+\mextonly
+
+The compiler option \OERef{SYSTEMFLAGEXT} enables volatile 
+declarations via extension of the \Ref{direct language specification}{multilang:direct} 
+syntax. It provides a flexible way to declare volatile variables, 
+fields, types and procedure VAR parameters as well.
+
+The volatile specification clause can be specified as \verb|["Volatile"]|
+immediately following the keyword "{\tt POINTER}" or "{\tt TO}" and can be
+placed after a name of a variable, field, type and procedure VAR parameter.
+A language string and "{\tt Volatile}" specification can appear together 
+in one clause,  separated by the a comma.   
+
+\Example
+\begin{verbatim}
+  TYPE
+    MyType1 ["C", Volatile"] = POINTER TO INTEGER;
+
+  VAR
+    v1: MyType1;
+    v2 ["Volatile"]: POINTER TO INTEGER;
+    v3: POINTER ["Volatile"] TO INTEGER;
+    
+  PROCEDURE myProc(VAR a ["Volatile"]: MyRecord);
+\end{verbatim}
+
+In this example all variables: "{\tt v1}", "{\tt v2}", "{\tt v3}" 
+are declared as volatile pointer to a integer value. To declare a 
+(non-volatile) pointer to a volatile object the volatile specification 
+should be placed after keyword "{\tt TO}".
+
+\Example
+\begin{verbatim}
+  TYPE
+    MyRecord = RECORD
+      field1: POINTER TO ["Volatile"] Device;
+      field2: POINTER ["Volatile"] TO Device;
+      field3: POINTER ["Volatile"] TO ["Volatile"] Device;
+    END;
+\end{verbatim}
+
+In the above example, "{\tt field1}" is not itself volatile but what 
+it points to is. Whereas "{\tt field2}" is volatile but what it points 
+to isn't and "{\tt field3}" is volatile as well as what it points to.
+
+The absolute address of a variable, direct language specification and 
+volatile specification can be placed into the same square bracket syntax.
+The absolute address should be specified first. Empty brackets are not 
+required anymore before direct language specification and volatile 
+specification in the variable declaration.
+
+\Example
+\begin{verbatim}
+  VAR
+    Store4 [CAST(ADDRESS, Base+300H), "C", "Volatile"]: MyRecord;
+\end{verbatim}
+
+See also the \ref{m2:ext:volatile:param} option.
+
+
+%----------------------------------------------------------------
+\subsection{Volatile parameters}\label{m2:ext:volatile:param}
+\index{volatile parameters}
+\index{Modula-2!volatile parameters}
+
+\mextonly
+
+If the option \OERef{SYSTEMFLAGEXT} is set ON, then in a formal 
+parameter section, the volatile specification \verb|["Volatile"]|
+can be placed after the name of a VAR parameter. Such a parameter
+is called volatile; its value may change in a way that can not be
+determined at compile time. As a result, the optimizer will not
+eliminate any operation involving that parameter. 
+
+We recommend to use volatile parameters to accept volatile variables 
+as actual parameters.
+
+\Example
+\begin{verbatim}
+  PROCEDURE MyProcedure (VAR dest ["Volatile"]: INTEGER);
+  BEGIN
+    ...
+  END MyProcedure;
+  
+  VAR
+    common ["Volatile"]: CARDINAL;
+    
+  BEGIN
+    MyProcedure(common)
+  END ...
+\end{verbatim}
+
+The volatile specification \verb|["Volatile"]| can also be placed
+immediately following the keyword "{\tt VAR}" in the VAR parameters
+declaration. In this case all VAR parameters in the given clause
+are volatile.
+
+\Example
+\begin{verbatim}
+  PROCEDURE MyProcedure2 (VAR ["Volatile"] Param1, Param2 : CARD32);
+\end{verbatim}
+
+To declare a procedure type that takes volatile parameters, the volatile 
+specification \verb|["Volatile"]| can be placed immediately following 
+the keyword "{\tt VAR}" parameters' type specification.
+
+\Example
+\begin{verbatim}
+  TYPE
+    MyProcedureType = PROCEDURE (VAR ["Volatile"] CARD32);
+\end{verbatim}
+
+See also \ref{m2:ext:volatile}.
+
+
+If the option \OERef{SYSTEMFLAGEXT} is set OFF, then in a formal parameter 
+section, the symbol \verb|"+"| may be placed after the name of a VAR parameter 
+to declare that parameter as volatile.
+
+\Example
+\begin{verbatim}
+  PROCEDURE OldStileProcedure(VAR dest+: INTEGER);
+\end{verbatim}
+
+
+%----------------------------------------------------------------
+\subsection{Read-only parameters}\label{m2:ext:RO_param}
+\index{read-only parameters}
+\index{Modula-2!read-only parameters}
+
+\mextonly
+
+In a formal parameter section, the symbol \verb|"-"| may be
+placed after the name of a value parameter.  Such a parameter is
+called {\em read-only}; its value can not be changed in the
+procedure body. Read-only parameters do not need to be copied before
+procedure activation; this enables procedures
+with structured parameters to be more effective.
+
+For \verb'ARRAY' and \verb'RECORD' read-only parameters,
+the array elements and record fields are protected.
+Read-only parameters cannot be used in definition modules.
+
+We recommend to use read-only parameters with care. The compiler
+does not check that the read-only parameter is not modified via
+another parameter or a global variable.
+
+\Example
+\begin{verbatim}
+    PROCEDURE Foo(VAR dest: ARRAY OF CHAR;
+                   source-: ARRAY OF CHAR);
+    BEGIN
+      dest[0]:='a';
+      dest[1]:=source[0];
+    END Foo;
+\end{verbatim}
+
+The call \verb|Foo(x,x)| would produce a wrong result, because
+the first \verb'Foo' statement changes the value of \verb|source[0]|
+(\verb|source| is not copied and points to the same location
+as \verb|dest|).
+
+
+
+\subsection{Variable number of parameters}\label{m2:SEQ:param}
+\index{SEQ parameters}
+\index{Modula-2!SEQ parameters}
+
+\mextonly
+
+The last formal parameter of a procedure may be declared as a
+``sequence of bytes'' (SEQ-parameter). In a procedure call, any
+(possibly empty) sequence of actual parameters of any types
+may be substituted in place of that parameter.
+Only the declaration
+
+\verb'    SEQ name: SYSTEM.BYTE'
+
+is allowed. A procedure may have only one SEQ parameter, and it must be
+the last element of the formal parameters list.
+
+Within the procedure, sequence parameters are very similar to open
+array parameters. This means that :
+\begin{itemize}
+\item the {\tt HIGH} function can be applied to the parameter;
+\item a {\tt SEQ} actual parameter may be subsequently passed to another procedure
+\item the \verb|i|-th byte of the sequence \verb|s|
+      can be accessed as \verb|s[i]|, like an array element.
+\end{itemize}
+
+An array of bytes, which is passed to a procedure as a formal
+SEQ-parameter, is formed as follows:
+\begin{itemize}
+\item
+  values of all actual parameters forming the sequence are represented
+  as described below and concatenated into an array in their textual order
+\item integer values are converted to {\tt LONGINT}
+\item {\tt BOOLEAN}, {\tt CHAR}, cardinal and enumeration values are converted
+      to {\tt LONGCARD}
+\item values of range types are converted according to their
+      base types
+\item real values are converted to {\tt LONGREAL}
+\item values of pointer, opaque and procedure types
+are converted to {\tt ADDRESS}
+\item
+    a structured value (record or array) is interpreted
+    as an array of bytes and passed as a sequence
+    of:
+    \begin{itemize}
+    \item the address of the structure
+    \item a zero 32-bit word (reserved for future extensions)
+    \item size of the structure (in LOCs) minus one
+    \end{itemize}
+\end{itemize}
+
+\ifgencode
+  See \ref{lowlevel:seqrep} for further information. 
+\fi
+\ifgenc
+  See \ref{maptoc:procdcl:seqrep} for further information. 
+\fi
+
+
+\subsection{Read-only export}\label{RO:export}
+\index{Modula-2!read-only export}
+
+\mextonly
+
+The \ot{} read-only export symbol "-", being specified after a variable or field
+identifier in a definition module will define the identifier as read-only
+for any client.
+Only the module in which a read-only variable or field is declared may
+change its value.
+
+The compiler will not allow the value
+of a read-only exported object to be changed explicitly (by
+an assignment) or implicitly (by passing it as a VAR parameter).
+
+For read-only variables of an array or record type, both array elements
+and record fields are also read-only.
+
+\paragraph{Example (an excerpt from a definition module):}
+\begin{verbatim}
+    TYPE Rec = RECORD
+      n-: INTEGER;
+      m : INTEGER;
+    END;
+
+    VAR
+      in-: FILE;
+      x-: Rec;
+\end{verbatim}
+
+\subsection{Renaming of imported modules}
+\index{Modula-2!renaming in import clause}
+\mextonly
+
+An imported module can be renamed inside the importing module. The real
+name of the module becomes invisible.
+\begin{verbatim}
+    Import = IMPORT [ Ident ":=" ] Ident
+              { "," [ Ident ":=" ] ident } ";".
+\end{verbatim}
+
+\Example
+\begin{verbatim}
+    MODULE test;
+    IMPORT vw := VirtualWorkstation;
+
+    VAR ws: vw.Station;
+
+    BEGIN
+      ws := vw.open();
+    END test.
+\end{verbatim}
+
+\subsection{NEW and DISPOSE for dynamic arrays}\label{m2:ext:NEW}
+\index{Modula-2!NEW and DISPOSE}
+\index{NEW (M2)}\index{DISPOSE}
+\index{memory management}
+\index{DYNALLOCATE}
+\index{DYNDEALLOCATE}
+
+Standard procedures {\tt NEW} and {\tt DISPOSE} can be applied to
+variables of a dynamic array type (See \ref{m2:ext:dynarrs}).
+Procedures {\tt DYNALLOCATE} and {\tt DYNDEALLOCATE} have to be visible
+in the calling context. Their headers and semantics are described below.
+
+\begin{verbatim}
+    PROCEDURE DYNALLOCATE(VAR a: ADDRESS;
+                           size: CARDINAL;
+                            len: ARRAY OF CARDINAL);
+\end{verbatim}
+
+The procedure must allocate a dynamic array and return its address in \verb'a'.
+\verb|size| is the size of the array base type (the size of an element)
+and \verb|len[i]| is the length of the array in $i$-th dimension.
+
+\begin{verbatim}
+    PROCEDURE DYNDEALLOCATE(VAR a: ADDRESS;
+                         size,dim: CARDINAL);
+\end{verbatim}
+
+The procedure must deallocate a dynamic array,
+where \verb|size| is the size of an element and \verb|dim|
+is the number of dimensions.
+
+{\bf Note:} In most cases, default implementation of these procedures
+may be used. The \OERef{STORAGE} option controls whether the default
+memory management should be enabled.
+
+A dynamic array is represented as a pointer to a so-called {\it array
+descriptor}
+\ifgenc (See \ref{maptoc:dynarr}). \fi
+\ifgencode (See \ref{lowlevel:opendesc}). \fi
+
+\subsection{HALT}\label{m2:ext:HALT}
+\index{HALT}
+\mextonly
+
+An optional integer parameter is allowed for the \verb'HALT' procedure.
+
+\verb'    PROCEDURE HALT ([code: INTEGER]);'
+
+\verb|HALT| terminates the program execution with an optional return code.
+Consult your operating system/environment documentation for more details.
+
+\subsection{ASSERT}\label{m2:ext:ASSERT}\index{ASSERT}
+\index{ASSERT}
+\mextonly
+
+The procedure \verb'ASSERT' checks its boolean parameter and terminates
+the program if it is not \verb'TRUE'. The second optional parameter
+denotes {\em task termination code}. If it is omitted, a standard value
+is assumed.
+
+\verb'PROCEDURE ASSERT(cond: BOOLEAN [; code: INTEGER]);'
+
+A call \verb|ASSERT(expr,code)| is equivalent to
+
+\verb'IF NOT expr THEN HALT(code) END;'
+
+\section{Source code directives}\label{m2:pragmas}
+
+Source code directives (or pragmas) are used to set compilation
+options in the source text and to select specific pieces of the source
+text to be compiled (conditional compilation).
+The ISO \mt{} standard does not describe pragma syntax.
+\XDS{} supports source code directives
+in both \mt{} and \ot{}. The syntax described in
+{\em The Oakwood Guidelines for the \ot{} Compiler Developers}
+is used.
+
+\subsection{Inline options and equations}\label{m2:pragmas:inline}
+\index{inline options}
+\index{inline equations}
+
+In some cases it is more desirable to set a compiler option or
+equation within the source  text. Some compiler options,  such as
+\OERef{MAIN}, are more meaningful in the source file before the
+module header, and some, such as run-time checks, even between statements.
+
+\xds{} allows options to be changed in the source text by using standard
+ISO  pseudo comments \verb|<* ... *>|\footnote{The old pragma style
+{\tt (*\$..*)} is supported to provide backward compatibility,
+but the compiler reports the ``obsolete syntax'' warning.}
+Some options can only be placed in the source text before the module
+header (i.e. before keywords \verb'IMPLEMENTATION', \verb'DEFINITION',
+and \verb'MODULE'). These options will be ignored if found elsewhere
+in the source text. See \ref{opt:bool:list} for more details.
+
+The format of an inline option or equation setting is described by
+the following syntax:
+\begin{verbatim}
+Pragma     = "<*" PragmaBody "*>"
+PragmaBody = PUSH | POP | NewStyle | OldStyle
+NewStyle   = [ NEW ] name [ "+" | "-" | "=" string ]
+OldStyle   = ("+" | "-") name
+\end{verbatim}
+\index{<* *>@\verb'<* *>'}
+
+{\tt NewStyle} is proposed as the Oakwood standard for \ot{},
+{\tt OldStyle} is the style used in the previous \xds{} releases.  All
+option names are case-independent.  If {\tt OldStyle} is used, 
+there should be  no  space between \verb|<*| and \verb|+| or \verb|-|
+{\tt OldStyle} does not allow to declare a new option or equation
+and to change an equation value.
+
+In all cases, the symbol \verb|+| sets the corresponding
+option ON, and the symbol \verb|-| sets it OFF.
+
+{\tt PUSH} and {\tt POP} keywords may be used to save and restore
+the whole state of options and equations.
+
+\Examples
+\begin{verbatim}
+    PROCEDURE Length(VAR a: ARRAY OF CHAR): CARDINAL;
+      VAR i: CARDINAL;
+    BEGIN
+      <* PUSH *>              (* save state *)
+      <* CHECKINDEX - *>      (* turn CHECKINDEX off *)
+      i := 0;
+      WHILE (i<=HIGH(a)) & (a[i]#0C) DO INC(i) END;
+      <* POP *>               (* restore state *)
+      RETURN i;
+    END Length;
+\end{verbatim}
+\begin{verbatim}
+    <* ALIGNMENT = "2" *>
+    TYPE
+      R = RECORD      (* This record is 6 bytes long *)
+            f1: CHAR;
+            f2: CARDINAL;
+          END;
+\end{verbatim}
+
+\subsection{Conditional compilation}\label{m2:pragmas:cc}
+\index{conditional compilation}
+
+It is possible to use conditional compilation with \mt{} and
+\ot{}\footnote{only if the {\bf O2ISOPRAGMA} option is set ON}
+compilers via the standard ISO pragma notation \verb|<* *>|.
+Conditional compilation statements can be placed anywhere in the source
+code. The syntax of the conditional compilation \verb'IF' statement
+follows:
+\begin{verbatim}
+    IfStatement      = <* IF Expression THEN *> text
+                     { <* ELSIF Expression THEN *> text }
+                     [ <* ELSE *> text ]
+                       <* END *>
+    Expression       = SimpleExpression
+                       [ ("=" | "#") SimpleExpression].
+    SimpleExpression = Term { "OR" Term}.
+    Term             = Factor { "&" Factor}.
+    Factor           = Ident | string |
+                       "DEFINED" "(" Ident ")" |
+                       "(" Expression ")" |
+                       "~" Factor | "NOT" Factor.
+    Ident            = option | equation.
+\end{verbatim}
+
+An operand in an expression is either a name of an option or equation or
+a string literal. An option has the string value \verb'"TRUE"', if it is
+currently set ON and \verb'"FALSE"', if it is currently set off
+or was not defined at all. The compiler will report a warning if an
+undeclared option or equation is used as a conditional compilation identifier.
+
+The comparison operators "\verb'='" and "\verb'#'" are not case sensitive.
+
+See also the section \ref{opt:COMPILER}.
+
+\Examples
+\begin{verbatim}
+    IMPORT lib :=
+          <* IF  __GEN_X86__ THEN *> MyX86Lib;
+          <* ELSIF __GEN_C__ THEN *> MyCLib;
+          <* ELSE *> *** Unknown ***
+          <* END *>
+\end{verbatim}
+
+\begin{verbatim}
+    CONST Win = <* IF Windows THEN *> TRUE
+                <* ELSE *> FALSE
+                <* END *>;
+\end{verbatim}
+
+\begin{verbatim}
+    <* IF DEFINED(Debug) & (DebugLevel = "2") THEN *>
+       PrintDebugInformation;
+    <* END *>;
+\end{verbatim}
+
+\begin{verbatim}
+    <* IF target_os = "OS2" THEN *>
+      Strings.Capitalize(filename);
+      <* IF NOT HPFS THEN *>
+        TruncateFileName(filename);
+      <* END *>
+    <* END *>
+\end{verbatim}
+

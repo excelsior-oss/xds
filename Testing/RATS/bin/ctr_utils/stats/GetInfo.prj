@@ -1,0 +1,8 @@
+% XDS project file
+
+-lookup=*.def=src
+-lookup=*.mod=src
+-lookup=*.sym=sym
+-lookup=*.obj=bin
+
+!module GetInfo.mod

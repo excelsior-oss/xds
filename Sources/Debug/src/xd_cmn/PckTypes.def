@@ -1,0 +1,138 @@
+-- Модуль содержит описание типов и переменных, используемых пакетным
+-- отладчиком, в частности, определена структура для пакетов,
+-- режимы работы паетного отладчика, описание точек останова
+-- и идентификаторов.
+
+DEFINITION MODULE PckTypes;
+
+IMPORT txt := Texts;
+
+CONST
+  (* Макс. кол-во пакетов, одновременно загружаемых отладчиком *)
+  MaxPakets = 16;
+
+  Comment    = ';';                 (* Символ комментария        *)
+  SepParam   = ',';                 (* Разделитель параметров    *)
+  Watchpoint = '*'+0C;
+  Counter    = '.'+0C;
+  Condition  = '?'+0C;
+  Delayed    = '/'+0C;
+
+
+TYPE
+  PROCEDURE_PARTS = ( Prologue, Body, Epilogue, Return );
+  PROCEDURE_PARTS_ID = ARRAY PROCEDURE_PARTS OF ARRAY [0..1] OF CHAR;
+
+CONST
+  ProcedureParts = PROCEDURE_PARTS_ID { 'P', 'B', 'E', 'R' };
+
+
+TYPE
+  PAKET = RECORD
+            Paket     : txt.TEXT; (* Паект                             *)
+            LastLine  : CARDINAL; (* Номер последней строки  в пакете  *)
+            LineNum   : CARDINAL; (* Номер текущей строки  в пакете    *)
+            RetPaket  : CARDINAL; (* Номер пакета для возврата         *)
+            RetLineNum: CARDINAL; (* Номер строки для возврата         *)
+            Reference : BOOLEAN;  (* Ссылка на ранее загруженный пакет *)
+          END;
+
+  PAKET_NO = [0..MaxPakets-1];      (* Номера пакетов *)
+
+  PAKETS = ARRAY PAKET_NO OF PAKET; (* Список пакетов *)
+
+
+VAR
+  Pakets       : PAKETS;     (* Загруженные пакеты      *)
+  QuantityPaket: CARDINAL;   (* Количество пакетов      *)
+  CurrPaket    : PAKET_NO;   (* Текущий пакет           *)
+  LastPaket    : CARDINAL;   (* Номер последнего пакета *)
+
+  ActiveComponent: CARDINAL; (* Текущая компонента *)
+  ActiveModule   : CARDINAL; (* Текущий модель     *)
+
+
+TYPE
+  MODE_FLAGS = ( Pak           (* Трасса пакета                       *)
+               , Trace         (* Трасса программы                    *)
+               , Put           (* Вывод информации оператором PUT     *)
+               , Put_Addr      (* Вывод адреса поля оператором PUT    *)
+               , GoSuccess     (* Программa исполняется               *)
+               , RestartDone   (* Программa перезапущена              *)
+               , KodSuccess    (* Таблицы для моделирования загружены *)
+               , StartSuccess  (* Точка входа определена              *)
+               , Time_Count    (* Посчет времени исполнения           *)
+               , User          (* Пользовательское прерывание         *)
+               , OutMem        (* Доступ вне диапазона адресов        *)
+               , WrProt        (* Запись в ПЗУ                        *)
+               , ProgInt       (* Программное прерывание              *)
+               , Address       (* Точка останова                      *)
+               , Write         (* Запись в память                     *)
+               , WriteReg      (* Запись в регистр                    *)
+               , Read          (* Чтение из памяти                    *)
+               , ReadReg       (* Чтение из регистра                  *)
+               , Call          (* Вызов                               *)
+               , Ret           (* Возврат                             *)
+               , If            (* Условный останов                    *)
+               , Line          (* Останов по строке                   *)
+               , IO            (* Ввод/вывод                          *)
+               , Dump          (* Дамп кода                           *)
+               , System        (* Системный режим                     *)
+               , CompCreated   (* Создана новая компонента            *)
+               , CompDestroyed (* Удалена компонента программы        *)
+               , Storage       (* Использование моделирования памяти  *)
+               , StoragePrint  (* Печать при моделировании            *)
+               , Test          (* Режим тестирования ядра системы     *)
+               , ModelProc     (* Режим моделирования вызова процедур *)
+               , DirectStart   (* Выполнять вызов непосредственно     *)
+               );
+
+  SHORT_STRING = ARRAY [0..16] OF CHAR;
+
+  SET_MODE_FLAGS = SET OF MODE_FLAGS;
+
+  MODE_NAME = RECORD First, Second: SHORT_STRING; END;
+
+  MODE_NAMES = ARRAY MODE_FLAGS OF MODE_NAME;
+
+
+VAR
+  Mode       : SET_MODE_FLAGS;          (* Режимы работы отладчика *)
+  ModeNames  : MODE_NAMES;
+  ModePrefix : BOOLEAN;
+  ModeOn     : SHORT_STRING;
+  ModeOff    : SHORT_STRING;
+  ModeBreak  : SET_MODE_FLAGS;
+
+
+TYPE
+  TRACE_MODE = ( Code, Source, Mix);
+
+  TRACE_NAME = SHORT_STRING;
+
+
+VAR
+  TraceMode: TRACE_MODE; (* Текущий режим трассировки *)
+
+
+TYPE
+  IDENT = ( TraceCode, TraceSource, TraceMix, Error, Disasm );
+
+  IDENT_NAMES = ARRAY IDENT OF SHORT_STRING;
+
+VAR
+  IdentNames: IDENT_NAMES;
+
+
+
+TYPE
+  BREAK_DESCRIPTION = RECORD
+                        Number  : CARDINAL;   (* Номер останова            *)
+                        Paket_No: CARDINAL;   (* Номер пакета              *)
+                        Line_No : CARDINAL;   (* Номер строки для перехода *)
+                      END;
+
+
+
+
+END PckTypes.

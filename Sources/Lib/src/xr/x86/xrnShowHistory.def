@@ -1,0 +1,29 @@
+(* Copyright (c) xTech 1995,97  All Rights Reserved *)
+(*
+ * XDS runtime library.
+ *
+ *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrnShowHistory;
+
+IMPORT SYSTEM;
+
+PROCEDURE X2C_HISTORY_ON ();
+
+PROCEDURE X2C_HISTORY_REG ( hmod, someAddr :SYSTEM.ADDRESS );
+(* inits history in multiple (also for DLLs). In fact, it registers
+   DLL's handle and an extent of its code segment  -- VitVit   *)
+
+
+PROCEDURE X2C_IS_CODESEG (     adr       :CARDINAL;
+                           VAR base, sec :CARDINAL;
+                           VAR hmod      :SYSTEM.ADDRESS
+                          ) :BOOLEAN;
+(* Does belong "adr" to whom code segment? If it's so, who is owner?  *)
+
+
+PROCEDURE X2C_EXIT_HISTORY ( hmod :SYSTEM.ADDRESS );
+(* unregisters  DLL or EXE-module *)
+
+
+END xrnShowHistory.

@@ -1,0 +1,14 @@
+-- Функции для перевода кодов ошибок, возникающих при работе
+-- программы, в строковое представление (сообщение).
+
+DEFINITION MODULE XCPT_Msg;
+
+CONST
+  UNKNOWN_BREAKPOINT = MAX(CARDINAL)-1;
+  GENERAL_EXCEPTION  = MAX(CARDINAL)-2;
+
+PROCEDURE Get_XCPT_Msg (xcpt, ext: CARDINAL; VAR msg: ARRAY OF CHAR);
+
+PROCEDURE Get_RTS_XCPT_Msg (xcpt: CARDINAL; VAR msg: ARRAY OF CHAR);
+
+END XCPT_Msg.

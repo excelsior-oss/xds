@@ -1,0 +1,26 @@
+-- Содержит реакции диалогового отладчика на события в исполняемой программе
+-- Перед использованием необходимо вызвать процедуру Ini, по окончании Exi;
+
+DEFINITION MODULE DlgReact;
+
+FROM ExeReact IMPORT DATA;
+
+PROCEDURE Ini;
+PROCEDURE Exi;
+
+<* IF DEST_K26 THEN *>
+  PROCEDURE DoStep_VAX (data: DATA);
+  PROCEDURE DoAddress_VAX (data: DATA);
+  PROCEDURE DoException_VAX (data: DATA);
+  PROCEDURE DoRegisterAccess (data: DATA);
+  PROCEDURE DoCall (data: DATA);
+  PROCEDURE DoRet (data: DATA);
+<* ELSIF DEST_XDS THEN *>
+  PROCEDURE DoAddress_x86 (data: DATA);
+  PROCEDURE DoException_x86 (data: DATA);
+  PROCEDURE DoStep_x86 (data: DATA);
+<* END *>
+
+PROCEDURE DoMemoryAccess (data: DATA);
+
+END DlgReact.

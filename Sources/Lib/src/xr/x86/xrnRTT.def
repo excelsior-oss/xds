@@ -1,0 +1,40 @@
+(* Copyright (c) xTech 1993,95.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrnRTT;
+  (* implemented in assembler - see rttraps.asm *)
+
+IMPORT
+  SYSTEM;
+
+CONST
+   STK_ENTRIES = 32;
+
+TYPE
+   ExceptionInfo = RECORD
+                     EAX : SYSTEM.CARD32;
+                     EBX : SYSTEM.CARD32;
+                     ECX : SYSTEM.CARD32;
+                     EDX : SYSTEM.CARD32;
+
+                     ESI : SYSTEM.CARD32;
+                     EDI : SYSTEM.CARD32;
+
+                     EBP : SYSTEM.CARD32;
+                     ESP : SYSTEM.CARD32;
+
+                     EIP : SYSTEM.CARD32;
+
+                     stk : ARRAY [0..STK_ENTRIES-1] OF SYSTEM.CARD32;
+                   END;
+
+PROCEDURE X2C_ClearFPP;
+
+PROCEDURE X2C_TrapFJump;
+
+PROCEDURE X2C_TRAP_NIL;
+PROCEDURE X2C_TRAP_RANGE;
+PROCEDURE X2C_TRAP_INDEX;
+
+PROCEDURE X2C_TRAP_BREAK (ErrEIP, ErrESP: SYSTEM.CARD32);
+
+END xrnRTT.

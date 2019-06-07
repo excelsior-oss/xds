@@ -1,0 +1,18 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+<*+ M2ADDTYPES *>
+<* IF __GEN_C__ THEN *>
+<*+ GENTYPEDEF *>
+<* END *>
+DEFINITION MODULE [2] conio;
+
+FROM SYSTEM IMPORT int;
+
+PROCEDURE kbhit(): int;
+PROCEDURE getch(): int;
+PROCEDURE getche(): int;
+PROCEDURE putch(ch: int): int;
+
+END conio.

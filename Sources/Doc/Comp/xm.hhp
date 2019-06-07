@@ -1,0 +1,25 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=xm.chm
+Contents file=xm.hhc
+Default Window=Main
+Default topic=xm.html
+Display compile progress=No
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=XDS-C User's Guide
+
+[WINDOWS]
+Main="XDS-C User's Guide","xm.hhc",,"xm000.html",,,,,,0x2520,,0x300e,[30,30,994,708],,,,,,,0
+
+[ALIAS]
+#include "xm.hha"
+
+[MAP]
+
+[FILES]
+xm.html
+..\default.css
+
+[INFOTYPES]
+

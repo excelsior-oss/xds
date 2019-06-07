@@ -1,0 +1,24 @@
+\chapter{Overview}\label{lib} \pagenumbering{arabic}
+\index{libraries}
+
+The following sets of libraries are provided:
+\begin{itemize}
+\item         ISO standard Modula-2 libraries (Chapter \ref{lib:ISO})
+\item         A subset of libraries defined in \cite{PIM} (Chapter \ref{lib:PIM})
+\item         Utility libraries (Chapter \ref{lib:util})
+\item         A subset of \ot{} Oakwood standard libraries (Chapter \ref{lib:oak})
+% !!! \item         Interface to ANSI C libraries (Chapter \ref{lib:clib})
+\ifcomment
+\item         A subset of Mithril core libraries (Chapter \ref{lib:mi})
+\fi
+
+\end{itemize}
+
+{\bf Note:} All these libraries can be used with both \mt{} and \ot{}
+compilers. Some libraries are written in \ot{}, others in \mt{}. If a
+program consists of both \ot{} and \mt{} modules, two memory
+managers are in use. In rare cases it can lead to problems with
+memory allocation  or  deallocation.  A special care was taken to
+eliminate these problems. % !!! (See \ref{rts:mm}).
+
+

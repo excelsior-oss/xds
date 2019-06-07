@@ -1,0 +1,163 @@
+(* Copyright (C) 1999-2000 Excelsior *)
+(*  1999 - FSA: mouse events *)
+
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] xtsGComm;
+
+IMPORT O := OS2;
+
+CONST
+  shMemName          = "\SHAREMEM\TSGRAPHDATA_";
+
+  clReadySemName     = "\SEM32\TSGRAPH1_";
+  servReadySemName   = "\SEM32\TSGRAPH2_";
+  mouseActionSemName = "\SEM32\TSGRAPH3_";
+
+  wmcharPipeName     = "\PIPE\TSGRAPH_WMCHARS_";
+
+  _mxPolyNodes = 100;
+  _mxTextChars = 256;
+
+  _mxNColor    = 1024;
+
+TYPE
+  GObj = (
+          init, clip, cancelClip, setmix, setBkMix,
+          lnType, setSpat, setBkC,
+          mapAllcol, initPal,
+
+          point, setpat, map1col, getimg, resize, setfocus,     -- read mode operations
+
+          plot,
+          rect, line,
+          disc, ellip, poly,
+          flood,
+          arc, pie,
+          text, rtext,
+          putimg, delimg,
+
+          error, ok
+         );
+
+CONST
+  rmodeB = point;
+  rmodeE = setfocus;
+
+TYPE
+  tGObj = RECORD
+            CASE obj :GObj OF
+              | init,
+                resize   : xd, yd,
+                           xLeft, yBottom :LONGCARD;
+
+                           numColors      :LONGCARD;
+                           fontMetricYd,
+                           fontMetricDescender,
+                           fontMetricXd   :LONGCARD;
+
+              | rect,
+                line     : lnCorn0,
+                           lnCorn1        :O.POINTL;
+                           lnColor        :LONGCARD;
+                           lnFill         :BOOLEAN;
+
+              |mapAllcol : curPalette     :ARRAY [0.._mxNColor] OF LONGINT;
+                           numc2map       :LONGCARD;
+
+              |map1col   : prevColor      :LONGINT;
+                           colInd         :LONGCARD;
+                           col2BSet       :LONGINT;
+
+              | clip     : region         :O.RECTL;
+
+              | setBkC   : BgrColor       :LONGCARD;
+
+              | setmix,
+                setBkMix : mixMode        :O.LONG;
+
+              | lnType   : lnStyle        :O.LONG;
+
+              | setSpat  : ptType         :O.LONG;
+
+              | setpat   : alPatt         :ARRAY [0..7] OF LONGCARD;
+
+              | plot,                                 --  read mode
+                point    : spot          :O.POINTL;   --  /
+                           pColor        :LONGCARD;
+
+              | disc   : discCenter     :O.POINTL;
+                         discRad,
+                         discColor      :LONGCARD;
+                         discFill       :BOOLEAN;
+
+              | ellip  : eCenter        :O.POINTL;
+                         eARad, eBRad   :LONGCARD;
+                         eColor         :LONGCARD;
+                         elFill         :BOOLEAN;
+
+              | poly:    polyColor      :LONGCARD;
+                         polyFill       :BOOLEAN;
+                         polyN          :LONGCARD;
+                         polyNodes      :ARRAY [0.._mxPolyNodes-1] OF O.POINTL;
+
+              | flood:   seedp          :O.POINTL;
+                         floodColor     :LONGCARD;
+                         boundColor     :LONGCARD;
+
+              | arc  :   arcCenter      :O.POINTL;
+                         arcARad,
+                         arcBRad        :LONGCARD;
+                         arcStartAngle,
+                         arcSweetAngle  :LONGINT;
+                         arcColor       :LONGCARD;
+
+              | pie  :   pieCenter      :O.POINTL;
+                         pieARad,
+                         pieBRad        :LONGCARD;
+                         pieStartAngle,
+                         pieSweetAngle  :LONGINT;
+                         pieFill        :BOOLEAN;
+                         pieColor       :LONGCARD;
+
+              | text :   txPos          :O.POINTL;
+                         txColor,
+                         txBgr          :LONGCARD;
+                         txFontXd,
+                         txFontYd,
+                         txfontDescend  :LONGCARD;
+
+                         txText         :ARRAY [0.._mxTextChars] OF CHAR;
+
+              | rtext :  rtxPos         :O.POINTL;
+                         rtxColor       :LONGCARD;
+                         rtxText        :ARRAY [0.._mxTextChars] OF CHAR;
+
+              |getimg :  imgArea        :ARRAY [0..1] OF O.POINTL;
+                         rimgHandle     :O.HBITMAP;
+
+              |putimg :  imgLCorn       :O.POINTL;
+                         imgHandle      :O.HBITMAP;
+                         imgMode        :LONGCARD;
+
+
+              |delimg :  delImgHandle   :O.HBITMAP;
+              |setfocus :
+            END;
+            mouseMsg : LONGCARD;
+            mouseMp1 : O.MPARAM;
+            mouseMp2 : O.MPARAM;
+          END;
+
+  ptrGObj = POINTER TO tGObj;
+
+(*  MSMouse interface: *)
+VAR
+  mouseProc      : PROCEDURE (LONGCARD, O.MPARAM, O.MPARAM);
+  mouseWinHeight : CARDINAL;
+  mouseGraph     : BOOLEAN; -- TRUE to bind mouse to the graph window, FALSE - tj the text
+
+
+END xtsGComm.

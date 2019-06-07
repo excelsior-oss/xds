@@ -1,0 +1,219 @@
+OBJDIR  = .
+NAME    = xlink
+SONAME  = libxlink$(JETVERSION).so
+
+OBJ     = $(OBJDIR)/link.o     \
+          $(OBJDIR)/struct.o   \
+          $(OBJDIR)/typestable.o \
+          $(OBJDIR)/efs.o \
+          $(OBJDIR)/idents.o   \
+          $(OBJDIR)/writepe.o  \
+          $(OBJDIR)/writelx.o  \
+          $(OBJDIR)/writeelf.o \
+          $(OBJDIR)/debug.o    \
+          $(OBJDIR)/dbgcv.o    \
+          $(OBJDIR)/dbghll.o   \
+          $(OBJDIR)/rdos2res.o \
+          $(OBJDIR)/rdntres.o  \
+          $(OBJDIR)/readdll.o  \
+          $(OBJDIR)/readelf.o  \
+          $(OBJDIR)/xshell.o   \
+          $(OBJDIR)/readcoff.o \
+          $(OBJDIR)/readedf.o  \
+          $(OBJDIR)/implib.o   \
+          $(OBJDIR)/messages.o \
+          $(OBJDIR)/xmem.o     \
+          $(OBJDIR)/xdebug.o   \
+          $(OBJDIR)/readomf0.o \
+          $(OBJDIR)/readomf.o  \
+          $(OBJDIR)/readxomf.o \
+          $(OBJDIR)/args.o     \
+          $(OBJDIR)/reader.o   \
+          $(OBJDIR)/writer.o   \
+          $(OBJDIR)/writeeil.o \
+          $(OBJDIR)/readeil.o  \
+          $(OBJDIR)/dbgedif.o  \
+          $(OBJDIR)/xos.o      \
+          $(OBJDIR)/parser.o   \
+          $(OBJDIR)/dbg99.o    \
+          $(OBJDIR)/unzip.o    \
+          $(OBJDIR)/ioapi.o    \
+          $(OBJDIR)/adler32.o  \
+          $(OBJDIR)/compress.o \
+          $(OBJDIR)/crc32.o    \
+          $(OBJDIR)/deflate.o  \
+          $(OBJDIR)/gzio.o     \
+          $(OBJDIR)/infback.o  \
+          $(OBJDIR)/inffast.o  \
+          $(OBJDIR)/inflate.o  \
+          $(OBJDIR)/inftrees.o \
+          $(OBJDIR)/trees.o    \
+          $(OBJDIR)/uncompr.o  \
+          $(OBJDIR)/zutil.o    \
+          $(OBJDIR)/packed_data.o
+
+CC      = gcc
+LD      = gcc
+
+COMMON_FLAGS = -s
+CPPFLAGS  = -Dxos_LINUX -DENABLE_PACKEDDATA_INPUT -DSHARED_LIBRARY -I zlib -I minizip $(COMMON_FLAGS)
+CFLAGS  = -Dxos_LINUX -DENABLE_PACKEDDATA_INPUT -DSHARED_LIBRARY -I zlib -I minizip -x c $(COMMON_FLAGS)
+LFLAGS  =
+LSOFLAGS  = $(COMMON_FLAGS) -static-libgcc -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
+
+all     : $(SONAME)
+
+$(SONAME) : $(OBJ)
+	$(CC) -shared -o $(SONAME) $(OBJ) $(LSOFLAGS)
+
+$(OBJDIR)/idents.o : idents.cpp xdefs.h idents.h xmem.h xdebug.h
+	$(CC) $(CPPFLAGS) -c -o $@ idents.cpp
+
+$(OBJDIR)/readcoff.o : readcoff.cpp struct.h idents.h messages.h debug.h xmem.h readcoff.h
+	$(CC) $(CPPFLAGS) -c -o $@ readcoff.cpp
+
+$(OBJDIR)/link.o : link.cpp idents.h xshell.h messages.h xdefs.h xos.h
+	$(CC) $(CPPFLAGS) -c -o $@ link.cpp
+
+$(OBJDIR)/struct.o : struct.cpp struct.h jet.h idents.h messages.h xdebug.h xmem.h reader.h writer.h cpb.h
+	$(CC) $(CPPFLAGS) -c -o $@ struct.cpp
+
+$(OBJDIR)/typestable.o : typestable.cpp typestable.h struct.h jet.h idents.h messages.h xdebug.h xmem.h
+	$(CC) $(CPPFLAGS) -c -o $@ typestable.cpp
+
+$(OBJDIR)/efs.o : efs.cpp efs.h struct.h jet.h idents.h messages.h xdebug.h xmem.h parser.h
+	$(CC) $(CPPFLAGS) -c -o $@ efs.cpp
+
+$(OBJDIR)/xshell.o : xshell.cpp xshell.h xdefs.h
+	$(CC) $(CPPFLAGS) -c -o $@ xshell.cpp
+
+$(OBJDIR)/writepe.o : writepe.cpp struct.h idents.h messages.h xdebug.h debug.h implib.h xmem.h writepe.h writer.h
+	$(CC) $(CPPFLAGS) -c -o $@ writepe.cpp
+
+$(OBJDIR)/writelx.o : writelx.cpp struct.h idents.h messages.h xdebug.h debug.h implib.h xmem.h writelx.h writer.h
+	$(CC) $(CPPFLAGS) -c -o $@ writelx.cpp
+
+$(OBJDIR)/writeelf.o : writeelf.cpp struct.h idents.h messages.h xdebug.h xmem.h writeelf.h writer.h xelf.h debug.h xos.h
+	$(CC) $(CPPFLAGS) -c -o $@ writeelf.cpp
+
+$(OBJDIR)/debug.o : debug.cpp struct.h debug.h dbghll.h dbg99.h dbgcv.h dbgedif.h xmem.h xdebug.h messages.h xos.h
+	$(CC) $(CPPFLAGS) -c -o $@ debug.cpp
+
+$(OBJDIR)/dbgcv.o : dbgcv.cpp struct.h idents.h messages.h debug.h xmem.h writer.h
+	$(CC) $(CPPFLAGS) -c -o $@ dbgcv.cpp
+
+$(OBJDIR)/dbghll.o : dbghll.cpp struct.h xdebug.h idents.h messages.h dbghll.h xmem.h debug.h writer.h
+	$(CC) $(CPPFLAGS) -c -o $@ dbghll.cpp
+
+$(OBJDIR)/rdntres.o : rdntres.cpp struct.h messages.h xmem.h rdntres.h
+	$(CC) $(CPPFLAGS) -c -o $@ rdntres.cpp
+
+$(OBJDIR)/rdos2res.o : rdos2res.cpp struct.h messages.h xdebug.h xmem.h rdos2res.h
+	$(CC) $(CPPFLAGS) -c -o $@ rdos2res.cpp
+
+$(OBJDIR)/readdll.o : readdll.cpp struct.h idents.h messages.h xmem.h readdll.h
+	$(CC) $(CPPFLAGS) -c -o $@ readdll.cpp
+
+$(OBJDIR)/readelf.o : readelf.cpp struct.h idents.h messages.h xmem.h readelf.h
+	$(CC) $(CPPFLAGS) -c -o $@ readelf.cpp
+
+$(OBJDIR)/readedf.o : readedf.cpp struct.h idents.h messages.h xmem.h readedf.h reader.h
+	$(CC) $(CPPFLAGS) -c -o $@ readedf.cpp
+
+$(OBJDIR)/messages.o : messages.cpp xdefs.h args.h xdebug.h messages.h xshell.h
+	$(CC) $(CPPFLAGS) -c -o $@ messages.cpp
+
+$(OBJDIR)/implib.o   : implib.cpp struct.h idents.h messages.h xdebug.h omf.h implib.h xmem.h writer.h
+	$(CC) $(CPPFLAGS) -c -o $@ implib.cpp
+
+$(OBJDIR)/xmem.o     : xmem.cpp xmem.h messages.h
+	$(CC) $(CPPFLAGS) -c -o $@ xmem.cpp
+
+$(OBJDIR)/xdebug.o   : xdebug.cpp struct.h xdebug.h idents.h
+	$(CC) $(CPPFLAGS) -c -o $@ xdebug.cpp
+
+$(OBJDIR)/readomf0.o : readomf0.cpp struct.h debug.h omf.h idents.h messages.h xdebug.h xmem.h readomf0.h
+	$(CC) $(CPPFLAGS) -c -o $@ readomf0.cpp
+
+$(OBJDIR)/readomf.o : readomf.cpp struct.h debug.h omf.h idents.h messages.h xdebug.h xmem.h readomf.h readomf0.h
+	$(CC) $(CPPFLAGS) -c -o $@ readomf.cpp
+
+$(OBJDIR)/readxomf.o : readxomf.cpp readomf.cpp struct.h debug.h omf.h xomf.h idents.h messages.h xdebug.h xmem.h readxomf.h readomf0.h
+	$(CC) $(CPPFLAGS) -c -o $@ readxomf.cpp
+
+$(OBJDIR)/args.o     : args.cpp struct.h idents.h xmem.h messages.h readedf.h reader.h xshell.h args.h cpb.h
+	$(CC) $(CPPFLAGS) -c -o $@ args.cpp
+
+$(OBJDIR)/reader.o   : reader.cpp xos.h xdefs.h messages.h xmem.h args.h idents.h reader.h omf.h readomf.h readxomf.h readeil.h readcoff.h readdll.h rdntres.h rdos2res.h res/packed_data.h
+	$(CC) $(CPPFLAGS) -c -o $@ reader.cpp
+
+$(OBJDIR)/writer.o   : writer.cpp xdefs.h xos.h xmem.h idents.h messages.h args.h writepe.h writelx.h writeelf.h implib.h writeeil.h writer.h
+	$(CC) $(CPPFLAGS) -c -o $@ writer.cpp
+
+$(OBJDIR)/writeeil.o : writeeil.cpp struct.h idents.h messages.h xdebug.h xmem.h writer.h writeeil.h eil.h
+	$(CC) $(CPPFLAGS) -c -o $@ writeeil.cpp
+
+$(OBJDIR)/readeil.o  : readeil.cpp struct.h idents.h messages.h xdebug.h readeil.h
+	$(CC) $(CPPFLAGS) -c -o $@ readeil.cpp
+
+$(OBJDIR)/dbg99.o    : dbg99.cpp dbghll.cpp struct.h xdebug.h idents.h messages.h dbg99.h xmem.h debug.h writer.h
+	$(CC) $(CPPFLAGS) -c -o $@ dbg99.cpp
+
+$(OBJDIR)/xos.o      : xos.cpp xos.h messages.h
+	$(CC) $(CPPFLAGS) -c -o $@ xos.cpp
+
+$(OBJDIR)/parser.o   : parser.cpp parser.h xdefs.h xmem.h xos.h messages.h
+	$(CC) $(CPPFLAGS) -c -o $@ parser.cpp
+
+$(OBJDIR)/dbgedif.o    : dbgedif.cpp dbgedif.h debug.h struct.h xdebug.h idents.h messages.h xmem.h writer.h
+	$(CC) $(CPPFLAGS) -c -o $@ dbgedif.cpp
+
+$(OBJDIR)/packed_data.o : res/packed_data.c res/packed_data.h
+	$(CC) $(CPPFLAGS) -c -o $@ res/packed_data.c
+
+# objs for minizip
+                                                                    
+$(OBJDIR)/unzip.o: minizip/unzip.c minizip/unzip.h minizip/ioapi.h minizip/crypt.h zlib/zlib.h
+	$(CC) $(CFLAGS) -c -o $@ minizip/unzip.c
+
+$(OBJDIR)/ioapi.o: minizip/ioapi.c minizip/ioapi.h
+	$(CC) $(CFLAGS) -c -o $@ minizip/ioapi.c
+
+$(OBJDIR)/adler32.o: zlib/adler32.c zlib/zlib.h zlib/zconf.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/adler32.c
+
+$(OBJDIR)/compress.o: zlib/compress.c zlib/zlib.h zlib/zconf.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/compress.c
+
+$(OBJDIR)/crc32.o: zlib/crc32.c zlib/zlib.h zlib/zconf.h zlib/crc32.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/crc32.c
+
+$(OBJDIR)/deflate.o: zlib/deflate.c zlib/deflate.h zlib/zutil.h zlib/zlib.h zlib/zconf.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/deflate.c         
+
+$(OBJDIR)/gzio.o: zlib/gzio.c zlib/zutil.h zlib/zlib.h zlib/zconf.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/gzio.c        
+
+$(OBJDIR)/infback.o: zlib/infback.c zlib/zutil.h zlib/zlib.h zlib/zconf.h zlib/inftrees.h zlib/inflate.h \
+zlib/inffast.h zlib/inffixed.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/infback.c
+
+$(OBJDIR)/inffast.o: zlib/inffast.c zlib/zutil.h zlib/zlib.h zlib/zconf.h zlib/inftrees.h zlib/inflate.h \
+zlib/inffast.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/inffast.c
+
+$(OBJDIR)/inflate.o: zlib/inflate.c zlib/zutil.h zlib/zlib.h zlib/zconf.h zlib/inftrees.h zlib/inflate.h \
+zlib/inffast.h zlib/inffixed.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/inflate.c
+
+$(OBJDIR)/inftrees.o: zlib/inftrees.c zlib/zutil.h zlib/zlib.h zlib/zconf.h zlib/inftrees.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/inftrees.c
+
+$(OBJDIR)/trees.o: zlib/trees.c zlib/zutil.h zlib/zlib.h zlib/zconf.h zlib/deflate.h zlib/trees.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/trees.c
+
+$(OBJDIR)/uncompr.o: zlib/uncompr.c zlib/zlib.h zlib/zconf.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/uncompr.c
+
+$(OBJDIR)/zutil.o: zlib/zutil.c zlib/zutil.h zlib/zlib.h zlib/zconf.h
+	$(CC) $(CFLAGS) -c -o $@ zlib/zutil.c

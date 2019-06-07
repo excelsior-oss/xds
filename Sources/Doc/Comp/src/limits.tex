@@ -1,0 +1,73 @@
+\chapter{Limitations and restrictions}\label{limits}
+\index{implementation limitations}
+\index{limitations of implementation}
+
+There are some limitations and restrictions in implementation of both
+\mt{} and \ot{} compilers.
+
+\section*{Length of identifiers}
+
+The length of an identifier is at most 127 characters.
+
+\ifgenc
+There may be further limitations imposed by your C compiler and linker.
+Please check the appropriate reference manuals.
+\fi % \ifgenc
+
+\section*{Length of literal strings}
+
+The  length of a literal string is at most 256 characters. Longer
+strings  may  be  constructed  using the string concatenation
+operator (See \ref{m2:ISO:strings}).
+
+\section*{Record extension hierarchy}
+
+The depth of a record extension hierarchy is at most 15 extensions.
+
+\section*{Unimplemented ISO libraries}
+
+\ifgenc
+The following \mt{} ISO standard library modules are not
+available in the current release:
+\begin{flushleft}
+\begin{tabular}{ll}
+\bf TermFile & Access to an interactive terminal                      \\
+\bf LowLong  & Access to underlying properties of the type {\tt LONGREAL}   \\
+\bf LowReal  & Access to underlying properties of the type {\tt REAL}   \\
+\end{tabular}
+\end{flushleft}
+\lindex{TermFile}
+\lindex{LowLong}
+\lindex{LowReal}
+\fi % \ifgencode
+
+\section*{Unimplemented Oakwood libraries}
+
+The following \ot{} Oakwood library modules are not
+available in the current release:
+\begin{flushleft}
+\begin{tabular}{lp{7cm}}
+\bf Input   & Keyboard and pointer device access \\
+\bf Files   & File input/output, riders          \\
+\bf XYPlane & Elementary pixel plotting          \\
+\end{tabular}
+\end{flushleft}
+\lindex{Input}
+\lindex{Files}
+\lindex{XYPlane}
+
+\ifgenc
+\section*{Whole overflow}
+
+The whole overflow exception is not detected in the current release.
+\fi % \ifgencode
+
+\section*{Coroutines}
+
+The current release provides a restricted implementation of the
+system module {\bf COROUTINES}: the interrupt requests are not
+detected.
+
+\section*{Dynamic loader}
+
+The \ot{} dynamic loading facility is not provided in the current release.

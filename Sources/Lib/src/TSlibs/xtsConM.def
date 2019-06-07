@@ -1,0 +1,101 @@
+(* Copyright (C) 1996-99 XDS Ltd. *)
+
+<* +M2EXTENSIONS *>
+ 
+DEFINITION MODULE xtsConM;
+
+IMPORT SYSTEM;
+
+FROM SYSTEM IMPORT CARD16, CARD8;
+
+------------------------------------------------------------------------------------------
+
+TYPE
+
+ <* IF target_family = "WIN32" THEN *>
+   ATTR = CARD16;
+   SYM  = ARRAY [0..1] OF CHAR;
+   CELL = RECORD
+            AsciiChar  :SYM;
+            Attributes :ATTR;
+          END;
+ <* ELSIF target_family = 'OS2' THEN *>
+   ATTR = CARD8;
+   SYM  = CHAR;
+   CELL = RECORD
+           AsciiChar  :CHAR;
+           Attributes :ATTR;
+         END;
+ <* ELSIF target_family = 'UNIX' THEN *>
+
+<* PUSH *>
+<* ALIGNMENT = "1" *>
+   ATTR = RECORD
+           Color: CARD8;
+           Other: CARD16;
+         END;   
+   SYM  = CHAR;
+   CELL = RECORD
+           AsciiChar  :SYM;
+           Attributes :ATTR;
+         END;
+<* POP *>
+
+ <* ELSE *>
+   !!! Target family not supported !!!
+ <* END *>
+
+  COLOR = ( Black,     Blue,         Green,      Cyan,
+            Red,       Magenta,      Brown,      LightGray,
+            DarkGray,  LightBlue,    LightGreen, LightCyan,
+            LightRed,  LightMagenta, Yellow,     White );
+
+
+TYPE
+  PBUFF = POINTER TO ARRAY [0..0FFFFH] OF CELL;
+
+------------------------------------------------------------------------------------------
+
+VAR
+  Columns,
+  Rows      :CARDINAL; -- screen size
+  scrLength :CARDINAL; -- always = Columns*Rows
+
+
+  pScr      :PBUFF;  -- actually, this is a ponter to array of Columns*Rows elements
+(*
+   screen contents ( ARRAY [0..Rows-1] OF Columns line slices )
+
+   WARNING : access to pScr can be made only after claiming rights through the GainAcces proc
+*)
+
+(* claim access rights *)
+PROCEDURE GainAccess;
+
+(* relinquish access rights *)
+PROCEDURE Relinquish;
+
+
+------------------------------------------------------------------------------------------
+
+PROCEDURE MakeAttr (fg, bg :COLOR) :ATTR;
+(* make a color attribute from foregroung&background colors passed *)
+
+PROCEDURE GetFg ( attr :ATTR) :COLOR;
+PROCEDURE GetBg ( attr :ATTR) :COLOR;
+
+PROCEDURE SaveScreen;
+PROCEDURE RestoreScreen;
+
+PROCEDURE SetCurPos ( x, y :CARD16);
+PROCEDURE GetCurPos ( VAR x,y :CARD16 );
+
+PROCEDURE CursorOn;
+PROCEDURE CursorOff;
+
+PROCEDURE UpdateRect ( x1A, y1A, x2A, y2A :CARDINAL );
+PROCEDURE UpdateAll;
+
+PROCEDURE CompareAttrs(attr1, attr2: ATTR): BOOLEAN;
+
+END xtsConM.

@@ -1,0 +1,97 @@
+% XDS User Manual
+%
+% Title page and copyright notices.
+%
+
+\pagenumbering{roman}
+
+\begin{titlepage}
+
+%\hfill\epsfxsize=0.4\textwidth\epsfbox{../logo3.eps}
+
+\ifjava\else
+\begin{center}
+\Large\bf XDS Family of Products
+\end{center}
+\fi
+\vspace{1 in}
+\begin{center}
+\Huge \bf
+\ifcommon
+\else
+  \ProductName
+  \par \Large for
+  \ifosii       IBM Operating System/2
+  \else\iflinux Linux Operating System
+  \else\ifmacosx Mac OS X
+  \else\ifwinnt Microsoft Windows 
+  \else\ifunix  Unix
+  \else\JNO
+  \fi\fi\fi\fi\fi
+  \par \Large Version \VersionNumber
+  \vfill
+\fi % ------- ifcommon
+\end{center}
+\begin{center}
+\huge\bf \BookName{}
+\end{center}
+
+\vfill
+\begin{center}
+\ifonline
+  {\Large Excelsior, LLC}
+
+  \url{http://www.excelsior-usa.com}
+\else
+  \includegraphics[scale=0.7]{../Common/logo.pdf}
+
+  {\sf http://www.excelsior-usa.com}
+\fi
+
+\end{center}
+
+\pagebreak
+\thispagestyle{empty}
+\setcounter{page}{0}
+{\small
+
+Copyright \copyright{} 2001-2019 Excelsior, LLC. All rights reserved.
+
+Information in this document is subject to change without notice and
+does not represent a commitment on the part of Excelsior, LLC.
+
+Excelsior's software and documentation have been tested and reviewed.
+Nevertheless, Excelsior makes no warranty or representation,
+either express or implied, with respect to the software and
+documentation included with Excelsior product. In no event will Excelsior be
+liable for direct, indirect, special, incidental or consequential
+damages resulting from any defect in the software or
+documentation included with this product. In particular, Excelsior
+shall have no liability for any programs or data used with this
+product, including the cost of recovering programs or data.
+
+\XDS{} is a trademark of Excelsior, LLC. % !!!
+
+\ifcommon \else % not a common document
+  \ifosii
+    IBM, Operating System/2, OS/2, Presentation Manager, C Set/2, VisualAge
+    are trademarks of IBM Corporation.
+  \fi
+
+  \ifwinnt
+    Microsoft, Windows 2000, Windows XP, Windows Vista are
+    either registered trademarks or trademarks of Microsoft Corporation.
+  \fi
+\fi
+
+\ifjava
+  Java (tm) and all Java-based trademarks and logos are trademarks or
+  registered trademarks of Sun Microsystems, Inc. in the United States and
+  other countries. 
+\fi
+
+All trademarks and copyrights mentioned in this documentation are
+the property of their respective holders.
+
+} % end small
+\end{titlepage}

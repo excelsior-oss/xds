@@ -1,0 +1,692 @@
+--------------------- Version 0.01, 01.11.96 ---------------------
+
+ 1. Modula-2 & Oberon-2 Debugger for Native XDS-x86, Version 0.01 beta,
+    OS/2 Edition issued!
+
+
+--------------------- Version 0.02, 13.11.96 ---------------------
+
+ 1. Pressing Enter in "Variables" window and structured variable edit window
+    on a designator which have a pointer type causes a referenced object to
+    be displayed (if possible). To edit a pointer value, press Ctrl+Enter.
+    In all other cases, Enter and Ctrl+Enter work perfectly the same.
+
+ 2. Now it is possible to switch beetween windows with the mouse.
+
+ 3. In list windows, single click on an element moves cursor to it,
+    double click behaves as Enter key.
+
+ 4. Mouse support added to menues (w/o dragging yet).
+
+ 5. In the main window (when in source mode):
+
+      - Single click moves user cursor
+      - Double click behaves as "execute to cursor position"
+      - Single click in the first two columns toggles breakpoint state
+        (sticky/disabled/none), if possible.
+
+ 6. Keyboard and mouse are not polled now, greatly reducing CPU load.
+
+ 7. In the "Search" menu, a new element was added - "Goto address" (Ctrl-A).
+    This operation allows to display source text which corresponds to
+    a given address, if any.
+
+ 8. FIX: Switching to another session during debugging caused XD to trap
+    upon debuggee stop.
+
+ 9. Alt+3 in the main window switches to the mixed view (source+disassembler)
+    mode.
+
+10. Program arguments are now accepted if entered in the Load dialog.
+
+11. This version is the first with thread-awareness: it allows to debug
+    multi-thread programs but has no thread control facilities.
+    Threads are displayed.
+
+12. It is recommended to erase old *.ses files and replace xd.cfg
+    before starting XD v.0.02 due to changes in the option set.
+
+13. FIX: An error in xd.cfg or a .ses file now does not cause the debugger to
+    crash. A warning with a line number is reported
+
+14. (LONG)REAL and (LONG)COMPLEX variables are now displayed.
+
+15. In previous versions, the debugger allowed more than four breaks to be set,
+    but only the first four worked. Now the number of breakpoints is unlimited.
+    The number of access breaks is limited to four. An attempt to set a
+    fifth access break causes a warning.
+
+16. FIX: Executing the code corresponding to the last line of a module
+    does not switch the source window to disassembler mode.
+
+17. Reserved identifiers (e.g. registers) are not case-sensitive anymore
+
+
+
+--------------------- Version 0.03, 24.11.96 ---------------------
+
+ 1. FIX: When setting acсess breaks, the debugger verifies address and length
+    and in case of error displays the correspondent message instead of
+    "Not enough hardware debug registers for required operation."
+
+ 2. FIX: During debug info loading, a lot of memory was allocated for
+    nothing, slowing down or even crashing the debugger.
+
+ 3. Source text display during execution has been speeded up.
+
+ 4. Find prev/Find next fixed
+
+ 5. Arrays with an enumeration index type are now displayed correctly.
+
+ 6. Smart Select Session (tm): the debuggee session is moved to foreground
+    200ms after start of execution, so if execution terminates earlier
+    (on a breakpoint or in a step mode), the windows won't flicker.
+
+ 7. Scroll left/right in disassembly and mixed modes (Alt-2,Alt-3)
+
+ 8. Module name search in expression evaluator has been speeded up
+
+ 9. Standard functions HEX(), DEC(). OCT(), BIN(), SDEC() (signed decimal)
+    introduced. Can be used to specify result radix.
+
+10. New functions can be used in expressions:
+
+    ADR(designator)  - address of a memory object
+    SIZE(designator) - size of a memory object
+    LOW(array)       - low index of an array
+    HIGH(array)      - high index of an array
+
+    Example: Provided that 'zzz' is an array variable, 'zzz[LOW(zzz)]' and
+             'zzz[HIGH(zzz)]' are evaluated to the first and last element
+             of 'zzz' correspondently.
+
+11. There's now a locator field in module, procedure, and variable list windows.
+    Pressing any of the keys '_', 'A'..'Z', 'a'..'z', '0'..'9' activates it.
+    Backspace erases last typed symbol, Esc clears the locator.
+
+12. Two exception handling modes (Options->Exception raise on first chance):
+
+    1) Let debuggee to handle exception. A user will be notified about
+       an exception only if debuggee fails to handle it.
+
+    2) Always notify user about exceptions, prompting for either debuggee
+       handler execution or halt.
+
+
+--------------------- Version 0.04, 29.11.96 ---------------------
+
+ 1. FIX: In one of the new exception handling modes (see 0.03, item 12)
+    debuggee was blocked after its exception handler execution.
+
+ 2. The backslash ("\") key now switches debuggee session to foreground
+    for 4 seconds, if not switched back earlier.
+
+    The slash ("/") key restores the debugger session screen to the state
+    it has before debugger invocation or before switching to interactive
+    mode. Pressing any key displays interactive mode screen again.
+
+ 3. FIX (Win32): Break on write access worked only once; the debugger
+    crashed on second try.
+
+ 4. Read/write access breaks now work.
+
+ 5. LOCAL VARIABLES are now displayed! To open the Local Variables window,
+    select Data -> Local variables from the menu. The optimizer still can not
+    be switched off completely, so only variables allocated on the stack
+    can be edited. Register variables are marked with a red exclamation mark
+    and can be viewed only. Their value correctness, however, is absolutely
+    not guaranteed. Locator field works in the Local Variables window as
+    usual.
+
+ 6. FIX (OS/2): thread information was incorrectly processed and hence
+    inadequately displayed.
+
+---------------------- Version 0.05, 07.12.96 ---------------------------
+
+ 1. Search in source files is not case sensitive anymore
+
+ 2. FIX: Some windows could not be closed from Windows menu
+
+ 3. FIX (Win32): Oberon-2 records with extensions are now read properly.
+
+ 4. FIX (OS/2): Keyboard handler now does not blocks the input if
+    keyboard is used to stop animation execution started with the mouse.
+    This bug also caused occassional keys duplication.
+
+ 5. FIX (Win32): AltHome and CtrlHome now work.
+
+ 6. FIX: It was imposiible to move out of Window menu using the mouse.
+    Other minor bugs related to this menu were fixed.
+
+ 7. Structure variable field values are now displayed aligned by maximum
+    field length.
+
+ 8. FIX (OS/2): his utility was unable to read debug info containing local
+    variables. It is also significantly speeded up.
+
+ 9. A structure variable window is now not modal. The displayed object
+    is NOT changed until a new structure variable is to be displayed.
+    For instance, if P^ is displayed, and then program is executed
+    so that P is assinged another value, the contents of the window
+    will remain unchanged.
+
+10. FIX (Win32): Oberon-2 extended records are now correctly _processed_.
+    (compare to item #3)
+
+11. FIX (OS/2): Procedure prologue and epilogue debug information was
+    incorrect.
+
+12. FIX (Win32): A bug in a low-level memory access module caused incorrect
+    processing of pointers containing garbage (e.g. uninitialized)
+    This bug also caused the debugger to crash on an attempt to dereference
+    a NIL pointer.
+
+13. FIX: Local variables window was sometimes blanked.
+
+14. FIX: If the execution point was in a procedure prologue or epilogue,
+    local variables were incorrectly displayed until EBP initialization.
+    In a thread procedure's prologue, EBP is equal to 0, so the debugger
+    was bombing.
+
+15. FIX (OS/2): Clicking on the background caused mouse event queue to
+    block.
+
+16. FIX: Disassembler now works correctly. More precisely, there are
+    no known cases of incorrect disassembly results. Please report
+    any inconsistencies (can be often noticed by '???' in place of
+    instruction mnemonic)
+
+17. In a source window heading, module, procedure, line number and address
+    correspoding to _user_ cursor position are displayed (if possible).
+    In disassembler mode, code offset from procedure's entry point is
+    also shown.
+
+18. The XD.CFG file and *.ses files are now searched and stored using XD.RED.
+
+19. FIX: A non-sticky breakpoint was not removing completely, and next
+    execution of that point caused the "File %s not found" message to
+    be displayed.
+
+20. FIX: Disassembler was incorrectly calculating addresses of procedures
+    above the current point, so addresses in such call instructions were
+    not resolving to procedure names.
+
+21. FIX: Stepping over an Oberon-2 type-bound procedure or a procedure
+    variable did not work.
+
+22. Step over a recursive call now stops on the same call level.
+
+23. Restart now works. All breaks are preserved, but counters are not reset.
+
+--------------------- Version 0.06, 14.12.96 -------------------------------
+
+ 1. Pop-up message/warning/error windows can now be closed by clicking
+    on the Ok button.
+
+ 2. Enter/CtrlEnter now works in the Watch window, if selected expression
+    is an lvalue.
+
+ 3. The Run menu has been reorganized. The "Run until call" item is not
+    available anymore (it did not work in fact). The "Step out" command
+    causes execution to the instruction right after the call to the
+    current procedure. The "Run to very return" command means execution until
+    procedure's epilogue, enabling to examine local variables and output
+    parameters before return. This two modes work only for procedures with
+    debug info by now.
+
+ 4. The "Step Over" command now uses a different technique for recursive
+    calls skipping, which is slightly faster and has eliminated the
+    problem with temporary breakpoint not being removed if stepping
+    over a recursive call was interrupted.
+
+ 5. The xd.red file is now a bit less essential, since the debuggee
+    executable is searched in the current directory and by PATH.
+
+ 6. FIX (OS/2): Yahooo! The debugger now works correctly on the first run
+    after system bootup.
+
+ 7. OS/2: threads can now be frozen/thawed and switched between.
+    In the single-step mode, all threads but current are stopped.
+    Stepping over a call, however, enables thread scheduling.
+
+ 8. FIX (OS/2): Debug info emitter crashed on variables of record type
+    with a field of type POINTER TO that very record.
+
+ 9. The debugger now works in any screen mode with 80 or more columns
+    and 25 or more lines.
+
+10. Call Stack can be now displayed.
+
+11. The disassembler now works from the user cursor position, which is
+    preserved during switching between source, disassembler, and mixed
+    modes.
+
+--------------------- Version 0.07, 21.12.96 -------------------------------
+
+ 1. FIX: Crash on startup if window size in xc.cfg or *.ses exceeds the
+    current session size.
+
+ 2. Public names are now read and displayed instead of addresses where
+    possible.
+
+ 3. In disassembler mode (Alt-2), it is now possible to scroll up, at
+    least upto the current procedure's entry point.
+
+ 4. Hot! Keyboard remapping has been implemented! The File/Options menu
+    contains the Keyboard Layout Scheme item, under which a name of a
+    file containing layout description can be specified. The default layout
+    will be used if this field is empty. The xd.kbd file can be used as a
+    template for custom layouts. Note: more than one key combinations can
+    be set up for an action; the first one will be displayed in the menu.
+
+ 5. Many fixes in the line editor.
+
+ 6. Breakpoints are now displayed and can be set in disassembler mode,
+    however, automatic mode switch is not implemented yet.
+
+ 7. FIX(Win32): Ctrl-Tab and Alt-Home were not recognized.
+
+--------------------- Version 0.08, 11.01.97 -------------------------------
+
+ 1. Watchpoints were implemented. If a watchpoint is encountered during
+    debuggee execution, all information windows are updates and execution
+    continues.
+
+ 2. FIX: a dialog window was not closed if messages were displayed during
+    its processing.
+
+ 3. If a breakpoint, which was set in disassembly mode, is encountered,
+    the debugger automatically switches to disassembly mode.
+
+ 4. FIX: the watch window was incorrectly displayed.
+
+ 5. FIX(OS/2): the debugger failed to load a program by its full name.
+
+ 6. Call stack display is improved. There is now no garbage beetwen the
+    first and second procedures in the stack, which was caused by state
+    of local variables.
+
+ 7. OS/2: Debug info is now generated for module body.
+
+ 8. FIX(OS/2): Restart did not work if a program is already finished.
+
+ 9. FIX: All floating point command were incorrectly displayed.
+    They were revised with the help of Intel Pentium Pro manual.
+
+10. Search for a module correspondent to an address significantly speeded up,
+    resulting in much faster execution trace.
+
+11. FIX: Pressing Enter on a radio button did not cause a dialog window
+    to close.
+
+12: FIX: The exception number and address were reported incorrectly.
+
+13: FIX: Line editor misbehaved at the rightmost position.
+
+14: FIX: The debugger crashed when trying to display two adjacent modules
+    in disassembly mode.
+
+--------------------- Version 0.09 , 03.02.97 -------------------------------
+
+ 1. PATCH(Win32): The debugger crashed upon DLL unload and thread
+    termination. Now it at least keeps running,
+
+ 2. FIX(Win32): Debug print turned off.
+
+ 3. FIX(Win32): The procedure which determined valid range of pages
+    contained a bug which caused XD to crash under Windows 95, and
+    lead to incorrect stack/dump display. In Watcom Win32 help, the
+    VirtualQueryEx call was claimed as unavailable under Windows 95,
+    so a lto of time was spent inventing patches, until we read SDK
+    Help and fixed our bug. Watcom and Microsoft - #%$%#$!!!
+
+ 4. FIX: ASSERT if Alt-3 is pressed from disassembly mode if no debug
+    info is available for the current code.
+
+ 5. FIX: ASSERT after displaying a message about absense of LINENO+
+
+ 6. FIX(OS/2): ASSERT if no debug info is available.
+
+ 7. FIX(Win32): Alt-\ & Ctrl-\ are now accepted.
+
+ 8. FIX: If line number specified on Goto Line is not in the valid
+    range, the correct message is displayed.
+
+ 9. FIX: ASSERT when trying to examine a variable or evaluate exression
+         with identifier if no program is loaded.
+
+10. FIX: In disassembly mode, MOV commands between Reg32 and a
+    system register (CRx, DRx, TRx) were displayed incorrectly.
+
+11. Condition breaks and breakpoints are now set even if the condition
+    may not be evaluated in the current context. A warning is issued.
+
+12. Publics are now resolved under Win32.
+
+13. FIX(Win32): Restart did not work after program termination.
+
+14. OS/2 only: Dynamic arrays (POINTER TO ARRAY OF ...) are now
+    supported, including multi-dimension and strings.
+
+15. OS/2 only: Sets (SET OF ...) are supported. Bits are toggled by
+    pressing Enter.
+
+P.S. 14 and 15 work only under OS/2, since Codeview do not allow to
+     express that types in debug informartion.
+
+16. FIX: A program is now searched for in the current directory
+    before it searched by PATH.
+
+17. Pressing Enter in the Call Stack now positions the user cursor
+    at the correspomndent location.
+
+18. It is now possible to dereference a pointer local variable
+    allocated on a register.
+
+19. A new option (File/Options) allows to strip source file pathes
+    so that they are searched via redirection.
+
+20. The number of accesses to debuggee's memory during disassembly and
+    stack scan greatly reduced. As a result, the debugger works much faster
+    under Windows 95, but still slower than under NT. Stack scan is
+    not invoked at all if the Call Stack window is not opened.
+
+21. Breaks are now correctly removed from the Breaks window and it is
+    possible to determine whether the currently selected break is enabled
+    or disabled.
+
+22. FIX: Pass counters are now incremented when passed in step mode.
+
+23. FIX: Run to cursor now works when there's a conditional break.
+
+24. Keypad Enter is now interpreted as a main one.
+
+25. It is now possible to set more than four access breaks (but
+    only four may be enabled at a time).
+
+26. Pressing Enter on a condition break in the Breaks window lets
+    the user to edit the break.
+
+--------------------- Version 0.10 -------------------------------
+
+ 1. FIX: Run to epilogue or Step out while on epilogue acted as Run.
+
+ 2. FIX(Win32): Restart after debuggee termination caused a new
+    session to be opened.
+
+ 3. In the Registers window, arrows now work correctly and mouse
+    support is provided
+
+ 4. FIX(OS/2): Restart corrupted program arguments.
+
+ 5. Goto address now works if no source text is available and does
+    not cause switching to Source mode.
+
+ 6. Option "Full disasm mode" may be used to toggle public symbols
+    resolution in Disassembl;y and Mixed modes. Set off on slow
+    systems.
+
+ 7. Step and trace mode now correctly work in procedures with
+    exceptional parts.
+
+ 8. Public symbols are resolved in the Call stack window.
+
+ 9. FIX(Win32): In v0.09 execution cursor was not moved in case
+    of a debuggee termination.
+
+10. FIX: If an exception was happened and successfuly handled before
+    a breakpoint is hit, attempt to continue execution after that hit
+    caused an exception at breakpoint address to be reported.
+
+11. FIX: Memory leak (in fact heap corruption) during debug info
+    reading has been eliminated. It revealed itself on large
+    enumerations and records.
+
+12. FIX: Crash on attempt to evaluate difference between two
+    addresses.
+
+13. OS/2: Hurray! It is now possible to debug PM programs without
+    hanging the whole system. Drawback: while the debuggee is stopped
+    pressing Ctrl-Esc and Alt-Esc is strongly not recommended, and
+    mouse does not work at all.
+
+--------------------- Version 0.11, 11.03.97 -------------------------------
+
+ 1. Caching and other mechanisms introduced to minimize the number
+    of system calls. As a result, the debugger works faster under
+    Windows 95 (under NT and OS/2 the change is less noticable).
+
+ 2. FIX(Win95): Restart did not work after program termination.
+
+ 3. FIX(Win95): Esc was not recognized when CapsLock is on.
+
+ 4. Now, if "Never fall into disassembler" mode is on, XD never
+    steps into routines without debug info and does not trace their
+    execution. So under OS/2 XD does not crash with SYS31xx on
+    attempt to step into or trace a system call.
+
+ 5. A breakpoint may now be removed in disassembly mode.
+
+ 6. It is now possible to swith to another modules in disassembly mode.
+
+ 7. All constants are shown in hex in disassembly mode
+
+ 8. Publics window is now displayed. It's possible to position on a
+    specific public name through it.
+
+ 9. The Components window added, which displays names of EXE and
+    loaded DLLs.
+
+10. FIX: If a variable had name similar to a register name,
+    "Register ..." was displayed instead of a value.
+
+11. FIX: Disassembler wrote out a 32-bit register name instead of
+    8-bit.
+
+12. Improvement: Disassembler now displays segment override
+    symbols inside command image but not at begin.
+
+13. Now it is possible to write enumeration items' names in expression
+
+14. Win32: Multi-thread programs debugging improvement. Now it is
+    possible to suspend and resume specific thread or switch to it
+    in order to inspect its state.
+
+15. FIX(OS/2): While debugging a multi-thread program, registers'
+    values of a wrong thread were displayed sometimes.
+
+16. FIX(OS/2): Debugger crashed if a thread was stopped inside
+    16-bit code.
+
+17. It is now possible to examine program state after an exception
+    without terminating it.
+
+18. Disassembler reviewed according to Pentium Pro and MMX specs.
+
+19. Under Win32, it is now possible to interrupt program execution
+    by pressing Ctrl-C in the debugger window. This feature is not
+    fully debugged yet, though.
+
+20. It is now possible to use unqualified local variables of current scope
+    (EIP corresponded) in expressions.
+
+21. New option, Show All Modules, allows to suppress modules without
+    debug info.
+
+22. Scroll down now works in the Mixed mode.
+
+23. !!! The NOOPTIMIZE option introduced in the compiler !!!
+
+24. FIX: The compiler crashed in the CodeView debug info emitter
+    upon encountering a recursive extended type (Oberon-2) definition.
+
+25. The Restart at startup item in the Run menu introduced. Drawbacks:
+    works under OS/2 only, disassembler is incorrect in 16-bit code.
+    The /c command line option also forces startup code debugging.
+
+
+--------------------- Version 0.12, 05.04.97 -------------------------------
+
+ 1. FIX(OS/2): Run over call in 16 bit code was used to set temporary
+    breakpoint to a wrong position
+
+ 2. It is now possible to debug programs without debug info, of course,
+    in disassembly mode only.
+
+ 3. FIX: Crash on attempt to position at a breakpoint which was set in
+    disassembly mode, if the source mode is active
+
+ 4. FIX(Win32): Exception caused by a call to API function DebugBreak
+    was ignored.
+
+ 5. FIX: Mouse in source window while in disassembly mode didn't work
+    the same way as in source mode.
+
+ 6. FIX: Breakpoints could not be enabled/disabled in disassembly mode.
+    Breakpoints with counters and conditional breaks also didn't work
+    properly.
+
+ 7. Now in a header of a dump window the address correspondent to
+    the current cursor position is displayed instead of combination
+    of origin +/- offset.
+
+ 8. From now on, activating dump or watch from a variables list or
+    a structured variable window causes address of the currently selected
+    variable to be substituted automatically.
+
+ 9. Click on the address column in disassembly and mixed mode invokes
+    the Goto Address dialog with the clicked address displayed.
+
+10. FIX: It is now possible to enter CHARs as values when modifying dump.
+
+11. Moreover, in ASCII mode typing also works.
+
+12. If the Access Break dialog is activated from a variable list window or
+    a structured variable window, address and size of the currently
+    selected variable are substituted to the corresponding fields. From
+    the Registers window, selected register value is substituted.
+    From a dump window, address and size of a currently selected element
+    is substituted.
+
+13. Mouse may be used to position in a dump and also in the stack window;
+    double click allows to edit a dump/stack element.
+
+14. Click on the address column in a dump window prompts for a new dump origin.
+
+15. FIX: In some lists, it was possible to position on an empty line with a
+    mouse, which caused the cursor to disapppear.
+
+16. FIX: After an exception in step mode, immediate restart caused crash.
+
+17. Menu items are now enabled and disabled according to context.
+
+18. FIX(Compiler): Crash while generating debug info for types like
+    "array of records containing a field which is a pointer to that array".
+
+19. Compiler news:
+
+    The use_watcom option has been excluded.
+
+    The DBGFMT equation introduced, which determines debug info format. By now,
+    possible values are "CodeView" (both OS/2 and Win32) and "HLL" (OS/2 only).
+    If DBGFMT was set to an empty string, CodeView is produced under Win32
+    and HLL under OS/2. Any other value causes no debug info to be produced.
+
+    The LINKER equation allows to select linker for which a response file
+    will be generated. Possible values: "xlink", "wlink", and "link386"
+    (OS/2 only). Under OS/2, if DBGFMT = CodeView and LINKER = 'link386',
+    it is now possible to use IPMD.
+
+20. Command-line options /Xnn /Ynn allow to specify size of the debugger
+    session window. Previous size is restored upon exit. Moreover,
+    the window is automatically resized, even under OS/2.
+
+21. The xd.cfg file is now read during startup only.
+
+22. FIX(OS/2): 16-bit calls caused heap corruptions in the debugger under
+    some circumstances.
+
+23. New option, Warning Bell, allows to toggle beeps.
+
+24. FIX: Replacing pass counter with a breakpoint of another type did not
+    work from the Breaks window.
+
+25. FIX: Upon first write access break activation, incorrect previous value
+    was displayed
+
+26. All list windows now provide horizontal scroll capability.
+
+27. Right click on most windows causes a corresponding pop-up menu to be
+    displayed. Not all actions are implemented yet.
+
+28. Exception description is now displayed instead of its number.
+
+29. FIX: In disassembler, commands "jmp far" and "call far" with "opsiz" prefix
+    were incorrectly processed, which caused incorrect address to be displayed
+    when passing control from a 32-bit segment to 16-bit or vv.
+
+30. In 16 bit code, instruction address is displayed as 4 digits.
+
+31. Garbage at the end of a code segment, caused by alignment, is not
+    disassembled anymore.
+
+32. FIX(OS/2): Stacks were incorrectly scanned in all threads but main.
+
+
+--------------------- Version 0.12bis -------------------------------
+
+ 1. In the Load Program dialog there is now a browser which allows to 
+    select an executable by walking the directory tree
+
+ 2. FIX: If there was an opened dump window which displays dynamically 
+    allocated storage, Restart caused crash, beacuse this memory is not
+    available. Now "?" characters are displayed until dump origin is
+    changed or memory is allocated.
+
+ 3. FIX: Substituion from a structured variable window into dump origin
+    promt now works correctly (only first level prefix was substituted).
+
+ 4. FIX: It is no longer possible to freeze the current thread or switch
+    to a frozen thread
+
+ 5. FIX: Program window mode is now automatically restored upon return
+         from a routine without line number info.
+
+ 6. Call stack scan speeded up (for 14000 calls - 5 times).
+
+ 7. Step Out now works in disassembly mode.
+
+ 8. FIX: longjmp used for corotines is now distinguised from used for 
+    exceptions.
+
+ 9. Call stack is now more accurate.
+
+10. Registers are now denoted as @<name> everywhere.
+
+11. The debugger now supports DLLs with debug info.
+
+12. Remote debugging is now supported under Win32. On the server system,
+    start XD_SRV.EXE, which will search for a debuggee using PATH.
+    On the client system, start XD.EXE /R=<transport>,<remote machine name>. 
+    By now, the only transport supported is TCP/IP, so use
+    /R=TCP,<IP address>.
+
+--------------------- Version 0.14 -------------------------------
+
+ 1. VAR параметры
+
+ 2. при перезапуске счетчики сбрасываются в ноль на отложенные постоянные или
+    не сработавшие одноразовые устанавливаются на начальное значение
+
+ 3. теперь для одноименных методов разных классов в отладочной информации
+    они предваряются именем класса и двумя двоеточиями
+
+ 4. В диалоговом отладчике можно смотреть обероновский объект по его 
+    динамическому типу.
+
+ 5. Перезагрузка программы аод OS/2 приводила к появлению мелких багов
+
+ 6. В предыдущей версии под OS/2 стали криво работать thread'ы
+
+ 7. Отладчик теперь понимает оба формата отладочной информации
+    под обеими платформами

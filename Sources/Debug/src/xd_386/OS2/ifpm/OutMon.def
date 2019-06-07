@@ -1,0 +1,11 @@
+DEFINITION MODULE OutMon;
+
+IMPORT O:=OS2;
+
+VAR
+  hEd      : O.HWND;
+  hFrame   : O.HWND;
+
+END OutMon.
+
+

@@ -1,0 +1,37 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+<*+ M2ADDTYPES *>
+<* IF __GEN_C__ THEN *>
+<*+ GENTYPEDEF *>
+<* END *>
+DEFINITION MODULE [2] fcntl;
+
+FROM SYSTEM IMPORT int;
+
+VAR
+  O_RDONLY      -: int;
+  O_WRONLY      -: int;
+  O_RDWR        -: int;
+  O_APPEND      -: int;
+  O_CREAT       -: int;
+  O_TRUNC       -: int;
+  O_EXCL        -: int;
+  O_TEXT        -: int;
+  O_BINARY      -: int;
+  O_RAW         -: int;
+  O_TEMPORARY   -: int;
+  O_NOINHERIT   -: int;
+  O_SEQUENTIAL  -: int;
+  O_RANDOM      -: int;
+  S_IREAD       -: int;
+  S_IWRITE      -: int;
+  S_IRWXG       -: int;
+  S_IRWXO       -: int;
+  S_IRGRP       -: int;
+  S_IWGRP       -: int;
+  S_IROTH       -: int;
+  S_IWOTH       -: int;
+
+END fcntl.

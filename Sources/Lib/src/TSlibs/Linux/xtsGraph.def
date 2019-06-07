@@ -1,0 +1,37 @@
+<* +M2ADDTYPES *>
+DEFINITION MODULE xtsGraph;
+
+ IMPORT SYSTEM, vga;
+ FROM Graph IMPORT HBITMAP;
+
+
+TYPE
+  _Region = RECORD
+    x1, y1, x2, y2: CARDINAL;
+  END;
+
+VAR
+  cur_clip_region  :_Region;
+  cur_mode_info    :vga.vga_modeinfo_ptr;
+  is16             :BOOLEAN;
+  isText           :BOOLEAN;
+
+TYPE
+  image_info_ptr = POINTER TO image_info;
+  image_info = RECORD
+    w, h: CARDINAL;
+    ptr: SYSTEM.ADDRESS;
+  END;
+
+PROCEDURE GetImage (x1, y1, x2, y2: CARDINAL; VAR handle: HBITMAP);
+PROCEDURE PutImage (x1, y1: CARDINAL; hbm: HBITMAP);
+
+PROCEDURE GetImage_C (x1, y1, x2, y2: INTEGER; VAR handle: HBITMAP);
+PROCEDURE PutImage_C (x1, y1: INTEGER; hbm: HBITMAP);
+
+PROCEDURE RemapPalette (palItem: CARDINAL; Color: LONGCARD): LONGCARD;
+PROCEDURE RemapAllPalette (colArray: ARRAY OF LONGCARD): LONGCARD;
+PROCEDURE InitStdPalette;
+
+END xtsGraph.
+

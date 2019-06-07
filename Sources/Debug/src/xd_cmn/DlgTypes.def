@@ -1,0 +1,62 @@
+-- Описание общих структур данных диалогового отладчика
+
+DEFINITION MODULE ["C"] DlgTypes;
+
+IMPORT sys := SYSTEM;
+
+TYPE
+  HWND = CARDINAL;
+
+TYPE
+  PullDownMenus = ( FileMenu
+                  , RunMenu
+                  , BreaksMenu
+                  , CodeMenu
+                  , DataMenu
+                 <* IF DEST_XDS THEN *>
+                  , ShowMenu
+                 <* END *>
+                  , SearchMenu
+                 <* IF DEST_XDS THEN *>
+                 <* IF DEFINED(mode) AND (mode="work") THEN *> -- FIXME
+                  , ToolsMenu
+                 <* END *>
+                 <* END *>
+                  , WindowsMenu
+                  , HelpMenu   );
+
+  PULLDOWN = RECORD
+               curr  : PullDownMenus;
+               opened: CARDINAL;
+             END;
+
+  PPULLDOWN = POINTER TO PULLDOWN;
+
+CONST
+  Invalid_H  = MAX(CARDINAL);
+  AllWindows = MAX(CARDINAL) - 1;
+
+TYPE
+  MESSAGE = ARRAY [0..76] OF CHAR;
+
+  WND_CTRL = ( WinCtrl_None
+             , WinCtrl_System
+             , WinCtrl_Restore
+             , WinCtrl_Move
+             , WinCtrl_Size
+             , WinCtrl_Minimize
+             , WinCtrl_Maximize
+             , WinCtrl_Close );
+
+  WND_CTRL_SET = SET OF WND_CTRL;
+
+
+TYPE
+  OUT_PROC = PROCEDURE ["Modula"] (ARRAY OF CHAR, SEQ sys.BYTE);
+
+
+CONST
+  Switch_To_Dialog   = "Switch_To_Dialog";
+
+
+END DlgTypes.

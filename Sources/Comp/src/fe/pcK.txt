@@ -1,0 +1,378 @@
+                        XDS Internal Representation
+
+
+- overall compiler structure
+
+        x-interface/ x-managers
+
+        front-end
+        back-end
+        middle-end
+        value
+
+--------------------------------------------
+
+        OBJECT, STRUCT, VALUE, USAGE
+        NODE
+
+
+---------------------------
+
+        mods            [cur_mod]
+        sys_mods
+
+
+--------------------------
+managers:
+
+
+        UNIT, RIDER
+
+
+(***************************************************************
+
+                       ПРЕДСТАВЛЕНИЕ ТИПОВ
+
+obj  - ссылка на объект для именованного типа, иначе NIL.
+mno  - номер модуля в котором описан тип.
+flag - информация для генератора о способе представления типа.
+pos,end  - позиции в тексте описания типа.
+ext  - указатель на дополнительную информацию для back-end.
+
+Для ordinal типов (ty_shortint, ty_integer, ty_longint, ty_shortcard,
+ty_cardinal, ty_longcard, ty_boolean, ty_char, ty_enum):
+min  - минимальное значение
+max  - максимальное значение
+
+Для ty_boolean, ty_char, ty_enum:
+base - базовый тип, один из WHOLEs, он определяет наличие знака и SIZE
+
+	     base
+range     базовый тип           min  - минимальное значение
+				max  - максимальное значение
+
+pointer   базовый тип
+
+set       базовый тип           len  - число элементов
+				min  - нижняя граница
+				max  - верхняя граница
+
+record    базовый тип           prof - список полей
+                                mem  - список методов
+                                len  - уровень расширения
+
+enum                            len  - число констант
+                                prof - список констант
+				min  - нижняя граница
+				max  - верхняя граница
+
+opaque    настоящий тип 
+
+proctype  тип результата        prof - список параметров
+                                mem  - список локалов
+                                use  - usage list
+                                inx  - super method (for method only)
+
+module                          prof - public objects
+                                mem  - non-public objects
+                                len  - version key
+                                use  - import
+
+array     тип элемента          inx  - тип индекса
+				len  - длина
+				min  - нижняя граница
+				max  - верхняя граница
+
+SS                              len  - длина (число элементов)
+
+array_of  тип элемента          len  - число измерений
+
+Представление вариантной записи:
+
+Все поля связаны в список.
+В месте вариантной части вставляется объект вида ob_header.
+head^.val^.obj = NIL, если тэг анонимный
+head^.val^.obj = field, если тэг нормальное поле.
+
+head^.val^.l - указывает список заголовков для каждого
+варианта.
+
+RECORD
+  a
+  CASE b: OF
+    |     c,d
+    |     e
+  ELSE    f
+  END
+  g
+END;
+
+--> a --> head -> g
+	  /
+	 nd_case -> b
+       /
+      nd_node -> nd_node -> nd_node
+	|          |           |
+	f          e           c -> d
+
+----------------------------------------------------------------
+
+              ПРЕДСТАВЛЕНИЕ СИНТАКСИЧЕСКОГО ДЕРЕВА
+
+Основные классы узлов:
+	- узлы, ссылающиеся на объекты;
+        - statements;
+        - операции;
+        - вспомогательные узлы.
+
+Общий вид дерева узлов (NODE):
+
+		       module
+		      /      \
+		     /       stat list
+		    /
+		  proc -> next proc
+		 /    \
+	       proc   stat list
+
+Корень дерева - узел вида модуль:
+    module^.obj  - объект (OBJECT) - единица компиляции;
+    module^.type - module type
+    module^.r    - список операторов (тело модуля);
+    module^.l    - первая процедура (NODE) модуля;
+
+Для процедуры:
+
+    proc^.obj  - procedure object
+    proc^.type - procedure type
+    proc^.next - следующая процедура в том же блоке;
+    proc^.l    - первая процедура локальная в данной;
+    proc^.r    - список операторов (тело процедуры).
+
+Атрибуты узла (NODE):
+
+mode - вид узла
+sub  - вид операции для унарных, бинарных операций и стандартных процедур
+next - следующий оператор или выражение
+type - тип узла; отстутствует для операторов; тип результата
+       для операций
+obj  - ссылка на объект (для узлов ссылок); используется также
+       в узлах динамического контроля типов (guard,eguard,is).
+pos  - позиция в тексте
+l,r  - ссылки на под-узлы
+val  - указатель на константное значение.
+
+ЗАМЕЧАНИЕ:  В  тех  случаях,  когда  есть  только одно под-дерево
+почти всегда используется левая ссылка.
+
+1. Листья деревьев соответствуют использованию идентификаторов и литералов.
+
+Поле  obj  содержит ссылку на соответствующий объект, поле type -
+тип объекта (копируется из объекта). Все эти узлы - листы,
+т.е. не содержат ссылок на под-деревья.
+
+nd_value   литерал или константа;
+           для констант поле val копируется из объекта: val:=obj^.val
+nd_var     содержит ссылку на объект с видами ob_var, ob_varpar, ob_seq.
+nd_proc    содержит ссылку на объект с видами nd_proc, nd_xproc
+           nd_eproc, nd_lproc, nd_cproc
+nd_type    имеет соотвествующий тип
+
+2. Операторы
+
+2.1. Просто устроенные операторы
+
+                 l               r              obj
+nd_while      expression       stat-seq
+nd_repeat     stat list        expression
+nd_loop                        stat-seq
+nd_exit                        loop
+nd_return    [expression]      block
+nd_with       designator       stat-seq      temp var
+nd_assign    [designator]      expression     [var]
+nd_call      [designator]      parm list      [var]
+nd_eval       expression
+nd_goto       label
+nd_block                       stat-seq
+nd_finally                                    procedure  
+nd_except    normal body       except body    trap var
+nd_protect   protected block                  protection var.
+nd_activate		       except
+nd_reraise		       except	
+nd_retry		       except
+
+The following statements do not have arguments:
+
+nd_reraise
+nd_activate
+nd_retry 
+nd_wtrap
+nd_ftrap 
+nd_null
+nd_label
+
+ЗАМЕЧАНИЕ:
+
+Для   узлов   с   видом  assign  &  call  используется  следующее
+соглашение:
+
+     Если n^.l = NIL, то это присваивание переменной (assign) или
+вызов  нормальной  (не  формальной)  процедуры  (call).  При этом
+n^.obj    содержит    ссылку    на   переменную   или   процедуру
+соответственно.
+			 obj
+i:=j;           assign  ----> i
+               /      \
+             NIL        j
+
+i^:=j;          assign
+	       /      \
+            deref      j
+             /
+            i
+КОНЕЦ ЗАМЕЧАНИЯ.
+
+2.2. Сложно устроенные операторы
+
+Вспомогательный узел node используется при недостатке ссылок,
+а вспомогательный узел pair способен хранить два числа.
+
+2.2.1. FOR
+			 for
+
+                     /          \
+                  node         stat list
+
+                /       \
+             from        to
+	  expression  expression
+
+for^.obj  -- loop variable
+node^.val -- step (шаг цикла)
+
+ntag_chk_range in for^.tags -> range checks for control variables
+
+2.2.2. CASE
+
+        case
+       /    \
+     expr    casedo | caselse -> pair (min)
+		  /    \         /
+                 /    stat    value (max)
+                /
+             node -> node .... ->
+             /    \
+            /     stat
+           /
+         pair (fr) -> pair
+	 /            /
+       value (to)   value
+
+pair^.val .. pair^.l^.val - диапазон меток
+
+case^.r = caselse, если часть ELSE присутствует (возможно пустая)
+          casedo, иначе
+
+case^.r^.next - пара содержащая значения минимальной
+                и максимальной метки.
+
+
+2.2.3. procedure call
+
+См. ЗАМЕЧАНИЕ выше (про узлы assign & call).
+
+          call
+       /        \
+  proc desig     p1 -> ... -> sequence
+			     /
+                            s1 -> ...
+
+При вызове метода левая ссылка указывает на узел вида method,
+а его левая ссылка на собственно обозначение.
+
+	  call
+	 /
+     method
+      /
+  expression
+
+method^.obj   - соответствующий объект-метод;
+method^.type  - процедурный тип метода
+
+2.2.4. IF
+
+IF    expr1 THEN stat1
+ELSIF expr2 THEN stat2
+ELSE stat3
+END;
+
+	      if
+	    /    \
+	  expr1  node
+		/    \
+	     stat1   if
+		   /    \
+		 expr2  node
+		       /   \
+		    stat2  stat3
+
+2.2.5. Oberon WITH (typecase)
+
+WITH v: T1 DO stat1
+  |  v: T2 DO stat2
+ELSE          stat3
+END;
+
+	      if
+	    /    \
+	  expr1  node
+		/    \
+	     stat1   if
+		   /    \
+		 expr2  node
+		       /   \
+		    stat2  stat3
+
+expr(i) == v IS T(i)
+
+2.2.6. У узлов соответствующих вызову стандартных процедур
+n^.r указывает на список параметров.
+
+2.3. Guard expressions : is, guard, eguard
+
+2.3.1. p IS T
+
+        unary (su_is)
+        /l    |obj  \r
+  expression  type  nd_type
+    		      |obj
+    		     type
+
+проверяемый тип лежит в unary^.obj^.type.
+
+2.3.2. Guard (check that the dynamic type of expression is an
+extension of guard^.type or equal to guard.type).
+
+       guard
+      /
+ expression
+
+type: guard^.type
+ntag_chk_range IN guard.tags, если нужно делать динамическую проверку;
+
+2.3.3. eguard (equal guard, check that the dynamic type of expression
+is exactly equal to the eguard^.type).
+
+        eguard
+       /
+   expression
+
+
+----------------------------------------------------------------
+
+nd_replace
+
+
+
+
+***************************************************************)

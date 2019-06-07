@@ -1,0 +1,52 @@
+(** Copyright (c) 1997 xTech Ltd, Russia. All Rights Reserved. *)
+(** XDS librarian. Data structures and offsets in Linear eXecutable format. *)
+
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] xldLX; (* VitVit. Jan 17, 1997 *)
+
+IMPORT
+  SYSTEM
+  ;
+
+CONST
+  MZSIG  = 5A4DH; (* "MZ" exe & dll file header signature *)
+  LXSIG  = 584CH; (* "LX" signature *)
+
+TYPE
+  DWORD = SYSTEM.CARD32;
+  WORD  = SYSTEM.CARD16;
+  BYTE  = SYSTEM.CARD8;
+
+
+(* Note: contents of ofs_xxx offset is related to the beginning of EXE, LXofs_xxx - to the LX header *)
+
+CONST
+  ofs_LXHeader = 3CH;
+
+(* LX Header *)
+
+  LXofs_ModuleTypeFlags = 10H;
+  LXofs_RsdNamesTable   = 58H;
+  ofs_NonRsdNamesTable  = 88H;
+  ofs_NonRsdNamesTableL = 8CH;
+
+
+CONST
+  Per_Proc_Lib_Init  = 2;
+  Internal_Fixup     = 4;
+  External_Fixup     = 5;
+  Incompat_PM_win    = 8;
+  Compat_PM_win      = 9;
+  Uses_PM_winAPI     = 10;
+  Module_notLoadable = 13; (* linker said shit happens *)
+  DLLmodule          = 15;
+  LoadDS_MemProt     = 16;
+  PhysDevDriver      = 17;
+  VirtDevDriver      = 18;
+  Per_Proc_Lib_Term  = 30;
+
+CONST
+  Module_type_mask = { 15, 16, 17 };
+
+END xldLX.

@@ -1,0 +1,36 @@
+(* Copyright (c) xTech 1997.  All Rights Reserved *)
+DEFINITION MODULE XEXCEPTIONS;
+
+(* This module provides XDS extensions to ISO10514 M2EXCEPTIONS. *)
+
+TYPE RTSExceptions =
+  ( typeGuardException, noMemoryException,       typeCastException,
+    userBreakException, unreachableDLLException, internalRTSException);
+
+PROCEDURE RTSException(): RTSExceptions;
+  (* If the current coroutine is in the exceptional execution state
+     because of the raising of a RTS exception, returns the
+     corresponding enumeration value, and otherwise
+     raises an exception.
+  *)
+
+PROCEDURE IsRTSException(): BOOLEAN;
+  (* If the current coroutine is in the exceptional execution state
+     because of the raising of RTS exception, returns TRUE,
+     and otherwise returns FALSE.
+  *)
+
+PROCEDURE IsAssertException(): BOOLEAN;
+  (* If the current coroutine is in the exceptional execution state
+     because of the raising of ASSERT exception, returns TRUE,
+     and otherwise returns FALSE.
+  *)
+
+PROCEDURE AssertCode(): CARDINAL;
+  (* If the current coroutine is in the exceptional execution state
+     because of the raising of an ASSERT exception, returns the
+     corresponding exception code (e.g. second ASSERT parameter value)
+     and otherwise raises an exception.
+  *)
+
+END XEXCEPTIONS.

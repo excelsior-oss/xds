@@ -1,0 +1,32 @@
+-- Операции над 64-битными целыми числами
+
+DEFINITION MODULE Int64;
+
+
+TYPE
+  INT64 = RECORD
+            low  : CARDINAL;
+            high : CARDINAL;
+          END;
+
+
+PROCEDURE int (low, high: CARDINAL): INT64;
+
+PROCEDURE int2real (a: INT64): LONGREAL;
+
+
+PROCEDURE add (a, b: INT64): INT64;
+
+PROCEDURE sub (a, b: INT64): INT64;
+
+PROCEDURE mul (a, b: INT64): INT64;
+
+PROCEDURE div (a, b: INT64): INT64;
+
+
+PROCEDURE lss (a, b: INT64): BOOLEAN;
+
+PROCEDURE gtr (a, b: INT64): BOOLEAN;
+
+
+END Int64.

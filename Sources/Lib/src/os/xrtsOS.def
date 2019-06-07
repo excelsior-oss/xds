@@ -1,0 +1,87 @@
+(* Copyright (c) XDS 1992,96,99.  All Rights Reserved *)
+(*
+  XDS RTS. Interface with OS.
+*)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrtsOS; (* Hady. 23.05.96 19:29 *)
+(* The idea of this interface is the folowing:
+  It must be in restricted sence platform independent, i.e. it should
+  define all names similar for all platforms. Each name should not denote
+  the same type/object etc for any platforms, but the thing it define
+  should be able to be used the same way.
+  Example:
+    TYPE FILE may be of CARDINAL for Win32 and POINTER TO Something for
+    POSIX, in both cases all necessary operations are applicable to
+    variables of these types.
+*)
+
+FROM SYSTEM  IMPORT  int, CARD32;
+IMPORT  SYSTEM;
+IMPORT  xmRTS;
+
+(* =============== File operations =============== *)
+TYPE
+  X2C_OSFILE; (* or something else suitable *)
+CONST
+  X2C_beg = int(0);
+  X2C_cur = int(1);
+  X2C_end = int(2);
+
+PROCEDURE / X2C_FileOpenRead(VAR f: X2C_OSFILE; name: ARRAY OF CHAR): int;
+PROCEDURE / X2C_FileClose(f: X2C_OSFILE): int;
+PROCEDURE / X2C_FileSeek(f: X2C_OSFILE; VAR ofs: SYSTEM.WORD; org: int): int;
+PROCEDURE / X2C_FileOpenWrite(VAR f: X2C_OSFILE; name: ARRAY OF CHAR): int;
+PROCEDURE / X2C_FileOpenRW(VAR f: X2C_OSFILE; name: ARRAY OF CHAR): int;
+PROCEDURE / X2C_FileRead (f: X2C_OSFILE; buf: SYSTEM.ADDRESS; VAR len: CARD32): int;
+PROCEDURE / X2C_FileWrite(f: X2C_OSFILE; buf: SYSTEM.ADDRESS; VAR len: CARD32): int;
+
+(* =============== Memory operations =============== *)
+PROCEDURE / X2C_AllocMem(size: CARD32): SYSTEM.ADDRESS;
+PROCEDURE / X2C_InitMem();
+(* used for memory pieces that never deallocated by the program *)
+
+PROCEDURE / X2C_malloc(size: CARD32): SYSTEM.ADDRESS;
+PROCEDURE / X2C_free(adr: SYSTEM.ADDRESS; size: CARD32);
+PROCEDURE / X2C_InitHeap( limit :CARD32; isIncr :BOOLEAN );
+
+PROCEDURE / X2C_ZEROMEM(adr: SYSTEM.ADDRESS; qsize: CARD32);
+
+(* =============== StdOut or StdErr output =============== *)
+PROCEDURE / X2C_StdOut(str: ARRAY OF CHAR; len: CARD32);
+
+PROCEDURE / X2C_StdOutS(str: ARRAY OF CHAR; width: CARD32);
+PROCEDURE / X2C_StdOutD(num: CARD32; w: CARD32);
+PROCEDURE / X2C_StdOutH(num: CARD32; w: CARD32);
+PROCEDURE / X2C_StdOutN(); (* NewLine *)
+
+PROCEDURE / X2C_StdOutFlush;
+
+PROCEDURE / X2C_DecToStr(VAR s: ARRAY OF CHAR; VAR pos: CARD32; no: CARD32);
+PROCEDURE / X2C_HexToStr(VAR s: ARRAY OF CHAR; VAR pos: CARD32; no: CARD32);
+
+(* =============== Interrupts =============== *)
+(*
+  It seems significant that folowing procedures should be
+  implemented or not implemented in couple.
+*)
+PROCEDURE / X2C_EnableIpts();
+PROCEDURE / X2C_DisableIpts();
+
+PROCEDURE / X2C_SaveIptHandler(no: CARD32);
+PROCEDURE / X2C_RestoreIptHandler(no: CARD32);
+PROCEDURE / X2C_SetIptHandler(no: CARD32): BOOLEAN;
+(* it assumed that certain interrupt handler being set should call
+   extern function with folowing interface: *)
+PROCEDURE / X2C_INT_HANDLER(no: CARD32);
+(* It is implemented along with coroutines stuff *)
+
+
+(* =============== Termination =============== *)
+PROCEDURE / X2C_iniexit;
+PROCEDURE / X2C_atexit(proc: xmRTS.X2C_EXIT_PROC);
+PROCEDURE / X2C_doexit(code: INTEGER);
+
+(* =============== StackTop =============== *)
+PROCEDURE / X2C_StackTop(): SYSTEM.ADDRESS;
+
+END xrtsOS.

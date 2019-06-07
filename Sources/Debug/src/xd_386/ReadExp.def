@@ -1,0 +1,10 @@
+-- Предоставляет функцию для получения данных о экспортируемых
+-- обьектах заданной программы
+
+DEFINITION MODULE ReadExp;
+
+IMPORT kt := KrnTypes;
+
+PROCEDURE ReadExport (full_name: ARRAY OF CHAR; VAR exp: kt.EXPORTS): BOOLEAN;
+
+END ReadExp.

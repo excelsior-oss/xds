@@ -1,0 +1,33 @@
+//
+// Version
+//
+
+1 VERSIONINFO
+ FILEVERSION 2,51,0,0
+ PRODUCTVERSION 2,51,0,0
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "CompanyName", "Excelsior, LLC.\0"
+            VALUE "FileDescription", "Native XDS-x86 Modula-2/Oberon-2 compiler\0"
+            VALUE "FileVersion", "2.51\0"
+            VALUE "InternalName", "XDS\0"
+            VALUE "LegalCopyright", "Copyright © 1991-2017 Excelsior, LLC.\0"
+            VALUE "OriginalFilename", "xc.exe\0"
+            VALUE "ProductName", "Native XDS-x86\0"
+            VALUE "ProductVersion", "2.51 [Modula-2 v2.40, XDS-x86 v1.51]\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END
+

@@ -1,0 +1,49 @@
+(* Copyright (c) 1994-98 XDS Ltd. All Rights Reserved. *)
+(* Access to some non-standard C functions *)
+(* Implementation in C *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] x2cLib; (* Ned 19-Mar-94. *)
+
+IMPORT SYSTEM, X2C, stdio;
+FROM stat IMPORT stat_t;
+FROM select IMPORT fd_set;
+
+
+PROCEDURE X2C_Time(): LONGCARD;
+(* Returns time in seconds *)
+
+PROCEDURE X2C_Clock(): LONGCARD;
+(* Returns time in 1/100 fractions of second *)
+
+PROCEDURE X2C_SetFileModes(name: ARRAY OF CHAR; type: CHAR);
+(* setup system dependend output file mode for:
+        'R' - raw
+        'T' - text
+*)
+
+PROCEDURE X2C_FDup(VAR f: stdio.FILE; type: ARRAY OF CHAR): SYSTEM.ADDRESS;
+PROCEDURE X2C_FDup2(VAR f1: stdio.FILE; VAR f2: SYSTEM.ADDRESS): SYSTEM.int;
+PROCEDURE X2C_ChSize(VAR f: stdio.FILE; sz: SYSTEM.INT32): SYSTEM.int;
+
+PROCEDURE X2C_GetFileType(VAR f: stdio.FILE): SYSTEM.int;
+
+PROCEDURE X2C_GetModuleName ( hmod      :SYSTEM.ADDRESS;
+                              VAR mname :ARRAY OF CHAR;
+                              nmlen     :SYSTEM.CARD32 );
+(* get executable component name *)
+
+
+PROCEDURE fstat (fildes: INTEGER; VAR buf: stat_t): INTEGER;
+PROCEDURE X2C_stat (path: ARRAY OF CHAR; VAR buf: stat_t): INTEGER;
+
+ 
+PROCEDURE FD_ZERO (VAR set: fd_set);
+PROCEDURE FD_SET (fd : INTEGER; VAR set: fd_set);
+PROCEDURE FD_CLR (fd : INTEGER; VAR set: fd_set);
+PROCEDURE FD_ISSET (fd : INTEGER; VAR set: fd_set): LONGINT;
+
+PROCEDURE get_errno() :INTEGER;
+
+END x2cLib.

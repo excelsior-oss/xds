@@ -1,0 +1,67 @@
+(* Copyright (C) 1997 XDS Ltd *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+<*-DLLEXPORT    *>
+
+
+(* OS/2,Win32,Linux portable run-time dynalinking support *)
+
+DEFINITION MODULE dllRTS;
+
+FROM SYSTEM IMPORT ADDRESS;
+
+TYPE
+  HMOD = ADDRESS;
+
+CONST
+  InvalidHandle = NIL;
+
+  MaxPathLength = 260;
+
+PROCEDURE LoadModule ( mname :ARRAY OF CHAR ) :HMOD;
+(*
+  loads DLL by name; if succesful, returns its handle, otherwise
+  returns InvalidHandle
+ *)
+
+PROCEDURE GetProcAdr ( hmod :HMOD; procname :ARRAY OF CHAR ) :PROC;
+(*
+   returns a procedure address by name from that DLL identified by the hmod
+   parameter. If fault ( wrong name or DLL handle ), returns NIL
+ *)
+
+PROCEDURE GetVarAdr ( hmod :HMOD; varname :ARRAY OF CHAR ) :ADDRESS;
+(* 
+   analogous to the previous procedure for a variable
+ *)
+
+PROCEDURE FreeModule ( hmod :HMOD; VAR rc :BOOLEAN );
+(* 
+   unloads a library; if success, rc is TRUE
+ *)  
+
+
+ 
+PROCEDURE GetModuleHandle ( mname :ARRAY OF CHAR ) :HMOD;
+(*
+   returns a DLL's handle by name, if that library is loaded (mapped) into the address 
+   space of calling process, otherwise returns InvalidHandle
+ *)
+
+PROCEDURE GetMyHandle () :HMOD;
+(*
+   returns a handle of that DLL whose code is being run in calling process
+ *)
+
+PROCEDURE GetModuleName ( hmod :HMOD; VAR mname :ARRAY OF CHAR; VAR rc :BOOLEAN );
+(*
+   returns full path of a DLL ( e.g. F:\XDS\BIN\LIBXDS.DLL ) by its handle and set
+   rc in TRUE; if fault ( a wrong handle was specified ) rc is FALSE
+ *)
+
+
+
+END dllRTS.
+
+

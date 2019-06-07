@@ -1,0 +1,35 @@
+MODULE Import;
+
+IMPORT WinDef;
+IMPORT WinNT;
+IMPORT WinBase;
+IMPORT WinError;
+IMPORT WinGDI;
+IMPORT WinUser;
+IMPORT WinNLS;
+IMPORT WinCon;
+IMPORT WinVer;
+IMPORT WinReg;
+IMPORT WinNetwk;
+IMPORT CDErr;
+IMPORT DDE;
+IMPORT DDEML;
+IMPORT Dlgs;
+IMPORT LZExpand;
+IMPORT MMSystem;
+IMPORT NB30;
+              (* rpc *)
+IMPORT ShellAPI;
+IMPORT WinPerf;
+IMPORT WinSock;
+IMPORT CommDlg;
+IMPORT WinSpool;
+IMPORT OLE;
+              (* OLE2 *)
+IMPORT WinSvc;
+IMPORT MCX;
+IMPORT IMM;
+
+BEGIN
+
+END Import.

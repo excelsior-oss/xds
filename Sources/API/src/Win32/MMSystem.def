@@ -1,0 +1,3367 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] MMSystem;
+
+(*==========================================================================
+ *
+ *  MMSystem.def -- Import file for Multimedia API's
+ *
+ *  Version 4.00
+ *
+ *--------------------------------------------------------------------------
+ *
+ *  Define:         Prevent inclusion of:
+ *  --------------  --------------------------------------------------------
+ *  MMNODRV         Installable driver support
+ *  MMNOSOUND       Sound support
+ *  MMNOWAVE        Waveform support
+ *  MMNOMIDI        MIDI support
+ *  MMNOAUX         Auxiliary audio support
+ *  MMNOMIXER       Mixer support
+ *  MMNOTIMER       Timer support
+ *  MMNOJOY         Joystick support
+ *  MMNOMCI         MCI support
+ *  MMNOMMIO        Multimedia file I/O support
+ *  MMNOMMSYSTEM    General MMSYSTEM functions
+ *
+ *==========================================================================
+ *)
+
+IMPORT SYSTEM;
+FROM WinDef IMPORT BYTE, PBYTE, PCBYTE, PVOID, WCHAR, BOOL, UINT, LONG, WORD, DWORD, PSTR, PCSTR, PWSTR, PCWSTR,
+                   LPARAM, LRESULT, POINT, RECT,
+                   HMODULE, HWND, HDC, HTASK;
+FROM WinBase IMPORT OutputDebugString;
+
+<* PUSH *> <* ALIGNMENT = "1" *>
+
+(****************************************************************************
+
+                    General constants and data types
+
+****************************************************************************)
+
+(* general constants *)
+CONST MAXPNAMELEN     = 32;     (* max product name length (including NULL) *)
+      MAXERRORLENGTH  = 256;    (* max error text length (including NULL) *)
+      MAX_JOYSTICKOEMVXDNAME = 260; (* max oem vxd name length (including NULL) *)
+
+TYPE PNAMESTR  = ARRAY [0..MAXPNAMELEN-1] OF CHAR; (* product name (NULL terminated string) *)
+     PNAMESTRW = ARRAY [0..MAXPNAMELEN-1] OF WCHAR;
+
+(* general data types *)
+
+TYPE MMVERSION = UINT;  (* major (high byte), minor (low byte) *)
+TYPE MMRESULT  = UINT;  (* error return code, 0 means no error *)
+                        (* call as if(err=xxxx(...)) Error(err); else *)
+
+
+(* types for wType field in MMTIME struct *)
+
+CONST TIME_MS      = 0001h;  (* time in milliseconds *)
+      TIME_SAMPLES = 0002h;  (* number of wave samples *)
+      TIME_BYTES   = 0004h;  (* current byte offset *)
+      TIME_SMPTE   = 0008h;  (* SMPTE time *)
+      TIME_MIDI    = 0010h;  (* MIDI time *)
+      TIME_TICKS   = 0020h;  (* Ticks within MIDI stream *)
+
+
+(* MMTIME data structure *)
+
+TYPE MMTIME =
+     RECORD
+        CASE wType : UINT OF      (* indicates the contents of the union *)
+        | TIME_MS     : ms : DWORD;         (* milliseconds *)
+        | TIME_SAMPLES: sample : DWORD;     (* samples *)
+        | TIME_BYTES  : cb     : DWORD;     (* byte count *)
+        | TIME_TICKS  : ticks  : DWORD;     (* ticks in MIDI stream *)
+        | TIME_SMPTE  : hour   : BYTE;      (* hours *)
+                        min    : BYTE;      (* minutes *)
+                        sec    : BYTE;      (* seconds *)
+                        frame  : BYTE;      (* frames  *)
+                        fps    : BYTE;      (* frames per second *)
+                        dummy  : BYTE;      (* pad *)
+                        pad    : ARRAY [0..1] OF BYTE;
+        | TIME_MIDI   : songptrpos : DWORD; (* song pointer position *)
+        END;
+     END;
+     PMMTIME = POINTER TO MMTIME;
+
+(* MAKEFOURCC was defined as macro, now in RTL *)
+
+PROCEDURE MAKEFOURCC (ch0, ch1, ch2, ch3 : BYTE) : DWORD;
+
+(****************************************************************************
+
+                    Multimedia Extensions Window Messages
+
+****************************************************************************)
+
+CONST MM_JOY1MOVE        = 3A0h;           (* joystick *)
+      MM_JOY2MOVE        = 3A1h;
+      MM_JOY1ZMOVE       = 3A2h;
+      MM_JOY2ZMOVE       = 3A3h;
+      MM_JOY1BUTTONDOWN  = 3B5h;
+      MM_JOY2BUTTONDOWN  = 3B6h;
+      MM_JOY1BUTTONUP    = 3B7h;
+      MM_JOY2BUTTONUP    = 3B8h;
+
+      MM_MCINOTIFY       = 3B9h;           (* MCI *)
+
+      MM_WOM_OPEN        = 3BBh;           (* waveform output *)
+      MM_WOM_CLOSE       = 3BCh;
+      MM_WOM_DONE        = 3BDh;
+
+      MM_WIM_OPEN        = 3BEh;           (* waveform input *)
+      MM_WIM_CLOSE       = 3BFh;
+      MM_WIM_DATA        = 3C0h;
+
+      MM_MIM_OPEN        = 3C1h;           (* MIDI input *)
+      MM_MIM_CLOSE       = 3C2h;
+      MM_MIM_DATA        = 3C3h;
+      MM_MIM_LONGDATA    = 3C4h;
+      MM_MIM_ERROR       = 3C5h;
+      MM_MIM_LONGERROR   = 3C6h;
+
+      MM_MOM_OPEN        = 3C7h;           (* MIDI output *)
+      MM_MOM_CLOSE       = 3C8h;
+      MM_MOM_DONE        = 3C9h;
+
+      MM_DRVM_OPEN       = 3D0h;           (* installable drivers *)
+      MM_DRVM_CLOSE      = 3D1h;
+      MM_DRVM_DATA       = 3D2h;
+      MM_DRVM_ERROR      = 3D3h;
+
+      MM_STREAM_OPEN     = 3D4h;
+      MM_STREAM_CLOSE    = 3D5h;
+      MM_STREAM_DONE     = 3D6h;
+      MM_STREAM_ERROR    = 3D7h;
+
+      MM_MOM_POSITIONCB  = 3CAh;           (* Callback for MEVT_POSITIONCB *)
+      MM_MCISIGNAL       = 3CBh;
+
+      MM_MIM_MOREDATA    = 3CCh;          (* MIM_DONE w/ pending events *)
+
+      MM_MIXM_LINE_CHANGE    = 3D0h;       (* mixer line change notify *)
+      MM_MIXM_CONTROL_CHANGE = 3D1h;       (* mixer control change notify *)
+
+(****************************************************************************
+
+                String resource number bases (internal use)
+
+****************************************************************************)
+
+CONST MMSYSERR_BASE        = 0;
+      WAVERR_BASE          = 32;
+      MIDIERR_BASE         = 64;
+      TIMERR_BASE          = 96;
+      JOYERR_BASE          = 160;
+      MCIERR_BASE          = 256;
+      MIXERR_BASE          = 1024;
+
+      MCI_STRING_OFFSET    = 512;
+      MCI_VD_OFFSET        = 1024;
+      MCI_CD_OFFSET        = 1088;
+      MCI_WAVE_OFFSET      = 1152;
+      MCI_SEQ_OFFSET       = 1216;
+
+(****************************************************************************
+
+                        General error return values
+
+****************************************************************************)
+
+(* general error return values *)
+
+CONST MMSYSERR_NOERROR      = 0;                  (* no error *)
+      MMSYSERR_ERROR        = MMSYSERR_BASE + 1;  (* unspecified error *)
+      MMSYSERR_BADDEVICEID  = MMSYSERR_BASE + 2;  (* device ID out of range *)
+      MMSYSERR_NOTENABLED   = MMSYSERR_BASE + 3;  (* driver failed enable *)
+      MMSYSERR_ALLOCATED    = MMSYSERR_BASE + 4;  (* device already allocated *)
+      MMSYSERR_INVALHANDLE  = MMSYSERR_BASE + 5;  (* device handle is invalid *)
+      MMSYSERR_NODRIVER     = MMSYSERR_BASE + 6;  (* no device driver present *)
+      MMSYSERR_NOMEM        = MMSYSERR_BASE + 7;  (* memory allocation error *)
+      MMSYSERR_NOTSUPPORTED = MMSYSERR_BASE + 8;  (* function isn't supported *)
+      MMSYSERR_BADERRNUM    = MMSYSERR_BASE + 9;  (* error value out of range *)
+      MMSYSERR_INVALFLAG    = MMSYSERR_BASE + 10; (* invalid flag passed *)
+      MMSYSERR_INVALPARAM   = MMSYSERR_BASE + 11; (* invalid parameter passed *)
+      MMSYSERR_HANDLEBUSY   = MMSYSERR_BASE + 12; (* handle being used *)
+                                                  (* simultaneously on another *)
+                                                  (* thread (eg callback; *)
+      MMSYSERR_INVALIDALIAS = MMSYSERR_BASE + 13; (* specified alias not found *)
+      MMSYSERR_BADDB        = MMSYSERR_BASE + 14; (* bad registry database *)
+      MMSYSERR_KEYNOTFOUND  = MMSYSERR_BASE + 15; (* registry key not found *)
+      MMSYSERR_READERROR    = MMSYSERR_BASE + 16; (* registry read error *)
+      MMSYSERR_WRITEERROR   = MMSYSERR_BASE + 17; (* registry write error *)
+      MMSYSERR_DELETEERROR  = MMSYSERR_BASE + 18; (* registry delete error *)
+      MMSYSERR_VALNOTFOUND  = MMSYSERR_BASE + 19; (* registry value not found *)
+      MMSYSERR_NODRIVERCB   = MMSYSERR_BASE + 20; (* driver does not call DriverCallback *)
+      MMSYSERR_LASTERROR    = MMSYSERR_BASE + 20; (* last error in range *)
+
+
+TYPE HDRVR = POINTER TO RECORD END;
+
+<* IF NOT DEFINED (MMNODRV) THEN *>
+
+(****************************************************************************
+
+                        Installable driver support
+
+****************************************************************************)
+
+TYPE DRVCONFIGINFOEX = RECORD
+                              dwDCISize          : DWORD;
+                              lpszDCISectionName : PCWSTR;
+                              lpszDCIAliasName   : PCWSTR;
+                              dnDevNode          : DWORD;
+                       END;
+    PDRVCONFIGINFOEX = POINTER TO DRVCONFIGINFOEX;
+
+
+(* Driver messages *)
+
+CONST DRV_LOAD             = 0001h;
+      DRV_ENABLE           = 0002h;
+      DRV_OPEN             = 0003h;
+      DRV_CLOSE            = 0004h;
+      DRV_DISABLE          = 0005h;
+      DRV_FREE             = 0006h;
+      DRV_CONFIGURE        = 0007h;
+      DRV_QUERYCONFIGURE   = 0008h;
+      DRV_INSTALL          = 0009h;
+      DRV_REMOVE           = 000Ah;
+      DRV_EXITSESSION      = 000Bh;
+      DRV_POWER            = 000Fh;
+      DRV_RESERVED         = 0800h;
+      DRV_USER             = 4000h;
+
+(* LPARAM of DRV_CONFIGURE message *)
+
+TYPE DRVCONFIGINFO = RECORD
+                            dwDCISize          : DWORD;
+                            lpszDCISectionName : PCWSTR;
+                            lpszDCIAliasName   : PCWSTR;
+                     END;
+    PDRVCONFIGINFO = POINTER TO DRVCONFIGINFO;
+
+
+(* Supported return values for DRV_CONFIGURE message *)
+
+CONST DRVCNF_CANCEL  = 0000h;
+      DRVCNF_OK      = 0001h;
+      DRVCNF_RESTART = 0002h;
+
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+
+TYPE DRIVERPROC = PROCEDURE (DWORD, HDRVR, UINT, LPARAM, LPARAM) : LRESULT;
+
+PROCEDURE CloseDriver (hDriver : HDRVR; lParam1, lParam2 : LONG) : LRESULT;
+PROCEDURE OpenDriver  (szDriverName, szSectionName : PCWSTR; lParam2 : LONG) : HDRVR;
+PROCEDURE SendDriverMessage  (hDriver : HDRVR; message : UINT; lParam1, lParam2 : LONG) : LRESULT;
+PROCEDURE DrvGetModuleHandle (hDriver : HDRVR) : HMODULE;
+PROCEDURE GetDriverModuleHandle (hDriver : HDRVR) : HMODULE;
+PROCEDURE DefDriverProc (dwDriverIdentifier : DWORD; hdrvr : HDRVR; uMsg : UINT; lParam1, lParam2 : LPARAM) : LRESULT;
+
+<* END *>
+
+(* return values from DriverProc() function *)
+
+CONST DRV_CANCEL  = DRVCNF_CANCEL;
+      DRV_OK      = DRVCNF_OK;
+      DRV_RESTART = DRVCNF_RESTART;
+
+CONST DRV_MCI_FIRST = DRV_RESERVED;
+      DRV_MCI_LAST  = DRV_RESERVED + 0FFFh;
+
+<* END *>  (* NOT DEFINED (MMNODRV) *)
+
+(****************************************************************************
+
+                          Driver callback support
+
+****************************************************************************)
+
+(* flags used with waveOutOpen(), waveInOpen(), midiInOpen(), and *)
+(* midiOutOpen() to specify the type of the dwCallback parameter. *)
+
+CONST CALLBACK_TYPEMASK = 00070000h;    (* callback type mask *)
+      CALLBACK_NULL     = 00000000h;    (* no callback *)
+      CALLBACK_WINDOW   = 00010000h;    (* dwCallback is a HWND *)
+      CALLBACK_TASK     = 00020000h;    (* dwCallback is a HTASK *)
+      CALLBACK_FUNCTION = 00030000h;    (* dwCallback is a FARPROC *)
+      CALLBACK_THREAD   = CALLBACK_TASK; (* thread ID replaces 16 bit task *)
+      CALLBACK_EVENT    = 00050000h;    (* dwCallback is an EVENT Handle *)
+
+
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+
+TYPE DRVCALLBACK = PROCEDURE (HDRVR, UINT, DWORD, DWORD, DWORD);
+
+<* END *>   (* NOT DEFINED (_WIN32_VXD) *)
+
+<* IF NOT DEFINED (MMNOMMSYSTEM) THEN *>
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+
+(****************************************************************************
+
+                    General MMSYSTEM support
+
+****************************************************************************)
+
+CONST OutputDebugStr = OutputDebugString;
+
+<* END *>  (* NOT DEFINED (_WIN32_VXD)   *)
+<* END *>  (* NOT DEFINED (MMNOMMSYSTEM) *)
+
+<* IF NOT DEFINED (MMNOSOUND) THEN *>
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+
+(****************************************************************************
+
+                            Sound support
+
+****************************************************************************)
+
+PROCEDURE sndPlaySoundA (pszSound : PCSTR;  fuSound : UINT) : BOOL;
+PROCEDURE sndPlaySoundW (pszSound : PCWSTR; fuSound : UINT) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST sndPlaySound = sndPlaySoundW;
+<* ELSE *>
+      CONST sndPlaySound = sndPlaySoundA;
+<* END *>
+
+(*
+ *  flag values for fuSound and fdwSound arguments on [snd]PlaySound
+ *)
+
+CONST SND_SYNC          = 0000h;  (* play synchronously (default) *)
+      SND_ASYNC         = 0001h;  (* play asynchronously *)
+      SND_NODEFAULT     = 0002h;  (* silence (!default) if sound not found *)
+      SND_MEMORY        = 0004h;  (* pszSound points to a memory file *)
+      SND_LOOP          = 0008h;  (* loop the sound until next sndPlaySound *)
+      SND_NOSTOP        = 0010h;  (* don't stop any currently playing sound *)
+
+      SND_NOWAIT     = 00002000h; (* don't wait if the driver is busy *)
+      SND_ALIAS      = 00010000h; (* name is a registry alias *)
+      SND_ALIAS_ID   = 00110000h; (* alias is a predefined ID *)
+      SND_FILENAME   = 00020000h; (* name is file name *)
+      SND_RESOURCE   = 00040004h; (* name is resource name or atom *)
+
+      SND_PURGE          = 0040h; (* purge non-static events for task *)
+      SND_APPLICATION    = 0080h; (* look for application specific association *)
+
+      SND_ALIAS_START = 0;        (* alias base *)
+
+      SND_ALIAS_SYSTEMASTERISK      = SND_ALIAS_START + ORD ('S') + ORD ('*') * 256;
+      SND_ALIAS_SYSTEMQUESTION      = SND_ALIAS_START + ORD ('S') + ORD ('?') * 256;
+      SND_ALIAS_SYSTEMHAND          = SND_ALIAS_START + ORD ('S') + ORD ('H') * 256;
+      SND_ALIAS_SYSTEMEXIT          = SND_ALIAS_START + ORD ('S') + ORD ('E') * 256;
+      SND_ALIAS_SYSTEMSTART         = SND_ALIAS_START + ORD ('S') + ORD ('S') * 256;
+      SND_ALIAS_SYSTEMWELCOME       = SND_ALIAS_START + ORD ('S') + ORD ('W') * 256;
+      SND_ALIAS_SYSTEMEXCLAMATION   = SND_ALIAS_START + ORD ('S') + ORD ('!') * 256;
+      SND_ALIAS_SYSTEMDEFAULT       = SND_ALIAS_START + ORD ('S') + ORD ('D') * 256;
+
+PROCEDURE PlaySoundA (pszSound : PCSTR;  hmod : HMODULE; fdwSound : DWORD) : BOOL;
+PROCEDURE PlaySoundW (pszSound : PCWSTR; hmod : HMODULE; fdwSound : DWORD) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST PlaySound = PlaySoundW;
+<* ELSE *>
+      CONST PlaySound = PlaySoundA;
+<* END *>
+
+<* END *>  (* NOT DEFINED (_WIN32_VXD) *)
+<* END *>  (* NOT DEFINED (MMNOSOUND) *)
+
+<* IF NOT DEFINED (MMNOWAVE) THEN *>
+(****************************************************************************
+
+                        Waveform audio support
+
+****************************************************************************)
+
+(* waveform audio error return values *)
+
+CONST WAVERR_BADFORMAT     = WAVERR_BASE + 0;    (* unsupported wave format *)
+      WAVERR_STILLPLAYING  = WAVERR_BASE + 1;    (* still something playing *)
+      WAVERR_UNPREPARED    = WAVERR_BASE + 2;    (* header not prepared *)
+      WAVERR_SYNC          = WAVERR_BASE + 3;    (* device is synchronous *)
+      WAVERR_LASTERROR     = WAVERR_BASE + 3;    (* last error in range *)
+
+(* waveform audio data types *)
+
+TYPE HWAVE    = POINTER TO RECORD END;
+     HWAVEIN  = POINTER TO RECORD END;
+     HWAVEOUT = POINTER TO RECORD END;
+
+TYPE PHWAVEIN     = HWAVEIN;
+TYPE PHWAVEOUT    = HWAVEOUT;
+TYPE WAVECALLBACK = DRVCALLBACK;
+
+(* wave callback messages *)
+
+CONST WOM_OPEN      = MM_WOM_OPEN;
+      WOM_CLOSE     = MM_WOM_CLOSE;
+      WOM_DONE      = MM_WOM_DONE;
+      WIM_OPEN      = MM_WIM_OPEN;
+      WIM_CLOSE     = MM_WIM_CLOSE;
+      WIM_DATA      = MM_WIM_DATA;
+
+(* device ID for wave device mapper *)
+
+CONST WAVE_MAPPER   = SYSTEM.CAST (UINT, VAL (INTEGER, -1));
+
+(* flags for dwFlags parameter in waveOutOpen() and waveInOpen() *)
+
+CONST WAVE_FORMAT_QUERY         = 0001h;
+      WAVE_ALLOWSYNC            = 0002h;
+      WAVE_MAPPED               = 0004h;
+      WAVE_FORMAT_DIRECT        = 0008h;
+      WAVE_FORMAT_DIRECT_QUERY  = WAVE_FORMAT_QUERY + WAVE_FORMAT_DIRECT;
+
+(* wave data block header *)
+
+TYPE PWAVEHDR = POINTER TO WAVEHDR;
+      WAVEHDR = RECORD
+                lpData          : PBYTE;    (* pointer to locked data buffer *)
+                dwBufferLength  : DWORD;    (* length of data buffer *)
+                dwBytesRecorded : DWORD;    (* used for input only *)
+                dwUser          : DWORD;    (* for client's use *)
+                dwFlags         : DWORD;    (* assorted flags (see defines) *)
+                dwLoops         : DWORD;    (* loop control counter *)
+                lpNext          : PWAVEHDR; (* reserved for driver *)
+                reserved        : DWORD;    (* reserved for driver *)
+      END;
+
+(* flags for dwFlags field of WAVEHDR *)
+
+CONST WHDR_DONE      = 00000001h; (* done bit *)
+      WHDR_PREPARED  = 00000002h; (* set if this header has been prepared *)
+      WHDR_BEGINLOOP = 00000004h; (* loop start block *)
+      WHDR_ENDLOOP   = 00000008h; (* loop end block *)
+      WHDR_INQUEUE   = 00000010h; (* reserved for driver *)
+
+(* waveform output device capabilities structure *)
+
+TYPE WAVEOUTCAPSA =
+     RECORD
+       wMid           : WORD;        (* manufacturer ID *)
+       wPid           : WORD;        (* product ID *)
+       vDriverVersion : MMVERSION;   (* version of the driver *)
+       szPname        : PNAMESTR;    (* product name (NULL terminated string) *)
+       dwFormats      : DWORD;       (* formats supported *)
+       wChannels      : WORD;        (* number of sources supported *)
+       wReserved1     : WORD;        (* packing *)
+       dwSupport      : DWORD;       (* functionality supported by driver *)
+     END;
+     PWAVEOUTCAPSA = POINTER TO WAVEOUTCAPSA;
+
+TYPE WAVEOUTCAPSW =
+     RECORD
+       wMid           : WORD;        (* manufacturer ID *)
+       wPid           : WORD;        (* product ID *)
+       vDriverVersion : MMVERSION;   (* version of the driver *)
+       szPname        : PNAMESTRW;   (* product name (NULL terminated string) *)
+       dwFormats      : DWORD;       (* formats supported *)
+       wChannels      : WORD;        (* number of sources supported *)
+       wReserved1     : WORD;        (* packing *)
+       dwSupport      : DWORD;       (* functionality supported by driver *)
+     END;
+     PWAVEOUTCAPSW = POINTER TO WAVEOUTCAPSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  WAVEOUTCAPS =  WAVEOUTCAPSW;
+      TYPE PWAVEOUTCAPS = PWAVEOUTCAPSW;
+<* ELSE *>
+      TYPE  WAVEOUTCAPS =  WAVEOUTCAPSA;
+      TYPE PWAVEOUTCAPS = PWAVEOUTCAPSA;
+<* END *>
+
+(* flags for dwSupport field of WAVEOUTCAPS *)
+
+CONST WAVECAPS_PITCH          = 0001h; (* supports pitch control *)
+      WAVECAPS_PLAYBACKRATE   = 0002h; (* supports playback rate control *)
+      WAVECAPS_VOLUME         = 0004h; (* supports volume control *)
+      WAVECAPS_LRVOLUME       = 0008h; (* separate left-right volume control *)
+      WAVECAPS_SYNC           = 0010h;
+      WAVECAPS_SAMPLEACCURATE = 0020h;
+      WAVECAPS_DIRECTSOUND    = 0040h;
+
+(* waveform input device capabilities structure *)
+
+TYPE WAVEINCAPSA =
+     RECORD
+       wMid           : WORD;          (* manufacturer ID *)
+       wPid           : WORD;          (* product ID *)
+       vDriverVersion : MMVERSION;     (* version of the driver *)
+       szPname        : PNAMESTR;      (* product name (NULL terminated string) *)
+       dwFormats      : DWORD;         (* formats supported *)
+       wChannels      : WORD;          (* number of channels supported *)
+       wReserved1     : WORD;          (* structure packing *)
+     END;
+     PWAVEINCAPSA = POINTER TO WAVEINCAPSA;
+
+TYPE WAVEINCAPSW =
+     RECORD
+       wMid           : WORD;          (* manufacturer ID *)
+       wPid           : WORD;          (* product ID *)
+       vDriverVersion : MMVERSION;     (* version of the driver *)
+       szPname        : PNAMESTRW;     (* product name (NULL terminated string) *)
+       dwFormats      : DWORD;         (* formats supported *)
+       wChannels      : WORD;          (* number of channels supported *)
+       wReserved1     : WORD;          (* structure packing *)
+     END;
+     PWAVEINCAPSW = POINTER TO WAVEINCAPSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  WAVEINCAPS =  WAVEINCAPSW;
+      TYPE PWAVEINCAPS = PWAVEINCAPSW;
+<* ELSE *>
+      TYPE  WAVEINCAPS =  WAVEINCAPSA;
+      TYPE PWAVEINCAPS = PWAVEINCAPSA;
+<* END *>
+
+(* defines for dwFormat field of WAVEINCAPS and WAVEOUTCAPS *)
+
+CONST WAVE_INVALIDFORMAT     = 00000000h;  (* invalid format *)
+      WAVE_FORMAT_1M08       = 00000001h;  (* 11.025 kHz, Mono,   8-bit  *)
+      WAVE_FORMAT_1S08       = 00000002h;  (* 11.025 kHz, Stereo, 8-bit  *)
+      WAVE_FORMAT_1M16       = 00000004h;  (* 11.025 kHz, Mono,   16-bit *)
+      WAVE_FORMAT_1S16       = 00000008h;  (* 11.025 kHz, Stereo, 16-bit *)
+      WAVE_FORMAT_2M08       = 00000010h;  (* 22.05  kHz, Mono,   8-bit  *)
+      WAVE_FORMAT_2S08       = 00000020h;  (* 22.05  kHz, Stereo, 8-bit  *)
+      WAVE_FORMAT_2M16       = 00000040h;  (* 22.05  kHz, Mono,   16-bit *)
+      WAVE_FORMAT_2S16       = 00000080h;  (* 22.05  kHz, Stereo, 16-bit *)
+      WAVE_FORMAT_4M08       = 00000100h;  (* 44.1   kHz, Mono,   8-bit  *)
+      WAVE_FORMAT_4S08       = 00000200h;  (* 44.1   kHz, Stereo, 8-bit  *)
+      WAVE_FORMAT_4M16       = 00000400h;  (* 44.1   kHz, Mono,   16-bit *)
+      WAVE_FORMAT_4S16       = 00000800h;  (* 44.1   kHz, Stereo, 16-bit *)
+
+(* OLD general waveform format structure (information common to all formats) *)
+
+TYPE WAVEFORMAT =
+     RECORD
+        wFormatTag      : WORD;   (* format type *)
+        nChannels       : WORD;   (* number of channels (i.e. mono, stereo, etc.) *)
+        nSamplesPerSec  : DWORD;  (* sample rate *)
+        nAvgBytesPerSec : DWORD;  (* for buffer estimation *)
+        nBlockAlign     : WORD;   (* block size of data *)
+     END;
+     PWAVEFORMAT = POINTER TO WAVEFORMAT;
+
+(* flags for wFormatTag field of WAVEFORMAT *)
+
+CONST WAVE_FORMAT_PCM = 1;
+
+(* specific waveform format structure for PCM data *)
+TYPE PCMWAVEFORMAT = RECORD
+                            wf             : WAVEFORMAT;
+                            wBitsPerSample : WORD;
+                     END;
+    PPCMWAVEFORMAT = POINTER TO PCMWAVEFORMAT;
+
+
+(*
+ *  extended waveform format structure used for all non-PCM formats. this
+ *  structure is common to all non-PCM formats.
+ *)
+
+TYPE WAVEFORMATEX =
+     RECORD
+        wFormatTag      : WORD;  (* format type *)
+        nChannels       : WORD;  (* number of channels (i.e. mono, stereo...) *)
+        nSamplesPerSec  : DWORD; (* sample rate *)
+        nAvgBytesPerSec : DWORD; (* for buffer estimation *)
+        nBlockAlign     : WORD;  (* block size of data *)
+        wBitsPerSample  : WORD;  (* number of bits per sample of mono data *)
+        cbSize          : WORD;  (* the count in bytes of the size of *)
+     END;                        (* extra information (after cbSize) *)
+    PWAVEFORMATEX = POINTER TO WAVEFORMATEX;
+   PCWAVEFORMATEX = POINTER TO WAVEFORMATEX;
+
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+(* waveform audio function prototypes *)
+
+PROCEDURE waveOutGetNumDevs () : UINT;
+
+PROCEDURE waveOutGetDevCapsA (uDeviceID : UINT; VAR woc : WAVEOUTCAPSA; cbwoc : UINT) : MMRESULT;
+PROCEDURE waveOutGetDevCapsW (uDeviceID : UINT; VAR woc : WAVEOUTCAPSW; cbwoc : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST waveOutGetDevCaps = waveOutGetDevCapsW;
+<* ELSE *>
+      CONST waveOutGetDevCaps = waveOutGetDevCapsA;
+<* END *>
+
+PROCEDURE waveOutGetVolume (hwo : HWAVEOUT; VAR dwVolume : DWORD) : MMRESULT;
+PROCEDURE waveOutSetVolume (hwo : HWAVEOUT;     dwVolume : DWORD) : MMRESULT;
+
+PROCEDURE waveOutGetErrorTextA (mmrError : MMRESULT; pszText : PSTR;  cchText : UINT) : MMRESULT;
+PROCEDURE waveOutGetErrorTextW (mmrError : MMRESULT; pszText : PWSTR; cchText : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST waveOutGetErrorText = waveOutGetErrorTextW;
+<* ELSE *>
+      CONST waveOutGetErrorText = waveOutGetErrorTextA;
+<* END *>
+
+
+PROCEDURE waveOutOpen (VAR hwo : HWAVEOUT; uDeviceID : UINT;
+                       VAR wfx : WAVEFORMATEX; dwCallback : DWORD;
+                       dwInstance : DWORD; fdwOpen : DWORD) : MMRESULT;
+
+PROCEDURE waveOutClose           (hwo : HWAVEOUT) : MMRESULT;
+PROCEDURE waveOutPrepareHeader   (hwo : HWAVEOUT; VAR pwh : WAVEHDR; cbwh : UINT) : MMRESULT;
+PROCEDURE waveOutUnprepareHeader (hwo : HWAVEOUT; VAR pwh : WAVEHDR; cbwh : UINT) : MMRESULT;
+PROCEDURE waveOutWrite           (hwo : HWAVEOUT; VAR pwh : WAVEHDR; cbwh : UINT) : MMRESULT;
+PROCEDURE waveOutPause           (hwo : HWAVEOUT) : MMRESULT;
+PROCEDURE waveOutRestart         (hwo : HWAVEOUT) : MMRESULT;
+PROCEDURE waveOutReset           (hwo : HWAVEOUT) : MMRESULT;
+PROCEDURE waveOutBreakLoop       (hwo : HWAVEOUT) : MMRESULT;
+PROCEDURE waveOutGetPosition     (hwo : HWAVEOUT; VAR mmt : MMTIME; cbmmt : UINT) : MMRESULT;
+PROCEDURE waveOutGetPitch        (hwo : HWAVEOUT; VAR Pitch : DWORD) : MMRESULT;
+PROCEDURE waveOutSetPitch        (hwo : HWAVEOUT;     Pitch : DWORD) : MMRESULT;
+PROCEDURE waveOutGetPlaybackRate (hwo : HWAVEOUT; VAR Rate  : DWORD) : MMRESULT;
+PROCEDURE waveOutSetPlaybackRate (hwo : HWAVEOUT;     Rate  : DWORD) : MMRESULT;
+PROCEDURE waveOutGetID           (hwo : HWAVEOUT; VAR DeviceID : UINT) : MMRESULT;
+
+PROCEDURE waveOutMessage (hwo : HWAVEOUT; uMsg : UINT; dw1, dw2 : DWORD) : MMRESULT;
+
+PROCEDURE waveInGetNumDevs () : UINT;
+
+PROCEDURE waveInGetDevCapsA (uDeviceID : UINT; VAR wic : WAVEINCAPSA; cbwic : UINT) : MMRESULT;
+PROCEDURE waveInGetDevCapsW (uDeviceID : UINT; VAR wic : WAVEINCAPSW; cbwic : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST waveInGetDevCaps = waveInGetDevCapsW;
+<* ELSE *>
+      CONST waveInGetDevCaps = waveInGetDevCapsA;
+<* END *>
+
+PROCEDURE waveInGetErrorTextA (mmrError : MMRESULT; pszText : PSTR;  cchText : UINT) : MMRESULT;
+PROCEDURE waveInGetErrorTextW (mmrError : MMRESULT; pszText : PWSTR; cchText : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST waveInGetErrorText = waveInGetErrorTextW;
+<* ELSE *>
+      CONST waveInGetErrorText = waveInGetErrorTextA;
+<* END *>
+
+PROCEDURE waveIntOpen (VAR hwi : HWAVEIN; uDeviceID : UINT;
+                       VAR wfx : WAVEFORMATEX; dwCallback : DWORD;
+                       dwInstance : DWORD; fdwOpen : DWORD) : MMRESULT;
+
+PROCEDURE waveInClose           (hwi : HWAVEIN) : MMRESULT;
+PROCEDURE waveInPrepareHeader   (hwi : HWAVEIN; VAR wh : WAVEHDR; cbwh : UINT) : MMRESULT;
+PROCEDURE waveInUnprepareHeader (hwi : HWAVEIN; VAR wh : WAVEHDR; cbwh : UINT) : MMRESULT;
+PROCEDURE waveInAddBuffer       (hwi : HWAVEIN; VAR wh : WAVEHDR; cbwh : UINT) : MMRESULT;
+PROCEDURE waveInStart           (hwi : HWAVEIN) : MMRESULT;
+PROCEDURE waveInStop            (hwi : HWAVEIN) : MMRESULT;
+PROCEDURE waveInReset           (hwi : HWAVEIN) : MMRESULT;
+PROCEDURE waveInGetPosition     (hwi : HWAVEIN; VAR mmt : MMTIME; cbmmt : UINT) : MMRESULT;
+PROCEDURE waveInGetID           (hwi : HWAVEIN; VAR DeviceID : UINT) : MMRESULT;
+
+PROCEDURE waveInMessage (hwo : HWAVEIN; uMsg : UINT; dw1, dw2 : DWORD) : MMRESULT;
+
+<* END *>  (* NOT DEFINED (_WIN32_VXD) *)
+
+<* END *>  (* NOT DEFINED (MMNOWAVE) *)
+
+<* IF NOT DEFINED (MMNOMIDI) THEN *>
+(****************************************************************************
+
+                            MIDI audio support
+
+****************************************************************************)
+
+(* MIDI error return values *)
+
+CONST MIDIERR_UNPREPARED    = MIDIERR_BASE + 0;   (* header not prepared *)
+      MIDIERR_STILLPLAYING  = MIDIERR_BASE + 1;   (* still something playing *)
+      MIDIERR_NOMAP         = MIDIERR_BASE + 2;   (* no configured instruments *)
+      MIDIERR_NOTREADY      = MIDIERR_BASE + 3;   (* hardware is still busy *)
+      MIDIERR_NODEVICE      = MIDIERR_BASE + 4;   (* port no longer connected *)
+      MIDIERR_INVALIDSETUP  = MIDIERR_BASE + 5;   (* invalid MIF *)
+      MIDIERR_BADOPENMODE   = MIDIERR_BASE + 6;   (* operation unsupported w/ open mode *)
+      MIDIERR_DONT_CONTINUE = MIDIERR_BASE + 7;   (* thru device 'eating' a message *)
+      MIDIERR_LASTERROR     = MIDIERR_BASE + 7;   (* last error in range *)
+
+
+(* MIDI audio data types *)
+
+TYPE HMIDI = POINTER TO RECORD END;
+TYPE HMIDIIN = POINTER TO RECORD END;
+TYPE HMIDIOUT = POINTER TO RECORD END;
+TYPE HMIDISTRM = POINTER TO RECORD END;
+
+TYPE PHMIDI = POINTER TO HMIDI;
+TYPE PHMIDIIN = POINTER TO HMIDIIN;
+TYPE PHMIDIOUT = POINTER TO HMIDIOUT;
+TYPE PHMIDISTRM = POINTER TO HMIDISTRM;
+TYPE MIDICALLBACK = DRVCALLBACK;
+
+CONST MIDIPATCHSIZE = 128;
+
+TYPE PATCHARRAY = ARRAY [0..MIDIPATCHSIZE-1] OF WORD;
+TYPE KEYARRAY   = ARRAY [0..MIDIPATCHSIZE-1] OF WORD;
+
+(* MIDI callback messages *)
+
+CONST MIM_OPEN       = MM_MIM_OPEN;
+      MIM_CLOSE      = MM_MIM_CLOSE;
+      MIM_DATA       = MM_MIM_DATA;
+      MIM_LONGDATA   = MM_MIM_LONGDATA;
+      MIM_ERROR      = MM_MIM_ERROR;
+      MIM_LONGERROR  = MM_MIM_LONGERROR;
+      MOM_OPEN       = MM_MOM_OPEN;
+      MOM_CLOSE      = MM_MOM_CLOSE;
+      MOM_DONE       = MM_MOM_DONE;
+      MIM_MOREDATA   = MM_MIM_MOREDATA;
+      MOM_POSITIONCB = MM_MOM_POSITIONCB;
+
+      MIDIMAPPER     = SYSTEM.CAST (UINT, VAL (INTEGER, -1));
+      MIDI_MAPPER    = SYSTEM.CAST (UINT, VAL (INTEGER, -1));
+
+(* flags for dwFlags parm of midiInOpen() *)
+
+CONST MIDI_IO_STATUS = 00000020h;
+
+(* flags for wFlags parm of midiOutCachePatches(), midiOutCacheDrumPatches() *)
+
+CONST MIDI_CACHE_ALL     = 1;
+      MIDI_CACHE_BESTFIT = 2;
+      MIDI_CACHE_QUERY   = 3;
+      MIDI_UNCACHE       = 4;
+
+
+(* MIDI output device capabilities structure *)
+
+TYPE MIDIOUTCAPSA =
+     RECORD
+        wMid           : WORD;          (* manufacturer ID *)
+        wPid           : WORD;          (* product ID *)
+        vDriverVersion : MMVERSION;     (* version of the driver *)
+        szPname        : PNAMESTR;      (* product name (NULL terminated string) *)
+        wTechnology    : WORD;          (* type of device *)
+        wVoices        : WORD;          (* # of voices (internal synth only) *)
+        wNotes         : WORD;          (* max # of notes (internal synth only) *)
+        wChannelMask   : WORD;          (* channels used (internal synth only) *)
+        dwSupport      : DWORD;         (* functionality supported by driver *)
+     END;
+     PMIDIOUTCAPSA = POINTER TO MIDIOUTCAPSA;
+
+TYPE MIDIOUTCAPSW =
+     RECORD
+        wMid           : WORD;          (* manufacturer ID *)
+        wPid           : WORD;          (* product ID *)
+        vDriverVersion : MMVERSION;     (* version of the driver *)
+        szPname        : PNAMESTRW;     (* product name (NULL terminated string) *)
+        wTechnology    : WORD;          (* type of device *)
+        wVoices        : WORD;          (* # of voices (internal synth only) *)
+        wNotes         : WORD;          (* max # of notes (internal synth only) *)
+        wChannelMask   : WORD;          (* channels used (internal synth only) *)
+        dwSupport      : DWORD;         (* functionality supported by driver *)
+     END;
+     PMIDIOUTCAPSW = POINTER TO MIDIOUTCAPSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MIDIOUTCAPS =  MIDIOUTCAPSW;
+      TYPE PMIDIOUTCAPS = PMIDIOUTCAPSW;
+<* ELSE *>
+      TYPE  MIDIOUTCAPS =  MIDIOUTCAPSA;
+      TYPE PMIDIOUTCAPS = PMIDIOUTCAPSA;
+<* END *>
+
+(* flags for wTechnology field of MIDIOUTCAPS structure *)
+
+CONST MOD_MIDIPORT   = 1; (* output port *)
+      MOD_SYNTH      = 2; (* generic internal synth *)
+      MOD_SQSYNTH    = 3; (* square wave internal synth *)
+      MOD_FMSYNTH    = 4; (* FM internal synth *)
+      MOD_MAPPER     = 5; (* MIDI mapper *)
+
+(* flags for dwSupport field of MIDIOUTCAPS structure *)
+
+CONST MIDICAPS_VOLUME   = 0001h; (* supports volume control *)
+      MIDICAPS_LRVOLUME = 0002h; (* separate left-right volume control *)
+      MIDICAPS_CACHE    = 0004h;
+      MIDICAPS_STREAM   = 0008h; (* driver supports midiStreamOut directly *)
+
+(* MIDI input device capabilities structure *)
+
+TYPE MIDIINCAPSA =
+     RECORD
+        wMid           : WORD;          (* manufacturer ID *)
+        wPid           : WORD;          (* product ID *)
+        vDriverVersion : MMVERSION;     (* version of the driver *)
+        szPname        : PNAMESTR;      (* product name (NULL terminated string) *)
+        dwSupport      : DWORD;         (* functionality supported by driver *)
+     END;
+    PMIDIINCAPSA = POINTER TO MIDIINCAPSA;
+
+TYPE MIDIINCAPSW =
+     RECORD
+        wMid           : WORD;          (* manufacturer ID *)
+        wPid           : WORD;          (* product ID *)
+        vDriverVersion : MMVERSION;     (* version of the driver *)
+        szPname        : PNAMESTRW;     (* product name (NULL terminated string) *)
+        dwSupport      : DWORD;         (* functionality supported by driver *)
+     END;
+    PMIDIINCAPSW = POINTER TO MIDIINCAPSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MIDIINCAPS =  MIDIINCAPSW;
+      TYPE PMIDIINCAPS = PMIDIINCAPSW;
+<* ELSE *>
+      TYPE  MIDIINCAPS =  MIDIINCAPSA;
+      TYPE PMIDIINCAPS = PMIDIINCAPSA;
+<* END *>
+
+(* MIDI data block header *)
+TYPE PMIDIHDR = POINTER TO MIDIHDR;
+     MIDIHDR =
+     RECORD
+        lpData          : PSTR;       (* pointer to locked data block *)
+        dwBufferLength  : DWORD;      (* length of data in data block *)
+        dwBytesRecorded : DWORD;      (* used for input only *)
+        dwUser          : DWORD;      (* for client's use *)
+        dwFlags         : DWORD;      (* assorted flags (see defines) *)
+        lpNext          : PMIDIHDR;   (* reserved for driver *)
+        reserved        : DWORD;      (* reserved for driver *)
+        dwOffset        : DWORD;      (* Callback offset into buffer *)
+        dwReserved      : ARRAY [0..7] OF DWORD;  (* Reserved for MMSYSTEM *)
+     END;
+
+TYPE MIDIEVENT =
+     RECORD
+        dwDeltaTime : DWORD;      (* Ticks since last event *)
+        dwStreamID  : DWORD;      (* Reserved; must be zero *)
+        dwEvent     : DWORD;      (* Event type and parameters *)
+        dwParms     : ARRAY [0..0] OF DWORD;  (* Parameters if this is a long event *)
+     END;
+
+TYPE MIDISTRMBUFFVER =
+     RECORD
+        dwVersion    : DWORD;     (* Stream buffer format version *)
+        dwMid        : DWORD;     (* Manufacturer ID as defined in MMREG.H *)
+        dwOEMVersion : DWORD;     (* Manufacturer version for custom ext *)
+     END;
+
+(* flags for dwFlags field of MIDIHDR structure *)
+
+CONST MHDR_DONE      = 00000001h;       (* done bit *)
+      MHDR_PREPARED  = 00000002h;       (* set if header prepared *)
+      MHDR_INQUEUE   = 00000004h;       (* reserved for driver *)
+      MHDR_ISSTRM    = 00000008h;       (* Buffer is stream buffer *)
+
+(* *)
+(* Type codes which go in the high byte of the event DWORD of a stream buffer *)
+(* *)
+(* Type codes 00-7F contain parameters within the low 24 bits *)
+(* Type codes 80-FF contain a length of their parameter in the low 24 *)
+(* bits, followed by their parameter data in the buffer. The event *)
+(* DWORD contains the exact byte length; the parm data itself must be *)
+(* padded to be an even multiple of 4 bytes long. *)
+(* *)
+
+CONST MEVT_F_SHORT      = 00000000h;
+      MEVT_F_LONG       = 80000000h;
+      MEVT_F_CALLBACK   = 40000000h;
+
+PROCEDURE MEVT_EVENTTYPE (x : DWORD) : BYTE;
+PROCEDURE MEVT_EVENTPARM (x : DWORD) : DWORD;
+
+CONST MEVT_SHORTMSG     = VAL (BYTE, 0);    (* parm = shortmsg for midiOutShortMsg *)
+      MEVT_TEMPO        = VAL (BYTE, 1);    (* parm = new tempo in microsec/qn     *)
+      MEVT_NOP          = VAL (BYTE, 2);    (* parm = unused; does nothing         *)
+
+(* 0x04-0x7F reserved *)
+
+CONST MEVT_LONGMSG      = VAL (BYTE, 80h);  (* parm = bytes to send verbatim       *)
+      MEVT_COMMENT      = VAL (BYTE, 82h);  (* parm = comment data                 *)
+      MEVT_VERSION      = VAL (BYTE, 84h);  (* parm = MIDISTRMBUFFVER struct       *)
+
+(* 0x81-0xFF reserved *)
+
+CONST MIDISTRM_ERROR    = -2;
+
+(* *)
+(* Structures and defines for midiStreamProperty *)
+(* *)
+
+CONST MIDIPROP_SET      = 80000000h;
+      MIDIPROP_GET      = 40000000h;
+
+(* These are intentionally both non-zero so the app cannot accidentally *)
+(* leave the operation off and happen to appear to work due to default *)
+(* action. *)
+
+CONST MIDIPROP_TIMEDIV  = 00000001h;
+      MIDIPROP_TEMPO    = 00000002h;
+
+TYPE MIDIPROPTIMEDIV = RECORD
+                              cbStruct  : DWORD;
+                              dwTimeDiv : DWORD;
+                       END;
+    PMIDIPROPTIMEDIV = POINTER TO MIDIPROPTIMEDIV;
+
+TYPE MIDIPROPTEMPO = RECORD
+                            cbStruct : DWORD;
+                            dwTempo  : DWORD;
+                     END;
+    PMIDIPROPTEMPO = POINTER TO MIDIPROPTEMPO;
+
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+
+PROCEDURE midiOutGetNumDevs () : UINT;
+
+PROCEDURE midiStreamOpen  (VAR hms : HMIDISTRM; VAR DeviceID : UINT;
+                           cMidi : DWORD; dwCallback : DWORD;
+                           dwInstance : DWORD; fdwOpen : DWORD) : MMRESULT;
+
+PROCEDURE midiStreamClose (hms : HMIDISTRM) : MMRESULT;
+
+PROCEDURE midiStreamProperty (hms : HMIDISTRM; lppropdata : PBYTE; dwProperty : DWORD) : MMRESULT;
+PROCEDURE midiStreamPosition (hms : HMIDISTRM; VAR mmt : MMTIME; cbmmt : UINT) : MMRESULT;
+
+PROCEDURE midiStreamOut     (hms : HMIDISTRM; VAR mh : MIDIHDR; cbmh : UINT) : MMRESULT;
+PROCEDURE midiStreamPause   (hms : HMIDISTRM) : MMRESULT;
+PROCEDURE midiStreamRestart (hms : HMIDISTRM) : MMRESULT;
+PROCEDURE midiStreamStop    (hms : HMIDISTRM) : MMRESULT;
+
+PROCEDURE midiConnect    (hmi : HMIDI; hmo : HMIDIOUT; pReserved : PVOID) : MMRESULT;
+PROCEDURE midiDisconnect (hmi : HMIDI; hmo : HMIDIOUT; pReserved : PVOID) : MMRESULT;
+
+PROCEDURE midiOutGetDevCapsA (uDeviceID : UINT; VAR mod : MIDIOUTCAPSA; cbmoc : UINT) : MMRESULT;
+PROCEDURE midiOutGetDevCapsW (uDeviceID : UINT; VAR mod : MIDIOUTCAPSW; cbmoc : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST midiOutGetDevCaps = midiOutGetDevCapsW;
+<* ELSE *>
+      CONST midiOutGetDevCaps = midiOutGetDevCapsA;
+<* END *>
+
+
+PROCEDURE midiOutGetVolume (hmo : HMIDIOUT; VAR Volume : DWORD) : MMRESULT;
+PROCEDURE midiOutSetVolume (hmo : HMIDIOUT;     Volume : DWORD) : MMRESULT;
+
+PROCEDURE midiOutGetErrorTextA (mmrError : MMRESULT; Text : PSTR;  cchText : UINT) : MMRESULT;
+PROCEDURE midiOutGetErrorTextW (mmrError : MMRESULT; Text : PWSTR; cchText : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST midiOutGetErrorText = midiOutGetErrorTextW;
+<* ELSE *>
+      CONST midiOutGetErrorText = midiOutGetErrorTextA;
+<* END *>
+
+PROCEDURE midiOutOpen (VAR hmo : HMIDIOUT; uDeviceID : UINT;
+                       dwCallback : DWORD; dwInstance : DWORD;
+                       fdwOpen : DWORD) : MMRESULT;
+PROCEDURE midiOutClose            (hmo : HMIDIOUT) : MMRESULT;
+PROCEDURE midiOutPrepareHeader    (hmo : HMIDIOUT; VAR mh : MIDIHDR; cbmh : UINT) : MMRESULT;
+PROCEDURE midiOutUnprepareHeader  (hmo : HMIDIOUT; VAR mh : MIDIHDR; cbmh : UINT) : MMRESULT;
+PROCEDURE midiOutShortMsg         (hmo : HMIDIOUT; dwMsg : DWORD) : MMRESULT;
+PROCEDURE midiOutLongMsg          (hmo : HMIDIOUT; VAR mh : MIDIHDR; cbmh : UINT) : MMRESULT;
+PROCEDURE midiOutReset            (hmo : HMIDIOUT) : MMRESULT;
+PROCEDURE midiOutCachePatches     (hmo : HMIDIOUT; uBank  : UINT; VAR pa : PATCHARRAY; fuCache : UINT) : MMRESULT;
+PROCEDURE midiOutCacheDrumPatches (hmo : HMIDIOUT; uPatch : UINT; VAR pa : PATCHARRAY; fuCache : UINT) : MMRESULT;
+PROCEDURE midiOutGetID            (hmo : HMIDIOUT; VAR DeviceID : UINT) : MMRESULT;
+
+PROCEDURE midiOutMessage (hmo : HMIDIOUT; uMsg : UINT; dw1, dw2 : DWORD) : MMRESULT;
+
+PROCEDURE midiInGetNumDevs () : UINT;
+
+PROCEDURE midiInGetDevCapsA (uDeviceID : UINT; VAR mic : MIDIINCAPSA; cbmic : UINT) : MMRESULT;
+PROCEDURE midiInGetDevCapsW (uDeviceID : UINT; VAR mic : MIDIINCAPSW; cbmic : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST midiInGetDevCaps = midiInGetDevCapsW;
+<* ELSE *>
+      CONST midiInGetDevCaps = midiInGetDevCapsA;
+<* END *>
+
+PROCEDURE midiInGetErrorTextA (mmrError : MMRESULT; pszText : PSTR;  cchText : UINT) : MMRESULT;
+PROCEDURE midiInGetErrorTextW (mmrError : MMRESULT; pszText : PWSTR; cchText : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST midiInGetErrorText = midiInGetErrorTextW;
+<* ELSE *>
+      CONST midiInGetErrorText = midiInGetErrorTextA;
+<* END *>
+
+PROCEDURE midiInOpen (VAR hmi : HMIDIIN; uDeviceID : UINT;
+                      dwCallback : DWORD; dwInstance : DWORD;
+                      fdwOpen : DWORD) : MMRESULT;
+PROCEDURE midiInClose           (hmi : HMIDIIN) : MMRESULT;
+PROCEDURE midiInPrepareHeader   (hmi : HMIDIIN; VAR mh : MIDIHDR; cbmh : UINT) : MMRESULT;
+PROCEDURE midiInUnprepareHeader (hmi : HMIDIIN; VAR mh : MIDIHDR; cbmh : UINT) : MMRESULT;
+PROCEDURE midiInAddBuffer       (hmi : HMIDIIN; VAR mh : MIDIHDR; cbmh : UINT) : MMRESULT;
+PROCEDURE midiInStart           (hmi : HMIDIIN) : MMRESULT;
+PROCEDURE midiInStop            (hmi : HMIDIIN) : MMRESULT;
+PROCEDURE midiInReset           (hmi : HMIDIIN) : MMRESULT;
+PROCEDURE midiInGetID           (hmi : HMIDIIN; VAR DeviceID : UINT) : MMRESULT;
+
+PROCEDURE midiInMessage (hmi : HMIDIIN; uMsg : UINT; dw1, dw2 : DWORD) : MMRESULT;
+
+<* END *>  (* NOT DEFINED (_WIN32_VXD) *)
+
+<* END *>  (* NOT DEFINED (MMNOMIDI) *)
+
+<* IF NOT DEFINED (MMNOAUX) THEN *>
+(****************************************************************************
+
+                        Auxiliary audio support
+
+****************************************************************************)
+
+(* device ID for aux device mapper *)
+
+CONST AUX_MAPPER = SYSTEM.CAST (UINT, VAL (INTEGER, -1));
+
+(* Auxiliary audio device capabilities structure *)
+
+TYPE AUXCAPSA =
+     RECORD
+            wMid           : WORD;         (* manufacturer ID *)
+            wPid           : WORD;         (* product ID *)
+            vDriverVersion : MMVERSION;    (* version of the driver *)
+            szPname        : PNAMESTR;     (* product name (NULL terminated string) *)
+            wTechnology    : WORD;         (* type of device *)
+            wReserved1     : WORD;         (* padding *)
+            dwSupport      : DWORD;        (* functionality supported by driver *)
+     END;
+     PAUXCAPSA = POINTER TO AUXCAPSA;
+
+TYPE AUXCAPSW =
+     RECORD
+            wMid           : WORD;         (* manufacturer ID *)
+            wPid           : WORD;         (* product ID *)
+            vDriverVersion : MMVERSION;    (* version of the driver *)
+            szPname        : PNAMESTRW;    (* product name (NULL terminated string) *)
+            wTechnology    : WORD;         (* type of device *)
+            wReserved1     : WORD;         (* padding *)
+            dwSupport      : DWORD;        (* functionality supported by driver *)
+     END;
+     PAUXCAPSW = POINTER TO AUXCAPSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  AUXCAPS =  AUXCAPSW;
+      TYPE PAUXCAPS = PAUXCAPSW;
+<* ELSE *>
+      TYPE  AUXCAPS =  AUXCAPSA;
+      TYPE PAUXCAPS = PAUXCAPSA;
+<* END *>
+
+(* flags for wTechnology field in AUXCAPS structure *)
+
+CONST AUXCAPS_CDAUDIO   = 1;       (* audio from internal CD-ROM drive *)
+      AUXCAPS_AUXIN     = 2;       (* audio from auxiliary input jacks *)
+
+(* flags for dwSupport field in AUXCAPS structure *)
+
+CONST AUXCAPS_VOLUME    = 0001h;   (* supports volume control *)
+      AUXCAPS_LRVOLUME  = 0002h;   (* separate left-right volume control *)
+
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+
+(* auxiliary audio function prototypes *)
+
+PROCEDURE auxGetNumDevs () : UINT;
+
+PROCEDURE auxGetDevCapsA (uDeviceID : UINT; VAR pac : AUXCAPSA; cbac : UINT) : MMRESULT;
+PROCEDURE auxGetDevCapsW (uDeviceID : UINT; VAR pac : AUXCAPSW; cbac : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST auxGetDevCaps = auxGetDevCapsW;
+<* ELSE *>
+      CONST auxGetDevCaps = auxGetDevCapsA;
+<* END *>
+
+PROCEDURE auxSetVolume (uDeviceID : UINT; VAR Volume : DWORD) : MMRESULT;
+PROCEDURE auxGetVolume (uDeviceID : UINT; VAR Volume : DWORD) : MMRESULT;
+
+PROCEDURE auxOutMessage (uDeviceID : UINT; uMsg : UINT; dw1, dw2 : DWORD) : MMRESULT;
+
+<* END *> (* NOT DEFINED (_WIN32_VXD) *)
+
+<* END *>  (* NOT DEFINED (MMNOAUX) *)
+
+<* IF NOT DEFINED (MMNOMIXER) THEN *>
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+(****************************************************************************
+
+                            Mixer Support
+
+****************************************************************************)
+
+TYPE  HMIXEROBJ = POINTER TO RECORD END;
+     PHMIXEROBJ = POINTER TO HMIXEROBJ;
+
+TYPE HMIXER  = POINTER TO RECORD END;
+     PHMIXER = POINTER TO HMIXER;
+
+CONST MIXER_SHORT_NAME_CHARS = 16;
+      MIXER_LONG_NAME_CHARS  = 64;
+
+(* *)
+(*  MMRESULT error return values specific to the mixer API *)
+(* *)
+(* *)
+
+CONST MIXERR_INVALLINE           = MIXERR_BASE + 0;
+      MIXERR_INVALCONTROL        = MIXERR_BASE + 1;
+      MIXERR_INVALVALUE          = MIXERR_BASE + 2;
+      MIXERR_LASTERROR           = MIXERR_BASE + 2;
+
+CONST MIXER_OBJECTF_HANDLE    = 80000000h;
+      MIXER_OBJECTF_MIXER     = 00000000h;
+      MIXER_OBJECTF_HMIXER    = MIXER_OBJECTF_HANDLE + MIXER_OBJECTF_MIXER;
+
+      MIXER_OBJECTF_WAVEOUT   = 1000000h;
+      MIXER_OBJECTF_HWAVEOUT  = MIXER_OBJECTF_HANDLE + MIXER_OBJECTF_WAVEOUT;
+
+      MIXER_OBJECTF_WAVEIN    = 20000000h;
+      MIXER_OBJECTF_HWAVEIN   = MIXER_OBJECTF_HANDLE + MIXER_OBJECTF_WAVEIN;
+
+      MIXER_OBJECTF_MIDIOUT   = 30000000h;
+      MIXER_OBJECTF_HMIDIOUT  = MIXER_OBJECTF_HANDLE + MIXER_OBJECTF_MIDIOUT;
+
+      MIXER_OBJECTF_MIDIIN    = 40000000h;
+      MIXER_OBJECTF_HMIDIIN   = MIXER_OBJECTF_HANDLE + MIXER_OBJECTF_MIDIIN;
+
+      MIXER_OBJECTF_AUX       = 50000000h;
+
+PROCEDURE mixerGetNumDevs () : UINT;
+
+TYPE MIXERCAPSA =
+     RECORD
+            wMid           : WORD;        (* manufacturer id *)
+            wPid           : WORD;        (* product id *)
+            vDriverVersion : MMVERSION;   (* version of the driver *)
+            szPname        : PNAMESTR;    (* product name *)
+            fdwSupport     : DWORD;       (* misc. support bits *)
+            cDestinations  : DWORD;       (* count of destinations *)
+     END;
+     PMIXERCAPSA = POINTER TO MIXERCAPSA;
+
+TYPE MIXERCAPSW =
+     RECORD
+            wMid           : WORD;        (* manufacturer id *)
+            wPid           : WORD;        (* product id *)
+            vDriverVersion : MMVERSION;   (* version of the driver *)
+            szPname        : PNAMESTRW;   (* product name *)
+            fdwSupport     : DWORD;       (* misc. support bits *)
+            cDestinations  : DWORD;       (* count of destinations *)
+     END;
+     PMIXERCAPSW = POINTER TO MIXERCAPSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MIXERCAPS = MIXERCAPSW;
+      TYPE PMIXERCAPS = PMIXERCAPSW;
+<* ELSE *>
+      TYPE  MIXERCAPS = MIXERCAPSA;
+      TYPE PMIXERCAPS = PMIXERCAPSA;
+<* END *>
+
+
+PROCEDURE mixerGetDevCapsA (uMxId : UINT; VAR mxcaps : MIXERCAPSA; cbmxcaps : UINT) : MMRESULT;
+PROCEDURE mixerGetDevCapsW (uMxId : UINT; VAR mxcaps : MIXERCAPSW; cbmxcaps : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mixerGetDevCaps = mixerGetDevCapsW;
+<* ELSE *>
+      CONST mixerGetDevCaps = mixerGetDevCapsA;
+<* END *>
+
+
+PROCEDURE mixerOpen (VAR hmx : HMIXER; uMxId : UINT; dwCallback : DWORD;
+                     dwInstance : DWORD; fdwOpen : DWORD) : MMRESULT;
+
+PROCEDURE mixerClose (hmx : HMIXER) : MMRESULT;
+
+PROCEDURE mixerMessage (hmx : HMIXER; uMsg : UINT; dwParam1, dwParam2 : DWORD) : DWORD;
+
+TYPE MIXERLINEA =
+     RECORD
+            cbStruct        : DWORD;           (* size of MIXERLINE structure *)
+            dwDestination   : DWORD;           (* zero based destination index *)
+            dwSource        : DWORD;           (* zero based source index (if source) *)
+            dwLineID        : DWORD;           (* unique line id for mixer device *)
+            fdwLine         : DWORD;           (* state/information about line *)
+            dwUser          : DWORD;           (* driver specific information *)
+            dwComponentType : DWORD;           (* component type line connects to *)
+            cChannels       : DWORD;           (* number of channels line supports *)
+            cConnections    : DWORD;           (* number of connections [possible] *)
+            cControls       : DWORD;           (* number of controls at this line *)
+            szShortName     : ARRAY [0..MIXER_SHORT_NAME_CHARS-1] OF CHAR;
+            szName          : ARRAY [0..MIXER_LONG_NAME_CHARS -1] OF CHAR;
+            Target : RECORD
+                      dwType         : DWORD;     (* MIXERLINE_TARGETTYPE_xxxx *)
+                      dwDeviceID     : DWORD;     (* target device ID of device type *)
+                      wMid           : WORD;      (* of target device *)
+                      wPid           : WORD;      (*      " *)
+                      vDriverVersion : MMVERSION; (*      " *)
+                      szPname        : PNAMESTR;  (*      " *)
+                     END;
+     END;
+     PMIXERLINEA = POINTER TO MIXERLINEA;
+
+TYPE MIXERLINEW =
+     RECORD
+            cbStruct        : DWORD;           (* size of MIXERLINE structure *)
+            dwDestination   : DWORD;           (* zero based destination index *)
+            dwSource        : DWORD;           (* zero based source index (if source) *)
+            dwLineID        : DWORD;           (* unique line id for mixer device *)
+            fdwLine         : DWORD;           (* state/information about line *)
+            dwUser          : DWORD;           (* driver specific information *)
+            dwComponentType : DWORD;           (* component type line connects to *)
+            cChannels       : DWORD;           (* number of channels line supports *)
+            cConnections    : DWORD;           (* number of connections [possible] *)
+            cControls       : DWORD;           (* number of controls at this line *)
+            szShortName     : ARRAY [0..MIXER_SHORT_NAME_CHARS-1] OF WCHAR;
+            szName          : ARRAY [0..MIXER_LONG_NAME_CHARS -1] OF WCHAR;
+            Target : RECORD
+                      dwType         : DWORD;     (* MIXERLINE_TARGETTYPE_xxxx *)
+                      dwDeviceID     : DWORD;     (* target device ID of device type *)
+                      wMid           : WORD;      (* of target device *)
+                      wPid           : WORD;      (*      " *)
+                      vDriverVersion : MMVERSION; (*      " *)
+                      szPname        : PNAMESTRW; (*      " *)
+                     END;
+     END;
+     PMIXERLINEW = POINTER TO MIXERLINEW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MIXERLINE =  MIXERLINEW;
+           PMIXERLINE = PMIXERLINEW;
+<* ELSE *>
+      TYPE  MIXERLINE =  MIXERLINEA;
+           PMIXERLINE = PMIXERLINEA;
+<* END *>
+
+(* *)
+(*  MIXERLINE.fdwLine *)
+(* *)
+(* *)
+
+CONST MIXERLINE_LINEF_ACTIVE              = 00000001h;
+      MIXERLINE_LINEF_DISCONNECTED        = 00008000h;
+      MIXERLINE_LINEF_SOURCE              = 80000000h;
+
+(* *)
+(*  MIXERLINE.dwComponentType *)
+(* *)
+(*  component types for destinations and sources *)
+(* *)
+(* *)
+CONST MIXERLINE_COMPONENTTYPE_DST_FIRST       = 00000000h;
+      MIXERLINE_COMPONENTTYPE_DST_UNDEFINED   = MIXERLINE_COMPONENTTYPE_DST_FIRST + 0;
+      MIXERLINE_COMPONENTTYPE_DST_DIGITAL     = MIXERLINE_COMPONENTTYPE_DST_FIRST + 1;
+      MIXERLINE_COMPONENTTYPE_DST_LINE        = MIXERLINE_COMPONENTTYPE_DST_FIRST + 2;
+      MIXERLINE_COMPONENTTYPE_DST_MONITOR     = MIXERLINE_COMPONENTTYPE_DST_FIRST + 3;
+      MIXERLINE_COMPONENTTYPE_DST_SPEAKERS    = MIXERLINE_COMPONENTTYPE_DST_FIRST + 4;
+      MIXERLINE_COMPONENTTYPE_DST_HEADPHONES  = MIXERLINE_COMPONENTTYPE_DST_FIRST + 5;
+      MIXERLINE_COMPONENTTYPE_DST_TELEPHONE   = MIXERLINE_COMPONENTTYPE_DST_FIRST + 6;
+      MIXERLINE_COMPONENTTYPE_DST_WAVEIN      = MIXERLINE_COMPONENTTYPE_DST_FIRST + 7;
+      MIXERLINE_COMPONENTTYPE_DST_VOICEIN     = MIXERLINE_COMPONENTTYPE_DST_FIRST + 8;
+      MIXERLINE_COMPONENTTYPE_DST_LAST        = MIXERLINE_COMPONENTTYPE_DST_FIRST + 8;
+
+      MIXERLINE_COMPONENTTYPE_SRC_FIRST       = 00001000h;
+      MIXERLINE_COMPONENTTYPE_SRC_UNDEFINED   = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 0;
+      MIXERLINE_COMPONENTTYPE_SRC_DIGITAL     = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 1;
+      MIXERLINE_COMPONENTTYPE_SRC_LINE        = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 2;
+      MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE  = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 3;
+      MIXERLINE_COMPONENTTYPE_SRC_SYNTHESIZER = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 4;
+      MIXERLINE_COMPONENTTYPE_SRC_COMPACTDISC = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 5;
+      MIXERLINE_COMPONENTTYPE_SRC_TELEPHONE   = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 6;
+      MIXERLINE_COMPONENTTYPE_SRC_PCSPEAKER   = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 7;
+      MIXERLINE_COMPONENTTYPE_SRC_WAVEOUT     = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 8;
+      MIXERLINE_COMPONENTTYPE_SRC_AUXILIARY   = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 9;
+      MIXERLINE_COMPONENTTYPE_SRC_ANALOG      = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 10;
+      MIXERLINE_COMPONENTTYPE_SRC_LAST        = MIXERLINE_COMPONENTTYPE_SRC_FIRST + 10;
+
+(* *)
+(*  MIXERLINE.Target.dwType *)
+(* *)
+(* *)
+
+CONST MIXERLINE_TARGETTYPE_UNDEFINED     = 0;
+      MIXERLINE_TARGETTYPE_WAVEOUT       = 1;
+      MIXERLINE_TARGETTYPE_WAVEIN        = 2;
+      MIXERLINE_TARGETTYPE_MIDIOUT       = 3;
+      MIXERLINE_TARGETTYPE_MIDIIN        = 4;
+      MIXERLINE_TARGETTYPE_AUX           = 5;
+
+PROCEDURE mixerGetLineInfoA (hmxobj : HMIXEROBJ; VAR mxl : MIXERLINEA; fdwInfo : DWORD) : MMRESULT;
+PROCEDURE mixerGetLineInfoW (hmxobj : HMIXEROBJ; VAR mxl : MIXERLINEW; fdwInfo : DWORD) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mixerGetLineInfo = mixerGetLineInfoW;
+<* ELSE *>
+      CONST mixerGetLineInfo = mixerGetLineInfoA;
+<* END *>
+
+CONST MIXER_GETLINEINFOF_DESTINATION      = 00000000h;
+      MIXER_GETLINEINFOF_SOURCE           = 00000001h;
+      MIXER_GETLINEINFOF_LINEID           = 00000002h;
+      MIXER_GETLINEINFOF_COMPONENTTYPE    = 00000003h;
+      MIXER_GETLINEINFOF_TARGETTYPE       = 00000004h;
+
+      MIXER_GETLINEINFOF_QUERYMASK        = 0000000Fh;
+
+PROCEDURE mixerGetID (hmxobj : HMIXEROBJ; VAR MxId : UINT; fdwId : DWORD) : MMRESULT;
+
+(* *)
+(*  MIXERCONTROL *)
+(* *)
+(* *)
+
+TYPE MIXERCONTROLA =
+     RECORD
+            cbStruct       : DWORD;         (* size in bytes of MIXERCONTROL *)
+            dwControlID    : DWORD;         (* unique control id for mixer device *)
+            dwControlType  : DWORD;         (* MIXERCONTROL_CONTROLTYPE_xxx *)
+            fdwControl     : DWORD;         (* MIXERCONTROL_CONTROLF_xxx *)
+            cMultipleItems : DWORD;         (* if MIXERCONTROL_CONTROLF_MULTIPLE set *)
+            szShortName    : ARRAY [0..MIXER_SHORT_NAME_CHARS-1] OF CHAR;
+            szName         : ARRAY [0..MIXER_LONG_NAME_CHARS-1] OF CHAR;
+            Bounds  : RECORD
+                        CASE : BOOLEAN OF
+                        | TRUE  : lMinimum  : LONG;   (* signed minimum for this control *)
+                                  lMaximum  : LONG;   (* signed maximum for this control *)
+                        | FALSE : dwMinimum : DWORD;  (* unsigned minimum for this control *)
+                                  dwMaximum : DWORD;  (* unsigned maximum for this control *)
+                        ELSE
+                                  dwReserved : ARRAY [0..5] OF DWORD;
+                        END;
+                      END;
+            Metrics : RECORD
+                        CASE : BOOLEAN OF
+                        | TRUE  : cSteps       : DWORD;  (* # of steps between min & max *)
+                        | FALSE : cbCustomData : DWORD;  (* size in bytes of custom data *)
+                        ELSE
+                                  dwReserved : ARRAY [0..5] OF DWORD;  (* !!! needed? we have cbStruct.... *)
+                        END;
+                      END;
+     END;
+     PMIXERCONTROLA = POINTER TO MIXERCONTROLA;
+
+TYPE MIXERCONTROLW =
+     RECORD
+            cbStruct       : DWORD;         (* size in bytes of MIXERCONTROL *)
+            dwControlID    : DWORD;         (* unique control id for mixer device *)
+            dwControlType  : DWORD;         (* MIXERCONTROL_CONTROLTYPE_xxx *)
+            fdwControl     : DWORD;         (* MIXERCONTROL_CONTROLF_xxx *)
+            cMultipleItems : DWORD;         (* if MIXERCONTROL_CONTROLF_MULTIPLE set *)
+            szShortName    : ARRAY [0..MIXER_SHORT_NAME_CHARS-1] OF WCHAR;
+            szName         : ARRAY [0..MIXER_LONG_NAME_CHARS-1] OF WCHAR;
+            Bounds  : RECORD
+                        CASE : BOOLEAN OF
+                        | TRUE  : lMinimum  : LONG;   (* signed minimum for this control *)
+                                  lMaximum  : LONG;   (* signed maximum for this control *)
+                        | FALSE : dwMinimum : DWORD;  (* unsigned minimum for this control *)
+                                  dwMaximum : DWORD;  (* unsigned maximum for this control *)
+                        ELSE
+                                  dwReserved : ARRAY [0..5] OF DWORD;
+                        END;
+                      END;
+            Metrics : RECORD
+                        CASE : BOOLEAN OF
+                        | TRUE  : cSteps       : DWORD;  (* # of steps between min & max *)
+                        | FALSE : cbCustomData : DWORD;  (* size in bytes of custom data *)
+                        ELSE
+                                  dwReserved : ARRAY [0..5] OF DWORD;  (* !!! needed? we have cbStruct.... *)
+                        END;
+                      END;
+     END;
+     PMIXERCONTROLW = POINTER TO MIXERCONTROLW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MIXERCONTROL =  MIXERCONTROLW;
+      TYPE PMIXERCONTROL = PMIXERCONTROLW;
+<* ELSE *>
+      TYPE  MIXERCONTROL =  MIXERCONTROLA;
+      TYPE PMIXERCONTROL = PMIXERCONTROLA;
+<* END *>
+
+(* *)
+(*  MIXERCONTROL.fdwControl *)
+(* *)
+(* *)
+
+CONST MIXERCONTROL_CONTROLF_UNIFORM   = 00000001h;
+      MIXERCONTROL_CONTROLF_MULTIPLE  = 00000002h;
+      MIXERCONTROL_CONTROLF_DISABLED  = 80000000h;
+
+(* *)
+(*  MIXERCONTROL_CONTROLTYPE_xxx building block defines *)
+(* *)
+(* *)
+
+CONST MIXERCONTROL_CT_CLASS_MASK          = 0F0000000h;
+      MIXERCONTROL_CT_CLASS_CUSTOM        = 000000000h;
+      MIXERCONTROL_CT_CLASS_METER         = 010000000h;
+      MIXERCONTROL_CT_CLASS_SWITCH        = 020000000h;
+      MIXERCONTROL_CT_CLASS_NUMBER        = 030000000h;
+      MIXERCONTROL_CT_CLASS_SLIDER        = 040000000h;
+      MIXERCONTROL_CT_CLASS_FADER         = 050000000h;
+      MIXERCONTROL_CT_CLASS_TIME          = 060000000h;
+      MIXERCONTROL_CT_CLASS_LIST          = 070000000h;
+
+      MIXERCONTROL_CT_SUBCLASS_MASK       = 00F000000h;
+
+      MIXERCONTROL_CT_SC_SWITCH_BOOLEAN   = 000000000h;
+      MIXERCONTROL_CT_SC_SWITCH_BUTTON    = 001000000h;
+
+      MIXERCONTROL_CT_SC_METER_POLLED     = 000000000h;
+
+      MIXERCONTROL_CT_SC_TIME_MICROSECS   = 000000000h;
+      MIXERCONTROL_CT_SC_TIME_MILLISECS   = 001000000h;
+
+      MIXERCONTROL_CT_SC_LIST_SINGLE      = 000000000h;
+      MIXERCONTROL_CT_SC_LIST_MULTIPLE    = 001000000h;
+
+      MIXERCONTROL_CT_UNITS_MASK          = 000FF0000h;
+      MIXERCONTROL_CT_UNITS_CUSTOM        = 000000000h;
+      MIXERCONTROL_CT_UNITS_BOOLEAN       = 000010000h;
+      MIXERCONTROL_CT_UNITS_SIGNED        = 000020000h;
+      MIXERCONTROL_CT_UNITS_UNSIGNED      = 000030000h;
+      MIXERCONTROL_CT_UNITS_DECIBELS      = 000040000h; (* in 10ths *)
+      MIXERCONTROL_CT_UNITS_PERCENT       = 000050000h; (* in 10ths *)
+
+(* *)
+(*  Commonly used control types for specifying MIXERCONTROL.dwControlType *)
+(* *)
+
+CONST MIXERCONTROL_CONTROLTYPE_CUSTOM         = MIXERCONTROL_CT_CLASS_CUSTOM + MIXERCONTROL_CT_UNITS_CUSTOM;
+      MIXERCONTROL_CONTROLTYPE_BOOLEANMETER   = MIXERCONTROL_CT_CLASS_METER + MIXERCONTROL_CT_SC_METER_POLLED + MIXERCONTROL_CT_UNITS_BOOLEAN;
+      MIXERCONTROL_CONTROLTYPE_SIGNEDMETER    = MIXERCONTROL_CT_CLASS_METER + MIXERCONTROL_CT_SC_METER_POLLED + MIXERCONTROL_CT_UNITS_SIGNED;
+      MIXERCONTROL_CONTROLTYPE_PEAKMETER      = MIXERCONTROL_CONTROLTYPE_SIGNEDMETER + 1;
+      MIXERCONTROL_CONTROLTYPE_UNSIGNEDMETER  = MIXERCONTROL_CT_CLASS_METER + MIXERCONTROL_CT_SC_METER_POLLED + MIXERCONTROL_CT_UNITS_UNSIGNED;
+      MIXERCONTROL_CONTROLTYPE_BOOLEAN        = MIXERCONTROL_CT_CLASS_SWITCH + MIXERCONTROL_CT_SC_SWITCH_BOOLEAN + MIXERCONTROL_CT_UNITS_BOOLEAN;
+      MIXERCONTROL_CONTROLTYPE_ONOFF          = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 1;
+      MIXERCONTROL_CONTROLTYPE_MUTE           = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 2;
+      MIXERCONTROL_CONTROLTYPE_MONO           = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 3;
+      MIXERCONTROL_CONTROLTYPE_LOUDNESS       = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 4;
+      MIXERCONTROL_CONTROLTYPE_STEREOENH      = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 5;
+      MIXERCONTROL_CONTROLTYPE_BUTTON         = MIXERCONTROL_CT_CLASS_SWITCH + MIXERCONTROL_CT_SC_SWITCH_BUTTON + MIXERCONTROL_CT_UNITS_BOOLEAN;
+      MIXERCONTROL_CONTROLTYPE_DECIBELS       = MIXERCONTROL_CT_CLASS_NUMBER + MIXERCONTROL_CT_UNITS_DECIBELS;
+      MIXERCONTROL_CONTROLTYPE_SIGNED         = MIXERCONTROL_CT_CLASS_NUMBER + MIXERCONTROL_CT_UNITS_SIGNED;
+      MIXERCONTROL_CONTROLTYPE_UNSIGNED       = MIXERCONTROL_CT_CLASS_NUMBER + MIXERCONTROL_CT_UNITS_UNSIGNED;
+      MIXERCONTROL_CONTROLTYPE_PERCENT        = MIXERCONTROL_CT_CLASS_NUMBER + MIXERCONTROL_CT_UNITS_PERCENT;
+      MIXERCONTROL_CONTROLTYPE_SLIDER         = MIXERCONTROL_CT_CLASS_SLIDER + MIXERCONTROL_CT_UNITS_SIGNED;
+      MIXERCONTROL_CONTROLTYPE_PAN            = MIXERCONTROL_CONTROLTYPE_SLIDER + 1;
+      MIXERCONTROL_CONTROLTYPE_QSOUNDPAN      = MIXERCONTROL_CONTROLTYPE_SLIDER + 2;
+      MIXERCONTROL_CONTROLTYPE_FADER          = MIXERCONTROL_CT_CLASS_FADER + MIXERCONTROL_CT_UNITS_UNSIGNED;
+      MIXERCONTROL_CONTROLTYPE_VOLUME         = MIXERCONTROL_CONTROLTYPE_FADER + 1;
+      MIXERCONTROL_CONTROLTYPE_BASS           = MIXERCONTROL_CONTROLTYPE_FADER + 2;
+      MIXERCONTROL_CONTROLTYPE_TREBLE         = MIXERCONTROL_CONTROLTYPE_FADER + 3;
+      MIXERCONTROL_CONTROLTYPE_EQUALIZER      = MIXERCONTROL_CONTROLTYPE_FADER + 4;
+      MIXERCONTROL_CONTROLTYPE_SINGLESELECT   = MIXERCONTROL_CT_CLASS_LIST + MIXERCONTROL_CT_SC_LIST_SINGLE + MIXERCONTROL_CT_UNITS_BOOLEAN;
+      MIXERCONTROL_CONTROLTYPE_MUX            = MIXERCONTROL_CONTROLTYPE_SINGLESELECT + 1;
+      MIXERCONTROL_CONTROLTYPE_MULTIPLESELECT = MIXERCONTROL_CT_CLASS_LIST + MIXERCONTROL_CT_SC_LIST_MULTIPLE + MIXERCONTROL_CT_UNITS_BOOLEAN;
+      MIXERCONTROL_CONTROLTYPE_MIXER          = MIXERCONTROL_CONTROLTYPE_MULTIPLESELECT + 1;
+      MIXERCONTROL_CONTROLTYPE_MICROTIME      = MIXERCONTROL_CT_CLASS_TIME + MIXERCONTROL_CT_SC_TIME_MICROSECS + MIXERCONTROL_CT_UNITS_UNSIGNED;
+      MIXERCONTROL_CONTROLTYPE_MILLITIME      = MIXERCONTROL_CT_CLASS_TIME + MIXERCONTROL_CT_SC_TIME_MILLISECS + MIXERCONTROL_CT_UNITS_UNSIGNED;
+
+(* *)
+(*  MIXERLINECONTROLS *)
+(* *)
+
+TYPE MIXERLINECONTROLSA =
+     RECORD
+            cbStruct : DWORD;       (* size in bytes of MIXERLINECONTROLS *)
+            dwLineID : DWORD;       (* line id (from MIXERLINE.dwLineID) *)
+            CASE : BOOLEAN OF
+            | TRUE  : dwControlID   : DWORD;  (* MIXER_GETLINECONTROLSF_ONEBYID *)
+            | FALSE : dwControlType : DWORD;  (* MIXER_GETLINECONTROLSF_ONEBYTYPE *)
+            END;
+            cControls : DWORD;           (* count of controls pmxctrl points to *)
+            cbmxctrl  : DWORD;           (* size in bytes of _one_ MIXERCONTROL *)
+            pamxctrl  : PMIXERCONTROLA;  (* pointer to first MIXERCONTROL array *)
+     END;
+     PMIXERLINECONTROLSA = POINTER TO MIXERLINECONTROLSA;
+
+TYPE MIXERLINECONTROLSW =
+     RECORD
+            cbStruct : DWORD;       (* size in bytes of MIXERLINECONTROLS *)
+            dwLineID : DWORD;       (* line id (from MIXERLINE.dwLineID) *)
+            CASE : BOOLEAN OF
+            | TRUE  : dwControlID   : DWORD;  (* MIXER_GETLINECONTROLSF_ONEBYID *)
+            | FALSE : dwControlType : DWORD;  (* MIXER_GETLINECONTROLSF_ONEBYTYPE *)
+            END;
+            cControls : DWORD;           (* count of controls pmxctrl points to *)
+            cbmxctrl  : DWORD;           (* size in bytes of _one_ MIXERCONTROL *)
+            pamxctrl  : PMIXERCONTROLW;  (* pointer to first MIXERCONTROL array *)
+     END;
+     PMIXERLINECONTROLSW = POINTER TO MIXERLINECONTROLSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MIXERLINECONTROLS =  MIXERLINECONTROLSW;
+           PMIXERLINECONTROLS = PMIXERLINECONTROLSW;
+<* ELSE *>
+      TYPE  MIXERLINECONTROLS =  MIXERLINECONTROLSA;
+           PMIXERLINECONTROLS = PMIXERLINECONTROLSA;
+<* END *>
+
+
+(* *)
+(* *)
+(* *)
+
+PROCEDURE mixerGetLineControlsA (hmxobj : HMIXEROBJ; VAR mxlc : MIXERLINECONTROLSA; fdwControls : DWORD) : MMRESULT;
+PROCEDURE mixerGetLineControlsW (hmxobj : HMIXEROBJ; VAR mxlc : MIXERLINECONTROLSW; fdwControls : DWORD) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mixerGetLineControls = mixerGetLineControlsW;
+<* ELSE *>
+      CONST mixerGetLineControls = mixerGetLineControlsA;
+<* END *>
+
+CONST MIXER_GETLINECONTROLSF_ALL          = 00000000h;
+      MIXER_GETLINECONTROLSF_ONEBYID      = 00000001h;
+      MIXER_GETLINECONTROLSF_ONEBYTYPE    = 00000002h;
+
+      MIXER_GETLINECONTROLSF_QUERYMASK    = 0000000Fh;
+
+TYPE MIXERCONTROLDETAILS =
+     RECORD
+            cbStruct : DWORD;       (* size in bytes of MIXERCONTROLDETAILS *)
+            dwControlID : DWORD;    (* control id to get/set details on *)
+            cChannels : DWORD;      (* number of channels in paDetails array *)
+            CASE : BOOLEAN OF
+            | TRUE  : hwndOwner      : HWND;    (* for MIXER_SETCONTROLDETAILSF_CUSTOM *)
+            | FALSE : cMultipleItems : DWORD;   (* if _MULTIPLE, the number of items per channel *)
+            END;
+            cbDetails : DWORD;      (* size of _one_ details_XX struct *)
+            paDetails : PVOID;      (* pointer to array of details_XX structs *)
+     END;
+     PMIXERCONTROLDETAILS = POINTER TO MIXERCONTROLDETAILS;
+
+(* *)
+(*  MIXER_GETCONTROLDETAILSF_LISTTEXT *)
+(* *)
+(* *)
+
+TYPE MIXERCONTROLDETAILS_LISTTEXTA =
+     RECORD
+            dwParam1 : DWORD;
+            dwParam2 : DWORD;
+            szName   : ARRAY [0..MIXER_LONG_NAME_CHARS-1] OF CHAR;
+     END;
+     PMIXERCONTROLDETAILS_LISTTEXTA = POINTER TO MIXERCONTROLDETAILS_LISTTEXTA;
+
+TYPE MIXERCONTROLDETAILS_LISTTEXTW =
+     RECORD
+            dwParam1 : DWORD;
+            dwParam2 : DWORD;
+            szName   : ARRAY [0..MIXER_LONG_NAME_CHARS-1] OF WCHAR;
+     END;
+     PMIXERCONTROLDETAILS_LISTTEXTW = POINTER TO MIXERCONTROLDETAILS_LISTTEXTW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MIXERCONTROLDETAILS_LISTTEXT =  MIXERCONTROLDETAILS_LISTTEXTW;
+      TYPE PMIXERCONTROLDETAILS_LISTTEXT = PMIXERCONTROLDETAILS_LISTTEXTW;
+<* ELSE *>
+      TYPE  MIXERCONTROLDETAILS_LISTTEXT =  MIXERCONTROLDETAILS_LISTTEXTA;
+      TYPE PMIXERCONTROLDETAILS_LISTTEXT = PMIXERCONTROLDETAILS_LISTTEXTA;
+<* END *>
+
+(* *)
+(*  MIXER_GETCONTROLDETAILSF_VALUE *)
+(* *)
+(* *)
+
+TYPE MIXERCONTROLDETAILS_BOOLEAN = RECORD
+                                          fValue : LONG;
+                                   END;
+    PMIXERCONTROLDETAILS_BOOLEAN = POINTER TO MIXERCONTROLDETAILS_BOOLEAN;
+
+TYPE MIXERCONTROLDETAILS_SIGNED  = RECORD
+                                          lValue : LONG;
+                                   END;
+    PMIXERCONTROLDETAILS_SIGNED  = POINTER TO MIXERCONTROLDETAILS_SIGNED;
+
+TYPE MIXERCONTROLDETAILS_UNSIGNED = RECORD
+                                           dwValue : DWORD;
+                                    END;
+    PMIXERCONTROLDETAILS_UNSIGNED = POINTER TO MIXERCONTROLDETAILS_UNSIGNED;
+
+PROCEDURE mixerGetControlDetailsA (hmxobj : HMIXEROBJ; VAR pmxcd : MIXERCONTROLDETAILS; fdwDetails : DWORD) : MMRESULT;
+PROCEDURE mixerGetControlDetailsW (hmxobj : HMIXEROBJ; VAR pmxcd : MIXERCONTROLDETAILS; fdwDetails : DWORD) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mixerGetControlDetails = mixerGetControlDetailsW;
+<* ELSE *>
+      CONST mixerGetControlDetails = mixerGetControlDetailsA;
+<* END *>
+
+CONST MIXER_GETCONTROLDETAILSF_VALUE      = 00000000h;
+      MIXER_GETCONTROLDETAILSF_LISTTEXT   = 00000001h;
+
+      MIXER_GETCONTROLDETAILSF_QUERYMASK  = 0000000Fh;
+
+PROCEDURE mixerSetControlDetails (hmxobj : HMIXEROBJ; VAR mxcd : MIXERCONTROLDETAILS; fdwDetails : DWORD) : MMRESULT;
+
+CONST MIXER_SETCONTROLDETAILSF_VALUE      = 00000000h;
+      MIXER_SETCONTROLDETAILSF_CUSTOM     = 00000001h;
+
+      MIXER_SETCONTROLDETAILSF_QUERYMASK  = 0000000Fh;
+
+<* END *> (* NOT DEFINED (_WIN32_VXD) *)
+<* END *> (* NOT DEFINED (MMNOMIXER)  *)
+
+<* IF NOT DEFINED (MMNOTIMER) THEN *>
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+(****************************************************************************
+
+                            Timer support
+
+****************************************************************************)
+
+(* timer error return values *)
+
+CONST TIMERR_NOERROR = 0;                  (* no error *)
+      TIMERR_NOCANDO = TIMERR_BASE+1;      (* request not completed *)
+      TIMERR_STRUCT  = TIMERR_BASE+33;     (* time struct size *)
+
+(* timer data types *)
+
+TYPE TIMECALLBACK = PROCEDURE ((* uTimerID : *) UINT,
+                               (* uMsg     : *) UINT,
+                               (* dwUser   : *) DWORD,
+                               (* dw1      : *) DWORD,
+                               (* dw2      : *) DWORD);
+
+(* flags for fuEvent parameter of timeSetEvent() function *)
+
+CONST TIME_ONESHOT  = 0000h;   (* program timer for single event *)
+      TIME_PERIODIC = 0001h;   (* program for continuous periodic event *)
+
+      TIME_CALLBACK_FUNCTION    = 0000h;  (* callback is function *)
+      TIME_CALLBACK_EVENT_SET   = 0010h;  (* callback is event - use SetEvent *)
+      TIME_CALLBACK_EVENT_PULSE = 0020h;  (* callback is event - use PulseEvent *)
+
+(* timer device capabilities data structure *)
+
+TYPE TIMECAPS = RECORD
+                       wPeriodMin : UINT;     (* minimum period supported  *)
+                       wPeriodMax : UINT;     (* maximum period supported  *)
+                END;
+    PTIMECAPS = POINTER TO TIMECAPS;
+
+(* timer function prototypes *)
+
+PROCEDURE timeGetSystemTime (VAR mmt : MMTIME; cbmmt : UINT) : MMRESULT;
+
+PROCEDURE timeGetTime () : DWORD;
+PROCEDURE timeSetEvent (uDelay : UINT; uResolution : UINT;
+                        tc : TIMECALLBACK; dwUser : DWORD; fuEvent : UINT) : MMRESULT;
+PROCEDURE timeKillEvent   (uTimerID : UINT) : MMRESULT;
+PROCEDURE timeGetDevCaps  (VAR tc : TIMECAPS; cbtc : UINT) : MMRESULT;
+PROCEDURE timeBeginPeriod (uPeriod : UINT) : MMRESULT;
+PROCEDURE timeEndPeriod   (uPeriod : UINT) : MMRESULT;
+
+<* END *>  (* NOT DEFINED (_WIN32_VXD) *)
+<* END *>  (* NOT DEFINED (MMNOTIMER) *)
+
+<* IF NOT DEFINED (MMNOJOY) THEN *>
+(****************************************************************************
+
+                            Joystick support
+
+****************************************************************************)
+
+(* joystick error return values *)
+
+CONST JOYERR_NOERROR        = 0;                  (* no error *)
+      JOYERR_PARMS          = JOYERR_BASE+5;      (* bad parameters *)
+      JOYERR_NOCANDO        = JOYERR_BASE+6;      (* request not completed *)
+      JOYERR_UNPLUGGED      = JOYERR_BASE+7;      (* joystick is unplugged *)
+
+(* constants used with JOYINFO and JOYINFOEX structures and MM_JOY* messages *)
+
+CONST JOY_BUTTON1         = 0001h;
+      JOY_BUTTON2         = 0002h;
+      JOY_BUTTON3         = 0004h;
+      JOY_BUTTON4         = 0008h;
+      JOY_BUTTON1CHG      = 0100h;
+      JOY_BUTTON2CHG      = 0200h;
+      JOY_BUTTON3CHG      = 0400h;
+      JOY_BUTTON4CHG      = 0800h;
+
+(* constants used with JOYINFOEX *)
+
+CONST JOY_BUTTON5         = 00000010h;
+      JOY_BUTTON6         = 00000020h;
+      JOY_BUTTON7         = 00000040h;
+      JOY_BUTTON8         = 00000080h;
+      JOY_BUTTON9         = 00000100h;
+      JOY_BUTTON10        = 00000200h;
+      JOY_BUTTON11        = 00000400h;
+      JOY_BUTTON12        = 00000800h;
+      JOY_BUTTON13        = 00001000h;
+      JOY_BUTTON14        = 00002000h;
+      JOY_BUTTON15        = 00004000h;
+      JOY_BUTTON16        = 00008000h;
+      JOY_BUTTON17        = 00010000h;
+      JOY_BUTTON18        = 00020000h;
+      JOY_BUTTON19        = 00040000h;
+      JOY_BUTTON20        = 00080000h;
+      JOY_BUTTON21        = 00100000h;
+      JOY_BUTTON22        = 00200000h;
+      JOY_BUTTON23        = 00400000h;
+      JOY_BUTTON24        = 00800000h;
+      JOY_BUTTON25        = 01000000h;
+      JOY_BUTTON26        = 02000000h;
+      JOY_BUTTON27        = 04000000h;
+      JOY_BUTTON28        = 08000000h;
+      JOY_BUTTON29        = 10000000h;
+      JOY_BUTTON30        = 20000000h;
+      JOY_BUTTON31        = 40000000h;
+      JOY_BUTTON32        = 80000000h;
+
+(* constants used with JOYINFOEX structure *)
+
+CONST JOY_POVCENTERED        = MAX (WORD);
+      JOY_POVFORWARD         = 0;
+      JOY_POVRIGHT           = 9000;
+      JOY_POVBACKWARD        = 18000;
+      JOY_POVLEFT            = 27000;
+
+      JOY_RETURNX            = 00000001h;
+      JOY_RETURNY            = 00000002h;
+      JOY_RETURNZ            = 00000004h;
+      JOY_RETURNR            = 00000008h;
+      JOY_RETURNU            = 00000010h;     (* axis 5 *)
+      JOY_RETURNV            = 00000020h;     (* axis 6 *)
+      JOY_RETURNPOV          = 00000040h;
+      JOY_RETURNBUTTONS      = 00000080h;
+      JOY_RETURNRAWDATA      = 00000100h;
+      JOY_RETURNPOVCTS       = 00000200h;
+      JOY_RETURNCENTERED     = 00000400h;
+      JOY_USEDEADZONE        = 00000800h;
+      JOY_RETURNALL          = JOY_RETURNX + JOY_RETURNY + JOY_RETURNZ +
+                               JOY_RETURNR + JOY_RETURNU + JOY_RETURNV +
+                               JOY_RETURNPOV + JOY_RETURNBUTTONS;
+      JOY_CAL_READALWAYS     = 00010000h;
+      JOY_CAL_READXYONLY     = 00020000h;
+      JOY_CAL_READ3          = 00040000h;
+      JOY_CAL_READ4          = 00080000h;
+      JOY_CAL_READXONLY      = 00100000h;
+      JOY_CAL_READYONLY      = 00200000h;
+      JOY_CAL_READ5          = 00400000h;
+      JOY_CAL_READ6          = 00800000h;
+      JOY_CAL_READZONLY      = 01000000h;
+      JOY_CAL_READRONLY      = 02000000h;
+      JOY_CAL_READUONLY      = 04000000h;
+      JOY_CAL_READVONLY      = 08000000h;
+
+(* joystick ID constants *)
+
+CONST JOYSTICKID1            = 0;
+      JOYSTICKID2            = 1;
+
+(* joystick driver capabilites *)
+
+CONST JOYCAPS_HASZ           = 0001h;
+      JOYCAPS_HASR           = 0002h;
+      JOYCAPS_HASU           = 0004h;
+      JOYCAPS_HASV           = 0008h;
+      JOYCAPS_HASPOV         = 0010h;
+      JOYCAPS_POV4DIR        = 0020h;
+      JOYCAPS_POVCTS         = 0040h;
+
+(* joystick device capabilities data structure *)
+
+TYPE JOYCAPSA =
+     RECORD
+       wMid        : WORD;      (* manufacturer ID *)
+       wPid        : WORD;      (* product ID *)
+       szPname     : PNAMESTR;  (* product name (NULL terminated string) *)
+       wXmin       : UINT;      (* minimum x position value *)
+       wXmax       : UINT;      (* maximum x position value *)
+       wYmin       : UINT;      (* minimum y position value *)
+       wYmax       : UINT;      (* maximum y position value *)
+       wZmin       : UINT;      (* minimum z position value *)
+       wZmax       : UINT;      (* maximum z position value *)
+       wNumButtons : UINT;      (* number of buttons *)
+       wPeriodMin  : UINT;      (* minimum message period when captured *)
+       wPeriodMax  : UINT;      (* maximum message period when captured *)
+       wRmin       : UINT;      (* minimum r position value *)
+       wRmax       : UINT;      (* maximum r position value *)
+       wUmin       : UINT;      (* minimum u (5th axis) position value *)
+       wUmax       : UINT;      (* maximum u (5th axis) position value *)
+       wVmin       : UINT;      (* minimum v (6th axis) position value *)
+       wVmax       : UINT;      (* maximum v (6th axis) position value *)
+       wCaps       : UINT;      (* joystick capabilites *)
+       wMaxAxes    : UINT;      (* maximum number of axes supported *)
+       wNumAxes    : UINT;      (* number of axes in use *)
+       wMaxButtons : UINT;      (* maximum number of buttons supported *)
+       szRegKey    : PNAMESTR;  (* registry key *)
+       szOEMVxD    : ARRAY [0..MAX_JOYSTICKOEMVXDNAME-1] OF CHAR; (* OEM VxD in use *)
+     END;
+     PJOYCAPSA = POINTER TO JOYCAPSA;
+
+TYPE JOYCAPSW =
+     RECORD
+       wMid        : WORD;      (* manufacturer ID *)
+       wPid        : WORD;      (* product ID *)
+       szPname     : PNAMESTRW; (* product name (NULL terminated string) *)
+       wXmin       : UINT;      (* minimum x position value *)
+       wXmax       : UINT;      (* maximum x position value *)
+       wYmin       : UINT;      (* minimum y position value *)
+       wYmax       : UINT;      (* maximum y position value *)
+       wZmin       : UINT;      (* minimum z position value *)
+       wZmax       : UINT;      (* maximum z position value *)
+       wNumButtons : UINT;      (* number of buttons *)
+       wPeriodMin  : UINT;      (* minimum message period when captured *)
+       wPeriodMax  : UINT;      (* maximum message period when captured *)
+       wRmin       : UINT;      (* minimum r position value *)
+       wRmax       : UINT;      (* maximum r position value *)
+       wUmin       : UINT;      (* minimum u (5th axis) position value *)
+       wUmax       : UINT;      (* maximum u (5th axis) position value *)
+       wVmin       : UINT;      (* minimum v (6th axis) position value *)
+       wVmax       : UINT;      (* maximum v (6th axis) position value *)
+       wCaps       : UINT;      (* joystick capabilites *)
+       wMaxAxes    : UINT;      (* maximum number of axes supported *)
+       wNumAxes    : UINT;      (* number of axes in use *)
+       wMaxButtons : UINT;      (* maximum number of buttons supported *)
+       szRegKey    : PNAMESTRW; (* registry key *)
+       szOEMVxD    : ARRAY [0..MAX_JOYSTICKOEMVXDNAME-1] OF WCHAR; (* OEM VxD in use *)
+     END;
+     PJOYCAPSW = POINTER TO JOYCAPSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  JOYCAPS =  JOYCAPSW;
+           PJOYCAPS = PJOYCAPSW;
+<* ELSE *>
+      TYPE  JOYCAPS =  JOYCAPSA;
+           PJOYCAPS = PJOYCAPSA;
+<* END *>
+
+(* joystick information data structure *)
+
+TYPE JOYINFO = RECORD
+                      wXpos    : UINT;  (* x position *)
+                      wYpos    : UINT;  (* y position *)
+                      wZpos    : UINT;  (* z position *)
+                      wButtons : UINT;  (* button states *)
+               END;
+    PJOYINFO = POINTER TO JOYINFO;
+
+TYPE JOYINFOEX =
+     RECORD
+            dwSize         : DWORD;  (* size of structure *)
+            dwFlags        : DWORD;  (* flags to indicate what to return *)
+            dwXpos         : DWORD;  (* x position *)
+            dwYpos         : DWORD;  (* y position *)
+            dwZpos         : DWORD;  (* z position *)
+            dwRpos         : DWORD;  (* rudder/4th axis position *)
+            dwUpos         : DWORD;  (* 5th axis position *)
+            dwVpos         : DWORD;  (* 6th axis position *)
+            dwButtons      : DWORD;  (* button states *)
+            dwButtonNumber : DWORD;  (* current button number pressed *)
+            dwPOV          : DWORD;  (* point of view state *)
+            dwReserved1    : DWORD;  (* reserved for communication between winmm & driver *)
+            dwReserved2    : DWORD;  (* reserved for future expansion *)
+     END;
+     PJOYINFOEX = POINTER TO JOYINFOEX;
+
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+
+(* joystick function prototypes *)
+
+PROCEDURE joyGetNumDevs () : UINT;
+
+PROCEDURE joyGetDevCapsA (uJoyID : UINT; VAR jc : JOYCAPSA; cbjc : UINT) : MMRESULT;
+PROCEDURE joyGetDevCapsW (uJoyID : UINT; VAR jc : JOYCAPSW; cbjc : UINT) : MMRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST joyGetDevCaps = joyGetDevCapsW;
+<* ELSE *>
+      CONST joyGetDevCaps = joyGetDevCapsA;
+<* END *>
+
+PROCEDURE joyGetPos         (uJoyID : UINT; VAR ji : JOYINFO)   : MMRESULT;
+PROCEDURE joyGetPosEx       (uJoyID : UINT; VAR ji : JOYINFOEX) : MMRESULT;
+PROCEDURE joyGetThreshold   (uJoyID : UINT; VAR puThreshold : UINT) : MMRESULT;
+PROCEDURE joyReleaseCapture (uJoyID : UINT) : MMRESULT;
+PROCEDURE joySetCapture     (hwnd : HWND; uJoyID : UINT; uPeriod : UINT;
+                             fChanged : BOOL) : MMRESULT;
+PROCEDURE joySetThreshold   (uJoyID : UINT; uThreshold : UINT) : MMRESULT;
+
+<* END *>  (* IF NOT DEFINED (_WIN32_VXD) *)
+
+<* END *>  (* IF NOT DEFINED (MMNOJOY) *)
+
+
+<* IF NOT DEFINED (MMNOMMIO) THEN *>
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+(****************************************************************************
+
+                        Multimedia File I/O support
+
+****************************************************************************)
+
+(* MMIO error return values *)
+
+CONST MMIOERR_BASE                = 256;
+      MMIOERR_FILENOTFOUND        = MMIOERR_BASE + 1;  (* file not found *)
+      MMIOERR_OUTOFMEMORY         = MMIOERR_BASE + 2;  (* out of memory *)
+      MMIOERR_CANNOTOPEN          = MMIOERR_BASE + 3;  (* cannot open *)
+      MMIOERR_CANNOTCLOSE         = MMIOERR_BASE + 4;  (* cannot close *)
+      MMIOERR_CANNOTREAD          = MMIOERR_BASE + 5;  (* cannot read *)
+      MMIOERR_CANNOTWRITE         = MMIOERR_BASE + 6;  (* cannot write *)
+      MMIOERR_CANNOTSEEK          = MMIOERR_BASE + 7;  (* cannot seek *)
+      MMIOERR_CANNOTEXPAND        = MMIOERR_BASE + 8;  (* cannot expand file *)
+      MMIOERR_CHUNKNOTFOUND       = MMIOERR_BASE + 9;  (* chunk not found *)
+      MMIOERR_UNBUFFERED          = MMIOERR_BASE + 10; (*  *)
+      MMIOERR_PATHNOTFOUND        = MMIOERR_BASE + 11; (* path incorrect *)
+      MMIOERR_ACCESSDENIED        = MMIOERR_BASE + 12; (* file was protected *)
+      MMIOERR_SHARINGVIOLATION    = MMIOERR_BASE + 13; (* file in use *)
+      MMIOERR_NETWORKERROR        = MMIOERR_BASE + 14; (* network not responding *)
+      MMIOERR_TOOMANYOPENFILES    = MMIOERR_BASE + 15; (* no more file handles  *)
+      MMIOERR_INVALIDFILE         = MMIOERR_BASE + 16; (* default error file error *)
+
+(* MMIO constants *)
+
+CONST CFSEPCHAR = '+';             (* compound file name separator char. *)
+
+(* MMIO data types *)
+TYPE FOURCC = DWORD;         (* a four character code *)
+
+TYPE HMMIO = POINTER TO RECORD END;        (* a handle to an open file *)
+
+TYPE MMIOPROC = PROCEDURE ((* lpmmioinfo : *) PSTR,
+                           (* uMsg       : *) UINT,
+                           (* lParam1    : *) LPARAM,
+                           (* lParam2    : *) LPARAM) : LRESULT;
+
+(* general MMIO information data structure *)
+
+TYPE MMIOINFO =
+     RECORD
+
+        (* general fields *)
+
+        dwFlags     : DWORD;        (* general status flags *)
+        fccIOProc   : FOURCC;       (* pointer to I/O procedure *)
+        pIOProc     : MMIOPROC;     (* pointer to I/O procedure *)
+        wErrorRet   : UINT;         (* place for error to be returned *)
+        htask       : HTASK;        (* alternate local task *)
+
+        (* fields maintained by MMIO functions during buffered I/O *)
+
+        cchBuffer   : LONG;         (* size of I/O buffer (or 0L) *)
+        pchBuffer   : PSTR;         (* start of I/O buffer (or NULL) *)
+        pchNext     : PSTR;         (* pointer to next byte to read/write *)
+        pchEndRead  : PSTR;         (* pointer to last valid byte to read *)
+        pchEndWrite : PSTR;         (* pointer to last byte to write *)
+        lBufOffset  : LONG;         (* disk offset of start of buffer *)
+
+        (* fields maintained by I/O procedure *)
+
+        lDiskOffset : LONG;                   (* disk offset of next read or write *)
+        adwInfo     : ARRAY [0..2] OF DWORD;  (* data specific to type of MMIOPROC *)
+
+        (* other fields maintained by MMIO *)
+
+        dwReserved1 : DWORD;        (* reserved for MMIO use *)
+        dwReserved2 : DWORD;        (* reserved for MMIO use *)
+        hmmio       : HMMIO;        (* handle to open file *)
+     END;
+     PMMIOINFO = POINTER TO MMIOINFO;
+
+(* RIFF chunk information data structure *)
+
+TYPE MMCKINFO =
+     RECORD
+        ckid         : FOURCC;  (* chunk ID *)
+        cksize       : DWORD;   (* chunk size *)
+        fccType      : FOURCC;  (* form type or list type *)
+        dwDataOffset : DWORD;   (* offset of data portion of chunk *)
+        dwFlags      : DWORD;   (* flags used by MMIO functions *)
+     END;
+     PMMCKINFO = POINTER TO MMCKINFO;
+
+(* bit field masks *)
+
+CONST MMIO_RWMODE     = 00000003h;      (* open file for reading/writing/both *)
+      MMIO_SHAREMODE  = 00000070h;      (* file sharing mode number *)
+
+(* constants for dwFlags field of MMIOINFO *)
+
+CONST MMIO_CREATE     = 00001000h;      (* create new file (or truncate file) *)
+      MMIO_PARSE      = 00000100h;      (* parse new file returning path *)
+      MMIO_DELETE     = 00000200h;      (* create new file (or truncate file) *)
+      MMIO_EXIST      = 00004000h;      (* checks for existence of file *)
+      MMIO_ALLOCBUF   = 00010000h;      (* mmioOpen() should allocate a buffer *)
+      MMIO_GETTEMP    = 00020000h;      (* mmioOpen() should retrieve temp name *)
+
+      MMIO_DIRTY      = 10000000h;      (* I/O buffer is dirty *)
+
+(* read/write mode numbers (bit field MMIO_RWMODE) *)
+
+CONST MMIO_READ       = 00000000h;      (* open file for reading only *)
+      MMIO_WRITE      = 00000001h;      (* open file for writing only *)
+      MMIO_READWRITE  = 00000002h;      (* open file for reading and writing *)
+
+(* share mode numbers (bit field MMIO_SHAREMODE) *)
+
+CONST MMIO_COMPAT     = 00000000h;      (* compatibility mode *)
+      MMIO_EXCLUSIVE  = 00000010h;      (* exclusive-access mode *)
+      MMIO_DENYWRITE  = 00000020h;      (* deny writing to other processes *)
+      MMIO_DENYREAD   = 00000030h;      (* deny reading to other processes *)
+      MMIO_DENYNONE   = 00000040h;      (* deny nothing to other processes *)
+
+(* various MMIO flags *)
+
+CONST MMIO_FHOPEN             = 0010h;  (* mmioClose: keep file handle open *)
+      MMIO_EMPTYBUF           = 0010h;  (* mmioFlush: empty the I/O buffer *)
+      MMIO_TOUPPER            = 0010h;  (* mmioStringToFOURCC: to u-case *)
+      MMIO_INSTALLPROC    = 00010000h;  (* mmioInstallIOProc: install MMIOProc *)
+      MMIO_GLOBALPROC     = 10000000h;  (* mmioInstallIOProc: install globally *)
+      MMIO_REMOVEPROC     = 00020000h;  (* mmioInstallIOProc: remove MMIOProc *)
+      MMIO_UNICODEPROC    = 01000000h;  (* mmioInstallIOProc: Unicode MMIOProc *)
+      MMIO_FINDPROC       = 00040000h;  (* mmioInstallIOProc: find an MMIOProc *)
+      MMIO_FINDCHUNK          = 0010h;  (* mmioDescend: find a chunk by ID *)
+      MMIO_FINDRIFF           = 0020h;  (* mmioDescend: find a LIST chunk *)
+      MMIO_FINDLIST           = 0040h;  (* mmioDescend: find a RIFF chunk *)
+      MMIO_CREATERIFF         = 0020h;  (* mmioCreateChunk: make a LIST chunk *)
+      MMIO_CREATELIST         = 0040h;  (* mmioCreateChunk: make a RIFF chunk *)
+
+(* message numbers for MMIOPROC I/O procedure functions *)
+
+CONST MMIOM_READ   =  MMIO_READ;        (* read *)
+      MMIOM_WRITE  = MMIO_WRITE;        (* write *)
+      MMIOM_SEEK            = 2;        (* seek to a new position in file *)
+      MMIOM_OPEN            = 3;        (* open file *)
+      MMIOM_CLOSE           = 4;        (* close file *)
+      MMIOM_WRITEFLUSH      = 5;        (* write and flush *)
+      MMIOM_RENAME          = 6;        (* rename specified file *)
+      MMIOM_USER            = 8000h;    (* beginning of user-defined messages *)
+
+(* standard four character codes *)
+
+CONST FOURCC_RIFF     = VAL (DWORD, 'R') +
+                        VAL (DWORD, 'I') * 100H +
+                        VAL (DWORD, 'F') * 10000H +
+                        VAL (DWORD, 'F') * 1000000H;
+
+      FOURCC_LIST     = VAL (DWORD, 'L') +
+                        VAL (DWORD, 'I') * 100H +
+                        VAL (DWORD, 'S') * 10000H +
+                        VAL (DWORD, 'T') * 1000000H;
+
+(* four character codes used to identify standard built-in I/O procedures *)
+
+CONST FOURCC_DOS      = VAL (DWORD, 'D') +
+                        VAL (DWORD, 'O') * 100H +
+                        VAL (DWORD, 'S') * 10000H +
+                        VAL (DWORD, ' ') * 1000000H;
+
+      FOURCC_MEM      = VAL (DWORD, 'M') +
+                        VAL (DWORD, 'E') * 100H +
+                        VAL (DWORD, 'M') * 10000H +
+                        VAL (DWORD, ' ') * 1000000H;
+
+(* flags for mmioSeek() *)
+
+CONST SEEK_SET = 0;               (* seek to an absolute position *)
+      SEEK_CUR = 1;               (* seek relative to current position *)
+      SEEK_END = 2;               (* seek relative to end of file *)
+
+(* other constants *)
+
+CONST MMIO_DEFAULTBUFFER = 8192;      (* default buffer size *)
+
+CONST mmioFOURCC = MAKEFOURCC;
+
+
+(* MMIO function prototypes *)
+
+PROCEDURE mmioStringToFOURCCA (sz : PCSTR;  uFlags : UINT) : FOURCC;
+PROCEDURE mmioStringToFOURCCW (sz : PCWSTR; uFlags : UINT) : FOURCC;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mmioStringToFOURCC = mmioStringToFOURCCW;
+<* ELSE *>
+      CONST mmioStringToFOURCC = mmioStringToFOURCCA;
+<* END *>
+
+PROCEDURE mmioInstallIOProcA (fccIOProc : FOURCC; pIOProc : MMIOPROC; dwFlags : DWORD) : MMIOPROC;
+PROCEDURE mmioInstallIOProcW (fccIOProc : FOURCC; pIOProc : MMIOPROC; dwFlags : DWORD) : MMIOPROC;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mmioInstallIOProc = mmioInstallIOProcW;
+<* ELSE *>
+      CONST mmioInstallIOProc = mmioInstallIOProcA;
+<* END *>
+
+PROCEDURE mmioOpenA (pszFileName : PSTR;  VAR mmioinfo : MMIOINFO; fdwOpen : DWORD) : HMMIO;
+PROCEDURE mmioOpenW (pszFileName : PWSTR; VAR mmioinfo : MMIOINFO; fdwOpen : DWORD) : HMMIO;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mmioOpen = mmioOpenW;
+<* ELSE *>
+      CONST mmioOpen = mmioOpenA;
+<* END *>
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE mmioRenameA (pszFileName : PCSTR;  pszNewFileName : PCSTR;  mmioinfo : MMIOINFO; fdwRename : DWORD) : MMRESULT;
+<* ELSE *>
+PROCEDURE mmioRenameA (pszFileName : PCSTR;  pszNewFileName : PCSTR;  mmioinfo : PMMIOINFO; fdwRename : DWORD) : MMRESULT;
+<* END *>
+<* IF BACKEND # "C" THEN *>
+PROCEDURE mmioRenameW (pszFileName : PCWSTR; pszNewFileName : PCWSTR; mmioinfo : MMIOINFO; fdwRename : DWORD) : MMRESULT;
+<* ELSE *>
+PROCEDURE mmioRenameW (pszFileName : PCWSTR; pszNewFileName : PCWSTR; mmioinfo : PMMIOINFO; fdwRename : DWORD) : MMRESULT;
+<* END *>
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mmioRename = mmioRenameW;
+<* ELSE *>
+      CONST mmioRename = mmioRenameA;
+<* END *>
+
+PROCEDURE mmioClose       (hmmio : HMMIO; fuClose : UINT) : MMRESULT;
+PROCEDURE mmioRead        (hmmio : HMMIO; pch : PBYTE;  cch : LONG) : LONG;
+PROCEDURE mmioWrite       (hmmio : HMMIO; pch : PCBYTE; cch : LONG) : LONG;
+PROCEDURE mmioSeek        (hmmio : HMMIO; lOffset : LONG; iOrigin : INTEGER) : LONG;
+PROCEDURE mmioGetInfo     (hmmio : HMMIO; VAR mmioinfo  : MMIOINFO; fuInfo : UINT) : MMRESULT;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE mmioSetInfo     (hmmio : HMMIO;     pmmioinfo : MMIOINFO; fuInfo : UINT) : MMRESULT;
+<* ELSE *>
+PROCEDURE mmioSetInfo     (hmmio : HMMIO;     pmmioinfo : PMMIOINFO; fuInfo : UINT) : MMRESULT;
+<* END *>
+PROCEDURE mmioSetBuffer   (hmmio : HMMIO; pchBuffer : PBYTE; cchBuffer : LONG;
+                           fuBuffer : UINT) : MMRESULT;
+PROCEDURE mmioFlush       (hmmio : HMMIO; fuFlush : UINT) : MMRESULT;
+PROCEDURE mmioAdvance     (hmmio : HMMIO; VAR mmioinfo : MMIOINFO; fuAdvance : UINT) : MMRESULT;
+PROCEDURE mmioSendMessage (hmmio : HMMIO;  uMsg : UINT;
+                           lParam1, lParam2 : LPARAM) : LRESULT;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE mmioDescend     (hmmio : HMMIO; VAR mmcki : MMCKINFO;
+                           mmckiParent : MMCKINFO; fuDescend : UINT) : MMRESULT;
+<* ELSE *>
+PROCEDURE mmioDescend     (hmmio : HMMIO; VAR mmcki : MMCKINFO;
+                           mmckiParent : PMMCKINFO; fuDescend : UINT) : MMRESULT;
+<* END *>
+PROCEDURE mmioAscend      (hmmio : HMMIO; VAR mmcki : MMCKINFO; fuAscend : UINT) : MMRESULT;
+PROCEDURE mmioCreateChunk (hmmio : HMMIO; VAR mmcki : MMCKINFO; fuCreate : UINT) : MMRESULT;
+
+<* END *>  (* NOT DEFINED (_WIN32_VXD) *)
+<* END *>  (* NOT DEFINED (MMNOMMIO) *)
+
+<* IF NOT DEFINED (MMNOMCI) THEN *>
+<* IF NOT DEFINED (_WIN32_VXD) THEN *>
+(****************************************************************************
+
+                            MCI support
+
+****************************************************************************)
+
+TYPE MCIERROR    = DWORD;   (* error return code, 0 means no error *)
+TYPE MCIDEVICEID = UINT;    (* MCI device ID type *)
+
+TYPE YIELDPROC = PROCEDURE ((* mciId       : *) MCIDEVICEID,
+                            (* dwYieldData : *) DWORD) : UINT;
+
+(* MCI function prototypes *)
+
+PROCEDURE mciSendCommandA (mciId : MCIDEVICEID; uMsg : UINT; dwParam1, dwParam2 : DWORD) : MCIERROR;
+PROCEDURE mciSendCommandW (mciId : MCIDEVICEID; uMsg : UINT; dwParam1, dwParam2 : DWORD) : MCIERROR;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mciSendCommand = mciSendCommandW;
+<* ELSE *>
+      CONST mciSendCommand = mciSendCommandA;
+<* END *>
+
+PROCEDURE mciSendStringA (lpstrCommand : PCSTR; lpstrReturnString : PSTR;
+                          uReturnLength : UINT; hwndCallback : HWND) : MCIERROR;
+PROCEDURE mciSendStringW (lpstrCommand : PCWSTR; lpstrReturnString : PWSTR;
+                          uReturnLength : UINT; hwndCallback : HWND) : MCIERROR;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mciSendString = mciSendStringW;
+<* ELSE *>
+      CONST mciSendString = mciSendStringA;
+<* END *>
+
+PROCEDURE mciGetDeviceIDA (pszDevice : PCSTR)  : MCIDEVICEID;
+PROCEDURE mciGetDeviceIDW (pszDevice : PCWSTR) : MCIDEVICEID;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mciGetDeviceID = mciGetDeviceIDW;
+<* ELSE *>
+      CONST mciGetDeviceID = mciGetDeviceIDA;
+<* END *>
+
+PROCEDURE mciGetDeviceIDFromElementIDA (dwElementID : DWORD; lpstrType : PCSTR) : MCIDEVICEID;
+PROCEDURE mciGetDeviceIDFromElementIDW (dwElementID : DWORD; lpstrType : PCWSTR) : MCIDEVICEID;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mciGetDeviceIDFromElementID = mciGetDeviceIDFromElementIDW;
+<* ELSE *>
+      CONST mciGetDeviceIDFromElementID = mciGetDeviceIDFromElementIDA;
+<* END *>
+
+PROCEDURE mciGetErrorStringA (mcierr : MCIERROR; pszText : PSTR;  cchText : UINT) : BOOL;
+PROCEDURE mciGetErrorStringW (mcierr : MCIERROR; pszText : PWSTR; cchText : UINT) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST mciGetErrorString = mciGetErrorStringW;
+<* ELSE *>
+      CONST mciGetErrorString = mciGetErrorStringA;
+<* END *>
+
+PROCEDURE mciSetYieldProc (mciId : MCIDEVICEID; fpYieldProc : YIELDPROC;
+                           dwYieldData : DWORD) : BOOL;
+
+PROCEDURE mciGetCreatorTask (mciId : MCIDEVICEID) : HTASK;
+PROCEDURE mciGetYieldProc   (mciId : MCIDEVICEID; VAR dwYieldData : DWORD) : YIELDPROC;
+
+
+(* MCI error return values *)
+
+CONST MCIERR_INVALID_DEVICE_ID        = MCIERR_BASE + 1;
+      MCIERR_UNRECOGNIZED_KEYWORD     = MCIERR_BASE + 3;
+      MCIERR_UNRECOGNIZED_COMMAND     = MCIERR_BASE + 5;
+      MCIERR_HARDWARE                 = MCIERR_BASE + 6;
+      MCIERR_INVALID_DEVICE_NAME      = MCIERR_BASE + 7;
+      MCIERR_OUT_OF_MEMORY            = MCIERR_BASE + 8;
+      MCIERR_DEVICE_OPEN              = MCIERR_BASE + 9;
+      MCIERR_CANNOT_LOAD_DRIVER       = MCIERR_BASE + 10;
+      MCIERR_MISSING_COMMAND_STRING   = MCIERR_BASE + 11;
+      MCIERR_PARAM_OVERFLOW           = MCIERR_BASE + 12;
+      MCIERR_MISSING_STRING_ARGUMENT  = MCIERR_BASE + 13;
+      MCIERR_BAD_INTEGER              = MCIERR_BASE + 14;
+      MCIERR_PARSER_INTERNAL          = MCIERR_BASE + 15;
+      MCIERR_DRIVER_INTERNAL          = MCIERR_BASE + 16;
+      MCIERR_MISSING_PARAMETER        = MCIERR_BASE + 17;
+      MCIERR_UNSUPPORTED_FUNCTION     = MCIERR_BASE + 18;
+      MCIERR_FILE_NOT_FOUND           = MCIERR_BASE + 19;
+      MCIERR_DEVICE_NOT_READY         = MCIERR_BASE + 20;
+      MCIERR_INTERNAL                 = MCIERR_BASE + 21;
+      MCIERR_DRIVER                   = MCIERR_BASE + 22;
+      MCIERR_CANNOT_USE_ALL           = MCIERR_BASE + 23;
+      MCIERR_MULTIPLE                 = MCIERR_BASE + 24;
+      MCIERR_EXTENSION_NOT_FOUND      = MCIERR_BASE + 25;
+      MCIERR_OUTOFRANGE               = MCIERR_BASE + 26;
+      MCIERR_FLAGS_NOT_COMPATIBLE     = MCIERR_BASE + 28;
+      MCIERR_FILE_NOT_SAVED           = MCIERR_BASE + 30;
+      MCIERR_DEVICE_TYPE_REQUIRED     = MCIERR_BASE + 31;
+      MCIERR_DEVICE_LOCKED            = MCIERR_BASE + 32;
+      MCIERR_DUPLICATE_ALIAS          = MCIERR_BASE + 33;
+      MCIERR_BAD_CONSTANT             = MCIERR_BASE + 34;
+      MCIERR_MUST_USE_SHAREABLE       = MCIERR_BASE + 35;
+      MCIERR_MISSING_DEVICE_NAME      = MCIERR_BASE + 36;
+      MCIERR_BAD_TIME_FORMAT          = MCIERR_BASE + 37;
+      MCIERR_NO_CLOSING_QUOTE         = MCIERR_BASE + 38;
+      MCIERR_DUPLICATE_FLAGS          = MCIERR_BASE + 39;
+      MCIERR_INVALID_FILE             = MCIERR_BASE + 40;
+      MCIERR_NULL_PARAMETER_BLOCK     = MCIERR_BASE + 41;
+      MCIERR_UNNAMED_RESOURCE         = MCIERR_BASE + 42;
+      MCIERR_NEW_REQUIRES_ALIAS       = MCIERR_BASE + 43;
+      MCIERR_NOTIFY_ON_AUTO_OPEN      = MCIERR_BASE + 44;
+      MCIERR_NO_ELEMENT_ALLOWED       = MCIERR_BASE + 45;
+      MCIERR_NONAPPLICABLE_FUNCTION   = MCIERR_BASE + 46;
+      MCIERR_ILLEGAL_FOR_AUTO_OPEN    = MCIERR_BASE + 47;
+      MCIERR_FILENAME_REQUIRED        = MCIERR_BASE + 48;
+      MCIERR_EXTRA_CHARACTERS         = MCIERR_BASE + 49;
+      MCIERR_DEVICE_NOT_INSTALLED     = MCIERR_BASE + 50;
+      MCIERR_GET_CD                   = MCIERR_BASE + 51;
+      MCIERR_SET_CD                   = MCIERR_BASE + 52;
+      MCIERR_SET_DRIVE                = MCIERR_BASE + 53;
+      MCIERR_DEVICE_LENGTH            = MCIERR_BASE + 54;
+      MCIERR_DEVICE_ORD_LENGTH        = MCIERR_BASE + 55;
+      MCIERR_NO_INTEGER               = MCIERR_BASE + 56;
+
+      MCIERR_WAVE_OUTPUTSINUSE        = MCIERR_BASE + 64;
+      MCIERR_WAVE_SETOUTPUTINUSE      = MCIERR_BASE + 65;
+      MCIERR_WAVE_INPUTSINUSE         = MCIERR_BASE + 66;
+      MCIERR_WAVE_SETINPUTINUSE       = MCIERR_BASE + 67;
+      MCIERR_WAVE_OUTPUTUNSPECIFIED   = MCIERR_BASE + 68;
+      MCIERR_WAVE_INPUTUNSPECIFIED    = MCIERR_BASE + 69;
+      MCIERR_WAVE_OUTPUTSUNSUITABLE   = MCIERR_BASE + 70;
+      MCIERR_WAVE_SETOUTPUTUNSUITABLE = MCIERR_BASE + 71;
+      MCIERR_WAVE_INPUTSUNSUITABLE    = MCIERR_BASE + 72;
+      MCIERR_WAVE_SETINPUTUNSUITABLE  = MCIERR_BASE + 73;
+
+      MCIERR_SEQ_DIV_INCOMPATIBLE     = MCIERR_BASE + 80;
+      MCIERR_SEQ_PORT_INUSE           = MCIERR_BASE + 81;
+      MCIERR_SEQ_PORT_NONEXISTENT     = MCIERR_BASE + 82;
+      MCIERR_SEQ_PORT_MAPNODEVICE     = MCIERR_BASE + 83;
+      MCIERR_SEQ_PORT_MISCERROR       = MCIERR_BASE + 84;
+      MCIERR_SEQ_TIMER                = MCIERR_BASE + 85;
+      MCIERR_SEQ_PORTUNSPECIFIED      = MCIERR_BASE + 86;
+      MCIERR_SEQ_NOMIDIPRESENT        = MCIERR_BASE + 87;
+
+      MCIERR_NO_WINDOW                = MCIERR_BASE + 90;
+      MCIERR_CREATEWINDOW             = MCIERR_BASE + 91;
+      MCIERR_FILE_READ                = MCIERR_BASE + 92;
+      MCIERR_FILE_WRITE               = MCIERR_BASE + 93;
+
+      MCIERR_NO_IDENTITY              = MCIERR_BASE + 94;
+
+(* all custom device driver errors must be >= than this value *)
+
+CONST MCIERR_CUSTOM_DRIVER_BASE       = MCIERR_BASE + 256;
+
+CONST MCI_FIRST                       = DRV_MCI_FIRST;   (* 0x0800 *)
+
+(* MCI command message identifiers *)
+
+CONST MCI_OPEN                        = 0803h;
+      MCI_CLOSE                       = 0804h;
+      MCI_ESCAPE                      = 0805h;
+      MCI_PLAY                        = 0806h;
+      MCI_SEEK                        = 0807h;
+      MCI_STOP                        = 0808h;
+      MCI_PAUSE                       = 0809h;
+      MCI_INFO                        = 080Ah;
+      MCI_GETDEVCAPS                  = 080Bh;
+      MCI_SPIN                        = 080Ch;
+      MCI_SET                         = 080Dh;
+      MCI_STEP                        = 080Eh;
+      MCI_RECORD                      = 080Fh;
+      MCI_SYSINFO                     = 0810h;
+      MCI_BREAK                       = 0811h;
+      MCI_SAVE                        = 0813h;
+      MCI_STATUS                      = 0814h;
+      MCI_CUE                         = 0830h;
+      MCI_REALIZE                     = 0840h;
+      MCI_WINDOW                      = 0841h;
+      MCI_PUT                         = 0842h;
+      MCI_WHERE                       = 0843h;
+      MCI_FREEZE                      = 0844h;
+      MCI_UNFREEZE                    = 0845h;
+      MCI_LOAD                        = 0850h;
+      MCI_CUT                         = 0851h;
+      MCI_COPY                        = 0852h;
+      MCI_PASTE                       = 0853h;
+      MCI_UPDATE                      = 0854h;
+      MCI_RESUME                      = 0855h;
+      MCI_DELETE                      = 0856h;
+
+(* all custom MCI command messages must be >= than this value *)
+
+CONST MCI_USER_MESSAGES               = DRV_MCI_FIRST + 0400h;
+      MCI_LAST                        = 0FFFh;
+
+(* device ID for "all devices" *)
+
+CONST MCI_ALL_DEVICE_ID               = MAX (MCIDEVICEID);
+
+(* constants for predefined MCI device types *)
+
+CONST MCI_DEVTYPE_VCR                 = 513; (* MCI_STRING_OFFSET + 1  *)
+      MCI_DEVTYPE_VIDEODISC           = 514; (* MCI_STRING_OFFSET + 2  *)
+      MCI_DEVTYPE_OVERLAY             = 515; (* MCI_STRING_OFFSET + 3  *)
+      MCI_DEVTYPE_CD_AUDIO            = 516; (* MCI_STRING_OFFSET + 4  *)
+      MCI_DEVTYPE_DAT                 = 517; (* MCI_STRING_OFFSET + 5  *)
+      MCI_DEVTYPE_SCANNER             = 518; (* MCI_STRING_OFFSET + 6  *)
+      MCI_DEVTYPE_ANIMATION           = 519; (* MCI_STRING_OFFSET + 7  *)
+      MCI_DEVTYPE_DIGITAL_VIDEO       = 520; (* MCI_STRING_OFFSET + 8  *)
+      MCI_DEVTYPE_OTHER               = 521; (* MCI_STRING_OFFSET + 9  *)
+      MCI_DEVTYPE_WAVEFORM_AUDIO      = 522; (* MCI_STRING_OFFSET + 10 *)
+      MCI_DEVTYPE_SEQUENCER           = 523; (* MCI_STRING_OFFSET + 11 *)
+
+      MCI_DEVTYPE_FIRST               = MCI_DEVTYPE_VCR;
+      MCI_DEVTYPE_LAST                = MCI_DEVTYPE_SEQUENCER;
+
+      MCI_DEVTYPE_FIRST_USER          = 1000h;
+
+(* return values for 'status mode' command *)
+
+CONST MCI_MODE_NOT_READY              = MCI_STRING_OFFSET + 12;
+      MCI_MODE_STOP                   = MCI_STRING_OFFSET + 13;
+      MCI_MODE_PLAY                   = MCI_STRING_OFFSET + 14;
+      MCI_MODE_RECORD                 = MCI_STRING_OFFSET + 15;
+      MCI_MODE_SEEK                   = MCI_STRING_OFFSET + 16;
+      MCI_MODE_PAUSE                  = MCI_STRING_OFFSET + 17;
+      MCI_MODE_OPEN                   = MCI_STRING_OFFSET + 18;
+
+(* constants used in 'set time format' and 'status time format' commands *)
+
+CONST MCI_FORMAT_MILLISECONDS         = 0;
+      MCI_FORMAT_HMS                  = 1;
+      MCI_FORMAT_MSF                  = 2;
+      MCI_FORMAT_FRAMES               = 3;
+      MCI_FORMAT_SMPTE_24             = 4;
+      MCI_FORMAT_SMPTE_25             = 5;
+      MCI_FORMAT_SMPTE_30             = 6;
+      MCI_FORMAT_SMPTE_30DROP         = 7;
+      MCI_FORMAT_BYTES                = 8;
+      MCI_FORMAT_SAMPLES              = 9;
+      MCI_FORMAT_TMSF                 = 10;
+
+
+(* MCI time format conversion procedures.
+   All of them were macros in original .H file; implemented in RTL *)
+
+PROCEDURE MCI_MSF_MINUTE  (msf : DWORD) : BYTE;
+PROCEDURE MCI_MSF_SECOND  (msf : DWORD) : BYTE;
+PROCEDURE MCI_MSF_FRAME   (msf : DWORD) : BYTE;
+PROCEDURE MCI_MAKE_MSF    (m, s, f : BYTE) : DWORD;
+PROCEDURE MCI_TMSF_TRACK  (tmsf : DWORD) : BYTE;
+PROCEDURE MCI_TMSF_MINUTE (tmsf : DWORD) : BYTE;
+PROCEDURE MCI_TMSF_SECOND (tmsf : DWORD) : BYTE;
+PROCEDURE MCI_TMSF_FRAME  (tmsf : DWORD) : BYTE;
+PROCEDURE MCI_MAKE_TMSF   (t, m, s, f : BYTE) : DWORD;
+PROCEDURE MCI_HMS_HOUR    (hms : DWORD) : BYTE;
+PROCEDURE MCI_HMS_MINUTE  (hms : DWORD) : BYTE;
+PROCEDURE MCI_HMS_SECOND  (hms : DWORD) : BYTE;
+PROCEDURE MCI_MAKE_HMS    (h, m, s : BYTE) : DWORD;
+
+(* flags for wParam of MM_MCINOTIFY message *)
+
+CONST MCI_NOTIFY_SUCCESSFUL           = 0001h;
+      MCI_NOTIFY_SUPERSEDED           = 0002h;
+      MCI_NOTIFY_ABORTED              = 0004h;
+      MCI_NOTIFY_FAILURE              = 0008h;
+
+(* common flags for dwFlags parameter of MCI command messages *)
+
+CONST MCI_NOTIFY                      = 00000001h;
+      MCI_WAIT                        = 00000002h;
+      MCI_FROM                        = 00000004h;
+      MCI_TO                          = 00000008h;
+      MCI_TRACK                       = 00000010h;
+
+(* flags for dwFlags parameter of MCI_OPEN command message *)
+
+CONST MCI_OPEN_SHAREABLE              = 00000100h;
+      MCI_OPEN_ELEMENT                = 00000200h;
+      MCI_OPEN_ALIAS                  = 00000400h;
+      MCI_OPEN_ELEMENT_ID             = 00000800h;
+      MCI_OPEN_TYPE_ID                = 00001000h;
+      MCI_OPEN_TYPE                   = 00002000h;
+
+(* flags for dwFlags parameter of MCI_SEEK command message *)
+
+CONST MCI_SEEK_TO_START               = 00000100h;
+      MCI_SEEK_TO_END                 = 00000200h;
+
+(* flags for dwFlags parameter of MCI_STATUS command message *)
+
+CONST MCI_STATUS_ITEM                 = 00000100h;
+      MCI_STATUS_START                = 00000200h;
+
+(* flags for dwItem field of the MCI_STATUS_PARMS parameter block *)
+
+CONST MCI_STATUS_LENGTH               = 00000001h;
+      MCI_STATUS_POSITION             = 00000002h;
+      MCI_STATUS_NUMBER_OF_TRACKS     = 00000003h;
+      MCI_STATUS_MODE                 = 00000004h;
+      MCI_STATUS_MEDIA_PRESENT        = 00000005h;
+      MCI_STATUS_TIME_FORMAT          = 00000006h;
+      MCI_STATUS_READY                = 00000007h;
+      MCI_STATUS_CURRENT_TRACK        = 00000008h;
+
+(* flags for dwFlags parameter of MCI_INFO command message *)
+
+CONST MCI_INFO_PRODUCT                = 00000100h;
+      MCI_INFO_FILE                   = 00000200h;
+      MCI_INFO_MEDIA_UPC              = 00000400h;
+      MCI_INFO_MEDIA_IDENTITY         = 00000800h;
+      MCI_INFO_NAME                   = 00001000h;
+      MCI_INFO_COPYRIGHT              = 00002000h;
+
+(* flags for dwFlags parameter of MCI_GETDEVCAPS command message *)
+
+CONST MCI_GETDEVCAPS_ITEM             = 00000100h;
+
+(* flags for dwItem field of the MCI_GETDEVCAPS_PARMS parameter block *)
+
+CONST MCI_GETDEVCAPS_CAN_RECORD       = 00000001h;
+      MCI_GETDEVCAPS_HAS_AUDIO        = 00000002h;
+      MCI_GETDEVCAPS_HAS_VIDEO        = 00000003h;
+      MCI_GETDEVCAPS_DEVICE_TYPE      = 00000004h;
+      MCI_GETDEVCAPS_USES_FILES       = 00000005h;
+      MCI_GETDEVCAPS_COMPOUND_DEVICE  = 00000006h;
+      MCI_GETDEVCAPS_CAN_EJECT        = 00000007h;
+      MCI_GETDEVCAPS_CAN_PLAY         = 00000008h;
+      MCI_GETDEVCAPS_CAN_SAVE         = 00000009h;
+
+(* flags for dwFlags parameter of MCI_SYSINFO command message *)
+
+CONST MCI_SYSINFO_QUANTITY            = 00000100h;
+      MCI_SYSINFO_OPEN                = 00000200h;
+      MCI_SYSINFO_NAME                = 00000400h;
+      MCI_SYSINFO_INSTALLNAME         = 00000800h;
+
+(* flags for dwFlags parameter of MCI_SET command message *)
+
+CONST MCI_SET_DOOR_OPEN               = 00000100h;
+      MCI_SET_DOOR_CLOSED             = 00000200h;
+      MCI_SET_TIME_FORMAT             = 00000400h;
+      MCI_SET_AUDIO                   = 00000800h;
+      MCI_SET_VIDEO                   = 00001000h;
+      MCI_SET_ON                      = 00002000h;
+      MCI_SET_OFF                     = 00004000h;
+
+(* flags for dwAudio field of MCI_SET_PARMS or MCI_SEQ_SET_PARMS *)
+
+CONST MCI_SET_AUDIO_ALL               = 00000000h;
+      MCI_SET_AUDIO_LEFT              = 00000001h;
+      MCI_SET_AUDIO_RIGHT             = 00000002h;
+
+(* flags for dwFlags parameter of MCI_BREAK command message *)
+
+CONST MCI_BREAK_KEY                   = 00000100h;
+      MCI_BREAK_HWND                  = 00000200h;
+      MCI_BREAK_OFF                   = 00000400h;
+
+(* flags for dwFlags parameter of MCI_RECORD command message *)
+
+CONST MCI_RECORD_INSERT               = 00000100h;
+      MCI_RECORD_OVERWRITE            = 00000200h;
+
+(* flags for dwFlags parameter of MCI_SAVE command message *)
+
+CONST MCI_SAVE_FILE                   = 00000100h;
+
+(* flags for dwFlags parameter of MCI_LOAD command message *)
+
+CONST MCI_LOAD_FILE                   = 00000100h;
+
+(* generic parameter block for MCI command messages with no special parameters *)
+
+TYPE MCI_GENERIC_PARMS = RECORD
+                                dwCallback : DWORD;
+     END;
+     PMCI_GENERIC_PARMS = POINTER TO MCI_GENERIC_PARMS;
+
+(* parameter block for MCI_OPEN command message *)
+
+TYPE MCI_OPEN_PARMSA = RECORD
+                              dwCallback       : DWORD;
+                              wDeviceID        : MCIDEVICEID;
+                              lpstrDeviceType  : PCSTR;
+                              lpstrElementName : PCSTR;
+                              lpstrAlias       : PCSTR;
+                       END;
+    PMCI_OPEN_PARMSA = POINTER TO MCI_OPEN_PARMSA;
+
+TYPE MCI_OPEN_PARMSW = RECORD
+                              dwCallback       : DWORD;
+                              wDeviceID        : MCIDEVICEID;
+                              lpstrDeviceType  : PCWSTR;
+                              lpstrElementName : PCWSTR;
+                              lpstrAlias       : PCWSTR;
+                       END;
+    PMCI_OPEN_PARMSW = POINTER TO MCI_OPEN_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_OPEN_PARMS =  MCI_OPEN_PARMSW;
+           PMCI_OPEN_PARMS = PMCI_OPEN_PARMSW;
+<* ELSE *>
+      TYPE  MCI_OPEN_PARMS =  MCI_OPEN_PARMSA;
+           PMCI_OPEN_PARMS = PMCI_OPEN_PARMSA;
+<* END *>
+
+(* parameter block for MCI_PLAY command message *)
+
+TYPE MCI_PLAY_PARMS = RECORD
+                             dwCallback : DWORD;
+                             dwFrom     : DWORD;
+                             dwTo       : DWORD;
+                      END;
+    PMCI_PLAY_PARMS = POINTER TO MCI_PLAY_PARMS;
+
+(* parameter block for MCI_SEEK command message *)
+
+TYPE MCI_SEEK_PARMS = RECORD
+                             dwCallback : DWORD;
+                             dwTo       : DWORD;
+                      END;
+    PMCI_SEEK_PARMS = POINTER TO MCI_SEEK_PARMS;
+
+(* parameter block for MCI_STATUS command message *)
+
+TYPE MCI_STATUS_PARMS = RECORD
+                               dwCallback : DWORD;
+                               dwReturn   : DWORD;
+                               dwItem     : DWORD;
+                               dwTrack    : DWORD;
+                        END;
+    PMCI_STATUS_PARMS = POINTER TO MCI_STATUS_PARMS;
+
+(* parameter block for MCI_INFO command message *)
+
+TYPE MCI_INFO_PARMSA = RECORD
+                              dwCallback  : DWORD;
+                              lpstrReturn : PSTR;
+                              dwRetSize   : DWORD;
+                       END;
+    PMCI_INFO_PARMSA = POINTER TO MCI_INFO_PARMSA;
+
+TYPE MCI_INFO_PARMSW = RECORD
+                              dwCallback  : DWORD;
+                              lpstrReturn : PWSTR;
+                              dwRetSize   : DWORD;
+                       END;
+    PMCI_INFO_PARMSW = POINTER TO MCI_INFO_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_INFO_PARMS =  MCI_INFO_PARMSW;
+           PMCI_INFO_PARMS = PMCI_INFO_PARMSW;
+<* ELSE *>
+      TYPE  MCI_INFO_PARMS =  MCI_INFO_PARMSA;
+           PMCI_INFO_PARMS = PMCI_INFO_PARMSA;
+<* END *>
+
+(* parameter block for MCI_GETDEVCAPS command message *)
+TYPE MCI_GETDEVCAPS_PARMS = RECORD
+                                   dwCallback : DWORD;
+                                   dwReturn   : DWORD;
+                                   dwItem     : DWORD;
+                            END;
+    PMCI_GETDEVCAPS_PARMS = POINTER TO MCI_GETDEVCAPS_PARMS;
+
+(* parameter block for MCI_SYSINFO command message *)
+
+TYPE MCI_SYSINFO_PARMSA = RECORD
+                                 dwCallback  : DWORD;
+                                 lpstrReturn : PSTR;
+                                 dwRetSize   : DWORD;
+                                 dwNumber    : DWORD;
+                                 wDeviceType : UINT;
+                          END;
+    PMCI_SYSINFO_PARMSA = POINTER TO MCI_SYSINFO_PARMSA;
+
+TYPE MCI_SYSINFO_PARMSW = RECORD
+                                 dwCallback  : DWORD;
+                                 lpstrReturn : PWSTR;
+                                 dwRetSize   : DWORD;
+                                 dwNumber    : DWORD;
+                                 wDeviceType : UINT;
+                          END;
+    PMCI_SYSINFO_PARMSW = POINTER TO MCI_SYSINFO_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_SYSINFO_PARMS =  MCI_SYSINFO_PARMSW;
+           PMCI_SYSINFO_PARMS = PMCI_SYSINFO_PARMSW;
+<* ELSE *>
+      TYPE  MCI_SYSINFO_PARMS =  MCI_SYSINFO_PARMSA;
+           PMCI_SYSINFO_PARMS = PMCI_SYSINFO_PARMSA;
+<* END *>
+
+(* parameter block for MCI_SET command message *)
+
+TYPE MCI_SET_PARMS = RECORD
+                            dwCallback   : DWORD;
+                            dwTimeFormat : DWORD;
+                            dwAudio      : DWORD;
+                     END;
+    PMCI_SET_PARMS = POINTER TO MCI_SET_PARMS;
+
+(* parameter block for MCI_BREAK command message *)
+
+TYPE MCI_BREAK_PARMS = RECORD
+                              dwCallback : DWORD;
+                              nVirtKey   : INTEGER;
+                              hwndBreak  : HWND;
+                       END;
+    PMCI_BREAK_PARMS = POINTER TO MCI_BREAK_PARMS;
+
+(* parameter block for MCI_SAVE command message *)
+
+TYPE MCI_SAVE_PARMSA = RECORD
+                              dwCallback : DWORD;
+                              lpfilename : PCSTR;
+                       END;
+    PMCI_SAVE_PARMSA = POINTER TO MCI_SAVE_PARMSA;
+
+TYPE MCI_SAVE_PARMSW = RECORD
+                              dwCallback : DWORD;
+                              lpfilename : PCWSTR;
+                       END;
+    PMCI_SAVE_PARMSW = POINTER TO MCI_SAVE_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_SAVE_PARMS =  MCI_SAVE_PARMSW;
+           PMCI_SAVE_PARMS = PMCI_SAVE_PARMSW;
+<* ELSE *>
+      TYPE  MCI_SAVE_PARMS =  MCI_SAVE_PARMSA;
+           PMCI_SAVE_PARMS = PMCI_SAVE_PARMSA;
+<* END *>
+
+(* parameter block for MCI_LOAD command message *)
+
+TYPE MCI_LOAD_PARMSA = RECORD
+                              dwCallback : DWORD;
+                              lpfilename : PCSTR;
+                       END;
+    PMCI_LOAD_PARMSA = POINTER TO MCI_LOAD_PARMSA;
+
+TYPE MCI_LOAD_PARMSW = RECORD
+                              dwCallback : DWORD;
+                              lpfilename : PCWSTR;
+                       END;
+    PMCI_LOAD_PARMSW = POINTER TO MCI_LOAD_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_LOAD_PARMS =  MCI_LOAD_PARMSW;
+           PMCI_LOAD_PARMS = PMCI_LOAD_PARMSW;
+<* ELSE *>
+      TYPE  MCI_LOAD_PARMS =  MCI_LOAD_PARMSA;
+           PMCI_LOAD_PARMS = PMCI_LOAD_PARMSA;
+<* END *>
+
+(* parameter block for MCI_RECORD command message *)
+TYPE MCI_RECORD_PARMS = RECORD
+                               dwCallback : DWORD;
+                               dwFrom     : DWORD;
+                               dwTo       : DWORD;
+                        END;
+    PMCI_RECORD_PARMS = POINTER TO MCI_RECORD_PARMS;
+
+(* MCI extensions for videodisc devices *)
+
+(* flag for dwReturn field of MCI_STATUS_PARMS *)
+(* MCI_STATUS command, (dwItem == MCI_STATUS_MODE) *)
+
+CONST MCI_VD_MODE_PARK                = MCI_VD_OFFSET + 1;
+
+(* flag for dwReturn field of MCI_STATUS_PARMS *)
+(* MCI_STATUS command, (dwItem == MCI_VD_STATUS_MEDIA_TYPE) *)
+
+CONST MCI_VD_MEDIA_CLV                = MCI_VD_OFFSET + 2;
+      MCI_VD_MEDIA_CAV                = MCI_VD_OFFSET + 3;
+      MCI_VD_MEDIA_OTHER              = MCI_VD_OFFSET + 4;
+
+      MCI_VD_FORMAT_TRACK             = 4001h;
+
+(* flags for dwFlags parameter of MCI_PLAY command message *)
+
+CONST MCI_VD_PLAY_REVERSE             = 00010000h;
+      MCI_VD_PLAY_FAST                = 00020000h;
+      MCI_VD_PLAY_SPEED               = 00040000h;
+      MCI_VD_PLAY_SCAN                = 00080000h;
+      MCI_VD_PLAY_SLOW                = 00100000h;
+
+(* flag for dwFlags parameter of MCI_SEEK command message *)
+
+CONST MCI_VD_SEEK_REVERSE             = 00010000h;
+
+(* flags for dwItem field of MCI_STATUS_PARMS parameter block *)
+
+CONST MCI_VD_STATUS_SPEED             = 00004002h;
+      MCI_VD_STATUS_FORWARD           = 00004003h;
+      MCI_VD_STATUS_MEDIA_TYPE        = 00004004h;
+      MCI_VD_STATUS_SIDE              = 00004005h;
+      MCI_VD_STATUS_DISC_SIZE         = 00004006h;
+
+(* flags for dwFlags parameter of MCI_GETDEVCAPS command message *)
+
+CONST MCI_VD_GETDEVCAPS_CLV           = 00010000h;
+      MCI_VD_GETDEVCAPS_CAV           = 00020000h;
+
+      MCI_VD_SPIN_UP                  = 00010000h;
+      MCI_VD_SPIN_DOWN                = 00020000h;
+
+(* flags for dwItem field of MCI_GETDEVCAPS_PARMS parameter block *)
+
+CONST MCI_VD_GETDEVCAPS_CAN_REVERSE   = 00004002h;
+      MCI_VD_GETDEVCAPS_FAST_RATE     = 00004003h;
+      MCI_VD_GETDEVCAPS_SLOW_RATE     = 00004004h;
+      MCI_VD_GETDEVCAPS_NORMAL_RATE   = 00004005h;
+
+(* flags for the dwFlags parameter of MCI_STEP command message *)
+
+CONST MCI_VD_STEP_FRAMES              = 00010000h;
+      MCI_VD_STEP_REVERSE             = 00020000h;
+
+(* flag for the MCI_ESCAPE command message *)
+
+CONST MCI_VD_ESCAPE_STRING            = 00000100h;
+
+(* parameter block for MCI_PLAY command message *)
+
+TYPE MCI_VD_PLAY_PARMS = RECORD
+                                dwCallback : DWORD;
+                                dwFrom     : DWORD;
+                                dwTo       : DWORD;
+                                dwSpeed    : DWORD;
+                         END;
+    PMCI_VD_PLAY_PARMS = POINTER TO MCI_VD_PLAY_PARMS;
+
+(* parameter block for MCI_STEP command message *)
+
+TYPE MCI_VD_STEP_PARMS = RECORD
+                                dwCallback : DWORD;
+                                dwFrames   : DWORD;
+                         END;
+    PMCI_VD_STEP_PARMS = POINTER TO MCI_VD_STEP_PARMS;
+
+(* parameter block for MCI_ESCAPE command message *)
+
+TYPE MCI_VD_ESCAPE_PARMSA = RECORD
+                                   dwCallback   : DWORD;
+                                   lpstrCommand : PCSTR;
+                            END;
+    PMCI_VD_ESCAPE_PARMSA = POINTER TO MCI_VD_ESCAPE_PARMSA;
+
+TYPE MCI_VD_ESCAPE_PARMSW = RECORD
+                                   dwCallback   : DWORD;
+                                   lpstrCommand : PCSTR;
+                            END;
+    PMCI_VD_ESCAPE_PARMSW = POINTER TO MCI_VD_ESCAPE_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_VD_ESCAPE_PARMS =  MCI_VD_ESCAPE_PARMSW;
+      TYPE PMCI_VD_ESCAPE_PARMS = PMCI_VD_ESCAPE_PARMSW;
+<* ELSE *>
+      TYPE  MCI_VD_ESCAPE_PARMS =  MCI_VD_ESCAPE_PARMSA;
+      TYPE PMCI_VD_ESCAPE_PARMS = PMCI_VD_ESCAPE_PARMSA;
+<* END *>
+
+(* MCI extensions for CD audio devices *)
+
+(* flags for the dwItem field of the MCI_STATUS_PARMS parameter block *)
+
+CONST MCI_CDA_STATUS_TYPE_TRACK       = 00004001h;
+
+(* flags for the dwReturn field of MCI_STATUS_PARMS parameter block *)
+(* MCI_STATUS command, (dwItem == MCI_CDA_STATUS_TYPE_TRACK) *)
+
+CONST MCI_CDA_TRACK_AUDIO             = MCI_CD_OFFSET + 0;
+      MCI_CDA_TRACK_OTHER             = MCI_CD_OFFSET + 1;
+
+(* MCI extensions for waveform audio devices *)
+
+CONST MCI_WAVE_PCM                    = MCI_WAVE_OFFSET + 0;
+      MCI_WAVE_MAPPER                 = MCI_WAVE_OFFSET + 1;
+
+(* flags for the dwFlags parameter of MCI_OPEN command message *)
+
+CONST MCI_WAVE_OPEN_BUFFER            = 00010000h;
+
+(* flags for the dwFlags parameter of MCI_SET command message *)
+
+CONST MCI_WAVE_SET_FORMATTAG          = 00010000h;
+      MCI_WAVE_SET_CHANNELS           = 00020000h;
+      MCI_WAVE_SET_SAMPLESPERSEC      = 00040000h;
+      MCI_WAVE_SET_AVGBYTESPERSEC     = 00080000h;
+      MCI_WAVE_SET_BLOCKALIGN         = 00100000h;
+      MCI_WAVE_SET_BITSPERSAMPLE      = 00200000h;
+
+(* flags for the dwFlags parameter of MCI_STATUS, MCI_SET command messages *)
+
+CONST MCI_WAVE_INPUT                  = 00400000h;
+      MCI_WAVE_OUTPUT                 = 00800000h;
+
+(* flags for the dwItem field of MCI_STATUS_PARMS parameter block *)
+
+CONST MCI_WAVE_STATUS_FORMATTAG       = 00004001h;
+      MCI_WAVE_STATUS_CHANNELS        = 00004002h;
+      MCI_WAVE_STATUS_SAMPLESPERSEC   = 00004003h;
+      MCI_WAVE_STATUS_AVGBYTESPERSEC  = 00004004h;
+      MCI_WAVE_STATUS_BLOCKALIGN      = 00004005h;
+      MCI_WAVE_STATUS_BITSPERSAMPLE   = 00004006h;
+      MCI_WAVE_STATUS_LEVEL           = 00004007h;
+
+(* flags for the dwFlags parameter of MCI_SET command message *)
+
+CONST MCI_WAVE_SET_ANYINPUT           = 04000000h;
+      MCI_WAVE_SET_ANYOUTPUT          = 08000000h;
+
+(* flags for the dwFlags parameter of MCI_GETDEVCAPS command message *)
+
+CONST MCI_WAVE_GETDEVCAPS_INPUTS      = 00004001h;
+      MCI_WAVE_GETDEVCAPS_OUTPUTS     = 00004002h;
+
+(* parameter block for MCI_OPEN command message *)
+
+TYPE MCI_WAVE_OPEN_PARMSA = RECORD
+                                   dwCallback       : DWORD;
+                                   wDeviceID        : MCIDEVICEID;
+                                   lpstrDeviceType  : PCSTR;
+                                   lpstrElementName : PCSTR;
+                                   lpstrAlias       : PCSTR;
+                                   dwBufferSeconds  : DWORD;
+                            END;
+    PMCI_WAVE_OPEN_PARMSA = POINTER TO MCI_WAVE_OPEN_PARMSA;
+
+TYPE MCI_WAVE_OPEN_PARMSW = RECORD
+                                   dwCallback       : DWORD;
+                                   wDeviceID        : MCIDEVICEID;
+                                   lpstrDeviceType  : PCWSTR;
+                                   lpstrElementName : PCWSTR;
+                                   lpstrAlias       : PCWSTR;
+                                   dwBufferSeconds  : DWORD;
+                            END;
+    PMCI_WAVE_OPEN_PARMSW = POINTER TO MCI_WAVE_OPEN_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_WAVE_OPEN_PARMS =  MCI_WAVE_OPEN_PARMSW;
+           PMCI_WAVE_OPEN_PARMS = PMCI_WAVE_OPEN_PARMSW;
+<* ELSE *>
+      TYPE  MCI_WAVE_OPEN_PARMS =  MCI_WAVE_OPEN_PARMSA;
+           PMCI_WAVE_OPEN_PARMS = PMCI_WAVE_OPEN_PARMSA;
+<* END *>
+
+(* parameter block for MCI_DELETE command message *)
+TYPE MCI_WAVE_DELETE_PARMS = RECORD
+                                    dwCallback : DWORD;
+                                    dwFrom     : DWORD;
+                                    dwTo       : DWORD;
+                             END;
+    PMCI_WAVE_DELETE_PARMS = POINTER TO MCI_WAVE_DELETE_PARMS;
+
+(* parameter block for MCI_SET command message *)
+
+TYPE MCI_WAVE_SET_PARMS = RECORD
+                                 dwCallback      : DWORD;
+                                 dwTimeFormat    : DWORD;
+                                 dwAudio         : DWORD;
+                                 wInput          : UINT;
+                                 wOutput         : UINT;
+                                 wFormatTag      : WORD;
+                                 wReserved2      : WORD;
+                                 nChannels       : WORD;
+                                 wReserved3      : WORD;
+                                 nSamplesPerSec  : DWORD;
+                                 nAvgBytesPerSec : DWORD;
+                                 nBlockAlign     : WORD;
+                                 wReserved4      : WORD;
+                                 wBitsPerSample  : WORD;
+                                 wReserved5      : WORD;
+                          END;
+    PMCI_WAVE_SET_PARMS = POINTER TO MCI_WAVE_SET_PARMS;
+
+(* MCI extensions for MIDI sequencer devices *)
+
+(* flags for the dwReturn field of MCI_STATUS_PARMS parameter block *)
+(* MCI_STATUS command, (dwItem == MCI_SEQ_STATUS_DIVTYPE) *)
+
+CONST     MCI_SEQ_DIV_PPQN            = 0 + MCI_SEQ_OFFSET;
+          MCI_SEQ_DIV_SMPTE_24        = 1 + MCI_SEQ_OFFSET;
+          MCI_SEQ_DIV_SMPTE_25        = 2 + MCI_SEQ_OFFSET;
+          MCI_SEQ_DIV_SMPTE_30DROP    = 3 + MCI_SEQ_OFFSET;
+          MCI_SEQ_DIV_SMPTE_30        = 4 + MCI_SEQ_OFFSET;
+
+(* flags for the dwMaster field of MCI_SEQ_SET_PARMS parameter block *)
+(* MCI_SET command, (dwFlags == MCI_SEQ_SET_MASTER) *)
+
+CONST     MCI_SEQ_FORMAT_SONGPTR      = 4001h;
+          MCI_SEQ_FILE                = 4002h;
+          MCI_SEQ_MIDI                = 4003h;
+          MCI_SEQ_SMPTE               = 4004h;
+          MCI_SEQ_NONE                = 65533;
+          MCI_SEQ_MAPPER              = 65535;
+
+(* flags for the dwItem field of MCI_STATUS_PARMS parameter block *)
+
+CONST MCI_SEQ_STATUS_TEMPO            = 00004002h;
+      MCI_SEQ_STATUS_PORT             = 00004003h;
+      MCI_SEQ_STATUS_SLAVE            = 00004007h;
+      MCI_SEQ_STATUS_MASTER           = 00004008h;
+      MCI_SEQ_STATUS_OFFSET           = 00004009h;
+      MCI_SEQ_STATUS_DIVTYPE          = 0000400Ah;
+      MCI_SEQ_STATUS_NAME             = 0000400Bh;
+      MCI_SEQ_STATUS_COPYRIGHT        = 0000400Ch;
+
+(* flags for the dwFlags parameter of MCI_SET command message *)
+
+CONST MCI_SEQ_SET_TEMPO               = 00010000h;
+      MCI_SEQ_SET_PORT                = 00020000h;
+      MCI_SEQ_SET_SLAVE               = 00040000h;
+      MCI_SEQ_SET_MASTER              = 00080000h;
+      MCI_SEQ_SET_OFFSET              = 01000000h;
+
+(* parameter block for MCI_SET command message *)
+TYPE MCI_SEQ_SET_PARMS = RECORD
+                                dwCallback   : DWORD;
+                                dwTimeFormat : DWORD;
+                                dwAudio      : DWORD;
+                                dwTempo      : DWORD;
+                                dwPort       : DWORD;
+                                dwSlave      : DWORD;
+                                dwMaster     : DWORD;
+                                dwOffset     : DWORD;
+                         END;
+    PMCI_SEQ_SET_PARMS = POINTER TO MCI_SEQ_SET_PARMS;
+
+(* MCI extensions for animation devices *)
+
+(* flags for dwFlags parameter of MCI_OPEN command message *)
+
+CONST MCI_ANIM_OPEN_WS                = 00010000h;
+      MCI_ANIM_OPEN_PARENT            = 00020000h;
+      MCI_ANIM_OPEN_NOSTATIC          = 00040000h;
+
+(* flags for dwFlags parameter of MCI_PLAY command message *)
+
+CONST MCI_ANIM_PLAY_SPEED             = 00010000h;
+      MCI_ANIM_PLAY_REVERSE           = 00020000h;
+      MCI_ANIM_PLAY_FAST              = 00040000h;
+      MCI_ANIM_PLAY_SLOW              = 00080000h;
+      MCI_ANIM_PLAY_SCAN              = 00100000h;
+
+(* flags for dwFlags parameter of MCI_STEP command message *)
+
+CONST MCI_ANIM_STEP_REVERSE           = 00010000h;
+      MCI_ANIM_STEP_FRAMES            = 00020000h;
+
+(* flags for dwItem field of MCI_STATUS_PARMS parameter block *)
+
+CONST MCI_ANIM_STATUS_SPEED           = 00004001h;
+      MCI_ANIM_STATUS_FORWARD         = 00004002h;
+      MCI_ANIM_STATUS_HWND            = 00004003h;
+      MCI_ANIM_STATUS_HPAL            = 00004004h;
+      MCI_ANIM_STATUS_STRETCH         = 00004005h;
+
+(* flags for the dwFlags parameter of MCI_INFO command message *)
+
+CONST MCI_ANIM_INFO_TEXT              = 00010000h;
+
+(* flags for dwItem field of MCI_GETDEVCAPS_PARMS parameter block *)
+
+CONST MCI_ANIM_GETDEVCAPS_CAN_REVERSE = 00004001h;
+      MCI_ANIM_GETDEVCAPS_FAST_RATE   = 00004002h;
+      MCI_ANIM_GETDEVCAPS_SLOW_RATE   = 00004003h;
+      MCI_ANIM_GETDEVCAPS_NORMAL_RATE = 00004004h;
+      MCI_ANIM_GETDEVCAPS_PALETTES    = 00004006h;
+      MCI_ANIM_GETDEVCAPS_CAN_STRETCH = 00004007h;
+      MCI_ANIM_GETDEVCAPS_MAX_WINDOWS = 00004008h;
+
+(* flags for the MCI_REALIZE command message *)
+
+CONST MCI_ANIM_REALIZE_NORM           = 00010000h;
+      MCI_ANIM_REALIZE_BKGD           = 00020000h;
+
+(* flags for dwFlags parameter of MCI_WINDOW command message *)
+
+CONST MCI_ANIM_WINDOW_HWND            = 00010000h;
+      MCI_ANIM_WINDOW_STATE           = 00040000h;
+      MCI_ANIM_WINDOW_TEXT            = 00080000h;
+      MCI_ANIM_WINDOW_ENABLE_STRETCH  = 00100000h;
+      MCI_ANIM_WINDOW_DISABLE_STRETCH = 00200000h;
+
+(* flags for hWnd field of MCI_ANIM_WINDOW_PARMS parameter block *)
+(* MCI_WINDOW command message, (dwFlags == MCI_ANIM_WINDOW_HWND) *)
+
+CONST MCI_ANIM_WINDOW_DEFAULT         = 00000000h;
+
+(* flags for dwFlags parameter of MCI_PUT command message *)
+
+CONST MCI_ANIM_RECT                   = 00010000h;
+      MCI_ANIM_PUT_SOURCE             = 00020000h;
+      MCI_ANIM_PUT_DESTINATION        = 00040000h;
+
+(* flags for dwFlags parameter of MCI_WHERE command message *)
+
+CONST MCI_ANIM_WHERE_SOURCE           = 00020000h;
+      MCI_ANIM_WHERE_DESTINATION      = 00040000h;
+
+(* flags for dwFlags parameter of MCI_UPDATE command message *)
+
+CONST MCI_ANIM_UPDATE_HDC             = 00020000h;
+
+(* parameter block for MCI_OPEN command message *)
+
+TYPE MCI_ANIM_OPEN_PARMSA = RECORD
+                                   dwCallback       : DWORD;
+                                   wDeviceID        : MCIDEVICEID;
+                                   lpstrDeviceType  : PCSTR;
+                                   lpstrElementName : PCSTR;
+                                   lpstrAlias       : PCSTR;
+                                   dwStyle          : DWORD;
+                                   hWndParent       : HWND;
+                            END;
+    PMCI_ANIM_OPEN_PARMSA = POINTER TO MCI_ANIM_OPEN_PARMSA;
+
+TYPE MCI_ANIM_OPEN_PARMSW = RECORD
+                                   dwCallback       : DWORD;
+                                   wDeviceID        : MCIDEVICEID;
+                                   lpstrDeviceType  : PCWSTR;
+                                   lpstrElementName : PCWSTR;
+                                   lpstrAlias       : PCWSTR;
+                                   dwStyle          : DWORD;
+                                   hWndParent       : HWND;
+                            END;
+    PMCI_ANIM_OPEN_PARMSW = POINTER TO MCI_ANIM_OPEN_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_ANIM_OPEN_PARMS =  MCI_ANIM_OPEN_PARMSW;
+           PMCI_ANIM_OPEN_PARMS = PMCI_ANIM_OPEN_PARMSW;
+<* ELSE *>
+      TYPE  MCI_ANIM_OPEN_PARMS =  MCI_ANIM_OPEN_PARMSA;
+           PMCI_ANIM_OPEN_PARMS = PMCI_ANIM_OPEN_PARMSA;
+<* END *>
+
+(* parameter block for MCI_PLAY command message *)
+
+TYPE MCI_ANIM_PLAY_PARMS = RECORD
+                                  dwCallback : DWORD;
+                                  dwFrom     : DWORD;
+                                  dwTo       : DWORD;
+                                  dwSpeed    : DWORD;
+                           END;
+    PMCI_ANIM_PLAY_PARMS = POINTER TO MCI_ANIM_PLAY_PARMS;
+
+(* parameter block for MCI_STEP command message *)
+
+TYPE MCI_ANIM_STEP_PARMS = RECORD
+                                  dwCallback : DWORD;
+                                  dwFrames   : DWORD;
+                           END;
+    PMCI_ANIM_STEP_PARMS = POINTER TO MCI_ANIM_STEP_PARMS;
+
+(* parameter block for MCI_WINDOW command message *)
+
+TYPE MCI_ANIM_WINDOW_PARMSA = RECORD
+                                     dwCallback : DWORD;
+                                     hWnd       : HWND;
+                                     nCmdShow   : UINT;
+                                     lpstrText  : PCSTR;
+                              END;
+    PMCI_ANIM_WINDOW_PARMSA = POINTER TO MCI_ANIM_WINDOW_PARMSA;
+
+TYPE MCI_ANIM_WINDOW_PARMSW = RECORD
+                                     dwCallback : DWORD;
+                                     hWnd       : HWND;
+                                     nCmdShow   : UINT;
+                                     lpstrText  : PCWSTR;
+                              END;
+    PMCI_ANIM_WINDOW_PARMSW = POINTER TO MCI_ANIM_WINDOW_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_ANIM_WINDOW_PARMS =  MCI_ANIM_WINDOW_PARMSW;
+           PMCI_ANIM_WINDOW_PARMS = PMCI_ANIM_WINDOW_PARMSW;
+<* ELSE *>
+      TYPE  MCI_ANIM_WINDOW_PARMS =  MCI_ANIM_WINDOW_PARMSA;
+           PMCI_ANIM_WINDOW_PARMS = PMCI_ANIM_WINDOW_PARMSA;
+<* END *>
+
+
+(* parameter block for MCI_PUT, MCI_UPDATE, MCI_WHERE command messages *)
+
+TYPE MCI_ANIM_RECT_PARMS = RECORD
+                                  dwCallback : DWORD;
+                                  CASE : BOOLEAN OF
+                                  | TRUE  : ptOffset : POINT;
+                                            ptExtent : POINT;
+                                  | FALSE : rc : RECT;
+                                  END;
+                           END;
+
+    PMCI_ANIM_RECT_PARMS = POINTER TO MCI_ANIM_RECT_PARMS;
+
+(* parameter block for MCI_UPDATE PARMS *)
+
+TYPE MCI_ANIM_UPDATE_PARMS = RECORD
+                                    dwCallback : DWORD;
+                                    rc         : RECT;
+                                    hDC        : HDC;
+                             END;
+    PMCI_ANIM_UPDATE_PARMS = POINTER TO MCI_ANIM_UPDATE_PARMS;
+
+(* MCI extensions for video overlay devices *)
+
+(* flags for dwFlags parameter of MCI_OPEN command message *)
+
+CONST MCI_OVLY_OPEN_WS                = 00010000h;
+      MCI_OVLY_OPEN_PARENT            = 00020000h;
+
+(* flags for dwFlags parameter of MCI_STATUS command message *)
+
+CONST MCI_OVLY_STATUS_HWND            = 00004001h;
+      MCI_OVLY_STATUS_STRETCH         = 00004002h;
+
+(* flags for dwFlags parameter of MCI_INFO command message *)
+
+CONST MCI_OVLY_INFO_TEXT              = 00010000h;
+
+(* flags for dwItem field of MCI_GETDEVCAPS_PARMS parameter block *)
+
+CONST MCI_OVLY_GETDEVCAPS_CAN_STRETCH = 00004001h;
+      MCI_OVLY_GETDEVCAPS_CAN_FREEZE  = 00004002h;
+      MCI_OVLY_GETDEVCAPS_MAX_WINDOWS = 00004003h;
+
+(* flags for dwFlags parameter of MCI_WINDOW command message *)
+
+CONST MCI_OVLY_WINDOW_HWND            = 00010000h;
+      MCI_OVLY_WINDOW_STATE           = 00040000h;
+      MCI_OVLY_WINDOW_TEXT            = 00080000h;
+      MCI_OVLY_WINDOW_ENABLE_STRETCH  = 00100000h;
+      MCI_OVLY_WINDOW_DISABLE_STRETCH = 00200000h;
+
+(* flags for hWnd parameter of MCI_OVLY_WINDOW_PARMS parameter block *)
+
+CONST MCI_OVLY_WINDOW_DEFAULT         = 00000000h;
+
+(* flags for dwFlags parameter of MCI_PUT command message *)
+
+CONST MCI_OVLY_RECT                   = 00010000h;
+      MCI_OVLY_PUT_SOURCE             = 00020000h;
+      MCI_OVLY_PUT_DESTINATION        = 00040000h;
+      MCI_OVLY_PUT_FRAME              = 00080000h;
+      MCI_OVLY_PUT_VIDEO              = 00100000h;
+
+(* flags for dwFlags parameter of MCI_WHERE command message *)
+
+CONST MCI_OVLY_WHERE_SOURCE           = 00020000h;
+      MCI_OVLY_WHERE_DESTINATION      = 00040000h;
+      MCI_OVLY_WHERE_FRAME            = 00080000h;
+      MCI_OVLY_WHERE_VIDEO            = 00100000h;
+
+(* parameter block for MCI_OPEN command message *)
+
+TYPE MCI_OVLY_OPEN_PARMSA = RECORD
+                                   dwCallback       : DWORD;
+                                   wDeviceID        : MCIDEVICEID;
+                                   lpstrDeviceType  : PCSTR;
+                                   lpstrElementName : PCSTR;
+                                   lpstrAlias       : PCSTR;
+                                   dwStyle          : DWORD;
+                                   hWndParent       : HWND;
+                            END;
+    PMCI_OVLY_OPEN_PARMSA = POINTER TO MCI_OVLY_OPEN_PARMSA;
+
+TYPE MCI_OVLY_OPEN_PARMSW = RECORD
+                                   dwCallback       : DWORD;
+                                   wDeviceID        : MCIDEVICEID;
+                                   lpstrDeviceType  : PCWSTR;
+                                   lpstrElementName : PCWSTR;
+                                   lpstrAlias       : PCWSTR;
+                                   dwStyle          : DWORD;
+                                   hWndParent       : HWND;
+                            END;
+    PMCI_OVLY_OPEN_PARMSW = POINTER TO MCI_OVLY_OPEN_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_OVLY_OPEN_PARMS =  MCI_OVLY_OPEN_PARMSW;
+           PMCI_OVLY_OPEN_PARMS = PMCI_OVLY_OPEN_PARMSW;
+<* ELSE *>
+      TYPE  MCI_OVLY_OPEN_PARMS =  MCI_OVLY_OPEN_PARMSA;
+           PMCI_OVLY_OPEN_PARMS = PMCI_OVLY_OPEN_PARMSA;
+<* END *>
+
+
+(* parameter block for MCI_WINDOW command message *)
+
+TYPE MCI_OVLY_WINDOW_PARMSA = RECORD
+                                     dwCallback : DWORD;
+                                     hWnd       : HWND;
+                                     nCmdShow   : UINT;
+                                     lpstrText  : PCSTR;
+                              END;
+    PMCI_OVLY_WINDOW_PARMSA = POINTER TO MCI_OVLY_WINDOW_PARMSA;
+
+TYPE MCI_OVLY_WINDOW_PARMSW = RECORD
+                                     dwCallback : DWORD;
+                                     hWnd       : HWND;
+                                     nCmdShow   : UINT;
+                                     lpstrText  : PCWSTR;
+                              END;
+    PMCI_OVLY_WINDOW_PARMSW = POINTER TO MCI_OVLY_WINDOW_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_OVLY_WINDOW_PARMS =  MCI_OVLY_WINDOW_PARMSW;
+           PMCI_OVLY_WINDOW_PARMS = PMCI_OVLY_WINDOW_PARMSW;
+<* ELSE *>
+      TYPE  MCI_OVLY_WINDOW_PARMS =  MCI_OVLY_WINDOW_PARMSA;
+           PMCI_OVLY_WINDOW_PARMS = PMCI_OVLY_WINDOW_PARMSA;
+<* END *>
+
+(* parameter block for MCI_PUT, MCI_UPDATE, and MCI_WHERE command messages *)
+
+TYPE MCI_OVLY_RECT_PARMS = RECORD
+                                  dwCallback : DWORD;
+                                  CASE : BOOLEAN OF
+                                  | TRUE  : ptOffset : POINT;
+                                            ptExtent : POINT;
+                                  | FALSE : rc : RECT;
+                                  END;
+                           END;
+    PMCI_OVLY_RECT_PARMS = POINTER TO MCI_OVLY_RECT_PARMS;
+
+(* parameter block for MCI_SAVE command message *)
+
+TYPE MCI_OVLY_SAVE_PARMSA = RECORD
+                                   dwCallback : DWORD;
+                                   lpfilename : PCSTR;
+                                   rc         : RECT;
+                            END;
+    PMCI_OVLY_SAVE_PARMSA = POINTER TO MCI_OVLY_SAVE_PARMSA;
+
+TYPE MCI_OVLY_SAVE_PARMSW = RECORD
+                                   dwCallback : DWORD;
+                                   lpfilename : PCWSTR;
+                                   rc         : RECT;
+                            END;
+    PMCI_OVLY_SAVE_PARMSW = POINTER TO MCI_OVLY_SAVE_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_OVLY_SAVE_PARMS =  MCI_OVLY_SAVE_PARMSW;
+           PMCI_OVLY_SAVE_PARMS = PMCI_OVLY_SAVE_PARMSW;
+<* ELSE *>
+      TYPE  MCI_OVLY_SAVE_PARMS =  MCI_OVLY_SAVE_PARMSA;
+           PMCI_OVLY_SAVE_PARMS = PMCI_OVLY_SAVE_PARMSA;
+<* END *>
+
+(* parameter block for MCI_LOAD command message *)
+
+TYPE MCI_OVLY_LOAD_PARMSA = RECORD
+                                   dwCallback : DWORD;
+                                   lpfilename : PCSTR;
+                                   rc         : RECT;
+                            END;
+    PMCI_OVLY_LOAD_PARMSA = POINTER TO MCI_OVLY_LOAD_PARMSA;
+
+TYPE MCI_OVLY_LOAD_PARMSW = RECORD
+                                   dwCallback : DWORD;
+                                   lpfilename : PCWSTR;
+                                   rc         : RECT;
+                            END;
+    PMCI_OVLY_LOAD_PARMSW = POINTER TO MCI_OVLY_LOAD_PARMSW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MCI_OVLY_LOAD_PARMS =  MCI_OVLY_LOAD_PARMSW;
+           PMCI_OVLY_LOAD_PARMS = PMCI_OVLY_LOAD_PARMSW;
+<* ELSE *>
+      TYPE  MCI_OVLY_LOAD_PARMS =  MCI_OVLY_LOAD_PARMSA;
+           PMCI_OVLY_LOAD_PARMS = PMCI_OVLY_LOAD_PARMSA;
+<* END *>
+
+<* END *>  (* NOT DEFINED (_WIN32_VXD) *)
+<* END *>  (* NOT DEFINED (MMNOMCI) *)
+
+(****************************************************************************
+
+                        DISPLAY Driver extensions
+
+****************************************************************************)
+
+CONST  NEWTRANSPARENT  = 3;           (* use with SetBkMode() *)
+
+       QUERYROPSUPPORT = 40;          (* use to determine ROP support *)
+
+(****************************************************************************
+
+                        DIB Driver extensions
+
+****************************************************************************)
+
+CONST SELECTDIB        = 41;          (* DIB.DRV select dib escape *)
+
+PROCEDURE DIBINDEX (n : WORD) : DWORD;
+
+(* DIBINDEX was a macro: #define DIBINDEX(n)  MAKELONG((n),0x10FF)
+   now it is in RTL
+*)
+
+<* POP *> (* back to alignment=8 *)
+
+END MMSystem.
+

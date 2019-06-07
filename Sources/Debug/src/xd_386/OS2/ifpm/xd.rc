@@ -1,0 +1,6 @@
+#include "xd_res.h"
+
+#define MIS_TEXT 0x0001
+
+ICON    RES_MAIN xd.ico
+

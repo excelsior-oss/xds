@@ -1,0 +1,212 @@
+\chapter{Project files}
+\label{project}
+\index{project files}
+
+\section{Overview}
+
+The most powerful and multi-purpose feature of H2D is the {\em project file},
+which name may be specified at the command line after \verb'=p'.
+
+The project file may be used:
+\begin{itemize}
+\item To translate a set of header files at once, using the same option
+      settings:
+
+\verb'-BACKEND=C'\\
+\verb'-GENROVARS+'\\
+\verb'!module <stdio.h>'\\
+\verb'!module <stdlib.h>'
+
+\item To map calling/naming convention qualifiers used by a particular C
+      compiler to those supported by H2D (see \ref{rules:qualifiers}),
+      or to make them ignorable:
+
+\verb'!header <*.h>            /* define for all headers */'\\
+\verb'#define _System syscall'\\
+\verb'#define far'\\
+\verb'!end'
+
+\item To define macros which are predefined by a particular
+      C compiler or are used in conditional compilation preprocessor
+      directives (see \ref{rules:pp:conditional}):
+
+\verb'!header <*.h>'\\
+\verb'#define __WATCOM_C__'\\
+\verb'#define INCL_DOS'\\
+\verb'!end'
+
+\item To declare type synonyms in order to prevent H2D from automatic
+      type declarations (see \ref{rules:functions} and \ref{rules:types}):
+
+\verb'!header <*.h>'\\
+\verb'typedef char *String     /* no more PtrChar */'\\                   % !!! is this true?
+\verb'!end'
+
+\item To collect non-standard preprocessor directives in order to keep
+      original header files intact (see \ref{project:directives}):
+
+\verb'!header <string.h>'\\
+\verb'#variant strlen(0) : ARRAY'\\
+\verb'!end'
+
+\end{itemize}
+
+\subsection*{Example}
+
+The header files {\tt a.h} and {\tt m1.h}:
+
+{\ifonline\else\small\fi
+\begin{verbatim}
+/* a.h */
+  #include "m1.h"
+  #define constant1 0x11u
+  __PASCAL function3( float * arg0, unsigned long arg1 );
+/* end a.h */
+\end{verbatim}
+
+\begin{verbatim}
+/* m1.h */
+  #define constant2 0x111u
+  __PASCAL function1( float * arg0, float * arg1 );
+  function2( unsigned long arg0, unsigned long arg1 );
+/* end m1.h */
+\end{verbatim}
+
+with project file {\tt p.h2d}:
+
+\begin{verbatim}
+!header "*.h"
+  #define __PASCAL pascal
+!end
+!header "a.h"
+  #merge "m1.h"
+!end
+!header "m1.h"
+  #variant function1 (1) : VAR
+  #variant constant2 : BITSET
+  #variant function2 (1) : BITSET
+!end
+!module "a.h"
+\end{verbatim}
+
+are translated to
+
+\begin{verbatim}
+(* ************************ *)
+(*           m1.h           *)
+(* ************************ *)
+CONST
+  constant2 = {0, 4, 8};
+<*- GENTYPEDEF *>
+TYPE
+  PtrFloat = POINTER TO REAL;
+PROCEDURE ["StdCall"] function1 ( arg0: PtrFloat;
+                           VAR arg1: REAL ): SYSTEM.int;
+PROCEDURE function2 ( arg0: LONGCARD; arg1: BITSET ): SYSTEM.int;
+(* *********************** *)
+(*           a.h           *)
+(* *********************** *)
+CONST
+  constant1 = 111H;
+PROCEDURE ["StdCall"] function3 ( arg0: PtrFloat;
+                            arg1: LONGCARD ): SYSTEM.int;
+\end{verbatim}
+} % end \small
+
+\section{Project file contents}
+\label{project:directives}
+
+A project file may contain options settings and directives.
+Option settings in a project file override settings
+in the configuration file.
+
+H2D recognizes the following directives in project files:
+{\tt !header}, {\tt !module}, and {\tt !name}, which are
+described is the following sections.
+
+\subsection{!header}
+\label{project:header}
+
+\begin{verbatim}
+!header ( '<' Pattern '>' | '"' Pattern '"' )
+  Prologue
+[
+!footer
+  Epilogue
+]
+!end
+\end{verbatim}
+
+\verb'Pattern' is a regular expression (see \ref{config:red})
+representing a set of file names.
+{\tt Prologue} and {\tt Epilogue} are arbitrary sequences
+of C language tokens. {\tt Prologue} is inserted at the beginning
+of any header file which name matches \verb'Pattern'; {\tt Epilogue} is
+appended to its end. {\tt !footer} and {\tt Epilogue} may be omitted.
+
+If a header file name matches \verb'Pattern' in more than one
+\verb'!header' directive, their \verb'Prologue' and \verb'Epilogue'
+sections are merged.
+
+{\tt Prologue} usually contains:
+\begin{itemize}
+\item {\tt \#merge} and {\tt \#variant} directives
+\item Predefined macros of a particular C compiler
+\item Type synonym declarations to prevent automatic type names generation % !!! is it true
+\end{itemize}
+
+{\bf Note:} If there are \verb'#include' directives in either
+\verb'Prolodue' or \verb'Epilogue' ensure that names of the
+included files do not match \verb'Pattern', to avoid recursive inclusion:
+
+\begin{verbatim}
+!header <*.h&^mytypes.h>
+#include <mytypes.h>
+!end
+\end{verbatim}
+
+\subsection{!module}
+\label{project:module}
+
+\begin{verbatim}
+!module ( <file_name> | "file_name" )
+\end{verbatim}
+
+The \verb'!module' directive is used to specify header files which
+are to be translated when H2D processes the project file.
+
+Translating more than one header at once has one more advantage.
+A header file name may occur multiple times in {\tt \#include} directives.
+H2D keeps information about each translated header in memory, and if an
+already transtaled header file is encountered, it is not processed again.
+{\bf Note:} In this case H2D requires more memory.
+
+\subsubsection*{Example}
+
+\begin{verbatim}
+!module <ctype.h>
+!module <math.h>
+!module <stdio.h>
+!module <stdlib.h>
+!module <string.h>
+\end{verbatim}
+
+\subsection{!name}
+\label{project:name}
+
+\begin{verbatim}
+!name ( '<' file_name '>' | '"' file_name '"' ) identifier
+\end{verbatim}
+
+H2D replaces {\tt file\_name} with {\tt identifier} when generating
+module names. This may be useful when {\tt file\_name} contains special
+characters (e.g. {\tt my-header.h}), or when there are headers with
+equal names in different directories. See also the description
+of the \OERef{GENLONGNAMES} option.
+
+\subsubsection*{Example}
+
+\verb'!name <errno.h>     errno'\\
+\verb'!name <sys\errno.h> syserrno'
+
+

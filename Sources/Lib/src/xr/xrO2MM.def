@@ -1,0 +1,49 @@
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrO2MM; (* Hady 06-26-95 04:12pm *)
+
+IMPORT
+  SYSTEM
+  ,xmRTS
+  ,xrMM
+  ;
+
+PROCEDURE X2C_NEW(td: xmRTS.X2C_TD;
+               VAR a: SYSTEM.ADDRESS;
+                size: xrMM.SIZE_T;
+                 sys: BOOLEAN);
+
+PROCEDURE X2C_NEW_OPEN( td      : xmRTS.X2C_TD;
+                        VAR a   : SYSTEM.ADDRESS;
+                        size    : xrMM.SIZE_T;
+                        lens    : ARRAY OF xmRTS.X2C_LENS_TYPE;
+                        dim     : xrMM.SIZE_T;
+                        sys     : BOOLEAN
+                        );
+
+PROCEDURE X2C_DISPOSE(VAR a: SYSTEM.ADDRESS);
+
+PROCEDURE X2C_DESTRUCTOR(a: SYSTEM.ADDRESS; p: xmRTS.X2C_DPROC);
+
+
+PROCEDURE X2C_MODULEXE  (md :xmRTS.X2C_MD; hmod :SYSTEM.ADDRESS);
+(* register o2 type info of a module *)
+
+PROCEDURE X2C_MODULEDLL ( VAR component :xmRTS.X2C_MD;
+                                     md :xmRTS.X2C_MD;
+                                   hmod :SYSTEM.ADDRESS );
+(* register o2 type info of a module from DLL *)
+
+PROCEDURE X2C_DISABLE_COMPONENT ( component :xmRTS.X2C_MD );
+(* disable methods and erase names for all types from a component
+   ( when DLL unloading )
+ *)
+
+VAR
+  MutatorPeriod :CARDINAL; -- time between last GCollections, in ms.
+  GCPeriod      :CARDINAL; -- time of last GCollection, in ms.
+
+PROCEDURE / X2C_COLLECT;
+
+
+
+END xrO2MM.

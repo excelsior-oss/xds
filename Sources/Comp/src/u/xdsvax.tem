@@ -1,0 +1,21 @@
+! "M\t= %s\n",mkfname#>mkfext
+! "XDSLIB\t= %s\n","libxds.olb"
+! { main : "TARGET\t= %s\n",#>exeext }
+
+!new ccomp = gcc /NOCASE_HACK %s /OBJECT=%s
+
+# ------------------ objects enumeration ------------------
+#                    -------------------
+  ! "OBJ="; { obj : " \\\n\t%s,",# }
+  ! "\n"
+
+# ------------------- target make rules -------------------
+#                     -----------------
+  ! "$(TARGET) : $(OBJ) $(XDSLIB)\n"
+  ! "\tlink /executable=$(TARGET) $(OBJ) $(XDSLIB) /lib, gcclib /lib, vaxcrtl /lib\n"
+
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+  ! { c : { header : "%-24s : %s\n",^#>objext,#header } \
+    "%-24s : $(M) %s\n\t",#>objext,#; ccomp,#,#>objext; "\n\n" }

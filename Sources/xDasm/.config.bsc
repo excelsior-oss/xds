@@ -1,0 +1,13 @@
+# XDS-x86 Disassembler: Build System Configuration
+
+UNIT_NAME=XDS-x86-Disassembler
+
+ALL_COMPONENTS=xdasm
+PRIMARY_COMPONENTS=xdasm
+DEFAULT_COMPONENT=xdasm
+
+# Tools necessary to build component
+ENVIRONMENT=XDSDIR
+
+# External files which are part of this component  
+EXTDEPS=

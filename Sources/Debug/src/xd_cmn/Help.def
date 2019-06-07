@@ -1,0 +1,21 @@
+-- Модуль предназначен для организации выдачи помощи пользователю
+
+DEFINITION MODULE Help;
+
+IMPORT xStr;
+
+(* Создать Help! *)
+PROCEDURE CreateHelp;
+
+(* Всего секций в Help! *)
+PROCEDURE GetNSection (): CARDINAL;
+
+(* Выдать количество строк в секции *)
+PROCEDURE GetNLine (N: CARDINAL): CARDINAL;
+
+(* Выдать i строку N, секции, если i=0 - вернет имя секции *)
+(* Номера строк  - [1..GetNLine]                           *)
+PROCEDURE GetLine (N,i: CARDINAL): xStr.txt_ptr;
+
+
+END Help.

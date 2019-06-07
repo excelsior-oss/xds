@@ -1,0 +1,12 @@
+(* Copyright (c) xTech 1992,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosIpts; (* Hady. 31.05.96 11:05 *)
+
+PROCEDURE X2C_EnableIpts();
+PROCEDURE X2C_DisableIpts();
+
+PROCEDURE X2C_SaveIptHandler(no: CARDINAL);
+PROCEDURE X2C_RestoreIptHandler(no: CARDINAL);
+PROCEDURE X2C_SetIptHandler(no: CARDINAL): BOOLEAN;
+
+END xosIpts.

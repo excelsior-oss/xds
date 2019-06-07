@@ -1,0 +1,291 @@
+\chapter{Options Reference}
+\label{options}
+
+This chapter contains brief descriptions of all options that may be
+specified in either
+\ifonline \ref[configuration file]{config:cfg}.
+\else     configuration file (See \ref{config:cfg}).
+\fi
+or \ProjectFile{}.
+
+The general option syntax is:
+
+\verb'    Option = "-" name ("+" | "-" | "=" (string | integer))'
+
+Option names are case insensitive. Case is preserved when string
+option values are stored or emitted, but is ignored when they are
+compared.
+
+{\bf Examples}
+
+\begin{verbatim}
+    -mergeall+
+    -GENWIDTH=78
+    -BackEnd=Common
+\end{verbatim}
+
+\section{File extensions and prefixes}
+\label{DEFEXT}\label{DIREXT}\label{HEADEXT}
+\label{MODEXT}\label{PRJEXT}\label{TREEEXT}
+\label{DEFPFX}\label{MACPFX}
+% !!! index
+
+This group of options sets file name extensions and prefixes for H2D
+input and output files.
+
+\begin{center}
+\begin{tabular}{lll}
+\bf Option  & \bf Sets extension for...                  & \bf Default \\
+\hline
+\bf DEFEXT  & definition modules                         & \tt def        \\
+\bf DIREXT  & \See{directive files}{}{rules:nonstandard} & \tt dir        \\
+\bf HEADEXT & header files                               & \tt h          \\
+\bf MODEXT  & implementation modules                     & \tt mod        \\
+\bf PRJEXT  & \See{project files}{Chapter }{project}     & \tt h2d        \\
+\bf TREEEXT & include tree files (see the \OERef{GENTREE} option) & \tt tre  \\       % ???
+ & & \\
+\bf Option  & \bf Sets prefix for...         & \bf Default \\
+\hline
+\bf DEFPFX  & \See{definition modules}{}{using:fit:c}           & none        \\
+\bf MACPFX  & \See{macro prototype modules}{}{using:fit:native} & \_          \\
+\end{tabular}
+\end{center}
+
+\section{Translation options}
+
+\ifonline \else
+
+\begin{center}
+\begin{tabular}{llc}
+\bf Option           & \bf Meaning                     & \bf Default \\
+\hline
+\OERef{BACKEND}      & target compiler back-end        & \tt Common  \\
+\OERef{CHANGEDEF}    & enable retranslation            & \tt OFF     \\
+\OERef{COMMENTPOS}   & preserved comments position     & undefined   \\
+\OERef{CPPCOMMENTS}  & recognize C++ comments          & \tt ON      \\
+\OERef{CSTDLIB}      & set CSTDLIB value               & \tt OFF     \\
+\OERef{GENDIRS}      & extract non-stsndard directives & \tt OFF     \\
+\OERef{GENENUM}      & enum translation mode           & \tt Const   \\
+\OERef{GENLONGNAMES} & keep directory names            & \tt OFF     \\
+\OERef{GENMACRO}     & produce macro prototype modules & \tt OFF     \\
+\OERef{GENROVARS}    & translate constants to r/o vars & \tt OFF     \\
+\OERef{GENSEP}       & separate merged headers         & \tt OFF     \\
+\OERef{GENTREE}      & generate inclusion tree         & \tt OFF     \\
+\OERef{GENWIDTH}     & limit output line length        & unlimited   \\
+\OERef{MERGEALL}     & merge all headers               & \tt OFF     \\
+\OERef{PROGRESS}     & enable progress indicator       & \tt OFF     \\
+\end{tabular}
+\end{center}
+\fi
+
+For each option, a set of possible values is given in parenthesis:
+
+\begin{center}
+\begin{tabular}{ll}
+string  & an arbitrary sequence of characters \\
+numeric & an unsigned integer number \\
+boolean & ON or OFF
+\end{tabular}
+\end{center}
+
+\ifonline \else
+\begin{description}
+\fi
+
+\OptHead{BACKEND}{target compiler back-end} (Native/C/Common)
+
+Enables generation of definition modules suitable for
+either native-code compiler, translator to C, or both.
+It also affects generation of additional modules
+(See \ref{using:fit}).
+
+Default: {\tt Common} - both native and translator.
+
+\OptHead{CHANGEDEF}{enable retranslation} (boolean)
+
+If this option is set OFF, H2D does not translate a header file if a
+definition module corresponding to it already exists. Otherwise, H2D
+produces a new definition module which may overwrite the old one.
+
+See also \ref{config:red}.
+
+Default: OFF - do not process already translated headers
+
+\OptHead{COMMENTPOS}{preserved comments position} (numeric)
+
+Sets starting position of comments preserved by H2D in output files.
+Has effect only on comments which are placed next to declarations.
+
+Default: delimit comments with a single blank.
+
+\OptHead{CPPCOMMENTS}{recognize C++ comments} (boolean)
+
+If this option is set ON, H2D recognizes C++-style
+comments (started with {\tt '//'}) in header files.
+
+Default: ON - recognize C++ comments.
+
+\OptHead{CSTDLIB}{set CSTDLIB value} (boolean)
+
+Sets value of the {\bf CSTDLIB} XDS option in output definition modules
+corresponding to top-level header files (listed on the command line or
+in a \ProjectFile{}). See \ref{using:fit:c} for more information.
+
+Default: OFF - set {\bf CSTDLIB} off in definition modules.
+
+\OptHead{GENDIRS}{extract non-standard directives} (boolean)
+
+If this option is set ON, a file containing \See{non-standard preprocessor
+directives}{}{rules:nonstandard} is produced for each header file.
+
+Deafult: OFF - do not extract non-standard directives
+
+\OptHead{GENENUM}{enum translation mode} (Const/Enum/Mixed)
+
+Defines whether C enumerations should be unconditionally translated
+to integer constants (\verb'Const') or Modula-2 enumeration types
+(\verb'Enum'). If set to \verb'Mixed', only enumerations with default
+(or explicitly specified, but matching default) constant values are
+translated to enumeration types; all other are translated to constants.
+See also \ref{rules:types:enum}.
+
+Default: \verb'Const' - always translate to constants
+
+\OptHead{GENLONGNAMES}{keep directory names} (boolean)
+
+This option controls translation of the {\tt \#include} directive in cases
+when a specified file name contains directories. If this option is set OFF, H2D
+strips directory names. Otherwise directory names are kept and separators
+are replaced with underscore characters:
+
+\verb'#include <sys\errno.h>          IMPORT sys_errno;'
+
+See also \ref{project:name}.
+
+Default: OFF - strip directory names
+
+\OptHead{GENMACRO}{produce macro prototype modules} (boolean)
+
+Setting this option ON forces H2D to produce prototype modules for
+function-like C macros encountered in header files
+({\em prototype} means that implementation modules contain procedures
+with empty bodies; the actual code has to be written by hand).
+These modules have not to be imported, but to be added to the link list.
+See also \ref{using:fit:native}.
+
+This option is ignored if the target is XDS-C (the \OERef{BACKEND} option
+is set to \verb'C').
+
+Default: OFF - do not generate macro modules.
+
+\OptHead{GENROVARS}{translate constants to read-only variables} (boolean)
+
+Being set ON, enables translation of \verb'#define'd constants
+to read-only variables. Have no effect in native back-end sections.
+See \ref{using:modrules:constants} for more information.
+
+Default: OFF - do not translate constants to variables.
+
+\OptHead{GENSEP}{insert merged headers separators} (boolean)
+
+Setting this option ON forces H2D to insert a comment containing name
+of a merged header before declarations from that header.
+
+Default: OFF - do not insert separators
+
+\OptHead{GENTREE}{generate inclusion tree} (boolean)
+
+If this option is set ON, H2D produces a text file containing
+a tree of \verb'#include' directives for each header file specified
+on the command line or in a project file using the \ProjDir{module}.
+A name of a tree file is a name of a corresponding header file
+with extension defined by the \OERef{TREEEXT} option.
+
+Default: OFF - do not produce tree files
+
+\OptHead{GENWIDTH}{limit output line length} (numeric)
+
+Sets maximum length of a string in the output file.
+
+Default: do not limit string length.
+
+\OptHead{MERGEALL}{merge all headers} (boolean)
+
+If this option is set ON, H2D merges all header files included into the
+translated header by means of the {\tt \#include} directive.
+If this option is set OFF, H2D generates separate definition module
+for each header which is not specified in the {\tt \#merge} directive.
+
+See also \ref{rules:pp:include} and \ref{using:merge}.
+
+Default: OFF - do not merge headers which are not specified
+               in the {\tt \#merge} directive.
+
+\OptHead{PROGRESS}{enable progress indicator} (boolean)
+
+Setting this option ON enables progress indicator.
+
+Default: OFF - show no progress indicator
+
+\ifonline \else
+\end{description}
+\fi
+
+\section{Base types definition}
+
+The base types definition and mapping options, {\bf CTYPE} and {\bf M2TYPE},
+have a special syntax. Either of them may be specified more than once
+in a project or configuration file, provided that each time a new type is
+defined. See \ref{using:modrules:mapping} for more information on usage
+of these directives.
+
+By default, H2D is configured to support XDS compilers.
+
+\ifonline \else
+\begin{description}
+\fi
+
+\OptHead{CTYPE}{define a C base type} (special)
+
+This option defines size and default mapping of a C base type.
+
+\begin{verbatim}
+CTypeOption = '-' 'CTYPE' '=' Type '=' size ',' qualident
+Type = 'signed char'     | 'unsigned char'      |
+       'short int'       | 'unsigned short int' |
+       'signed int'      | 'unsigned int'       |
+       'signed long int' | 'unsigned long int'  |
+       'float'           | 'double'             |
+       'long float'      | 'long double'
+\end{verbatim}
+
+\verb'size' is the size of \verb'Type' in bytes, and \verb'qualident' is
+a Modula-2 type to which \verb'Type' should be translated by default:
+
+\verb'-CTYPE = signed char = 1, CHAR'
+
+See \ref{using:modrules:mapping} for more information.
+
+\OptHead{M2TYPE}{define a \mt{} type} (special)
+
+This option defines a \mt{} type.
+
+\begin{verbatim}
+M2TypeOption = '-' 'M2TYPE' '=' qualident '=' size ',' Attr
+Attr = 'BOOL'   | 'CHAR' |
+       'REAL'   | 'SET'  |
+       'SIGNED' | 'UNSIGNED'
+\end{verbatim}
+
+\verb'qualident' is a Modula-2 type being defined, \verb'size'
+is its size in bytes, and \verb'Attr' is a family to which it belongs:
+
+\verb'-M2TYPE = SYSTEM.INT16 = 2, SIGNED'
+
+See \ref{using:modrules:mapping} for more information.
+
+\ifonline \else
+\end{description}
+\fi
+
+

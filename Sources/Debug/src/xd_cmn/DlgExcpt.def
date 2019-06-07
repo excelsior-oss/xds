@@ -1,0 +1,9 @@
+DEFINITION MODULE DlgExcpt;
+
+IMPORT KrnTypes;
+
+PROCEDURE ClearExceptionsHistory ();
+
+PROCEDURE PutExceptionInfo (addr: KrnTypes.ADDRESS; message: ARRAY OF CHAR);
+
+END DlgExcpt.

@@ -1,0 +1,40 @@
+<*- M2BASE16 *>
+DEFINITION MODULE XReal;
+
+TYPE
+  STR = ARRAY [0..63] OF CHAR;
+
+PROCEDURE power10(e: CARDINAL; VAR ovr: BOOLEAN): LONGREAL;
+(* return 10.0 ** e *)
+
+PROCEDURE to_float(r: LONGREAL;
+		   digs, round, max: INTEGER;
+                   exp: CHAR;
+                   tail: BOOLEAN;
+                   esig: BOOLEAN;
+		   VAR str: STR);
+(*
+	digs  - number of significant digits
+        round - exponent will be power of round
+        exp   - used for exponent
+        tail  - enable trailing zeros
+        esig  - enable "+" in exponent
+        max   - max number of significant digits
+*)
+
+PROCEDURE to_fixed(r: LONGREAL;
+		   place,max: INTEGER;
+		   VAR str: STR);
+(*
+	place - round to the given place relative to the decimal point
+        max   - max number of significant digits
+*)
+
+PROCEDURE to_any(r: LONGREAL;
+		 max: INTEGER;
+		 VAR str: STR;
+		 len: INTEGER);
+
+PROCEDURE strcpy(fr: STR; VAR to: ARRAY OF CHAR);
+
+END XReal.

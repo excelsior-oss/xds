@@ -1,0 +1,12 @@
+(* Copyright (C) 1999 *FSA & XDS Ltd. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE xtsIO;
+
+IMPORT SYSTEM;
+
+PROCEDURE SetConMode(set : BOOLEAN; VAR tmp : SYSTEM.CARD32);
+
+END xtsIO.

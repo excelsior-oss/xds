@@ -1,0 +1,34 @@
+# This makefile creates libraries containing startup code for EXE and DLL,
+# and a fake startup for mixed language projects with main() written in C.
+
+ASMCOMP = nasm
+ASMFLAGS= -d WIN32 -f obj
+
+OBJDIR  = ..\..\..\..\ch\x86
+LIBDIR  = ..\..\..\..\workplace\lib\x86
+
+all: $(LIBDIR)\xstart.lib $(LIBDIR)\xstartd.lib $(LIBDIR)\xstartc.lib $(LIBDIR)\xstartx.lib
+
+$(OBJDIR)\xstart.obj:  xstart.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $*.obj $**
+
+$(OBJDIR)\xstartd.obj:  xstartd.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $*.obj $**
+
+$(OBJDIR)\xstartc.obj:  xstartc.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $*.obj $**
+
+$(OBJDIR)\xstartx.obj:  xstartx.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $*.obj $**
+
+$(LIBDIR)\xstart.lib:  $(OBJDIR)\xstart.obj
+  xlib /new /safe- $@ $**
+
+$(LIBDIR)\xstartd.lib:  $(OBJDIR)\xstartd.obj
+  xlib /new /safe- $@ $**
+
+$(LIBDIR)\xstartc.lib:  $(OBJDIR)\xstartc.obj
+  xlib /new /safe- $@ $**
+
+$(LIBDIR)\xstartx.lib:  $(OBJDIR)\xstartx.obj
+  xlib /new /safe- $@ $**

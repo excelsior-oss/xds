@@ -1,0 +1,14 @@
+DEFINITION MODULE Exe_Mem;
+IMPORT 
+  sys := SYSTEM,
+  kt  := KrnTypes,
+  objs:= Objects;
+
+VAR
+  data: objs.RawData;
+
+PROCEDURE Get(source: kt.ADDRESS; dest: sys.ADDRESS; len: CARDINAL): BOOLEAN;
+PROCEDURE GetReg(regno: CARDINAL; VAR value: kt.REG_VALUE): BOOLEAN;
+PROCEDURE GetFlags(VAR flags: kt.FLAGS): BOOLEAN;
+
+END Exe_Mem.

@@ -1,0 +1,1919 @@
+\newif\ifonline\onlinefalse   % set to true automatically by LaTeX OnLine
+\newif\ifenglish\englishtrue
+\input{../Common/def.tex}
+
+\ifonline\title{Oberon-2 Report}\fi
+
+\newif\ifcompact % !!!
+
+\documentstyle[11pt,makeidx,a4]{article}
+
+\makeindex
+
+\begin{document}
+
+%\chapter{The Oberon-2 Report}\label{o2rep}
+
+\begin{center}
+{\large\bf The Programming Language Oberon-2} \\
+H.M\"ossenb\"ock, N. Wirth  \\
+Institut f\"ur Computersysteme, \\
+ETH Z\"urich \\
+October 1993 \\
+\end{center}
+
+\section{Introduction}
+
+Oberon-2 is a general-purpose language in the tradition of Oberon
+and Modula-2. Its most important features are block structure, modularity,
+separate compilation, static typing with strong type checking (also
+across module boundaries), and type extension with type-bound procedures.
+
+Type extension makes Oberon-2 an object-oriented language. An object
+is a variable of an abstract data type consisting of private data
+(its state) and procedures that operate on this data. Abstract data
+types are declared as extensible records. Oberon-2 covers most terms
+of object-oriented languages by the established vocabulary of imperative
+languages in order to minimize the number of notions for similar concepts.
+
+This report is not intended as a programmer's tutorial. It is intentionally
+kept concise. Its function is to serve as a reference for programmers,
+implementors, and manual writers. What remains unsaid is mostly left
+so intentionally, either because it can be derived from stated rules
+of the language, or because it would require to commit the definition
+when a general commitment appears as unwise.
+
+Section \ref{o2r:terms}
+defines some terms that are used to express the type
+checking rules of Oberon-2. Where they appear in the text, they are
+written in italics to indicate their special meaning (e.g. the {\em same}
+type).
+
+\section{Syntax}
+
+An extended Backus-Naur Formalism (EBNF) is used to describe the syntax
+of Oberon-2: Alternatives are separated by \verb+|+. Brackets [ and ] denote
+optionality of the enclosed expression, and braces \{ and \} denote
+its repetition (possibly 0 times). Non-terminal symbols start with
+an upper-case letter (e.g. Statement). Terminal symbols either start
+with a lower-case letter (e.g. ident), or are written all in upper-case
+letters (e.g. BEGIN), or are denoted by strings (e.g. ":=").
+
+\section{Vocabulary and Representation}
+
+The representation of (terminal) symbols in terms of characters is
+defined using the ASCII set. Symbols are identifiers, numbers, strings,
+operators, and delimiters. The following lexical rules must be observed:
+Blanks and line breaks must not occur within symbols (except in comments,
+and blanks in strings). They are ignored unless they are essential
+to separate two consecutive symbols. Capital and lower-case letters
+are considered as distinct.
+
+\paragraph{\rm 1.} {\em Identifiers} are sequences of letters and
+digits. The first character must be a letter.
+{\BNFsize
+\begin{verbatim}
+  ident = letter {letter | digit}.
+\end{verbatim}}
+
+\noindent
+Examples:
+\begin{verbatim}
+  x   Scan   Oberon2   GetSymbol   firstLetter
+\end{verbatim}
+
+\paragraph{\rm 2.} {\em Numbers} are (unsigned) integer or real constants.
+The type of an integer constant is the minimal type to which the constant
+value belongs (see \ref{o2r:basic:types}). If the constant
+is specified with the suffix H, the representation is hexadecimal
+otherwise the representation is decimal.
+
+A real number always contains
+a decimal point. Optionally it may also contain a decimal scale factor.
+The letter E (or D) means "times ten to the power of". A real number
+is of type REAL, unless it has a scale factor containing the letter
+D. In this case it is of type LONGREAL.
+{\BNFsize
+\begin{verbatim}
+  number      = integer | real.
+  integer     = digit {digit} | digit{hexDigit}"H".
+  real        = digit{digit}"."{digit} [ScaleFactor].
+  ScaleFactor = ("E" | "D") ["+" | "-"] digit {digit}.
+  hexDigit    = digit |"A"|"B"|"C"|"D"|"E"|"F".
+  digit       = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9".
+\end{verbatim}}
+
+\noindent
+Examples:
+\begin{verbatim}
+  1991           INTEGER          1991
+  0DH            SHORTINT         13
+  12.3           REAL             12.3
+  4.567E8        REAL             456700000
+  0.57712566D-6  LONGREAL         0.00000057712566
+\end{verbatim}
+
+\paragraph{\rm 3.} {\em Character constants} are denoted by the ordinal
+number of the character in hexadecimal notation followed by the letter
+X.
+{\BNFsize
+\begin{verbatim}
+  character = digit {hexDigit} "X".
+\end{verbatim}}
+
+\paragraph{\rm 4.} {\em Strings} are sequences of characters enclosed
+in single (\verb|'|) or double (\verb|"|) quote marks.
+The opening quote must be
+the same as the closing quote and must not occur within the string.
+The number of characters in a string is called its length. A string
+of length 1 can be used wherever a character constant is allowed and
+vice versa.
+{\BNFsize
+\begin{verbatim}
+  string = '"' {char} '"' | "'" {char} "'".
+\end{verbatim}}
+
+\noindent
+Examples:
+\begin{verbatim}
+  "Oberon-2"     "Don't worry!"   "x"
+\end{verbatim}
+
+\paragraph{\rm 5.} {\em Operators} and {\em delimiters} are the special
+characters, character pairs, or reserved words listed below. The reserved
+words consist exclusively of capital letters and cannot be used as
+identifiers.
+\begin{verbatim}
+  +         :=         ARRAY    IMPORT     RETURN
+  -         ^          BEGIN    IN         THEN
+  *         =          BY       IS         TO
+  /         #          CASE     LOOP       TYPE
+  ~         <          CONST    MOD        UNTIL
+  &         >          DIV      MODULE     VAR
+  .         <=         DO       NIL        WHILE
+  ,         >=         ELSE     OF         WITH
+  ;         ..         ELSIF    OR
+  |         :          END      POINTER
+  (         )          EXIT     PROCEDURE
+  [         ]          FOR      RECORD
+  {         }          IF       REPEAT
+\end{verbatim}
+
+\paragraph{\rm 6.} {\em Comments} may be inserted between any two
+symbols in a program. They are arbitrary character sequences opened
+by the bracket \verb|(*| and closed by \verb|*)|.
+Comments may be nested. They do not affect the meaning of a program.
+
+\section{Declarations and scope rules}\label{o2r:decls}
+
+Every identifier occurring in a program must be introduced by a declaration,
+unless it is a predeclared identifier. Declarations also specify certain
+permanent properties of an object, such as whether it is a constant,
+a type, a variable, or a procedure. The identifier is then used to
+refer to the associated object.
+
+The {\em  scope} of an object $x$ extends textually from the point of
+its declaration to the end of the {\em block} (module, procedure,
+or record) to which the declaration belongs and hence to which the
+object is {\em local.} It excludes the scopes of equally named objects
+which are declared in nested blocks. The scope rules are:
+
+\begin{enumerate}
+\item
+    No identifier may denote more than one object within
+    a given scope (i.e. no identifier may be declared twice in a block);
+\item
+    An object may only be referenced within its scope;
+\item
+    A type $T$ of the form POINTER TO $T_1$ (see \ref{o2r:pointer})
+    can be declared before the scope of $T_1$.
+    The declaration of $T_1$ must follow in the same block to which
+    $T$ is local;
+\item
+    Identifiers denoting record fields (see \ref{o2r:record})
+    or type-bound procedures (see \ref{o2r:type:bound})
+    are valid in record designators only.
+\end{enumerate}
+
+\noindent
+An identifier declared in a module block may be followed by an export
+mark (\verb|"*"| or \verb|"-"|) in its declaration to indicate that
+it is exported.
+An identifier $x$ exported by a module $M$
+may be used in other modules,
+if they import $M$ (see section \ref{o2r:module}). The identifier
+is then denoted as $M.x$ in these modules and is called a {\em qualified
+identifier}. Identifiers marked with \verb|"-"| in their declaration
+are {\em read-only} in importing modules.
+{\BNFsize
+\begin{verbatim}
+  Qualident = [ident "."]ident.
+  IdentDef  = ident [" * " | " - "].
+\end{verbatim}}
+
+The following identifiers are predeclared; their meaning is defined
+in the indicated sections:
+\begin{center}
+\ifonline
+\begin{tabular}{llll}
+\else
+\begin{tabular}{ll@{\hspace{2.0cm}}ll}
+\fi
+ABS     & (\ref{o2r:predecl:proc}) &  LEN      & (\ref{o2r:predecl:proc}) \\
+ASH     & (\ref{o2r:predecl:proc}) &  LONG     & (\ref{o2r:predecl:proc}) \\
+BOOLEAN & (\ref{o2r:basic:types})  &  LONGINT  & (\ref{o2r:basic:types})  \\
+CAP     & (\ref{o2r:predecl:proc}) &  LONGREAL & (\ref{o2r:basic:types})  \\
+CHAR    & (\ref{o2r:basic:types})  &  MAX      & (\ref{o2r:predecl:proc}) \\
+CHR     & (\ref{o2r:predecl:proc}) &  MIN      & (\ref{o2r:predecl:proc}) \\
+COPY    & (\ref{o2r:predecl:proc}) &  NEW      & (\ref{o2r:predecl:proc}) \\
+DEC     & (\ref{o2r:predecl:proc}) &  ODD      & (\ref{o2r:predecl:proc}) \\
+ENTIER  & (\ref{o2r:predecl:proc}) &  ORD      & (\ref{o2r:predecl:proc}) \\
+EXCL    & (\ref{o2r:predecl:proc}) &  REAL     & (\ref{o2r:basic:types})  \\
+FALSE   & (\ref{o2r:basic:types})  &  SET      & (\ref{o2r:basic:types})  \\
+HALT    & (\ref{o2r:predecl:proc}) &  SHORT    & (\ref{o2r:predecl:proc}) \\
+INC     & (\ref{o2r:predecl:proc}) &  SHORTINT & (\ref{o2r:basic:types})  \\
+INCL    & (\ref{o2r:predecl:proc}) &  SIZE     & (\ref{o2r:predecl:proc}) \\
+INTEGER & (\ref{o2r:basic:types})  &  TRUE     & (\ref{o2r:basic:types})  \\
+\end{tabular}
+\end{center}
+
+\section{Constant declarations}
+
+A constant declaration associates an identifier with a constant value.
+{\BNFsize
+\begin{verbatim}
+  ConstantDeclaration = IdentDef "=" ConstExpression.
+  ConstExpression     = Expression.
+\end{verbatim}}
+A constant expression is an expression that can be evaluated by a
+mere textual scan without actually executing the program. Its operands
+are constants (section \ref{o2r:expr}) or predeclared
+functions (section \ref{o2r:predecl:proc}) that can be evaluated
+at compile time.
+Examples of constant declarations are:
+\begin{verbatim}
+  N = 100
+  limit = 2*N - 1
+  fullSet = {MIN(SET)..MAX(SET)}
+\end{verbatim}
+
+\section{Type declarations}\label{o2r:type:dcl}
+
+A data type determines the set of values which variables of that type
+may assume, and the operators that are applicable. A type declaration
+associates an identifier with a type. In the case of structured types
+(arrays and records) it also defines the structure of variables of
+this type.
+{\BNFsize
+\begin{verbatim}
+  TypeDeclaration = IdentDef "=" Type.
+  Type            = Qualident | ArrayType | RecordType |
+                    PointerType | ProcedureType.
+\end{verbatim}}
+
+\noindent
+Examples:
+\begin{verbatim}
+  Table = ARRAY N OF REAL
+  Tree =  POINTER TO Node
+  Node =  RECORD
+    key: INTEGER;
+    left, right: Tree
+  END
+  CenterTree = POINTER TO CenterNode
+  CenterNode = RECORD (Node)
+    width: INTEGER;
+    subnode: Tree
+  END
+  Function = PROCEDURE(x: INTEGER): INTEGER
+\end{verbatim}
+
+\subsection{Basic types}\label{o2r:basic:types}
+
+The basic types are denoted by predeclared identifiers. The associated
+operators are defined in \ref{o2r:operators} and the predeclared
+function procedures in \ref{o2r:predecl:proc} The values
+of the given basic types are the following:
+\begin{flushleft}
+\ifonline
+\begin{tabular}{lll}
+\else
+\begin{tabular}{llp{7cm}}
+\fi
+1. & { BOOLEAN}  &   the truth values {\tt TRUE} and {\tt FALSE}               \\
+2. & { CHAR}     &   the characters of the extended ASCII set
+                                                     {\tt (0X..0FFX)}    \\
+3. & { SHORTINT} &   the integers between {\tt MIN(SHORTINT)}
+                                      and {\tt MAX(SHORTINT)}     \\
+4. & { INTEGER}  &   the integers between {\tt MIN(INTEGER)}
+                                                and {\tt MAX(INTEGER)}      \\
+5. & { LONGINT}  &   the integers between {\tt MIN(LONGINT)}
+                                                and {\tt MAX(LONGINT)}      \\
+6. & { REAL}     &   the real numbers between {\tt MIN(REAL)}
+                                                and {\tt MAX(REAL)}         \\
+7. & { LONGREAL} &   the real numbers between {\tt MIN(LONGREAL)}
+                                                and {\tt MAX(LONGREAL)}     \\
+8. & { SET}      &   the sets of integers between 0 and {\tt MAX(SET)}   \\
+\end{tabular}
+\end{flushleft}
+Types 3 to 5 are {\em integer types}, types 6 and 7 are {\em real
+types}, and together they are called {\em numeric types}. They
+form a hierarchy; the larger type {\em includes} (the values of)
+the smaller type:
+$$
+\mbox{LONGREAL} \supseteq
+\mbox{REAL} \supseteq
+\mbox{LONGINT} \supseteq
+\mbox{INTEGER} \supseteq
+\mbox{SHORTINT}
+$$
+
+\subsection{Array types}
+
+An array is a structure consisting of a number of elements which are
+all of the same type, called the {\em element type}. The number of
+elements of an array is called its {\em length}. The elements of
+the array are designated by indices, which are integers between 0
+and the length minus 1.
+{\BNFsize
+\begin{verbatim}
+  ArrayType = ARRAY [ Length { "," Length}] OF Type.
+  Length    = ConstExpression.
+\end{verbatim}}
+
+A type of the form
+\begin{verbatim}
+   ARRAY L0, L1, ..., Ln OF T
+\end{verbatim}
+is understood as an abbreviation of
+\begin{verbatim}
+   ARRAY L0 OF
+     ARRAY L1 OF
+     ...
+       ARRAY Ln OF T
+\end{verbatim}
+Arrays declared without length are called {\em open arrays}. They
+are restricted to pointer base types (see \ref{o2r:pointer}),
+element types of open array types, and formal parameter types
+(see \ref{o2r:formal:param}).
+Examples:
+\begin{verbatim}
+   ARRAY 10, N OF INTEGER
+   ARRAY OF CHAR
+\end{verbatim}
+
+\subsection{Record types}\label{o2r:record}
+
+A record type is a structure consisting of a fixed number of elements,
+called {\em fields}, with possibly different types. The record type
+declaration specifies the name and type of each field. The scope of
+the field identifiers extends from the point of their declaration
+to the end of the record type, but they are also visible within designators
+referring to elements of record variables (see \ref{o2r:operands}).
+If a record type is exported, field identifiers that are to be visible
+outside the declaring module must be marked. They are called {\em public
+fields}; unmarked elements are called {\em private fields}.
+{\BNFsize
+\begin{verbatim}
+RecordType = RECORD ["("BaseType")"]
+               FieldList{";" FieldList}
+             END.
+BaseType   = Qualident.
+FieldList  = [IdentList ":" Type ].
+\end{verbatim}}
+Record types are extensible, i.e. a record type can be declared as
+an extension of another record type. In the example
+\begin{verbatim}
+   T0 = RECORD x: INTEGER END
+   T1 = RECORD (T0) y: REAL END
+\end{verbatim}
+$T_1$ is a (direct) {\em extension} of $T_0$ and $T_0$ is the (direct)
+{\em base type} of $T_1$ (see section \ref{o2r:terms}). An extended
+type $T_1$ consists of the fields of its base type and of the fields
+which are declared in $T_1$ (see section \ref{o2r:type:dcl}).
+All identifiers declared in the extended record must be different
+from the identifiers declared in its base type record(s).
+
+\noindent
+Examples of record type declarations:
+\begin{verbatim}
+  RECORD
+    day, month, year: INTEGER
+  END
+
+  RECORD
+    name, firstname: ARRAY 32 OF CHAR;
+    age: INTEGER;
+    salary: REAL
+  END
+\end{verbatim}
+
+\subsection{Pointer types}\label{o2r:pointer}
+
+Variables of a pointer type $P$ assume as values pointers to variables
+of some type $T$. $T$ is called the pointer base type of $P$ and
+must be a record or array type. Pointer types adopt the extension
+relation of their pointer base types: if a type $T_1$ is an extension
+of $T$, and $P_1$ is of type {\tt POINTER TO $T_1$},
+then $P_1$ is also an extension of $P$.
+{\BNFsize
+\begin{verbatim}
+  PointerType = POINTER TO Type.
+\end{verbatim}}
+If $p$ is a variable of type {\tt $P$ = POINTER TO $T$}, a call of the
+predeclared procedure {\tt NEW(p)} (see \ref{o2r:predecl:proc})
+allocates a variable of type $T$ in free storage. If $T$ is a record type
+or an array type with fixed length, the allocation has to be done
+with {\tt NEW(p)}; if $T$ is an $n$-dimensional open array type the allocation
+has to be done with
+{\tt NEW($p,e_0,\ldots,e_{n-1}$)} where $T$ is allocated with
+lengths given by the expressions $e_0,\ldots,e_{n-1}$.
+\index{memory management}
+In either case a pointer
+to the allocated variable is assigned to $p$. $p$ is of type $P$.
+The {\em referenced}
+variable $p$\arrow (pronounced as {\em $p$-referenced}) is of type $T$.
+Any pointer
+variable may assume the value NIL, which points to no variable at
+all.
+
+\subsection{Procedure types}\label{o2r:proctype}
+
+Variables of a procedure type $T$ have a procedure (or NIL) as value.
+If a procedure $P$ is assigned to a variable of type $T$, the formal parameter
+lists (see section \ref{o2r:formal:param}) of $P$ and $T$ must
+{\em match} (see \ref{o2r:terms}). $P$ must not be a
+predeclared or type-bound procedure nor may it be local to another
+procedure.
+{\BNFsize
+\begin{verbatim}
+  ProcedureType  = PROCEDURE [FormalParameters].
+\end{verbatim}}
+
+\section{Variable declarations}\label{o2r:var}
+
+Variable declarations introduce variables by defining an identifier
+and a data type for them.
+{\BNFsize
+\begin{verbatim}
+  VariableDeclaration = IdentList ":" Type.
+\end{verbatim}}
+Record and pointer variables have both a {\em static} type (the type
+with which they are declared - simply called their type) and a {\em dynamic}
+type (the type they assume at run time). For pointers and variable
+parameters of record type the dynamic type may be an extension of
+their static type. The static type determines which fields of a record
+are accessible. The dynamic type is used to call type-bound procedures
+(see \ref{o2r:type:bound}).
+
+\noindent
+Examples of variable declarations (refer to examples in \ref{o2r:type:dcl}):
+\begin{verbatim}
+  i, j, k: INTEGER
+  x, y: REAL
+  p, q: BOOLEAN
+  s: SET
+  F: Function
+  a: ARRAY 100 OF REAL
+  w: ARRAY 16 OF RECORD
+       name  : ARRAY 32 OF CHAR;
+       ccount: INTEGER
+     END
+  t, c: Tree
+\end{verbatim}
+
+\section{Expressions}\label{o2r:expr}
+
+Expressions are constructs denoting rules of computation
+whereby constants
+and current values of variables are combined to compute other values
+by the application of operators and function procedures. Expressions
+consist of operands and operators. Parentheses may be used to express
+specific associations of operators and operands.
+
+\subsection{Operands}\label{o2r:operands}
+
+With the exception of set constructors and literal constants
+(numbers,
+character constants, or strings), operands are denoted by {\em designators}.
+A designator consists of an identifier referring to a constant, variable,
+or procedure. This identifier may possibly be qualified by a module
+identifier (see sections \ref{o2r:decls} and \ref{o2r:module})
+and may be followed by selectors if the designated
+object is an element of a structure.
+{\BNFsize
+\begin{verbatim}
+  Designator     = Qualident { "." ident |
+                   "[" ExpressionList "]" |
+                   "^" | "(" Qualident ")" }.
+  ExpressionList = Expression {"," Expression}.
+\end{verbatim}}
+If a designates an array, then $a[e]$ denotes that element of a whose
+index is the current value of the expression $e$. The type of $e$ must
+be an integer type. A designator of the form $a[e_0,e_1,\ldots,e_n]$ stands
+for $a[e_0][e_1]\ldots[e_n]$.
+If $r$ designates a record, then $r.f$ denotes the field $f$ of $r$ or the
+procedure $f$ bound to the dynamic type of $r$
+(section \ref{o2r:type:bound}).
+If $p$ designates a pointer, $p$\arrow denotes
+the variable which is referenced
+by p. The designators $p$\arrow$.f$ and $p$\arrow$[e]$
+may be abbreviated as $p.f$ and
+$p[e]$, i.e. record and array selectors imply dereferencing.
+If $a$ or $r$ are read-only, then also $a[e]$ and $r.f$ are read-only.
+
+A {\em type guard } $v(T)$ asserts that the dynamic type of $v$ is $T$ (or
+an extension of $T$), i.e. program execution is aborted, if the dynamic
+type of $v$ is not $T$ (or an extension of $T$). Within the designator,
+$v$ is then regarded as having the static type $T$. The guard is applicable,
+if
+\begin{enumerate}
+\item
+$v$ is a variable parameter of record type or $v$ is a pointer, and
+if
+\item
+$T$ is an extension of the static type of $v$
+\end{enumerate}
+
+If the designated object is a constant or a variable, then the designator
+refers to its current value. If it is a procedure, the designator
+refers to that procedure unless it is followed by a (possibly empty)
+parameter list in which case it implies an activation of that procedure
+and stands for the value resulting from its execution. The actual
+parameters must correspond to the formal parameters as in proper procedure
+calls (see \ref{o2r:formal:param}).
+
+\noindent
+Examples of designators (refer to examples in \ref{o2r:var}):
+\begin{verbatim}
+  i                       (INTEGER)
+  a[i]                    (REAL)
+  w[3].name[i]            (CHAR)
+  t.left.right            (Tree)
+  t(CenterNode).subnode   (Tree)
+\end{verbatim}
+
+\subsection{Operators}\label{o2r:operators}
+
+Four classes of operators with different precedences (binding strengths)
+are syntactically distinguished in expressions. The operator \verb|~| has
+the highest precedence, followed by multiplication operators, addition
+operators, and relations. Operators of the same precedence associate
+from left to right. For example, \verb|x-y-z| stands for \verb|(x-y)-z|.
+{\BNFsize
+\begin{verbatim}
+  Expression       = SimpleExpression
+                     [ Relation SimpleExpression].
+  SimpleExpression = ["+" | "-"] Term {AddOperator Term}.
+  Term             = Factor {MulOperator Factor}.
+  Factor           = Designator [ActualParameters] |
+                     number | character | string | NIL |
+                     Set | "(" Expression ")" | "~" Factor.
+  Set              = "{"[Element {","Element}]"}".
+  Element          = Expression [".."Expression].
+  ActualParameters = "(" [ExpressionList] ")".
+  Relation         = "=" | "#" | "<" | "<=" | ">" | ">=" |
+                     IN | IS.
+  AddOperator      = "+" | "-" | OR.
+  MulOperator      = "*" | "/" | DIV | MOD | "&".
+\end{verbatim}}
+
+\noindent
+The available operators are listed in the following tables. Some operators
+are applicable to operands of various types, denoting different operations.
+In these cases, the actual operation is identified by the type of
+the operands. The operands must be {\em expression compatible} with
+respect to the operator (see \ref{o2r:terms}).
+
+\ifonline
+\subsection{Logical operators}
+\else
+\subsubsection{\em Logical operators}
+\fi
+
+\begin{tabular}{llll}
+\verb|OR|  & logical disjunction & \verb|p OR q| & "if p then TRUE, else q" \\
+\verb|&|   & logical conjunction & \verb|p & q|  &  "if p then q, else FALSE" \\
+\verb|~|   & negation            & \verb|~p|     &         "not p"  \\
+\end{tabular}
+
+\noindent
+These operators apply to BOOLEAN operands and yield a BOOLEAN result.
+
+\ifonline
+\subsection{Arithmetic operators}
+\else
+\subsubsection{\em Arithmetic operators}
+\fi
+
+\begin{tabular}{ll}
+        \verb|+|   & sum                 \\
+        \verb|-|   & difference          \\
+        \verb|*|   & product             \\
+        \verb|/|   & real quotient       \\
+        \verb|DIV| & integer quotient    \\
+        \verb|MOD| & modulus             \\
+\end{tabular}
+
+\noindent
+The operators \verb|+|, \verb|-|, \verb|*|, and \verb|/|
+apply to operands of numeric types. The
+type of the result is the type of that operand which includes the
+type of the other operand, except for division (\verb|/|), where the result
+is the smallest real type which includes both operand types. When
+used as monadic operators, - denotes sign inversion and + denotes
+the identity operation. The operators DIV and MOD apply to integer
+operands only. They are related by the following formulas defined
+for any x and positive divisors y:
+\begin{verbatim}
+  x = (x DIV y) * y + (x MOD y)
+  0 <= (x MOD y) < y
+\end{verbatim}
+
+\noindent
+Examples:
+\begin{flushleft}
+\begin{tabular}{cccc}
+x  &  y  & x DIV y & x MOD y \\
+5  &  3  &   1     &    2    \\
+-5 &  3  &  -2     &    1    \\
+\end{tabular}
+\end{flushleft}
+
+\ifonline
+\subsection{Set Operators}
+\else
+\subsubsection{\em Set Operators}
+\fi
+
+\begin{tabular}{ll}
+        \verb|+| &  union                                            \\
+        \verb|-| &  difference  (x - y = x * (-y))                   \\
+        \verb|*| &  intersection                                     \\
+        \verb|/| &  symmetric set difference (x / y = (x-y) + (y-x)) \\
+\end{tabular}
+
+\noindent
+Set operators apply to operands of type SET and yield a result of
+type SET. The monadic minus sign denotes the complement of x, i.e.
+-x denotes the set of integers between 0 and MAX(SET) which are not
+elements of x. Set operators are not associative (\verb|(a+b)-c # a+(b-c)|).
+
+A set constructor defines the value of a set by listing its elements
+between curly brackets. The elements must be integers in the range
+0..MAX(SET). A range a..b denotes all integers in the interval [a,
+b].
+
+\ifonline
+\subsection{Relations}
+\else
+\subsubsection{\em Relations}
+\fi
+
+\begin{tabular}{ll}
+        \verb|=| &  equal               \\
+        \verb|#| &  unequal             \\
+        \verb|<| &  less                \\
+        \verb|<=|&  less or equal       \\
+        \verb|>| &  greater             \\
+        \verb|>=|&  greater or equal    \\
+        \verb|IN|&  set membership      \\
+        \verb|IS|&  type test           \\
+\end{tabular}
+
+\noindent
+Relations yield a BOOLEAN result. The relations \verb|=|,
+\verb|#|, \verb|<|, \verb|<=|, \verb|>| and \verb|>=|
+apply to the numeric types, CHAR, strings, and character arrays containing
+0X as a terminator.
+The relations \verb|=| and \verb|#|
+also apply to BOOLEAN and SET, as well
+as to pointer and procedure types (including the value NIL).
+\verb|x IN s| stands for "x is an element of s". x must be of an integer
+type, and s of type SET.
+\verb|v IS T| stands for "the dynamic type of v is T (or an extension of
+T)" and is called a {\em type test}. It is applicable if
+\begin{enumerate}
+\item
+     v is a variable parameter of record type or v is
+     a pointer, and if
+\item
+     T is an extension of the static type of v
+\end{enumerate}
+
+\noindent
+Examples of expressions (refer to examples in \ref{o2r:var}):
+\begin{verbatim}
+  1991                    INTEGER
+  i DIV 3                 INTEGER
+  ~p OR q                 BOOLEAN
+  (i+j) * (i-j)           INTEGER
+  s - {8, 9, 13}          SET
+  i + x                   REAL
+  a[i+j] * a[i-j]         REAL
+  (0<=i) & (i<100)        BOOLEAN
+  t.key = 0               BOOLEAN
+  k IN {i..j-1}           BOOLEAN
+  w[i].name <= "John"     BOOLEAN
+  t IS CenterNode         BOOLEAN
+\end{verbatim}
+
+\section{Statements}
+
+Statements denote actions. There are elementary and structured statements.
+Elementary statements are not composed of any parts that are themselves
+statements. They are the {\bf assignment}, the {\bf procedure call},
+the {\bf return}, and the {\bf exit} statement. Structured statements
+are composed of parts that are themselves statements. They are used
+to express sequencing and conditional, selective, and repetitive execution.
+A statement may also be empty, in which case it denotes no action.
+The empty statement is included in order to relax punctuation rules
+in statement sequences.
+{\BNFsize
+\begin{verbatim}
+  Statement =
+    [ Assignment | ProcedureCall | IfStatement |
+      CaseStatement | WhileStatement | RepeatStatement |
+      ForStatement | LoopStatement | WithStatement |
+      EXIT | RETURN [Expression]
+    ].
+\end{verbatim}}
+
+\subsection{Assignments}
+
+Assignments replace the current value of a variable by a new value
+specified by an expression. The expression must be {\em assignment
+compatible} with the variable (see \ref{o2r:terms}).
+The assignment operator is written as ":=" and pronounced as becomes.
+{\BNFsize
+\begin{verbatim}
+  Assignment = Designator ":=" Expression.
+\end{verbatim}}
+
+If an expression $e$ of type $T_e$ is assigned to a variable $v$ of type
+$T_v$, the following happens:
+\begin{enumerate}
+\item
+if $T_v$ and $T_e$ are record types, only those fields
+of $T_e$ are assigned which also belong to $T_v$ ({\em projection}); the
+dynamic type of $v$ must be the {\em same} as the static type of $v$ and is
+not changed by the assignment;
+\item
+if $T_v$ and $T_e$ are pointer types, the dynamic type
+of $v$ becomes the dynamic type of $e$;
+\item
+if $T_v$ is ARRAY n OF CHAR and $e$ is a string of length
+$m < n$, $v[i]$ becomes $e_i$ for $i=0..m-1$ and $v[m]$ becomes $0X$.
+\end{enumerate}
+
+\noindent
+Examples of assignments (refer to examples in \ref{o2r:var}):
+\begin{flushleft}
+\begin{tabular}{ll}
+\tt i :=  0                             \\
+\tt p := i = j                          \\
+\tt x := i + 1                          \\
+\tt k := log2(i+j)                      \\
+\tt F := log2                  & (* see \ref{o2r:formal:param} *) \\
+\verb|s := {2, 3, 5, 7, 11, 13}|           \\
+\tt a[i] := (x+y) * (x-y)               \\
+\tt t.key := i                          \\
+\tt w[i+1].name := "John"               \\
+\tt t := c                              \\
+\end{tabular}
+\end{flushleft}
+
+\subsection{Procedure calls}
+
+A procedure call activates a procedure. It may contain a list of actual
+parameters which replace the corresponding formal parameters defined
+in the procedure declaration (see section \ref{o2r:proctype}).
+The correspondence is established by the positions of the parameters
+in the actual and formal parameter lists. There are two kinds of parameters:
+{\em variable} and {\em value parameters}.
+
+        If a formal parameter is a variable parameter, the corresponding
+actual parameter must be a designator denoting a variable. If it denotes
+an element of a structured variable, the component selectors are evaluated
+when the formal/actual parameter substitution takes place, i.e. before
+the execution of the procedure. If a formal parameter is a value parameter,
+the corresponding actual parameter must be an expression. This expression
+is evaluated before the procedure activation, and the resulting value
+is assigned to the formal parameter (see also \ref{o2r:formal:param}).
+{\BNFsize
+\begin{verbatim}
+  ProcedureCall = Designator [ActualParameters].
+\end{verbatim}}
+
+\noindent
+Examples:
+\begin{flushleft}
+\begin{tabular}{ll}
+\verb|WriteInt(i*2+1)|          & (* see \ref{o2r:formal:param} *) \\
+\verb|INC(w[k].count)|                                         \\
+\verb|t.Insert("John")|         & (* see \ref{o2r:module} *)   \\
+\end{tabular}
+\end{flushleft}
+
+\subsection{Statement sequences}
+
+Statement sequences denote the sequence of actions specified by the
+component statements which are separated by semicolons.
+{\BNFsize
+\begin{verbatim}
+  StatementSequence = Statement {";" Statement}.
+\end{verbatim}}
+
+\subsection{If statements}
+{\BNFsize
+\begin{verbatim}
+  IfStatement =
+         IF Expression THEN StatementSequence
+       { ELSIF Expression THEN StatementSequence }
+       [ ELSE StatementSequence ]
+         END.
+\end{verbatim}}
+If statements specify the conditional execution of guarded
+statement sequences. The Boolean expression preceding a statement
+sequence is called its {\em guard.} The guards are evaluated in sequence
+of occurrence, until one evaluates to TRUE, whereafter its associated
+statement sequence is executed. If no guard is satisfied, the statement
+sequence following the symbol ELSE is executed, if there is one.
+
+\noindent
+Example:
+\begin{verbatim}
+  IF (ch >= "A") & (ch <= "Z") THEN ReadIdentifier
+  ELSIF (ch >= "0") & (ch <= "9") THEN ReadNumber
+  ELSIF (ch = " ' ") OR (ch = '"') THEN ReadString
+  ELSE SpecialCharacter
+  END;
+\end{verbatim}
+
+\subsection{Case statements}
+
+Case statements specify the selection and execution of a statement
+sequence according to the value of an expression. First the case expression
+is evaluated, then that statement sequence is executed whose case
+label list contains the obtained value. The case expression must either
+be of an {\em integer} type that {\em includes} the types of all case labels,
+or both the case expression and the case labels must be of type CHAR.
+Case labels are constants, and no value must occur more than once.
+If the value of the expression does not occur as a label of any case,
+the statement sequence following the symbol ELSE is selected, if there
+is one, otherwise the program is aborted.
+{\BNFsize
+\begin{verbatim}
+  CaseStatement = CASE Expression OF Case {"|" Case}
+                  [ ELSE StatementSequence ]
+                  END.
+  Case          = [CaseLabelList ":" StatementSequence].
+  CaseLabelList = CaseLabels {"," CaseLabels}.
+  CaseLabels    = ConstExpression [ ".." ConstExpression].
+\end{verbatim}}
+
+\noindent
+Example:
+\begin{verbatim}
+  CASE ch OF
+    "A" .. "Z": ReadIdentifier
+  | "0" .. "9": ReadNumber
+  | "'", '"'  : ReadString
+  ELSE SpecialCharacter
+  END
+\end{verbatim}
+
+\subsection{While statements}
+
+While statements specify the repeated execution of a statement sequence
+while the Boolean expression (its {\em guard}) yields TRUE. The guard
+is checked before every execution of the statement sequence.
+{\BNFsize
+\begin{verbatim}
+  WhileStatement = WHILE Expression DO StatementSequence END.
+\end{verbatim}}
+
+\noindent
+Examples:
+\begin{verbatim}
+  WHILE i > 0 DO i := i DIV 2; k := k + 1 END
+  WHILE (t # NIL) & (t.key # i) DO t := t.left END
+\end{verbatim}
+
+\subsection{Repeat statements}
+
+A repeat statement specifies the repeated execution of a statement
+sequence until a condition specified by a Boolean expression is satisfied.
+The statement sequence is executed at least once.
+{\BNFsize
+\begin{verbatim}
+  RepeatStatement = REPEAT StatementSequence UNTIL Expression.
+\end{verbatim}}
+
+\subsection{For statements}
+
+A for statement specifies the repeated execution of a statement sequence
+for a fixed number of times while a progression of values is assigned
+to an integer variable called the {\em control variable} of the for
+statement.
+{\BNFsize
+\begin{verbatim}
+  ForStatement = FOR ident":="Expression TO Expression
+                 [ BY ConstExpression ] DO StatementSequence
+                 END.
+\end{verbatim}}
+The statement
+\begin{verbatim}
+  FOR v := beg TO end BY step DO statements END
+\end{verbatim}
+is equivalent to
+\begin{verbatim}
+  temp := end; v := beg;
+  IF step > 0 THEN
+    WHILE v <= temp DO statements; v := v + step END
+  ELSE
+    WHILE v >= temp DO statements; v := v + step END
+  END;
+\end{verbatim}
+{\tt temp} has the {\em same} type as {\tt v}.
+{\tt step} must be a non-zero constant expression.
+If $step$ is not specified, it is assumed to be 1.
+
+\noindent
+Examples:
+\begin{verbatim}
+  FOR i := 0 TO 79 DO k := k + a[i] END
+  FOR i := 79 TO 1 BY -1 DO a[i] := a[i-1] END
+\end{verbatim}
+
+\subsection{Loop statements}
+
+A loop statement specifies the repeated execution of a statement sequence.
+It is terminated upon execution of an exit statement within that sequence
+(see \ref{o2r:return}).
+{\BNFsize
+\begin{verbatim}
+  LoopStatement = LOOP StatementSequence END.
+\end{verbatim}}
+
+\noindent
+Example:
+\begin{verbatim}
+  LOOP
+    ReadInt(i);
+    IF i < 0 THEN EXIT END;
+    WriteInt(i)
+  END
+\end{verbatim}
+Loop statements are useful to express repetitions with several exit
+points or cases where the exit condition is in the middle of the repeated
+statement sequence.
+
+\subsection{Return and exit statements}\label{o2r:return}
+
+A return statement indicates the termination of a procedure. It is
+denoted by the symbol RETURN, followed by an expression if the procedure
+is a function procedure. The type of the expression must be {\em assignment
+compatible} (see \ref{o2r:terms}) with the result type
+specified in the procedure heading (see section \ref{o2r:proc:dcl}).
+
+Function procedures require the presence of a return statement indicating
+the result value. In proper procedures, a return statement is implied
+by the end of the procedure body. Any explicit return statement therefore
+appears as an additional (probably exceptional) termination point.
+
+An exit statement is denoted by the symbol EXIT. It specifies termination
+of the enclosing loop statement and continuation with the statement
+following that loop statement. Exit statements are contextually, although
+not syntactically associated with the loop statement which contains
+them.
+
+\subsection{With statements}
+
+With statements execute a statement sequence depending on the result
+of a type test and apply a type guard to every occurrence of the tested
+variable within this statement sequence.
+{\BNFsize
+\begin{verbatim}
+  WithStatement = WITH Guard DO StatementSequence
+                  { "|" Guard DO StatementSequence }
+                  [ ELSE StatementSequence ]
+                  END.
+  Guard         = Qualident ":" Qualident.
+\end{verbatim}}
+If $v$ is a variable parameter of record type or a pointer variable,
+and if it is of a static type $T_0$, the statement
+\begin{verbatim}
+  WITH v: T1 DO S1 |v: T2 DO S2 ELSE S3 END
+\end{verbatim}
+has the following meaning: if the dynamic type of $v$ is $T_1$, then the
+statement sequence $S_1$ is executed where $v$ is regarded as if it had
+the static type $T_1$; else if the dynamic type of $v$ is $T_2$, then $S_2$ is
+executed where $v$ is regarded as if it had the static type $T_2$; else
+$S_3$ is executed. $T_1$ and T2 must be extensions of $T_0$. If no type test
+is satisfied and if an else clause is missing the program is aborted.
+
+\noindent
+Example:
+\begin{verbatim}
+  WITH t: CenterTree DO i := t.width; c := t.subnode END
+\end{verbatim}
+
+\section{Procedure declarations}\label{o2r:proc:dcl}
+
+A procedure declaration consists of a procedure heading and a procedure
+body. The heading specifies the procedure identifier and the formal
+parameters. For type-bound procedures it also specifies the receiver
+parameter. The body contains declarations and statements. The procedure
+identifier is repeated at the end of the procedure declaration.
+
+There are two kinds of procedures: {\em proper procedures} and {\em function
+procedures.} The latter are activated by a function designator as
+a constituent of an expression and yield a result that is an operand
+of the expression. Proper procedures are activated by a procedure
+call. A procedure is a function procedure if its formal parameters
+specify a result type. The body of a function procedure must contain
+a return statement which defines its result.
+
+All constants, variables, types, and procedures declared within a
+procedure body are local to the procedure. Since procedures may be
+declared as local objects too, procedure declarations may be nested.
+The call of a procedure within its declaration implies recursive activation.
+
+Objects declared in the environment of the procedure are also visible
+in those parts of the procedure in which they are not concealed by
+a locally declared object with the same name.
+{\BNFsize
+\begin{verbatim}
+  ProcedureDeclaration =
+      ProcedureHeading ";" ProcedureBody ident
+  ProcedureHeading     =
+      PROCEDURE [Receiver] IdentDef [FormalParameters].
+  ProcedureBody        =
+      DeclarationSequence [ BEGIN StatementSequence ] END.
+  DeclarationSequence  =
+      { CONST { ConstantDeclaration";" } |
+        TYPE { TypeDeclaration ";" } |
+        VAR { VariableDeclaration ";" }
+      } |
+      { ProcedureDeclaration ";" | ForwardDeclaration ";" }.
+  ForwardDeclaration   =
+      PROCEDURE "^"[Receiver] IdentDef [FormalParameters].
+\end{verbatim}}
+If a procedure declaration specifies a receiver parameter, the procedure
+is considered to be bound to a type (see \ref{o2r:type:bound}).
+A forward declaration serves to allow forward references to a procedure
+whose actual declaration appears later in the text. The formal parameter
+lists of the forward declaration and the actual declaration must {\em match}
+(see \ref{o2r:terms}).
+
+\subsection{Formal parameters}\label{o2r:formal:param}
+
+Formal parameters are identifiers declared in the formal parameter
+list of a procedure. They correspond to actual parameters specified
+in the procedure call. The correspondence between formal and actual
+parameters is established when the procedure is called. There are
+two kinds of parameters, value and variable parameters, indicated
+in the formal parameter list by the absence or presence of the keyword
+VAR. Value parameters are local variables to which the value of the
+corresponding actual parameter is assigned as an initial value. Variable
+parameters correspond to actual parameters that are variables, and
+they stand for these variables. The scope of a formal parameter extends
+from its declaration to the end of the procedure block in which it
+is declared. A function procedure without parameters must have an
+empty parameter list. It must be called by a function designator whose
+actual parameter list is empty too. The result type of a procedure
+can be neither a record nor an array.
+{\BNFsize
+\begin{verbatim}
+  FormalParameters = "(" [FPSection {";"FPSection}] ")"
+                     [ ":" Qualident ].
+  FPSection        = [VAR] ident {"," ident} ":" Type.
+\end{verbatim}}
+Let $T_f$ be the type of a formal parameter $f$ (not an open array) and
+$T_a$ the type of the corresponding actual parameter $a$. For variable
+parameters, $T_a$ must be the {\em same} as $T_f$,
+or $T_f$ must be a record type
+and $T_a$ an extension of $T_f$. For value parameters, $a$ must be
+{\em assignment compatible} with $f$ (see \ref{o2r:terms}).
+If $T_f$ is an open array, then $a$ must be {\em array compatible} with $f$
+(see \ref{o2r:terms}). The lengths of $f$ are taken from $a$.
+
+\noindent
+Examples of procedure declarations:
+\begin{verbatim}
+  PROCEDURE ReadInt(VAR x: INTEGER);
+    VAR i: INTEGER; ch: CHAR;
+  BEGIN
+    i := 0;
+    Read(ch);
+    WHILE ("0" <= ch) & (ch >= "9") DO
+      i:= 10*i + (ORD(ch)-ORD("0"));
+      Read(ch)
+    END;
+    x := i;
+  END ReadInt
+
+  PROCEDURE WriteInt(x: INTEGER);
+    (* 0 <= x <= 100000 *)
+    VAR i: INTEGER; buf: ARRAY 5 OF INTEGER;
+  BEGIN
+    i := 0;
+    REPEAT
+      buf[i] := x MOD 10;
+      x := x DIV 10;
+      INC(i)
+    UNTIL x = 0;
+    REPEAT
+      DEC(i);
+      Write(CHR(buf[i] + ORD("0")))
+    UNTIL i = 0;
+  END WriteInt
+
+  PROCEDURE WriteString(s: ARRAY OF CHAR);
+    VAR i: INTEGER;
+  BEGIN
+    i := 0;
+    WHILE (i < LEN(s)) & (s[i] # 0X) DO
+      Write(s[i]);
+      INC(i)
+    END
+  END WriteString
+
+  PROCEDURE log2(x: INTEGER): INTEGER;
+    VAR y: INTEGER; (* assume x>0 *)
+  BEGIN
+    y := 0;
+    WHILE x > 1 DO x := x DIV 2; INC(y) END;
+    RETURN y
+  END log2
+\end{verbatim}
+
+\subsection{Type-bound procedures}\label{o2r:type:bound}
+
+Globally declared procedures may be associated with a record type
+declared in the same module.
+The procedures are said to be {\em bound} to the record type. The
+binding is expressed by the type of the {\em receiver} in the heading of
+a procedure declaration.  The receiver may be either a variable parameter
+of record type $T$ or a value parameter of type {\tt POINTER TO $T$}
+(where $T$ is a record type).
+The procedure is bound to the type $T$ and is considered local to it.
+{\BNFsize
+\begin{verbatim}
+  ProcedureHeading =
+        PROCEDURE [Receiver] IdentDef [FormalParameters].
+  Receiver         = "(" [VAR] ident ":" ident ")".
+\end{verbatim}}
+If a procedure $P$ is bound to a type $T_0$, it is implicitly also bound
+to any type $T_1$ which is an extension of $T_0$. However, a procedure
+$P'$  (with the same name as $P$) may be explicitly bound to $T_1$ in which
+case it overrides the binding of $P$. $P'$ is considered a {\em redefinition}
+of $P$ for $T_1$. The formal parameters of $P$ and $P'$ must {\em match}
+(see \ref{o2r:terms}).
+If $P$ and $T_1$ are exported (see section \ref{o2r:decls})
+$P'$ must be exported too.
+
+If $v$ is a designator and $P$ is a type-bound procedure, then $v.P$ denotes
+that procedure $P$ which is bound to the dynamic type of $v$ (dynamic
+binding). Note, that this may be a different procedure than the one
+bound to the static type of $v$. $v$ is passed to $P'$s receiver according
+to the parameter passing rules specified in section \ref{o2r:formal:param}.
+
+If $r$ is a receiver parameter declared with type $T$, $r.P$\arrow denotes the
+(redefined) procedure $P$ bound to the base type of $T$.
+
+In a forward
+declaration of a type-bound procedure the receiver parameter must
+be of the {\em same} type as in the actual procedure declaration. The formal
+parameter lists of both declarations must {\em match} (\ref{o2r:terms}).
+
+\noindent
+Examples:
+\begin{verbatim}
+  PROCEDURE (t: Tree) Insert (node: Tree);
+    VAR p, father: Tree;
+  BEGIN
+    p := t;
+    REPEAT father := p;
+      IF node.key = p.key THEN RETURN END;
+      IF node.key < p.key THEN p := p.left
+      ELSE p := p.right
+      END
+    UNTIL p = NIL;
+    IF node.key < father.key THEN father.left := node
+    ELSE father.right := node
+    END;
+    node.left := NIL;
+    node.right := NIL
+  END Insert;
+
+  PROCEDURE (t: CenterTree) Insert (node: Tree);
+    (*redefinition*)
+  BEGIN
+    WriteInt(node(CenterTree).width);
+    t.Insert^(node)
+    (* calls the Insert procedure bound to Tree *)
+  END Insert;
+\end{verbatim}
+
+\subsection{Predeclared procedures}\label{o2r:predecl:proc}
+\index{standard procedures!Oberon-2}
+
+The following table lists the predeclared procedures. Some are generic
+procedures, i.e. they apply to several types of operands. v stands
+for a variable, x and n for expressions, and T for a type.
+
+\ifonline
+\subsection{Function procedures}
+\else
+\subsubsection{\em Function procedures}
+\fi
+\label{o2r:std:func}
+\index{ABS}\index{ASH}\index{CAP}\index{CHR}
+\index{ENTIER}\index{LEN}\index{LONG}
+\index{MIN}\index{MAX}\index{ODD}\index{ORD (O2)}\index{SHORT}
+\index{SIZE}
+
+\begin{flushleft}
+\ifonline
+\else
+\ifcompact \small \fi
+  \newlength{\FuncName}\settowidth{\FuncName}{ENTIER(x)}
+  \newlength{\FuncRes}\settowidth{\FuncRes}{LONGREAL}
+  \newlength{\FuncArg}
+  \newlength{\FuncFun}
+  \ifcompact
+          \FuncArg=2.5cm
+          \FuncFun=3.5cm
+  \else
+          \FuncArg=2.8cm
+          \FuncFun=4.4cm
+  \fi
+\fi
+\ifonline
+\begin{tabular}{llll}
+\else
+\begin{tabular}{p{\FuncName}p{\FuncArg}p{\FuncRes}p{\FuncFun}}
+\fi
+Name    & Argument type      & Result type & Function \\
+        & \\
+ABS(x)  & numeric type       & type of x   & absolute value \\
+ASH(x,n) & x,n: integer type & LONGINT     & arithmetic shift ($x*2^n$) \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\FuncName}p{\FuncArg}p{\FuncRes}p{\FuncFun}}
+\fi
+CAP(x)  &  CHAR              & CHAR        & x is letter:
+                                            corresponding capital letter \\
+CHR(x)  &  integer type      & CHAR        & character with ordinal number x \\
+ENTIER(x)& real type         & LONGINT     & largest integer not greater than x \\
+LEN(v,n) & v: array; n: integer const. & LONGINT
+                                           & length of v in dimension n
+                                             (first dimension = 0) \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\FuncName}p{\FuncArg}p{\FuncRes}p{\FuncFun}}
+\fi
+LEN(v)   & v: array          & LONGINT     & the same as LEN(v,0) \\
+LONG(x)  & SHORTINT          & INTEGER     & identity   \\
+         & INTEGER           & LONGINT                  \\
+         & REAL              & LONGREAL                 \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\FuncName}p{\FuncArg}p{\FuncRes}p{\FuncFun}}
+\fi
+MAX(T)   & T = basic type    & T           & maximum value of type T \\
+         & T = SET           & INTEGER     & maximum element of a set \\
+MIN(T)   & T = basic type    & T           & minimum value of type T \\
+         & T = SET           & INTEGER     & 0 \\
+ODD(x)   & integer type      & BOOLEAN     & x MOD 2 = 1 \\
+ORD(x)   & CHAR              & INTEGER     & ordinal number of x \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\FuncName}p{\FuncArg}p{\FuncRes}p{\FuncFun}}
+\fi
+SHORT(x) & LONGINT           & INTEGER     & identity             \\
+         & INTEGER           & SHORTINT    & identity             \\
+         & LONGREAL          & REAL        & identity (truncation possible) \\
+SIZE(T)  & any type          & integer     & number of bytes required by T \\
+\end{tabular}
+\end{flushleft}
+
+\ifonline
+\subsection{Proper procedures}
+\else
+\subsubsection{\em Proper procedures}
+\fi
+\label{o2r:std:proc}
+\index{COPY}\index{DEC}\index{EXCL}\index{HALT}\index{INC}\index{INCL}
+\index{NEW (O2)}
+
+\begin{flushleft}
+\ifonline
+\else
+  \ifcompact \small \fi
+  \newlength{\ProcName}\settowidth{\ProcName}{NEW(v,x0,...,xn)}
+  \newlength{\ProcArg}
+  \newlength{\ProcFun}
+  \ifcompact
+          \ProcArg=4.0cm
+          \ProcFun=3.4cm
+  \else
+          \ProcArg=4.4cm
+          \ProcFun=4.2cm
+  \fi
+\fi
+\ifonline
+\begin{tabular}{lll}
+\else
+\begin{tabular}{p{\ProcName}p{\ProcArg}p{\ProcFun}}
+\fi
+Name      & Argument types             & Function \\
+          & \\
+ASSERT(x) & x: Boolean expression      & terminate program execution if not x \\
+ASSERT(x,n) & x: Boolean expression; n: integer constant
+                                       & terminate program execution if not x \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\ProcName}p{\ProcArg}p{\ProcFun}}
+\fi
+COPY(x,v) & x: character array, string;
+           v: character array          &  v := x \\
+DEC(v)    & integer type               &  v := v - 1 \\
+DEC(v,n)  & v, n: integer type         &  v := v - n \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\ProcName}p{\ProcArg}p{\ProcFun}}
+\fi
+EXCL(v,x) & v: SET; x: integer type    &  v := v - {x} \\
+HALT(n)   & integer constant           &  terminate program execution \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\ProcName}p{\ProcArg}p{\ProcFun}}
+\fi
+INC(v)    & integer type               &  v := v + 1 \\
+INC(v,n)  & v, n: integer type         &  v := v + n  \\
+INCL(v,x) & v: SET; x: integer type    &  v := v + {x} \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\ProcName}p{\ProcArg}p{\ProcFun}}
+\fi
+NEW(v)    & pointer to record or fixed array
+                                       &  allocate v\arrow \\
+NEW(v,x0,...,xn) &
+           v: pointer to open array;
+           xi: integer type            & allocate v\arrow with lengths x0...xn \\
+\end{tabular}
+\end{flushleft}
+
+\noindent
+COPY allows the assignment of a string or a character array
+containing a terminating 0X to another character array.
+If necessary, the assigned value is truncated
+to the target length minus one.
+The target will always contain 0X as a terminator.
+In ASSERT(x,n) and HALT(n),
+the interpretation of $n$ is left to the underlying system
+implementation.
+
+\section{Modules}\label{o2r:module}
+
+A module is a collection of declarations of constants, types, variables,
+and procedures, together with a sequence of statements for the purpose
+of assigning initial values to the variables. A module constitutes
+a text that is compilable as a unit.
+{\BNFsize
+\begin{verbatim}
+  Module     = MODULE ident ";" [ImportList]
+               DeclarationSequence
+               [ BEGIN StatementSequence ]
+               END ident ".".
+  ImportList = IMPORT Import {"," Import} ";".
+  Import     = [ident ":="] ident.
+\end{verbatim}}
+The import list specifies the names of the imported modules. If a
+module A is imported by a module M and A exports an identifier x,
+then x is referred to as A.x within M. If A is imported as B := A,
+the object x is referenced as B.x. This allows short alias names in
+qualified identifiers. A module must not import itself.
+Identifiers that are to be exported (i.e. that
+are to be visible in client modules) must be marked by an export mark
+in their declaration (see section \ref{o2r:decls}).
+
+The statement sequence following the symbol BEGIN is
+executed when the module is added to a system (loaded), which is done
+after the imported modules have been loaded. It follows that cyclic
+import of modules is illegal. Individual (parameterless and exported)
+procedures can be activated from the system, and these procedures
+serve as {\em commands}.
+{\small
+\begin{verbatim}
+MODULE Trees;
+(* exports:
+  Tree, Node, Insert, Search, Write, NewTree
+*)
+(* exports read-only: Node.name *)
+IMPORT Texts, Oberon;
+TYPE
+  Tree* = POINTER TO Node;
+  Node* = RECORD
+    name-: POINTER TO ARRAY OF CHAR;
+    left, right: Tree
+  END;
+
+VAR w: Texts.Writer;
+
+PROCEDURE (t: Tree) Insert* (name: ARRAY OF CHAR);
+  VAR p, father: Tree;
+BEGIN
+  p := t;
+  REPEAT father := p;
+    IF name = p.name^ THEN RETURN END;
+    IF name < p.name^ THEN p := p.left
+    ELSE p := p.right
+    END
+  UNTIL p = NIL;
+  NEW(p); p.left := NIL; p.right := NIL;
+  NEW(p.name,LEN(name)+1);
+  COPY(name,p.name^);
+  IF name < father.name^ THEN father.left := p
+  ELSE father.right := p
+  END;
+END Insert;
+
+PROCEDURE (t: Tree) Search* (name: ARRAY OF CHAR): Tree;
+  VAR p: Tree;
+BEGIN
+  p := t;
+  WHILE (p # NIL) & (name # p.name^) DO
+    IF name = p.name^ THEN p := p.left
+    ELSE p := p.right
+    END
+  END;
+  RETURN p
+END Search;
+
+PROCEDURE (t: Tree) Write*;
+BEGIN
+  IF t.left # NIL THEN t.left.Write END;
+  Texts.WriteString(w, t.name^);
+  Texts.WriteLn(w);
+  Texts.Append(Oberon.Log, w.buf);
+  IF t.right # NIL THEN t.right.Write END
+END Write;
+
+PROCEDURE NewTree* (): Tree;
+  VAR t: Tree;
+BEGIN
+  NEW(t); NEW(t.name, 1);
+  t.name[0] := 0X;
+  t.left := NIL; t.right := NIL;
+  RETURN t
+END NewTree;
+
+BEGIN
+  Texts.OpenWriter(w)
+END Trees.
+\end{verbatim}
+}
+
+\section{Definition of terms}\label{o2r:terms}
+
+\begin{tabular}{ll}
+{\bf Integer types}  &       SHORTINT, INTEGER, LONGINT \\
+{\bf Real types}     &       REAL, LONGREAL \\
+{\bf Numeric types}  &       integer types, real types \\
+\end{tabular}
+
+\ifonline
+\subsection{Same types}
+\else
+\subsubsection{Same types}
+\fi
+
+Two variables $a$ and $b$ with types $T_a$ and $T_b$ are of
+the {\em same} type if
+\begin{enumerate}
+\item
+$T_a$ and $T_b$ are both denoted by the same type identifier,
+or
+\item
+$T_a$ is declared to equal $T_b$ in a type declaration
+of the form $T_a = T_b$, or
+\item
+$a$ and $b$ appear in the same identifier list in a
+variable, record field, or formal parameter declaration and are not
+open arrays.
+\end{enumerate}
+
+\ifonline
+\subsection{Equal types}
+\else
+\subsubsection{Equal types}
+\fi
+
+Two types $T_a$ and $T_b$ are {\em equal} if
+\begin{enumerate}
+\item
+$T_a$ and $T_b$ are the {\em same} type, or
+\item
+$T_a$ and $T_b$ are open array types with {\em equal} element types, or
+\item
+$T_a$ and $T_b$ are procedure types whose formal parameter lists {\em match}.
+\end{enumerate}
+
+\ifonline
+\subsection{Type inclusion}
+\else
+\subsubsection{Type inclusion}
+\fi
+
+Numeric types {\em include} (the values of) smaller numeric types according
+to the following hierarchy
+$$
+\mbox{LONGREAL} \supseteq
+\mbox{REAL} \supseteq
+\mbox{LONGINT} \supseteq
+\mbox{INTEGER} \supseteq
+\mbox{SHORTINT}
+$$
+
+\ifonline
+\subsection{Type extension (base type)}
+\else
+\subsubsection{Type extension (base type)}
+\fi
+
+Given a type declaration {\tt $T_b$ = RECORD ($T_a$)... END},
+$T_b$ is a {\em direct extension} of $T_a$,
+and $T_a$ is a {\em direct base type} of $T_b$. A type $T_b$ is
+an {\em extension} of a type $T_a$ ($T_a$ is a {\em base type} of $T_b$) if
+\begin{enumerate}
+\item
+$T_a$ and $T_b$ are the {\em same} types, or
+\item
+$T_b$ is a {\em direct extension} of an {\em extension} of $T_a$
+\end{enumerate}
+
+If {\tt $P_a$ = POINTER TO $T_a$}
+and {\tt $P_b$ = POINTER TO $T_b$}, $P_b$ is an {\em extension} of
+$P_a$ ($P_a$ is a {\em base type} of $P_b$)
+if $T_b$ is an {\em extension} of $T_a$.
+
+\ifonline
+\subsection{Assignment compatible}
+\else
+\subsubsection{Assignment compatible}
+\fi
+
+An expression $e$ of type $T_e$ is {\em assignment compatible} with a variable
+$v$ of type $T_v$ if one of the following conditions hold:
+\begin{enumerate}
+\item
+$T_e$ and $T_v$ are the {\em same} type;
+\item
+$T_e$ and $T_v$ are numeric types and $T_v$ {\em includes} $T_e$;
+\item
+$T_e$ and $T_v$ are record types and $T_e$ is an {\em extension}
+of $T_v$ and the dynamic type of $v$ is $T_v$ ;
+\item
+$T_e$ and $T_v$ are pointer types and $T_e$ is an {\em extension}
+of $T_v$;
+\item
+$T_v$ is a pointer or a procedure type and $e$ is NIL;
+\item
+$T_v$ is ARRAY n OF CHAR, $e$ is a string constant with
+$m$ characters, and $m < n$;
+\item
+$T_v$ is a procedure type and $e$ is the name of a procedure
+whose formal parameters {\em match} those of $T_v$.
+\end{enumerate}
+
+\ifonline
+\subsection{Array compatible}
+\else
+\subsubsection{Array compatible}
+\fi
+
+An actual parameter $a$ of type $T_a$ is {\em array compatible} with a formal
+parameter $f$ of type $T_f$ if
+\begin{enumerate}
+\item
+$T_f$ and $T_a$ are the {\em same} type, or
+\item
+$T_f$ is an open array, $T_a$ is any array, and their
+element types are {\em array compatible}, or
+\item
+$T_f$ is ARRAY OF CHAR and $a$ is a string.
+\end{enumerate}
+
+\ifonline
+\subsection{Expression compatible}
+\else
+\subsubsection{Expression compatible}
+\fi
+
+For a given operator, the types of its operands are {\em expression compatible}
+if they conform to the following table (which shows also the result
+type of the expression). Character arrays to be compared
+must contain 0X as a terminator. Type $T_1$ must be an extension
+of type $T_0$:
+\begin{flushleft}
+\ifonline
+\else
+  \ifcompact \footnotesize \else \small \fi
+  \newlength{\Operator}\settowidth{\Operator}{\verb|= = < <= > >=|}
+  \newlength{\Operand}
+  \newlength{\ResType}
+  \ifcompact
+          \Operand=2.4cm
+          \ResType=2.7cm
+  \else
+          \Operand=2.7cm
+          \ResType=3.7cm
+  \fi
+\fi
+\ifonline
+\begin{tabular}{llll}
+\else
+\begin{tabular}{p{\Operator}p{\Operand}p{\Operand}p{\ResType}}
+\fi
+operator & first operand   & second operand     & result type \\
+\verb|+ - *| & numeric         &  numeric
+                               & smallest numeric type including both operands \\
+\verb|/|     & numeric         & numeric
+                               & smallest real type including both operands \\
+\verb|+ - * /|  & SET           & SET                &  SET \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\Operator}p{\Operand}p{\Operand}p{\ResType}}
+\fi
+DIV MOD  & integer         & integer
+                                & smallest integer type including both operands \\
+OR \verb|&| \verb|~| & BOOLEAN & BOOLEAN        & BOOLEAN \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\Operator}p{\Operand}p{\Operand}p{\ResType}}
+\fi
+\verb|= # < <= > >=|
+              & numeric         &   numeric     & BOOLEAN \\
+              & CHAR            &  CHAR         & BOOLEAN \\
+              & character array, string
+              & character array, string         & BOOLEAN \\
+\verb|= #|    & BOOLEAN         & BOOLEAN       & BOOLEAN \\
+              & SET             &     SET       & BOOLEAN \\
+              & NIL, POINTER TO T0 or T1
+              & NIL, POINTER TO T0 or T1        & BOOLEAN \\
+              & procedure type T, NIL
+              & procedure type T, NIL           & BOOLEAN \\
+IN            & integer         &     SET       & BOOLEAN \\
+IS            & pointer         &     pointer   & BOOLEAN \\
+              & record          &     record    & BOOLEAN \\
+\end{tabular}
+\end{flushleft}
+
+\subsection{Matching formal parameter lists}
+
+Two formal parameter lists {\em match} if
+\begin{enumerate}
+\item
+they have the same number of parameters, and
+\item
+they have either the {\em same} function result type or none, and
+\item
+parameters at corresponding positions have {\em equal} types, and
+\item
+parameters at corresponding positions are both either
+value or variable parameters.
+\end{enumerate}
+
+\section{Syntax of Oberon-2}
+
+{
+\ifcompact \small \fi
+\begin{verbatim}
+Module      = MODULE ident ";" [ImportList] DeclSeq
+             [BEGIN StatementSeq] END ident ".".
+ImportList  = IMPORT [ident ":="] ident
+              {"," [ident ":="] ident} ";".
+DeclSeq     =  { CONST {ConstDecl ";" }
+            | TYPE {TypeDecl ";"}
+            | VAR {VarDecl ";"}} {ProcDecl ";"
+            | ForwardDecl ";"}.
+ConstDecl   = IdentDef "=" ConstExpr.
+TypeDecl    = IdentDef "=" Type.
+VarDecl     = IdentList ":" Type.
+ProcDecl    = PROCEDURE [Receiver] IdentDef
+              [FormalPars] ";" DeclSeq [BEGIN
+              StatementSeq] END ident.
+ForwardDecl = PROCEDURE "^" [Receiver] IdentDef
+              [FormalPars].
+FormalPars  = "(" [FPSection {";" FPSection}] ")"
+              [":" Qualident].
+FPSection   = [VAR] ident {"," ident} ":" Type.
+Receiver    = "(" [VAR] ident ":" ident ")".
+Type        = Qualident
+            | ARRAY [ConstExpr {"," ConstExpr}] OF Type
+            | RECORD ["("Qualident")"] FieldList
+              {";" FieldList} END
+            | POINTER TO Type
+            | PROCEDURE [FormalPars]
+FieldList   = [IdentList ":" Type].
+StatementSeq= Statement {";" Statement}.
+Statement   = [Designator ":=" Expr
+            | Designator ["(" [ExprList] ")"]
+            | IF Expr THEN StatementSeq
+             {ELSIF Expr THEN StatementSeq}
+             [ELSE StatementSeq] END
+            | CASE Expr OF Case {"|" Case}
+              [ELSE StatementSeq] END
+            | WHILE Expr DO StatementSeq END
+            | REPEAT StatementSeq UNTIL Expr
+            | FOR ident ":=" Expr TO Expr
+              [BY ConstExpr] DO StatementSeq END
+            | LOOP StatementSeq END
+            | WITH Guard DO StatementSeq
+             {"|" Guard DO StatementSeq}
+              [ELSE StatementSeq] END
+            | EXIT
+            | RETURN [Expr]].
+Case        = [CaseLabels {"," CaseLabels}
+              ":" StatementSeq].
+CaseLabels  = ConstExpr [".." ConstExpr].
+Guard       = Qualident ":" Qualident.
+ConstExpr   = Expr.
+Expr        = SimpleExpr [Relation SimpleExpr].
+SimpleExpr  = ["+" | "-"] Term {AddOp Term}.
+Term        = Factor {MulOp Factor}.
+Factor      = Designator ["(" [ExprList] ")"]
+            | number | character | string | NIL
+            | Set | "(" Expr ")" | " ~ " Factor.
+Set         = "{" [Element {"," Element}] "}".
+Element     = Expr [".." Expr].
+Relation    = "=" | "#" | "<" | "<=" | ">" | ">="
+            | IN | IS.
+AddOp       = "+" | "-" | OR.
+MulOp       = " * " | "/" | DIV | MOD | "&".
+Designator  = Qualident {"." ident | "[" ExprList "]"
+            |  "^" | "(" Qualident ")"}.
+ExprList    = Expr {"," Expr}.
+IdentList   = IdentDef {"," IdentDef}.
+Qualident   = [ident "."] ident.
+IdentDef    = ident [" * " | "-"].
+\end{verbatim}
+}
+
+\section{The module SYSTEM}\label{o2r:SYSTEM}
+
+The module SYSTEM contains certain types and procedures that are necessary
+to implement {\em low-level} operations particular to a given computer and/or
+implementation. These include for example facilities for accessing
+devices that are controlled by the computer, and facilities to break
+the type compatibility rules otherwise imposed by the language definition.
+It is strongly recommended to restrict their use to specific modules
+(called {\em low-level} modules). Such modules are inherently non-portable,
+but easily recognized due to the identifier SYSTEM appearing in their
+import list. The following specifications hold for the implementation
+of Oberon-2 on the Ceres computer.
+
+Module SYSTEM exports a type BYTE with the following characteristics:
+Variables of type CHAR or SHORTINT can be assigned to variables of
+type BYTE. If a formal variable parameter is of type ARRAY OF BYTE
+then the corresponding actual parameter may be of any type.
+
+Another type exported by module SYSTEM is the type PTR. Variables
+of any pointer type may be assigned to variables of type PTR. If a
+formal variable parameter is of type PTR, the actual parameter may
+be of any pointer type.
+
+The procedures contained in module SYSTEM are listed in the following
+tables. Most of them correspond to single instructions compiled as
+in-line code. For details, the reader is referred to the processor
+manual. $v$ stands for a variable, $x$, $y$, $a$, and $n$ for expressions, and
+$T$ for a type.
+
+\ifonline
+\subsection{Function procedures}
+\else
+\subsubsection{Function procedures}
+\fi
+
+\begin{flushleft}
+\ifonline
+\else
+  \ifcompact \small \fi
+  \settowidth{\FuncName}{ROT(w,w)}
+  \settowidth{\FuncRes}{BOOLEAN}
+  \ifcompact
+          \FuncArg=2.5cm
+          \FuncFun=3.5cm
+  \else
+          \FuncArg=2.8cm
+          \FuncFun=4.4cm
+  \fi
+\fi
+\ifonline
+\begin{tabular}{llll}
+\else
+\begin{tabular}{p{\FuncName}p{\FuncArg}p{\FuncRes}p{\FuncFun}}
+\fi
+Name     & Argument types   & Result type & Function \\
+         & \\
+ADR(v)   & any              & LONGINT     & address of variable v \\
+BIT(a,n) & a: LONGINT
+          n: integer        & BOOLEAN     & bit n of Mem[a] \\
+CC(n)    & integer constant & BOOLEAN     & condition $n$ ($0\leq n\leq 15$) \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\FuncName}p{\FuncArg}p{\FuncRes}p{\FuncFun}}
+\fi
+LSH(x,n) & x: integer,
+          CHAR, BYTE;
+          n: integer         & type of x  &  logical shift \\
+ROT(x,n) & x: integer,
+          CHAR, BYTE;
+          n: integer         & type of x  &  rotation \\
+VAL(T,x) & T, x: any type    & T          & x interpreted as of type T \\
+\end{tabular}
+\end{flushleft}
+\index{SYSTEM!ADR (O2)}
+\index{SYSTEM!BIT}\index{SYSTEM!CC}\index{SYSTEM!LSH}
+\index{SYSTEM!ROT}\index{SYSTEM!VAL}
+
+\ifonline
+\subsection{Proper procedures}
+\else
+\subsubsection{Proper procedures}
+\fi
+
+\begin{flushleft}
+\ifonline
+\else
+  \ifcompact \small \fi
+  \settowidth{\ProcName}{MOVE(a0,a1,n)}
+  \ifcompact
+          \ProcArg=4.0cm
+          \ProcFun=3.4cm
+  \else
+          \ProcArg=4.4cm
+          \ProcFun=4.2cm
+  \fi
+\fi
+\ifonline
+\begin{tabular}{lll}
+\else
+\begin{tabular}{p{\ProcName}p{\ProcArg}p{\ProcFun}}
+\fi
+Name      & Argument types             & Function \\
+          & \\
+GET(a,v)    & a: LONGINT;
+              v: any basic type,
+              pointer, procedure type & v := Mem[a] \\
+PUT(a,x)    &  a: LONGINT;
+              x: any basic type,
+              pointer, procedure type & Mem[a] :=x \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\ProcName}p{\ProcArg}p{\ProcFun}}
+\fi
+GETREG(n,v) &  n: integer constant;
+              v: any basic type,
+              pointer, procedure type & v := Register n \\
+PUTREG(n,x) &  n: integer constant;
+              x: any basic type,
+              pointer, procedure type & Register n := x \\
+\ifonline
+\else
+\end{tabular}
+\begin{tabular}{p{\ProcName}p{\ProcArg}p{\ProcFun}}
+\fi
+MOVE(a0,a1,n) &  a0, a1: LONGINT;
+                 n: integer           & Mem[a1..a1+n-1] := Mem[a0..a0+n-1] \\
+NEW(v,n)      & v: any pointer;
+              n: integer              & allocate storage block of n bytes
+                                       assign its address to v \\
+\end{tabular}
+\end{flushleft}
+\index{SYSTEM!GET}
+\index{SYSTEM!PUT}
+\index{SYSTEM!GETREG}
+\index{SYSTEM!PUTREG}
+\index{SYSTEM!MOVE}
+\index{SYSTEM!NEW (O2)}
+
+\printindex
+
+\end{document}

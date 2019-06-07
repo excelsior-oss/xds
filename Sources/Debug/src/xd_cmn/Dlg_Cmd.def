@@ -1,0 +1,5 @@
+-- Выполнение команд пакетного отладчика из диалогового
+
+DEFINITION MODULE Dlg_Cmd;
+
+END Dlg_Cmd.

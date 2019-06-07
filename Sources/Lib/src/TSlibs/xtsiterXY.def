@@ -1,0 +1,27 @@
+ (* Copyrigth (C) 1996 xTech Ltd *)
+
+<* +M2EXTENSIONS *>
+ 
+DEFINITION MODULE xtsiterXY;
+
+TYPE
+  iterCL = RECORD
+             (* public: *)
+             x ,y, i     :CARDINAL;
+             (* private *)
+             xBeg,
+             xLim, yLim,
+             iD          :CARDINAL;
+           END;
+
+PROCEDURE myMIN ( a,b :CARDINAL ) :CARDINAL;
+PROCEDURE myMAX ( a,b :CARDINAL ) :CARDINAL;
+
+PROCEDURE init  ( xd, yd, x1A, y1A, x2A, y2A :CARDINAL; VAR obj :iterCL );
+
+PROCEDURE inc ( VAR obj :iterCL );
+
+PROCEDURE isEnd ( VAR obj :iterCL ) :BOOLEAN;
+
+END xtsiterXY.
+

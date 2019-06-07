@@ -1,0 +1,52 @@
+(* Copyright (c) 1998 XDS Ltd.  All Rights Reserved. *)
+DEFINITION MODULE POSIXIOChan;
+
+(* This module contains POSIX-specific extended channels
+   controll in addition to basic functionality of ISO10514
+   standard input/output library.
+*)
+
+IMPORT SYSTEM;
+IMPORT IOChan, ChanConsts, xDevData;
+
+TYPE
+  ChanId = IOChan.ChanId;
+  FlagSet = ChanConsts.FlagSet;
+  OpenResults = ChanConsts.OpenResults;
+
+CONST
+  read = FlagSet{ChanConsts.readFlag};   (* input operations are requested/available *)
+  write = FlagSet{ChanConsts.writeFlag}; (* output operations are requested/available *)
+  text = FlagSet{ChanConsts.textFlag};   (* text operations are requested/available *)
+  raw = FlagSet{ChanConsts.rawFlag};     (* raw operations are requested/available *)
+
+PROCEDURE GetFilePtr(cid: IOChan.ChanId): SYSTEM.ADDRESS;
+  (* If the channel identified by cid is managed by RndFile, SeqFile or
+    StreamFile device modules, the function returns the corresponding 
+    POINTER TO stdio.FILE; otherwise the exception wrongDevice is raised
+  *)
+
+PROCEDURE GetFileName(cid: IOChan.ChanId): xDevData.FileName;
+  (* If the channel identified by cid is managed by RndFile, SeqFile or
+    StreamFile device modules, the function returns the name of the
+    corresponding 
+file; otherwise the exception wrongDevice is raised
+  *)
+
+PROCEDURE MakeChannel(VAR cid: ChanId;
+                         file: SYSTEM.ADDRESS;
+                         name: ARRAY OF CHAR;
+                        flags: FlagSet;
+                      VAR res: OpenResults);
+  (* Attempts to obtain a channel and connect it to file, which actual
+    type has to be POINTER TO stdio.FILE.
+    If successfull, assigns to cid the identity of the channel.
+
+    Access mode of cid is set according to the given flags.
+    GetName method of cid will return the given name.
+
+    Note that channel made by this procedure can be considered as
+    SeqFile, RndFile, or StreamFile.
+  *)
+
+END POSIXIOChan.

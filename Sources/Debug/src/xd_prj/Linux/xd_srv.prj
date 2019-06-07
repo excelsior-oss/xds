@@ -1,0 +1,140 @@
+% Project file for XDS xServer 
+% modes are: enduser, work
+
+!if env_target = "x86os2" then
+  -PM
+!end
+
+!if not defined trialversion then
+  !new trialversion-
+!end
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if not defined placement then
+  !if (mode="enduser") then
+    -placement := release
+  !else
+    -placement := current
+  !end
+!end
+
+
+% output settings
+!if placement="release" then
+  -mkfname = $!/../../enduser/tmp/xd_srv
+  -lookup = *.sym  = $!/../../enduser/tmp; $!/../../enduser/xds/sym/x86
+  -lookup = *.lib  = $!/../../enduser/xds/lib/x86
+  -lookup = *.obj  = $!/../../enduser/tmp
+  -lookup = *.dbg  = $!/../../enduser/tmp
+  -lookup = *.exe  = $!/../../enduser/xds/bin
+  -lookup = *.dll  = $!/../../enduser/xds/bin
+!else
+  % work
+  -mkfname = xd_srv
+  -lookup = *.sym  = sym
+  -lookup = *.o    = bin
+  -lookup = *.obj  = bin
+  -lookup = *.dbg  = dbg
+  -lookup = *.h    = ch
+  -lookup = *.c    = ch
+!end
+
+-m2cmpsym+
+-changesym+
+-m2extensions+
+-o2extensions-
+-m2addtypes+
+
+-gcthreshold =  96000000
+-heaplimit = 96000000
+
+-compilerheap = 16777216
+
+-makefile+
+-longname+
+
+-xd_batch_included:+
+
+-TARGET_OS=Linux
+
+-TARGET_VAX:-
+-TARGET_x86:+
+-TARGET_m68k:-
+-TARGET_PPC:-
+
+-ONLY_REMOTE:+
+
+-DEST_XDS:+
+-DEST_K26:-
+
+-DEST_XDASM:-
+
+-SCHERN_K26:-
+
+% Source lookup settings
+!if mode = "enduser" then
+  -lookup = *.def = src/xd_utl;
+  -lookup = *.mod = src/xd_utl;
+  -lookup = *.def = src/xd_cmn; src/xd_enh; src/xd_386; src/xd_rmt;
+  -lookup = *.mod = src/xd_cmn; src/xd_enh; src/xd_386; src/xd_rmt;
+  -lookup = *.def = src/xd_386/Linux;
+  -lookup = *.mod = src/xd_386/Linux;
+!elsif mode = "work" then
+  -lookup = *.def = src;
+  -lookup = *.mod = src;
+  -lookup = *.def = ../src/xd_ditls; ../src/xd_utl;
+  -lookup = *.mod = ../src/xd_ditls; ../src/xd_utl;
+  -lookup = *.def = ../src/xd_cmn; ../src/xd_enh; ../src/xd_386; ../src/xd_rmt;
+  -lookup = *.mod = ../src/xd_cmn; ../src/xd_enh; ../src/xd_386; ../src/xd_rmt;
+  -lookup = *.def = ../src/xd_386/Linux;
+  -lookup = *.mod = ../src/xd_386/Linux;
+  -lookup = *.def = ../src/xd_rmt; ../src/xd_rmt/Linux;
+  -lookup = *.mod = ../src/xd_rmt; ../src/xd_rmt/Linux;
+
+%  -lookup = *.def = ../src/xd_ditls;
+
+!end
+
+% Runtime checks and debug settings
+!if mode="enduser" then
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+
+  -xd_debug:-
+
+!elsif mode="work" then
+
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+
+  -dbgfmt = HLL
+  -xd_debug:+
+!end
+
+!module XD_Serv.mod
+%!module Trans.mod

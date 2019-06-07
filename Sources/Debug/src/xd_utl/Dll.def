@@ -1,0 +1,11 @@
+-- Поддержка использования библиотек динамического связывания.
+
+DEFINITION MODULE Dll;
+
+IMPORT dllRTS;
+
+PROCEDURE CheckHandle (handle: dllRTS.HMOD): BOOLEAN;
+
+PROCEDURE AddHandle (handle: dllRTS.HMOD);
+
+END Dll.

@@ -1,0 +1,44 @@
+(* Copyright (c) 1994,95 xTech Ltd, Russia. All Rights Reserved. *)
+(*
+ * XDS runtime library.
+ * Functions, used to implement ISO exceptions.
+ * For C & X86 back-ends.
+ *)
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE [2] xrExceptions;
+
+FROM xmRTS    IMPORT  X2C_XHandler, X2C_XSource, X2C_pCHAR;
+IMPORT  SYSTEM;
+
+PROCEDURE X2C_doRaise(source: X2C_XSource);
+(* Note that the source must be prepared, e.g. the code and message
+         fields should be assigned as needed *)
+
+PROCEDURE X2C_XInitHandler(x: X2C_XHandler);
+(* Used to initialize exception trap *)
+PROCEDURE X2C_XRETRY;
+(* operator RETRY *)
+PROCEDURE X2C_XREMOVE;
+(* remove current exception trap *)
+PROCEDURE X2C_XOFF;
+(* reset current exception trap *)
+PROCEDURE X2C_XON;
+(* set current exception trap to active state *)
+
+<* IF __GEN_X86__ OR NATIVE_LIBRARY THEN *>
+PROCEDURE [2] X2C_TRAP_FC_IMPL(no: SYSTEM.INT32; file: X2C_pCHAR; line: SYSTEM.CARD32);
+<* ELSE *>
+PROCEDURE [2] X2C_TRAP_FC(no: SYSTEM.INT32; file: X2C_pCHAR; line: SYSTEM.CARD32);
+<* END *>
+PROCEDURE X2C_TRAP_F(no: SYSTEM.INT32);
+<* IF __GEN_X86__ OR NATIVE_LIBRARY THEN *>
+PROCEDURE X2C_TRAP_G(no: SYSTEM.INT32);
+(* The same with X2C_TRAP_F but is intended to be called
+directly from hardware excaption handlers *)
+<* END *>
+PROCEDURE X2C_ASSERT_F(no: SYSTEM.CARD32);
+PROCEDURE X2C_ASSERT_FC(no: SYSTEM.CARD32; file: X2C_pCHAR; line: SYSTEM.CARD32);
+
+PROCEDURE X2C_init_exceptions;
+
+END xrExceptions.

@@ -1,0 +1,16 @@
+(* Copyright (c) xTech 1993. All Rights Reserved. *)
+DEFINITION MODULE XRaise; (* Ned 02-Mar-93 *)
+
+CONST
+  IOLink    = 100H;
+  RndFile   = 110H;
+  WholeConv = 120H;
+  RealConv  = 130H;
+  LongConv  = 140H;
+  RealMath  = 150H;
+  LongMath  = 160H;
+  Storage   = 170H;
+
+PROCEDURE RAISE(no: CARDINAL; msg: ARRAY OF CHAR);
+
+END XRaise.

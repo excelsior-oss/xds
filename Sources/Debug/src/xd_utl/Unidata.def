@@ -1,0 +1,38 @@
+DEFINITION MODULE Unidata;
+IMPORT sys:= SYSTEM;
+
+
+CONST
+  N_SLOTS = 256;
+
+TYPE
+  COMPARE_IMAGE = PROCEDURE (IMAGE, IMAGE,CARDINAL): BOOLEAN;
+  LENGTH_IMAGE  = PROCEDURE (IMAGE): CARDINAL;
+  HASH_RESULT   = RECORD
+                    index : CARDINAL; -- индекс в таблице
+                    number: CARDINAL; -- номер таблицы
+                  END;
+  HASH          = PROCEDURE (IMAGE): HASH_RESULT;
+
+  STORAGE;
+
+  IMAGE = sys.ADDRESS;
+  IMAGE_REF = CARDINAL;
+
+
+CONST
+  Invalid_Ref = IMAGE_REF (MAX(CARDINAL));
+
+
+  PROCEDURE CreateStorage(VAR storage: STORAGE;SLOT_SIZE : CARDINAL; Sizes: ARRAY OF CARDINAL; Hash: HASH);
+  PROCEDURE DestroyStorage(VAR storage: STORAGE);
+  PROCEDURE ClearData(storage: STORAGE);
+  PROCEDURE Add(VAR storage: STORAGE; image: IMAGE;  IsEqual: COMPARE_IMAGE; Length : LENGTH_IMAGE; VAR unique : BOOLEAN):  IMAGE_REF;
+  PROCEDURE Get(storage: STORAGE; image_ref: IMAGE_REF): IMAGE;
+  PROCEDURE Next(storage: STORAGE; ref: IMAGE_REF; len: LENGTH_IMAGE): IMAGE_REF;
+  PROCEDURE First(storage:STORAGE ): IMAGE_REF;
+  PROCEDURE IsRefValid(storage:STORAGE; ref: IMAGE_REF): BOOLEAN;
+  PROCEDURE IsEmptyStorage( storage:STORAGE) : BOOLEAN;
+  PROCEDURE PrintHashTbl( storage:STORAGE);
+  PROCEDURE PrintStorageInfo(storage:STORAGE);
+END Unidata.

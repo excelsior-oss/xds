@@ -1,0 +1,13 @@
+# XDS-x86 Linker : Build System Configuration
+
+UNIT_NAME=XDS-x86-Linker
+
+ALL_COMPONENTS=xlink
+PRIMARY_COMPONENTS=xlink
+DEFAULT_COMPONENT=xlink
+
+# Tools necessary to build component
+ENVIRONMENT=MSBUILD_HOME,MSVC_HOME
+
+# External files which are part of this component  
+EXTDEPS=

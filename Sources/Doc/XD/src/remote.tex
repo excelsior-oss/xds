@@ -1,0 +1,62 @@
+\chapter{Remote debugging}
+\label{remote}
+
+%$ New in 1.1:
+
+With XD, you may debug programs running on another computer to which you may
+connect via network. Table \ref{remote:protocols} contains the list of
+supported networks protocols.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\bf Code & \bf Protocol & \bf Remote system identified by \\
+\hline
+\tt TCP  & TCP/IP & IP address \\
+\hline
+\end{tabular}
+\caption{Supported Protocols}
+\label{remote:protocols}
+\end{center}
+\end{table}
+
+\section{Preparing for remote debugging}
+
+\ifwinnt
+Copy the following files from the {\tt BIN} subdirectory of your XDS installation
+to an empty directory on the target system:
+
+\begin{verbatim}
+    XD_SRV.EXE  XDS24.DLL     XD_NB09.DLL
+                XD_DITLS.DLL  XD_T_TCP.DLL
+                XD_NB04.DLL   XD_UTL.DLL
+                  
+\end{verbatim}
+\else\ifosii
+\fi
+\fi
+
+\section{Starting debug server}
+
+To launch the debug server on the target machine, issue the following command:
+
+\verb'    XD_SRV /R=<protocol code>'
+
+Example:
+
+\verb'    XD_SRV /R=TCP'
+
+
+\section{Starting XD in remote mode}
+
+To start XD in remote mode, use the {\tt /R} command line switch:
+
+\verb'    XD /R=<protocol code>,<remote system id>'
+
+For instance, if you want XD to connect via TCP/IP to the debug server running
+on a machine which IP address is \verb'server.mycompany.com', issue the
+following command:
+
+\verb'    XD /R=TCP,server.mycompany.com'
+

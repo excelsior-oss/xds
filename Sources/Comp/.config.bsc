@@ -1,0 +1,13 @@
+# XDS-x86 Compiler: Build System Configuration
+
+UNIT_NAME=XDS-x86-Compiler
+
+ALL_COMPONENTS=xc,xm
+PRIMARY_COMPONENTS=xc,xm
+DEFAULT_COMPONENT=xc
+
+# Tools necessary to build component
+ENVIRONMENT=XDSDIR
+
+# External files which are part of this component  
+EXTDEPS=

@@ -1,0 +1,33 @@
+#define  INCL_PM
+#define  INCL_NLS
+#include <os2.h>
+#include "..\xpview.h"
+
+ICON    RES_MAIN   xpview.ico
+
+MENU RES_MAIN
+
+{
+  SUBMENU    "~File",                IDM_FILE,           MIS_TEXT
+  {
+    MENUITEM    "~Open...",          IDM_FILEOPEN,       MIS_TEXT
+  }
+  SUBMENU    "~Window",              IDM_WINDOW,         MIS_TEXT
+  {
+    MENUITEM    "~1: ",              IDM_WINCOMPONENTS,  MIS_TEXT
+    MENUITEM    "~2: ",              IDM_WINMODULES,     MIS_TEXT
+    MENUITEM    "~3: ",              IDM_WINPROCEDURES,  MIS_TEXT
+    MENUITEM    "~4: ",              IDM_WINLINES,       MIS_TEXT
+    MENUITEM    SEPARATOR
+    MENUITEM    "~Popup all",        IDM_WINPOPALL,      MIS_TEXT
+    MENUITEM    "~Tile",             IDM_WINTILE,        MIS_TEXT
+    MENUITEM    "~Cascade",          IDM_WINCASCADE,     MIS_TEXT
+  }
+}
+
+ACCELTABLE RES_MAIN
+{
+      VK_F3,                                IDM_FILEOPEN,       VIRTUALKEY
+}
+
+

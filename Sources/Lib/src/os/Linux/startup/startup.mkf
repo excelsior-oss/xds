@@ -1,0 +1,24 @@
+ASMFLAGS= -dLINUX -f obj
+
+OBJDIR  = ../../../../ch
+LIBDIR  = ../../../..
+
+all: $(LIBDIR)/xstart.lib $(LIBDIR)/xstartx.lib $(LIBDIR)/xstarts.lib
+
+$(OBJDIR)/xstart.obj:  xstart.asm
+	nasm $(ASMFLAGS) -o $(OBJDIR)/xstart.obj xstart.asm
+
+$(OBJDIR)/xstartx.obj:  xstartx.asm
+	nasm $(ASMFLAGS) -o $(OBJDIR)/xstartx.obj xstartx.asm
+
+$(OBJDIR)/xstarts.obj:  xstarts.asm
+	nasm $(ASMFLAGS) -o $(OBJDIR)/xstarts.obj xstarts.asm
+
+$(LIBDIR)/xstart.lib:  $(OBJDIR)/xstart.obj
+	xlib /new /safe- $@ $(OBJDIR)/xstart.obj
+
+$(LIBDIR)/xstartx.lib:  $(OBJDIR)/xstartx.obj
+	xlib /new /safe- $@ $(OBJDIR)/xstartx.obj
+
+$(LIBDIR)/xstarts.lib:  $(OBJDIR)/xstarts.obj
+	xlib /new /safe- $@ $(OBJDIR)/xstarts.obj

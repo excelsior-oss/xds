@@ -1,0 +1,84 @@
+-- Различные процедуры для работы со строками.
+
+DEFINITION MODULE xStr;
+
+CONST
+  MaxLengthLine = 16384; (* Максимальная длина строки *)
+
+TYPE
+  txt_ptr = POINTER TO ARRAY [0..0FFFEH] OF CHAR;
+
+  string = txt_ptr;
+
+  (* СТРОКА *)
+  STRING = POINTER TO ARRAY OF CHAR;
+  (* реальная длина строки определяется HIGH(STRING) *)
+
+  (* строка, часто используется как промежуточный буфер *)
+  String = ARRAY [0..MaxLengthLine-1] OF CHAR;
+
+  CHARSET = SET OF CHAR;
+
+(* Создает строку заданной длины *)
+PROCEDURE alloc_str(VAR s: STRING; len: CARDINAL);
+
+(* Создает и копирует в строку содержимое buf *)
+PROCEDURE alloc_from(VAR s: STRING; buf: ARRAY OF CHAR);
+
+(* Уничтожает строку *)
+PROCEDURE dealloc_str(VAR s: STRING);
+
+(* Copies at most numberToExtract characters from source to destination,
+   starting at position startIndex in source. *)
+PROCEDURE Extract (source: ARRAY OF CHAR; startIndex, numberToExtract: CARDINAL;
+                   VAR destination: ARRAY OF CHAR);
+
+(* Inserts source into destination at position startIndex *)
+PROCEDURE Insert (source: ARRAY OF CHAR; startIndex: CARDINAL; VAR destination: ARRAY OF CHAR);
+
+(* Appends source to destination. *)
+PROCEDURE Append (source: ARRAY OF CHAR; VAR destination: ARRAY OF CHAR);
+
+(* CharPos returns the position of first occurrence of character
+   C in string S. If the character is not found then
+   F = FALSE, otherwise F = TRUE *)
+PROCEDURE CharPos (S:ARRAY OF CHAR; C:CHAR; VAR F:BOOLEAN) : CARDINAL;
+
+(* Replace 'find' to 'change' in dest *)
+PROCEDURE ReplaceString (find, change: ARRAY OF CHAR; VAR dest: ARRAY OF CHAR);
+
+(* Replace 'find' to 'change' in dest *)
+PROCEDURE ReplaceChar (find, change: CHAR; VAR dest: ARRAY OF CHAR);
+
+(* Upper case char *)
+PROCEDURE UpChar (ch:CHAR) : CHAR;
+
+(* Upper case string *)
+PROCEDURE Uppercase (VAR s: ARRAY OF CHAR);
+
+(* Удаляет все ведущие пробелы и выделяет первое слово в строке *)
+PROCEDURE StripWord (str: ARRAY OF CHAR; VAR word: ARRAY OF CHAR);
+
+(* Truncuted string to l symbols *)
+PROCEDURE TruncStr (VAR s: ARRAY OF CHAR; l: CARDINAL);
+
+(* returns TRUE if the string in Source matches the string in Pattern       *)
+(* The pattern may contain any number of the wild characters '*' and '?'    *)
+(* '?' matches any single character                                         *)
+(* '*' matches any sequence of charcters (including a zero length sequence) *)
+(* EG '*m?t*i*' will match 'Automatic'                                      *)
+PROCEDURE Match(Source, Pattern: ARRAY OF CHAR) : BOOLEAN;                
+
+
+
+
+PROCEDURE StrToCard (S: ARRAY OF CHAR; Base: CARDINAL; VAR OK: BOOLEAN): LONGCARD;
+
+PROCEDURE Slice (VAR R: ARRAY OF CHAR; S: ARRAY OF CHAR; P,L: CARDINAL);
+
+PROCEDURE Item (VAR R: ARRAY OF CHAR; S: ARRAY OF CHAR; T: CHARSET; N: CARDINAL);
+
+PROCEDURE ItemS (VAR R :ARRAY OF CHAR; S, T :ARRAY OF CHAR; N :CARDINAL);
+
+
+END xStr.

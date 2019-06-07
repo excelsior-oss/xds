@@ -1,0 +1,378 @@
+\chapter{Expressions}
+\label{expr}
+
+XD accepts expressions in various places. For instance, an expression
+may be added to the Watches window, used in a conditional breakpoint,
+and even entered as an initial counter value.
+
+The expression syntax in XD closely matches \mt{} syntax, with the 
+following additions and exceptions:
+\begin{itemize}
+\item the qualified identifier syntax is expanded to allow referencing of
+      entities from scopes and components other than current 
+      (see \ref{expr:entities}).
+\item expressions may not contain debuggee function calls; only
+      debugger \See{built-in functions}{}{expr:builtin} may be used.
+\item the construct:
+
+\verb'    Type "<" Expression ">"'
+
+      designates an object of type \verb'Type' residing at address
+      to which \verb'Expression' evaluates (see \ref{expr:casting}).
+\end{itemize}
+
+Type compatibility rules are much more relaxed in comparison
+with Modula-2. Also, implicit type conversions are performed
+under certain circumstances.
+
+Set and complex types are not currently supported.
+
+A {\it designator}\index{designator} is an expression which denotes a memory
+object (in other words, represents an lvalue). In some places XD expects
+a designator to be used.
+
+\section{Constants}
+
+\subsection{Whole constants}
+
+\begin{verbatim}
+    WholeConst   = DecimalConst | HexConst
+    DecimalConst = Digit { Digit }
+    HexConst     = Digit { HexDigit } "H" |
+                   "0" ("x"|"X") HexDigit { HexDigit }
+    Digit    = "0" | "1" | "2" | "3" | "4" |
+               "5" | "6" | "7" | ""8 | "9"
+    HexDigit = Digit |
+               "a" | "b" | "c" | "d" | "e" | "f" |
+               "A" | "B" | "C" | "D" | "E" | "F"
+\end{verbatim}
+A decimal constant is a sequence of decimal digits \verb"'0'..'9'".
+A hexadecimal constant is a secuence of hexadecimal digits \verb"'0'..'9'",
+\verb"'a'..'f'", \verb"'A'..'F'", either prefixed with "\verb'0x'"
+or "\verb'0X'", or postfixed with "\verb'H'". Examples:
+
+\verb'    0x05074  13H  1342'
+
+The debugger stores a whole constant in 4 bytes of memory,
+so the maximum value of a whole constant is \verb'0FFFFFFFFH'.
+
+\subsection{Real constants}
+
+\begin{verbatim}
+    RealConst = DecimalConst "." [ DecimalConst ]
+                [ "e" | "E" [ "+" | "-" ] DecimalConst ]
+\end{verbatim}
+
+A whole decimal constant immediately followed by the period,
+is considered to be a whole part of a real constant. The period,
+in turn, may be followed by another whole decimal constant
+representing a fixed part. Finally, an exponent may be specified
+by adding the "\verb'E'" or "\verb'e'" character and an exponent
+value with an optional sign.
+
+\verb'    1.    3.14    0.1234E-10'
+
+Real constants are stored in 10 bytes format.
+
+\subsection{Boolean constants}
+
+\begin{verbatim}
+    BooleanConst = "TRUE" | "FALSE"
+\end{verbatim}
+
+\subsection{Character constants}
+
+\begin{verbatim}
+    CharConst = "'" character "'" |
+                OctalConst "C"
+\end{verbatim}
+
+A character constant is a single character enclosed in apostrophes:
+
+\verb"    '!'  '''  'X'"
+
+\ifcomment
+
+\subsection{Complex constants}
+
+Complex constants are not supported in the current release.
+
+\subsection{Set constants}
+
+Set constants are not supported in the current release.
+
+\subsection{String constants}
+
+String constants are not supported in the current release.
+
+\fi
+
+\section{CPU registers}
+
+You may use names of CPU registers in expressions, prefixing their names
+with "\verb'@'".
+
+The debugger recognizes the following register names:
+
+\begin{verbatim}
+    EAX, AX, AL, AH, EBX, BX, BL, BH,
+    ECX, CX, CL, CH, EDX, DX, DL, DH
+    ESI, SI, EDI, DI
+    ESP, SP, EBP, BP
+    EIP
+    CS, SS, DS, ES, GS, FS
+    EFL
+\end{verbatim}
+
+\section{Referencing program entities}
+\label{expr:entities}
+
+It is possible to reference a named program entity in an expression, 
+provided that the executable contains debug information for that entity.
+You may use in expressions identifiers of global and local variables 
+and procedures, types, and enumeration type elements. In addition, 
+it is possible to reference DLL publics.
+
+Entities are referenced by their identifiers. In \mt{} and \ot{}, a program
+may contain more than one entity with the given identifier in different scopes.
+By default, the debugger starts searching for an entity in the scope of 
+the current procedure (i.e. the procedure in which the execution point 
+is placed) and then goes up to the scope of the compilation module which 
+contains that procedure. Therefore, it may be necessary to qualify an 
+entity name:
+
+\verb'    QualIdent = [ [ Component "$" ] Module "." ] { Proc "::" } Name'
+
+\ifcomment !!!
+Программа может состоять из нескольких модулей, но только один из них является
+текущим - это тот модуль, адресное пространство которго содержит текущее
+значение IP. Точно так же, модуль может состоять из нескольких процедур,
+одна из них является текущей, а именно та, адресное пространство которой
+содержит текущее значение IP. Для диалоговаого отладчика текущими являются
+модуль и процедура, отвечающие положению пользовательского курсора, информация
+о которых отображается в верхней строке главного окна.
+
+Идентификация обьекта, соответсвующего имени, выполняется в следующей
+последовательности: alias, модуль, переменная, процедура, локальный обьект,
+тип, public, имя элемента перечислимого тип.
+
+Example:
+
+KrnExec
+result
+feefawfum
+sunday
+PCHAR
+CalcSumm
+InOut_WriteString
+
+Если обьект неопределен в текущей области видимости, его можно квалифицировать
+именем обьемлющего блока.
+
+Example:
+
+KrnExec.LoadProgram
+DlgBreak.AddBreak::BreakPos
+
+
+Note
+
+Информация об обьектах программы генерируется компилятором, для этого ему
+необходимо задать соответствующие опции; более подробную информацию об этом
+можно получить в соответствующих разделах описания компилятора и отладчика.
+
+!!! \fi
+
+\section{Operators}
+
+\subsection{Unary operators}
+
+\begin{tabular}{lll}
+\bf Operator & \bf For operand type & \bf Denotes         \\
+\hline
+\tt +        & numeric              &                     \\
+\tt -        & numeric              & negation            \\
+\tt NOT ~    & whole                & bit-wise complement (32-bit) \\
+             & boolean              & logical complement
+\end{tabular}
+
+\subsection{Binary operators}
+
+\begin{tabular}{lll}
+\bf Operator & \bf For operand types & \bf Denotes         \\
+\hline
+\tt +        & numeric               & addition            \\
+\tt -        & numeric               & subtraction         \\
+\tt          & address               & difference          \\
+\tt *        & numeric               & multiplication      \\
+\tt /        & numeric               & division            \\
+\tt DIV      & whole                 & division            \\
+\tt MOD      & whole                 & modulus             \\
+\tt REM      & whole                 & modulus             \\
+\tt %        & numeric               & modulus             \\ % ???
+\tt AND \&   & whole                 & bit-wise AND (32-bit)  \\
+\tt          & boolean               & logical conjunction \\
+\tt OR  |    & whole                 & bit-wise OR  (32-bit)  \\
+\tt          & boolean               & logical inclusive disjunction \\
+\tt XOR      & whole                 & bit-wise XOR (32-bit)  \\
+\tt          & boolean               & logical exclusive disjunction
+\end{tabular}
+
+It is also possible to add whole numbers to and subtract from addresses.
+
+\subsection{Comparison operators}
+
+\begin{tabular}{lll}
+\bf Operator & \bf For operand types & \bf Tests if the first is        \\
+\hline
+\tt =        & scalar                & equal     \\
+\tt \#       & scalar                & not equal \\
+\tt <        & ordinal or real       & less than \\
+\tt <=       & ordinal or real       & less than or equal \\
+\tt >        & ordinal or real       & greater than \\
+\tt >=       & ordinal or real       & greater than or equal
+\end{tabular}
+
+\section{Built-in functions}
+\label{expr:builtin}
+
+\subsection{ADR - address of a memory object}
+
+\verb'    ADR "(" Designator ")"'
+
+Returns the address of the memory object designated by \verb'Designator'.
+
+\begin{verbatim}
+    ADR(ArrayOfRecords)
+    ADR(ArrayOfRecords[6])
+    ADR(ArrayOfRecords[6].FirstField)
+\end{verbatim}
+
+\subsection{SIZE - size of a memory object}
+
+\verb'    SIZE "(" Designator ")"'
+
+Returns the size of the memory object designated by \verb'Designator'.
+
+Examples:
+
+\begin{verbatim}
+    SIZE(ArrayOfRecords)
+    SIZE(ArrayOfRecords[6])
+    SIZE(ArrayOfRecords[6].FirstField)
+\end{verbatim}
+
+% !!! What about sizes of types?
+
+\subsection{LOW - low index of an array}
+
+\verb'    LOW "(" Array ")"'
+
+Returns the low index of an array designated by \verb'Array'.
+
+\verb'    LOW(ArrayOfRecords)'
+
+\subsection{HIGH - high index of an array}
+
+\verb'    HIGH "(" Array ")"'
+
+Returns the high index of an array designated by \verb'Array'.
+
+\verb'    HIGH(ArrayOfRecords)'
+
+\subsection{@PASS - number of passes for breakpoint}
+\label{expr:builtin:pass}
+
+% !!! New in version 1.1:
+
+\verb'    @PASS "(" Name | Number ")"'
+
+Returns the number of passes for the breakpoint identified by \verb'Name' or
+\verb'Number' (see \ref{batch:BREAK}). Batch mode only.
+
+\subsection{@ARG - access to command-line arguments}
+\label{expr:builtin:arg}
+
+% !!! New in version 1.1:
+
+\verb'    @ARG "(" n ")"'
+
+Returns \verb'n'-th command-line argument specified after control file 
+name. Batch mode only.
+
+For instance, if the \verb'breakat.xd' file contains the following
+statements:
+
+\begin{verbatim}
+       LOAD @ARG(1)
+       BREAK B, PROC, @ARG(2),, Dialog
+       START                              
+       QUIT
+
+Dialog DIALOG
+       STOP
+\end{verbatim}
+ 
+and XD is launched as
+
+\verb'    xd /b breakat myprog M.P'
+
+it will load the program \verb'myprog', establish a breakpoint at the 
+body of the procedure \verb'P' from module \verb'M', execute
+the program up to that breakpoint and switch to the dislog mode.
+
+\section{Type casting}
+\label{expr:casting}
+
+\verb'    Type "(" Designator ")"'
+
+This kind of type casting allows you to treat a memory object designated by
+\verb'Designator' as if it had type \verb'Type'. \verb'Type' can be any type
+defined in your program and present in its debug information, or one of the
+predefined types.
+
+\verb'    CARD8(File.result)' \\
+\verb'    PrintModes.MODE(PrintModeBox^.selected)'
+
+\verb'    Type "<" Expression ">"'
+
+The result is a memory object residing at address \verb'Expression'
+and having type \verb'Type'.
+
+The result of \verb'Expression' must be compatible with the address type.
+
+\verb'    ADDRESS<ADR(result)>' \\
+\verb'    DataBase.ArrayCardinal<ADR(Array2DimInteger[3])>'
+
+\begin{table}
+\begin{center}
+\begin{tabular}{lll}
+\bf Name & \bf Type & \bf Size \\
+\hline
+BYTE8        & unsigned integer & 1  \\  % ??? what's the diff with CARD?
+BYTE16       & unsigned integer & 2  \\
+BYTE32       & unsigned integer & 4  \\
+INT8         & signed integer   & 1  \\
+INT16        & signed integer   & 2  \\
+INT32        & signed integer   & 4  \\
+CARD8        & unsigned integer & 1  \\
+CARD16       & unsigned integer & 2  \\
+CARD32       & unsigned integer & 4  \\
+REAL         & real             & 4  \\
+LONGREAL     & real             & 8  \\
+LONGLONGREAL & real             & 10 \\
+COMPLEX      & complex          & 8  \\
+LONGCOMPLEX  & complex          & 16 \\
+BOOL8        & boolean          & 1  \\
+BOOL16       & boolean          & 2  \\
+BOOL32       & boolean          & 4  \\
+CHAR8        & character        & 1  \\
+SET8         & bitset           & 1 \\
+SET16        & bitset           & 2 \\
+SET32        & bitset           & 4 \\
+ADDRESS      & address          & 4
+\end{tabular}
+\end{center}
+\caption{Predefined types}
+\end{table}
+

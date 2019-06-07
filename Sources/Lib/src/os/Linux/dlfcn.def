@@ -1,0 +1,68 @@
+(* Copyright (c) Excelsior 2003.  All Rights Reserved *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] dlfcn;
+
+IMPORT SYSTEM;
+
+TYPE
+  HANDLE = SYSTEM.ADDRESS;
+
+  PCHAR = POINTER TO CHAR;
+
+CONST
+  RTLD_LAZY          = 000001H; -- Lazy function call binding.
+  RTLD_NOW           = 000002H; -- Immediate function call binding.
+  RTLD_BINDING_MASK  = 000003H; -- Mask of binding time value.
+  RTLD_NOLOAD        = 000004H; -- Do not load the object.
+
+  -- If the following bit is set in the MODE argument to `dlopen',
+  -- the symbols of the loaded object and its dependencies are made
+  -- visible as if the object were linked directly into the program.
+  RTLD_GLOBAL    = 000100H;
+
+  -- Unix98 demands the following flag which is the inverse to RTLD_GLOBAL.
+  -- The implementation does this by default and so we can define the
+  -- value to zero.
+  RTLD_LOCAL     = 0;
+
+  -- Do not delete object when closed.
+  RTLD_NODELETE  = 001000H;
+
+
+-- Open the shared object FILE and map it in; return a handle that can be
+-- passed to `dlsym' to get symbol values from it.
+PROCEDURE dlopen (file: PCHAR; mode: SYSTEM.INT32): HANDLE;
+
+-- Unmap and close a shared object opened by `dlopen'.
+-- The handle cannot be used again after calling `dlclose'.
+PROCEDURE dlclose (handle: HANDLE): SYSTEM.INT32;
+
+-- Find the run-time address in the shared object HANDLE refers to
+-- of the symbol called NAME.
+PROCEDURE dlsym (handle: HANDLE; name: ARRAY OF CHAR): SYSTEM.ADDRESS;
+
+-- When any of the above functions fails, call this function
+-- to return a string describing the error.  Each call resets
+-- the error string so that a following call returns null.
+PROCEDURE dlerror (): PCHAR;
+
+
+TYPE
+  -- This is GNU extension, correct in Linux.
+  Dl_info = RECORD
+    dli_fname : PCHAR;            -- File name of defining object.
+    dli_fbase : SYSTEM.ADDRESS;   -- Load address of that object.
+    dli_sname : PCHAR;            -- Name of nearest symbol.
+    dli_saddr : SYSTEM.ADDRESS;   -- Exact value of nearest symbol.
+  END;
+
+-- Fill in *INFO with the following information about ADDRESS.
+-- Returns 0 if no shared object's segments contain that address.
+PROCEDURE dladdr (address : HANDLE; VAR info : Dl_info) : SYSTEM.INT32;
+
+
+END dlfcn.

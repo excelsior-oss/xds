@@ -1,0 +1,15 @@
+(* Copyright (c) Excelsior 1999.  All Rights Reserved *)
+(* Copyright (c) xTech 1993,95. *)
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrsetjmp;
+
+IMPORT xPOSIX;
+
+TYPE
+  X2C_jmp_buf = xPOSIX.jmp_buf;
+
+CONST
+  X2C_setjmp  = xPOSIX.setjmp;
+  X2C_longjmp = xPOSIX.longjmp;
+
+END xrsetjmp.

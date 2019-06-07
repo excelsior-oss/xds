@@ -1,0 +1,15 @@
+-- Содержить идентификаторы: название продукта,
+-- номер версии, copyright
+
+DEFINITION MODULE ["C"] XD_Title;
+
+
+CONST
+  PRODUCT   = "XDS Debugger (native x86 edition)";  (* Продукт   *)
+  VERSION   = "2.0";                                (* Версия    *)
+  COPYRIGHT = "1996-2002 Excelsior";                (* Copyright *)
+
+
+END XD_Title.
+
+

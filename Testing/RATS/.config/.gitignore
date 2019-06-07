@@ -1,0 +1,5 @@
+/.config-*.bsc
+/.env-*.bsc
+
+!/.config-COMPUTERNAME.bsc
+!/.env-COMPUTERNAME.bsc

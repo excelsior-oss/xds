@@ -1,0 +1,302 @@
+(* vgamouse.def  Feb 18  12:3:31  1999 *)
+(* Copyright (c) 1999, JSC XDS *)
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: vgamouse.h *)
+
+DEFINITION MODULE ["C"] vgamouse;
+
+IMPORT SYSTEM;
+
+(*  Mouse interface for svgalib.  *)
+
+(*  Can be used independently.  *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  MOUSE_MICROSOFT              - : INTEGER;
+  MOUSE_MOUSESYSTEMS           - : INTEGER;
+  MOUSE_MMSERIES               - : INTEGER;
+  MOUSE_LOGITECH               - : INTEGER;
+  MOUSE_BUSMOUSE               - : INTEGER;
+  MOUSE_PS2                    - : INTEGER;
+  MOUSE_LOGIMAN                - : INTEGER;
+  MOUSE_GPM                    - : INTEGER;
+  MOUSE_SPACEBALL              - : INTEGER;
+  MOUSE_NONE                   - : INTEGER;
+  MOUSE_INTELLIMOUSE           - : INTEGER;
+  MOUSE_IMPS2                  - : INTEGER;
+  MOUSE_ORIENTATION_VERTICAL   - : INTEGER;
+  MOUSE_ORIENTATION_HORIZONTAL - : INTEGER;
+  MOUSE_ACCEL_TYPE_NORMAL      - : INTEGER;
+  MOUSE_ACCEL_TYPE_POWER       - : INTEGER;
+  DEFAULT_ACCEL_THRESH         - : INTEGER;
+  DEFAULT_ACCEL_POWER          - : REAL;
+  DEFAULT_ACCEL_OFFSET         - : INTEGER;
+  DEFAULT_ACCEL_MULT           - : INTEGER;
+  DEFAULT_MAXDELTA             - : INTEGER;
+  DEFAULT_ACCEL_MAXDELTA       - : INTEGER;
+  DEFAULT_ACCEL_TYPE           - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  MOUSE_MICROSOFT              = 0;
+  MOUSE_MOUSESYSTEMS           = 1;
+  MOUSE_MMSERIES               = 2;
+  MOUSE_LOGITECH               = 3;
+  MOUSE_BUSMOUSE               = 4;
+  MOUSE_PS2                    = 5;
+  MOUSE_LOGIMAN                = 6;
+  MOUSE_GPM                    = 7;
+  MOUSE_SPACEBALL              = 8;
+  -- Some special number for a non supported/existing mouse
+  MOUSE_NONE                   = 9;
+  MOUSE_INTELLIMOUSE           = 10;
+  MOUSE_IMPS2                  = 11;
+  MOUSE_ORIENTATION_VERTICAL   = 0;
+  MOUSE_ORIENTATION_HORIZONTAL = 1;
+  MOUSE_ACCEL_TYPE_NORMAL      = 1;
+  MOUSE_ACCEL_TYPE_POWER       = 2;
+  DEFAULT_ACCEL_THRESH         = 5;
+  DEFAULT_ACCEL_POWER          = 1.2;
+  DEFAULT_ACCEL_OFFSET         = 1;
+  DEFAULT_ACCEL_MULT           = 10;
+  DEFAULT_MAXDELTA             = 0;
+  DEFAULT_ACCEL_MAXDELTA       = 0;
+  DEFAULT_ACCEL_TYPE           = 0; -- MOUSE_ACCEL_TYPE_POWER
+
+<* END *>
+
+(* Logical or the following values to one of the above at will and give that for
+   type in mouse_init (still they make only sense for serial mice) *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  MOUSE_CHG_DTR  - : INTEGER;
+  MOUSE_DTR_HIGH - : INTEGER;
+  MOUSE_CHG_RTS  - : INTEGER;
+  MOUSE_RTS_HIGH - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  MOUSE_CHG_DTR  = 80000000H; -- CLEAR (!) the DTR line
+  MOUSE_DTR_HIGH = 40000000H; -- when used with MOUSE_CHG_DTR set DTR not clear it
+  MOUSE_CHG_RTS  = 20000000H; -- CLEAR (!) the RTS line
+  MOUSE_RTS_HIGH = 10000000H; -- when used with MOUSE_CHG_RTS set RTS not clear it
+
+<* END *>
+
+(* If MOUSE_CHG_DTR is not given the DTR state is not touched.. same with RTS resp.
+   So I use MOUSE_MOUSESYSTEMS|MOUSE_CHG_RTS to force my
+   multiprotocol mouse to MOUSESYSTEMS and use init the driver to MOUSESYSTEMS *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  MOUSE_TYPE_MASK         - : INTEGER;
+  MOUSE_LEFTBUTTON        - : INTEGER;
+  MOUSE_MIDDLEBUTTON      - : INTEGER;
+  MOUSE_RIGHTBUTTON       - : INTEGER;
+  MOUSE_FOURTHBUTTON      - : INTEGER;
+  MOUSE_FIFTHBUTTON       - : INTEGER;
+  MOUSE_SIXTHBUTTON       - : INTEGER;
+  MOUSE_RESETBUTTON       - : INTEGER;
+  MOUSE_XDIM              - : INTEGER;
+  MOUSE_YDIM              - : INTEGER;
+  MOUSE_ZDIM              - : INTEGER;
+  MOUSE_RXDIM             - : INTEGER;
+  MOUSE_RYDIM             - : INTEGER;
+  MOUSE_RZDIM             - : INTEGER;
+  MOUSE_2DIM              - : INTEGER;
+  MOUSE_3DIM              - : INTEGER;
+  MOUSE_6DIM              - : INTEGER;
+  MOUSE_DEFAULTSAMPLERATE - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  MOUSE_TYPE_MASK         = 0FFFFH; -- the upper 16bit are reserved for future flags
+  MOUSE_LEFTBUTTON        = 4;
+  MOUSE_MIDDLEBUTTON      = 2;
+  MOUSE_RIGHTBUTTON       = 1;
+  MOUSE_FOURTHBUTTON      = 8;
+  MOUSE_FIFTHBUTTON       = 16;
+  MOUSE_SIXTHBUTTON       = 32;
+  MOUSE_RESETBUTTON       = 64;
+  MOUSE_XDIM              = 1;
+  MOUSE_YDIM              = 2;
+  MOUSE_ZDIM              = 4;
+  MOUSE_RXDIM             = 8;
+  MOUSE_RYDIM             = 16;
+  MOUSE_RZDIM             = 32;
+  MOUSE_2DIM              = 3;
+  MOUSE_3DIM              = 7;
+  MOUSE_6DIM              = 63;
+  MOUSE_DEFAULTSAMPLERATE = 150;
+
+<* END *>
+
+(* Initialize mouse device. Returns 0 if succesful, -1 otherwise.
+   (Get the svgalib configured type with vga_getmousetype()). *)
+
+PROCEDURE mouse_init ( dev: ARRAY OF CHAR;
+                       type: INTEGER;
+                       samplerate: INTEGER ): INTEGER;
+
+(* Similar but returns the mouse fd if succesful. *)
+PROCEDURE mouse_init_return_fd ( dev: ARRAY OF CHAR;
+                                 type: INTEGER;
+                                 samplerate: INTEGER ): INTEGER;
+
+(* Set event handler invoked by mouse_update(). *)
+
+TYPE
+  __mouse_handler = SYSTEM.ADDRESS;
+
+PROCEDURE mouse_seteventhandler ( handler: __mouse_handler );
+
+(* Close mouse device. *)
+
+PROCEDURE mouse_close;
+
+(* Read mouse and handle events. Returns 0 if no event. *)
+
+PROCEDURE mouse_update (): INTEGER;
+
+(* Similar to mouse_update, but wait for an event to happen. *)
+
+PROCEDURE mouse_waitforupdate;
+
+(* mouse_init sets default event handler that keeps track of absolute
+   coordinates: *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  MOUSE_NOWRAP            - : INTEGER;
+  MOUSE_WRAPX             - : INTEGER;
+  MOUSE_WRAPY             - : INTEGER;
+  MOUSE_WRAPZ             - : INTEGER;
+  MOUSE_WRAPRX            - : INTEGER;
+  MOUSE_WRAPRY            - : INTEGER;
+  MOUSE_WRAPRZ            - : INTEGER;
+  MOUSE_WRAP              - : INTEGER;
+  MOUSE_ROT_COORDS        - : INTEGER;
+  MOUSE_ROT_INFINITESIMAL - : INTEGER;
+  MOUSE_ROT_RX_RY_RZ      - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  MOUSE_NOWRAP            = 0;
+  MOUSE_WRAPX             = 1;
+  MOUSE_WRAPY             = 2;
+  MOUSE_WRAPZ             = 4;
+  MOUSE_WRAPRX            = 8;
+  MOUSE_WRAPRY            = 16;
+  MOUSE_WRAPRZ            = 32;
+  MOUSE_WRAP              = 63;
+  MOUSE_ROT_COORDS        = 196;
+  MOUSE_ROT_INFINITESIMAL = 0;   -- report changes in angle about axes
+  MOUSE_ROT_RX_RY_RZ      = 64;  -- report angle about axes
+
+<* END *>
+
+(* Warning! Next two not yet supported! *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  MOUSE_ROT_ZXZ - : INTEGER;
+  MOUSE_ROT_YPR - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  MOUSE_ROT_ZXZ = 128; -- use x convention Euler angles
+  MOUSE_ROT_YPR = 196; -- use yaw, pitch, and roll
+
+<* END *>
+
+(* Revert to default handler. *)
+
+PROCEDURE mouse_setdefaulteventhandler;
+
+(* Set position of mouse. *)
+
+PROCEDURE mouse_setposition ( x: INTEGER;
+                              y: INTEGER );
+
+(* Set position of mouse in all 6 dimensions.  *)
+
+PROCEDURE mouse_setposition_6d ( x: INTEGER;
+                                 y: INTEGER;
+                                 z: INTEGER;
+                                 rx: INTEGER;
+                                 ry: INTEGER;
+                                 rz: INTEGER;
+                                 dim_mask: INTEGER );
+
+(* Set horizontal range of mouse to [x1, x2] incl.  *)
+
+PROCEDURE mouse_setxrange ( x1: INTEGER;
+                            x2: INTEGER );
+
+(* Set vertical range of mouse to [y1, y2] incl. *)
+
+PROCEDURE mouse_setyrange ( y1: INTEGER;
+                            y2: INTEGER );
+
+(* Set all ranges of mouse in 6 dimensions. *)
+
+PROCEDURE mouse_setrange_6d ( x1: INTEGER;
+                              x2: INTEGER;
+                              y1: INTEGER;
+                              y2: INTEGER;
+                              z1: INTEGER;
+                              z2: INTEGER;
+                              rx1: INTEGER;
+                              rx2: INTEGER;
+                              ry1: INTEGER;
+                              ry2: INTEGER;
+                              rz1: INTEGER;
+                              rz2: INTEGER;
+                              dim_mask: INTEGER );
+
+(* Set scale factor by which raw mouse coordinates are divided. *)
+
+PROCEDURE mouse_setscale ( s: INTEGER );
+
+(* Enable/disable wrapping of mouse in horizontal and/or vertical range. *)
+
+PROCEDURE mouse_setwrap ( w: INTEGER );
+
+(* Get current mouse x-coordinate. *)
+
+PROCEDURE mouse_getx (): INTEGER;
+
+(* Get current mouse y-coordinate. *)
+
+PROCEDURE mouse_gety (): INTEGER;
+
+(* Get position of mouse in all 6 dimensions. *)
+
+PROCEDURE mouse_getposition_6d ( VAR x: INTEGER;
+                                 VAR y: INTEGER;
+                                 VAR z: INTEGER;
+                                 VAR rx: INTEGER;
+                                 VAR ry: INTEGER;
+                                 VAR rz: INTEGER );
+
+(* Get current mouse button status. *)
+
+PROCEDURE mouse_getbutton (): INTEGER;
+
+END vgamouse.

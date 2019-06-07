@@ -1,0 +1,98 @@
+(* Copyright (C) 1998 XDS Ltd. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE MsMouse;
+
+FROM SYSTEM IMPORT ADDRESS;
+
+TYPE
+    MsData = RECORD
+        left_pressed, middle_pressed, right_pressed: BOOLEAN;
+        actions: CARDINAL;
+        row, col: INTEGER;
+    END;
+
+    MsRange = RECORD
+        max_col,min_col, max_row, min_row: INTEGER;
+    END;
+
+    MsMotion = RECORD
+        vert, horiz: INTEGER;
+    END;
+
+    GraphcurMask = ARRAY [0..15] OF CARDINAL;
+    MsGraphcur = RECORD
+        row, col: INTEGER;
+        screen_mask: GraphcurMask;
+        cursor_mask: GraphcurMask;
+    END;
+
+    Hardware = RECORD
+        start_scan, end_scan: INTEGER;
+    END;
+
+    Software = RECORD
+        screen_mask, cursor_mask: CARDINAL;
+    END;
+
+    MsTextCur = RECORD
+       type: BOOLEAN;
+       CASE : BOOLEAN OF
+         | TRUE : H: Hardware;
+         | FALSE : S: Software;
+       END;
+    END;
+
+    MsSense = RECORD
+        h_speed, v_speed, threshold: INTEGER;
+    END;
+
+    MouseFuncType = PROCEDURE(CARDINAL, CARDINAL, CARDINAL, CARDINAL); --mask, buttons, x, y
+
+    MsInterrupt = RECORD
+        IntFunc: MouseFuncType;
+        mask: CARDINAL;
+    END;
+
+CONST
+    _MS_ON      = TRUE;
+    _MS_OFF     = FALSE;
+    _MS_HIDE    = FALSE;
+    _MS_SHOW    = TRUE;
+
+    _MS_LEFT   =  0;
+    _MS_RIGHT  =  1;
+    _MS_MIDDLE =  2;
+
+    _MS_HARD  =   TRUE;
+    _MS_SOFT  =   FALSE;
+
+PROCEDURE Reset(): INTEGER;
+PROCEDURE Cursor(Mode: BOOLEAN);
+PROCEDURE DriverSize(): CARDINAL;
+PROCEDURE GetMotion(VAR mp: MsMotion);
+PROCEDURE GetPage(): CARDINAL;
+PROCEDURE GetPress(Button: INTEGER; VAR mp: MsData);
+PROCEDURE GetRelease(Button: INTEGER; VAR mp: MsData);
+PROCEDURE GetSensitivity(VAR mp: MsSense);
+PROCEDURE GetStatus(VAR mp: MsData);
+PROCEDURE LightPen(Mode: BOOLEAN);
+PROCEDURE RestoreDriver(Buffer: ADDRESS);
+PROCEDURE SaveDriver(Buffer: ADDRESS);
+PROCEDURE SetDouble(Threshold: INTEGER);
+PROCEDURE SetGraphCursor(VAR mp: MsGraphcur);
+PROCEDURE SetInterrupt(VAR mp: MsInterrupt);
+PROCEDURE SetMickeys(Vert, Horiz: INTEGER);
+PROCEDURE SetPage(Page: CARDINAL);
+PROCEDURE SetPosition(Row, Col: INTEGER);
+PROCEDURE SetRange(mp: MsRange);
+PROCEDURE SetSensitivity(mp: MsSense);
+PROCEDURE SetTextCursor(mp: MsTextCur);
+PROCEDURE SwapInterrupt(VAR mp: MsInterrupt);
+PROCEDURE UpdateScreen(x1, y1, x2, y2: INTEGER);
+
+PROCEDURE InitMouse();
+
+END MsMouse.

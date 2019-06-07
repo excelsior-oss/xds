@@ -1,0 +1,129 @@
+(* vgajoystick.def  Feb 18  12:3:31  1999 *)
+(* Copyright (c) 1999, JSC XDS *)
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: vgajoystick.h *)
+
+DEFINITION MODULE ["C"] vgajoystick;
+
+IMPORT SYSTEM;
+
+(* Joystick interface modeled after svgalibs keyboard and mouse interfaces
+ * Copyright 1998 Daniel Engström <daniel.engstrom@riksnett.no>
+ * Partly based on code from
+ * joystick-0.7.3 Copyright (C) 1992, 1993 Author C. Smith
+ * and
+ * joystick-1.0.6 Copyright (C) 1997 Vojtech Pavlik
+ *
+ * Extension and modifications. Multiple joystick support, VC switching,
+ * etc. Michael Weller <eowmob@exp-math.uni-essen.de>. *)
+
+(* event for joystick handlers  *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  JOY_EVENTBUTTONDOWN - : INTEGER;
+  JOY_EVENTBUTTONUP   - : INTEGER;
+  JOY_EVENTAXIS       - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  JOY_EVENTBUTTONDOWN = 1;
+  JOY_EVENTBUTTONUP   = 2;
+  JOY_EVENTAXIS       = 3;
+
+<* END *>
+
+(* file is a struct FILE to output calibration instructions to,
+ * set to NULL to skip calibration
+ *)
+
+
+TYPE 
+  __joystick_output = PROCEDURE ( (* msg *) ARRAY OF CHAR );
+
+PROCEDURE joystick_init ( joydev: INTEGER;
+                          jo: __joystick_output ): INTEGER;
+
+(*  This is guaranteed not to collide with any user definition  *)
+(* #define JOY_CALIB_STDOUT ((__joystick_output)(void * )joystick_init) *)
+VAR
+  JOY_CALIB_STDOUT: __joystick_output;
+
+PROCEDURE joystick_close ( joydev: INTEGER );
+
+(*  polls the joystick and calls the eventhandler  *)
+
+PROCEDURE joystick_update (): INTEGER;
+
+TYPE 
+  __joystick_handler = PROCEDURE ( (* event *) INTEGER,
+                                   (* number *) INTEGER,
+                                   (* value *) CHAR,
+                                   (* joydev *) INTEGER );
+
+(* event - event type; see above
+ * number - the axis or button number for this event 0=x axis or button 1, etc.
+ * value - value for axis events -128 - 0 - +127 *)
+
+PROCEDURE joystick_sethandler ( joydev: INTEGER;
+                                jh: __joystick_handler );
+
+PROCEDURE joystick_setdefaulthandler ( joydev: INTEGER );
+
+PROCEDURE joystick_getnumaxes ( joydev: INTEGER ): CHAR;
+
+PROCEDURE joystick_getnumbuttons ( joydev: INTEGER ): CHAR;
+
+(*  querys the default handler if used  *)
+
+PROCEDURE joystick_getaxis ( joydev: INTEGER;
+                             a: INTEGER ): CHAR;
+
+PROCEDURE joystick_getbutton ( joydev: INTEGER;
+                               b: INTEGER ): CHAR;
+
+(* XDS: these procedures corresponds to a macro. *)
+
+<* IF  __GEN_C__ THEN *>
+
+PROCEDURE joystick_button1 ( i: INTEGER ): CHAR;
+PROCEDURE joystick_button2 ( i: INTEGER ): CHAR;
+PROCEDURE joystick_button3 ( i: INTEGER ): CHAR;
+PROCEDURE joystick_button4 ( i: INTEGER ): CHAR;
+PROCEDURE joystick_getb1 (): CHAR;
+PROCEDURE joystick_getb2 (): CHAR;
+PROCEDURE joystick_getb3 (): CHAR;
+PROCEDURE joystick_getb4 (): CHAR;
+PROCEDURE joystick_x ( i: INTEGER ): CHAR;
+PROCEDURE joystick_y ( i: INTEGER ): CHAR;
+PROCEDURE joystick_z ( i: INTEGER ): CHAR;
+PROCEDURE joystick_getx (): CHAR;
+PROCEDURE joystick_gety (): CHAR;
+PROCEDURE joystick_getz (): CHAR;
+
+<* ELSE *>
+
+PROCEDURE  / joystick_button1 ( i: INTEGER ): CHAR;
+PROCEDURE  / joystick_button2 ( i: INTEGER ): CHAR;
+PROCEDURE  / joystick_button3 ( i: INTEGER ): CHAR;
+PROCEDURE  / joystick_button4 ( i: INTEGER ): CHAR;
+PROCEDURE  / joystick_getb1 (): CHAR;
+PROCEDURE  / joystick_getb2 (): CHAR;
+PROCEDURE  / joystick_getb3 (): CHAR;
+PROCEDURE  / joystick_getb4 (): CHAR;
+PROCEDURE  / joystick_x ( i: INTEGER ): CHAR;
+PROCEDURE  / joystick_y ( i: INTEGER ): CHAR;
+PROCEDURE  / joystick_z ( i: INTEGER ): CHAR;
+PROCEDURE  / joystick_getx (): CHAR;
+PROCEDURE  / joystick_gety (): CHAR;
+PROCEDURE  / joystick_getz (): CHAR;
+
+<* END *>
+
+END vgajoystick.

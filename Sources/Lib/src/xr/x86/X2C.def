@@ -1,0 +1,66 @@
+(* Copyright (c) XDS Ltd. 1992,97.  All Rights Reserved *)
+
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] X2C;
+
+IMPORT SYSTEM, xmRTS;
+
+TYPE
+  X2C_LSET_BASE = BITSET;
+
+VAR
+  X2C_argc-   :INTEGER;
+  X2C_argv-   :POINTER TO POINTER TO CHAR;
+  X2C_sysarg  :POINTER TO CHAR;
+  (* pointer to unparsed argument string w/o program name *)
+
+CONST
+  X2C_LSET_SIZE         = MAX(BITSET)+1;
+
+  X2C_adr_aligment      = 1;
+
+  -- these values MUST be equal to X2C_Exceptions in xr/C/X2c.h 
+  -- and constatnts in opTune.ob2
+
+  (* Oberon-2 Exceptions *)
+  X2C_assertException   = 15;
+  X2C_guardException    = 16;
+  (* RTS Exceptions *)
+  X2C_noMemoryException = 17;
+  X2C_internalError     = 18;
+  X2C_castError         = 19;
+  X2C_UserBreak         = 20;
+  X2C_unreachDLL        = 21;
+  X2C_stack_overflow    = 22;
+
+(*-----------------------------------------------------*)
+
+CONST
+  X2C_OFS_END  = SYSTEM.MAKEADR(1);
+  X2C_OFS_ARR  = SYSTEM.MAKEADR(2);
+  X2C_OFS_REC  = SYSTEM.MAKEADR(3);
+  X2C_BASE     = SYSTEM.MAKEADR(4);
+
+PROCEDURE / X2C_GET_TD(a: SYSTEM.ADDRESS): xmRTS.X2C_TD;
+
+PROCEDURE / X2C_adr_lss(x,y: SYSTEM.ADDRESS): BOOLEAN;
+PROCEDURE / X2C_adr_gtr(x,y: SYSTEM.ADDRESS): BOOLEAN;
+
+(*-----------------------------------------------------*)
+
+CONST X2C_TRAP = xmRTS.X2C_TRAP_F;
+
+(* Was there the RT Initialization? *)
+PROCEDURE  X2C_wasNLibInit() :BOOLEAN;
+PROCEDURE  X2C_makeNLibInit();
+
+(* Was there the entry in EXE? *)
+PROCEDURE  X2C_wasXEntry() :BOOLEAN;
+PROCEDURE  X2C_makeXEntry();
+
+VAR
+(* history list header preinitialized by NIL *)
+  X2C_HisList   :SYSTEM.ADDRESS;
+
+END X2C.

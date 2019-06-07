@@ -1,0 +1,61 @@
+(* Copyright (c) xTech 1993,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS*>
+<*+ M2ADDTYPES*>
+DEFINITION MODULE [2] limits;
+
+FROM SYSTEM IMPORT int, unsigned;
+
+<* IF __GEN_C__ THEN *>
+
+VAR
+  (* the following constants are declared as read-only variables *)
+  (* to improve portability. *)
+
+  CHAR_BIT     -: int;
+
+  UCHAR_MAX    -: unsigned;
+  USHRT_MAX    -: unsigned;
+  UINT_MAX     -: unsigned;
+  ULONG_MAX    -: LONGCARD;
+
+  CHAR_MAX     -: int;
+  SCHAR_MAX    -: int;
+  SHRT_MAX     -: int;
+  INT_MAX      -: int;
+  LONG_MAX     -: LONGINT;
+
+  CHAR_MIN     -: int;
+  SCHAR_MIN    -: int;
+  SHRT_MIN     -: int;
+  INT_MIN      -: int;
+  LONG_MIN     -: LONGINT;
+
+<* ELSIF __GEN_X86__ THEN *>
+CONST
+  CHAR_BIT     = 8;
+
+  UCHAR_MAX    = 255;
+  USHRT_MAX    = 10000H;
+  ULONG_MAX    = 80000000H;
+  UINT_MAX     = ULONG_MAX;
+
+  CHAR_MAX     = 255; (* depends on whether char is signed or not *)
+  SCHAR_MAX    = 127;
+  SHRT_MAX     = 7FFFH;
+  LONG_MAX     = 7FFFFFFFH;
+  INT_MAX      = LONG_MAX;
+
+  CHAR_MIN     = 0;
+  SCHAR_MIN    = - SCHAR_MAX -1;
+  SHRT_MIN     = - SHRT_MAX -1;
+  INT_MIN      = - LONG_MAX -1;
+  LONG_MIN     = - LONG_MAX -1;
+
+<* ELSE *>
+        *** not implemented ***
+<* END *>
+
+
+END limits.

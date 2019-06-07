@@ -1,0 +1,59 @@
+(* Copyright (c) 1992,96,2000 Excelsior, Russia. All Rights Reserved. *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosFiles; (* Hady. 19.06.96 14:33 *)
+
+IMPORT  SYSTEM, xlibOS, ChanConsts;
+
+CONST
+  (* Seek op parameters *)
+  X2C_fSeekSet = xlibOS.X2C_fSeekSet;
+  X2C_fSeekCur = xlibOS.X2C_fSeekCur;
+  X2C_fSeekEnd = xlibOS.X2C_fSeekEnd;
+
+  (* Access bitset *)
+  X2C_fAccessRead   = xlibOS.X2C_fAccessRead;
+  X2C_fAccessWrite  = xlibOS.X2C_fAccessWrite;
+  X2C_fModeNew      = xlibOS.X2C_fModeNew;
+  X2C_fModeText     = xlibOS.X2C_fModeText;
+  X2C_fModeRaw      = xlibOS.X2C_fModeRaw;
+
+  (* file types by the handle *)
+  X2C_ftDisk = xlibOS.X2C_ftDisk; (* ordinary disk file *)
+  X2C_ftChar = xlibOS.X2C_ftChar; (* character device; use line buffering *)
+  X2C_ftPipe = xlibOS.X2C_ftPipe; (* pipe; no buffering *)
+  X2C_ftUnk  = xlibOS.X2C_ftUnk;  (* unknown (other) type of file *)
+
+PROCEDURE X2C_IsMixAllowed(): BOOLEAN;
+
+PROCEDURE X2C_fGetXAttrs(VAR data: xlibOS.X2C_FXATTRS);
+PROCEDURE X2C_fSetXAttrs(VAR data: xlibOS.X2C_FXATTRS);
+
+PROCEDURE X2C_fOpen(VAR f: xlibOS.X2C_OSFHANDLE; name: ARRAY OF CHAR; tags: BITSET): ChanConsts.OpenResults;
+PROCEDURE X2C_fClose(VAR f: xlibOS.X2C_OSFHANDLE): SYSTEM.int;
+PROCEDURE X2C_fRead(f: xlibOS.X2C_OSFHANDLE; buf: SYSTEM.ADDRESS; size: SYSTEM.CARD32; VAR rd: SYSTEM.CARD32): SYSTEM.int;
+PROCEDURE X2C_fWrite(f: xlibOS.X2C_OSFHANDLE; buf: SYSTEM.ADDRESS; size: SYSTEM.CARD32; VAR wr: SYSTEM.CARD32): SYSTEM.int;
+
+PROCEDURE X2C_fSeek(f: xlibOS.X2C_OSFHANDLE; VAR ofs: xlibOS.X2C_FPOS; how: SYSTEM.int): SYSTEM.int;
+PROCEDURE X2C_fTell(f: xlibOS.X2C_OSFHANDLE; VAR pos: xlibOS.X2C_FPOS): SYSTEM.int;
+PROCEDURE X2C_fSize(f: xlibOS.X2C_OSFHANDLE; VAR siz: xlibOS.X2C_FPOS): SYSTEM.int;
+PROCEDURE X2C_fFlush(f: xlibOS.X2C_OSFHANDLE): SYSTEM.int;
+
+PROCEDURE X2C_fChSize(f: xlibOS.X2C_OSFHANDLE): SYSTEM.int;
+
+CONST
+  X2C_fStdIn  = xlibOS.X2C_fStdIn;
+  X2C_fStdOut = xlibOS.X2C_fStdOut;
+  X2C_fStdErr = xlibOS.X2C_fStdErr;
+
+PROCEDURE X2C_fGetStd(VAR f: xlibOS.X2C_OSFHANDLE; what: SYSTEM.int): SYSTEM.int;
+(* get system dependent standard handle *)
+PROCEDURE X2C_fSetStd(new: xlibOS.X2C_OSFHANDLE; which: SYSTEM.int): SYSTEM.int;
+(* redirect standard handle "which" to given one *)
+
+PROCEDURE X2C_fGetFileType(f: xlibOS.X2C_OSFHANDLE): SYSTEM.int;
+(*
+PROCEDURE X2C_fNoBuffer(f: xlibOS.X2C_OSFHANDLE): BOOLEAN;
+(* to suppress bufferization for this handle *)
+*)
+
+END xosFiles.

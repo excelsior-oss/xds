@@ -1,0 +1,639 @@
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] xmRTS;
+
+<* IF __GEN_C__ THEN *>
+FROM xrsetjmp IMPORT X2C_jmp_buf;
+<* ELSE *>
+FROM xrnsetjmp IMPORT X2C_jmp_buf;
+<* END *>
+
+FROM SYSTEM IMPORT
+        ADDRESS, CARD8, CARD16, CARD32, INT8, INT16, INT32, SET32, SET16;
+FROM SYSTEM IMPORT
+        int, size_t, void;
+
+CONST
+  X2C_MSG_LEN   = 1024; (* exception message length *)
+  X2C_EXT       = 16;
+  X2C_HIS_LEN   = 256; (* history length limit     *)
+  X2C_REGSIZE   = 64;
+
+TYPE
+  <* IF __GEN_C__ THEN *>
+
+    X2C_pCHAR = POINTER TO CHAR;
+    X2C_pVOID = POINTER TO void;
+    LSET      = POINTER TO CARD32;
+
+    <* IF native_library THEN *>
+      X2C_HIS_BUFFER = ARRAY [0..X2C_HIS_LEN-1] OF CARD32;
+    <* END *>
+
+  <* ELSE *>
+
+    X2C_pCHAR = POINTER TO CHAR;
+    X2C_pVOID = ADDRESS;
+    LSET      = POINTER TO BITSET;
+
+    HISREG    = RECORD
+                  ofs  :CARDINAL;
+                  sec  :CARDINAL;
+                  hmod :ADDRESS;
+                END;
+
+    X2C_HIS_BUFFER = ARRAY [0..X2C_HIS_LEN-1] OF HISREG;
+
+  <* END *>
+
+  <* IF __GEN_C__ AND ~ native_library THEN *>
+
+    X2C_Profile   = POINTER TO X2C_Profile_STR;
+    X2C_Profile_STR = RECORD
+      name   : X2C_pCHAR;
+      count  : INT32;
+      time   : INT32;
+      total  : INT32;
+      next   : X2C_Profile;
+      tags   : SET16;
+    END;
+
+    X2C_his_rec=RECORD
+      fnm : X2C_pCHAR;
+      fln : INT16;
+      tags: SET16;
+      prf : X2C_Profile;
+    END;
+
+    X2C_HIS_BUFFER = ARRAY [0..X2C_HIS_LEN-1] OF X2C_his_rec;
+
+    ProfilingModeType = (PROF_MODE_NONE, PROF_MODE_MIN, PROF_MODE_STANDARD, PROF_MODE_FULL);
+    ProfilingModeSet  = SET OF ProfilingModeType;
+  
+  <* ELSIF TARGET_CPU="X86" THEN *>
+    (* see xProfRTS.def *)
+  <* END *>
+
+  <* IF MULTITHREAD THEN *>
+  X2C_MUTEX;
+  <* END *>
+
+  X2C_Coroutine = POINTER TO X2C_Coroutine_STR;
+  X2C_XHandler  = POINTER TO X2C_XHandler_STR;
+  X2C_XSource   = POINTER TO X2C_XSource_STR;
+  X2C_ppCHAR    = POINTER TO X2C_pCHAR;
+  X2C_ppVOID    = POINTER TO X2C_pVOID;
+  X2C_pCARD16   = POINTER TO CARD16;
+  X2C_ppCARD16  = POINTER TO X2C_pCARD16;
+  X2C_TD        = POINTER TO X2C_TD_STR;
+  X2C_MD        = POINTER TO X2C_MD_STR;
+  X2C_LINK      = POINTER TO X2C_LINK_STR;
+
+  X2C_XSource_STR = RECORD
+    number : CARD32;
+    message: ARRAY [0..X2C_MSG_LEN-1] OF CHAR;
+    <* IF MULTITHREAD THEN *>
+    lock   : X2C_MUTEX;
+    <* END *>
+  END;
+
+  X2C_Coroutine_STR = RECORD
+    prot     : PROTECTION;
+    int_no   : INT16;   (* attached interrupt, -1 if non        *)
+    stk_start: ADDRESS; (* used by garbage collector            *)
+    stk_end  : ADDRESS;
+    fwd      : X2C_Coroutine;
+    bck      : X2C_Coroutine;
+    proc     : PROC;
+    magic    : INT32;
+    buf      : X2C_jmp_buf;
+    handler  : X2C_XHandler;
+    his      : X2C_HIS_BUFFER;
+    his_cnt  : INT16;
+    his_msg  : ARRAY [0..X2C_MSG_LEN-1] OF CHAR;
+    reg_dump : ARRAY [0..X2C_REGSIZE-1] OF CARD32; (* buffer for registers dump (GC) *)
+    reg_dsize: CARD32;    (* number of words actually ocupied by regs *)
+    <* IF MULTITHREAD THEN *>
+    lock     : X2C_MUTEX;
+    <* END *>
+  END;
+
+  X2C_XHandler_STR = RECORD
+    state    : INT16;
+    history  : INT16;
+    source   : X2C_XSource;
+    next     : X2C_XHandler;
+    buf      : X2C_jmp_buf;
+  END;
+
+  X2C_MD_STR = RECORD
+    next  : X2C_MD;              (* next module descriptor               *)
+    cnext : X2C_MD;              (* next module descriptor in component  *)
+    name  : X2C_pCHAR;           (* module name                          *)
+    offs  : X2C_ppVOID;          (* global pointer addresses             *)
+    cmds  : POINTER TO PROC;     (* commands                             *)
+    cnms  : X2C_ppCHAR;          (* command names                        *)
+    types : X2C_TD;              (* type descriptors                     *)
+  END;
+
+  X2C_TD_STR = RECORD
+    size    : size_t;
+    name    : X2C_pCHAR;         (* type name                      *)
+    module  : X2C_MD;            (* host module                    *)
+    next    : X2C_TD;            (* next type in module types list *)
+    methods : INT16;             (* number of methods              *)
+    level   : INT16;             (* of inheritance hierarchy       *)
+    base    : ARRAY [0..X2C_EXT-1] OF X2C_TD; (* ancestors (including this) *)
+    proc    : POINTER TO PROC;   (* methods table *)
+    offs    : X2C_ppVOID;        (* offset description - see below *)
+    (* only for GC *)
+    succ    : X2C_TD;   (* in list of marked types *)
+    link    : X2C_LINK; (* list of already marked objects of that type *)
+    tail    : X2C_LINK; (* tail of already marked objects of that type *)
+    self    : X2C_TD;   (* either "THIS" pointer or pointer to a copy in heap *)
+    res     : CARD32;
+  END;
+
+(*
+  Memory overhead - 2 words per objects.
+  Dynamic arrays are represented as 2 objects (descriptor
+  and array body).
+
+  Each module and type descriptor contains
+  "offs" field - POINTER TO ARRAY OF ADDRESS;
+  This array lists addresses of global variables in
+  module descriptor and offsets in type descriptor.
+
+
+           Offset description language
+           ----------------------------
+
+  OffsSequence      =  OFS_END  | OffsDesc OffsSequence
+
+    OffsDesc        =  PtrDesc  | CompTypeDesc
+
+       PtrDesc      =  <offset>   (* merely an O2 pointer *)
+
+       CompTypeDesc =  OFS_REC <adr of type_desc> <first field offs>
+                       OFS_ARR <last elem offset> <first elem offset>    (* array of O2 pointers *)
+                       OFS_ARR <last elem offset> CompTypeDesc <first elem offset>
+                
+  Note :  1. In the case of record offsets, actually <offset+OFS_BASE> is used
+             instead of <offset>                
+          2. In the case of module global var list, <offset> is meant as an
+             address of a variable
+*)
+
+  X2C_LINK_STR = RECORD
+    CASE :INTEGER OF
+      |0: td   : X2C_TD; (* must have offset = 0, X2C_GET_TD *)
+      |1: next : X2C_LINK;
+      |2: dummy: CARD32;
+    END;
+    CASE :INTEGER OF
+      |0: size : CARD32; (* must be 32 bits width! *)
+      |1: tags : SET32;
+    END;
+  END;
+
+CONST (* X2C_XHandler^.state constants *)
+  X2C_st_normal=0;
+  X2C_st_exceptional=1;
+  X2C_st_off=2;
+  X2C_st_reraise=3;
+
+VAR
+  X2C_rtsSource: X2C_XSource;   (* RTS exceptions source     *)
+  X2C_assertSrc: X2C_XSource;   (* ASSERT exceptions source  *)
+  X2C_MODULES  : X2C_MD;
+  X2C_hline    : INT32;
+
+VAR
+  XDSLIB_INITIALIZATION_FAILED :BOOLEAN; (* Library initialization failed *)
+
+<* IF multithread THEN *>
+
+PROCEDURE / X2C_NewMutex(VAR m: X2C_MUTEX);
+PROCEDURE / X2C_DelMutex(VAR m: X2C_MUTEX);
+PROCEDURE / X2C_LockMutex(m: X2C_MUTEX);
+PROCEDURE / X2C_FreeMutex(m: X2C_MUTEX);
+
+PROCEDURE / X2C_InitThreads(): INT32;
+
+PROCEDURE / X2C_LockCoroutines();
+PROCEDURE / X2C_UnlockCoroutines();
+(* provided to syncronize coroutines list *)
+
+<* END *>
+
+(* work with current coroutine *)
+PROCEDURE / X2C_SetCurrent(c: X2C_Coroutine);
+PROCEDURE / X2C_GetCurrent(): X2C_Coroutine;
+
+
+PROCEDURE / X2C_ZEROMEM (p: ADDRESS; quatroNum: CARDINAL);
+(* fill memory with zeros; chunk size must be quatroNum*4 in size *)
+
+
+PROCEDURE / X2C_CAP(x: CHAR): CHAR;
+(* built-in function "CAP". C,X86 *)
+PROCEDURE / X2C_STRCMP_PROC(a: X2C_pVOID; alen: size_t;
+              b: X2C_pVOID; blen: size_t): int;
+(* built-in strings compare operation. C,X86 *)
+
+PROCEDURE / X2C_ASH(a: INT32; b: INT32): INT32;
+(* SYSTEM.ASH. C,X86 *)
+
+PROCEDURE / X2C_ROT (a: SET32; len: INT16; n: INT32): SET32;
+(* BITSET rotate operator. C,X86 *)
+PROCEDURE / X2C_ROTL(res: LSET; a: LSET; len: INT16; n: INT32): LSET;
+(* SET OF rotate operator. C,X86 *)
+
+PROCEDURE / X2C_LSH (a: SET32; len: INT16; n: INT32): SET32;
+(* SYSTEM.LSH operator for BITSET. C,X86 *)
+PROCEDURE / X2C_LSHL(res: LSET; a: LSET; len: INT16; n: INT32): LSET;
+(* SYSTEM.LSH operator for SET OF. C,X86 *)
+
+PROCEDURE / X2C_INCL(set: LSET; i: CARD32; bits: CARD16): LSET;
+(* Operator INCL for SET OF. C,X86 *)
+PROCEDURE / X2C_EXCL(set: LSET; i: CARD32; bits: CARD16): LSET;
+(* Operator EXCL for SET OF. C,X86 *)
+
+PROCEDURE / X2C_SET_EQU(a,b: LSET; bits: CARD16): BOOLEAN;
+(* SET OF compare operator. C,X86 *)
+PROCEDURE / X2C_SET_LEQ(a,b: LSET; bits: CARD16): BOOLEAN;
+(* SET OF compare operator. C,X86 *)
+
+PROCEDURE / X2C_LONGSET(set: LSET; a,b: CARD32; bits: CARD16): LSET;
+(* Include bits from a to b into SET OF "set". C,X86 *)
+
+PROCEDURE / X2C_AND(res,a,b: LSET; len: CARD16): LSET;
+(* Operator "*" for SET OF. C,X86 *)
+PROCEDURE / X2C_OR (res,a,b: LSET; len: CARD16): LSET;
+(* Operator "+" for SET OF. C,X86 *)
+PROCEDURE / X2C_XOR(res,a,b: LSET; len: CARD16): LSET;
+(* Operator "/" for SET OF. C,X86 *)
+PROCEDURE / X2C_BIC(res,a,b: LSET; len: CARD16): LSET;
+(* Operator "-" for SET OF. C,X86 *)
+
+PROCEDURE / X2C_COMPLEMENT(res,a: LSET; len: CARD16): LSET;
+(* Operator "unary minus" for SET OF. C,X86 *)
+
+PROCEDURE / X2C_EXPRI(base: LONGREAL;    ex: INT32): LONGREAL;
+(* ??? C,X86 *)
+
+PROCEDURE / X2C_ENTIER(x: LONGREAL): INT32;
+(* Operator ENTIER. C,X86 *)
+
+PROCEDURE / X2C_TRUNCI(x: LONGREAL; min,max: INT32): INT32;
+(* Operator TRUNC. C,X86 *)
+PROCEDURE / X2C_TRUNCC(x: LONGREAL; min,max: CARD32): CARD32;
+(* Operator TRUNC. C,X86 *)
+
+PROCEDURE / X2C_COPY(s: X2C_pVOID; s_len: size_t;
+         d: X2C_pVOID; d_len: size_t): X2C_pVOID;
+(* Procedure COPY. C,X86 *)
+
+PROCEDURE / X2C_LENGTH(s: X2C_pVOID; s_len: size_t): size_t;
+(* Function LENGTH. C,X86 *)
+
+(* Implementation of this procedures is in EXCEPTIONS.m *)
+PROCEDURE / X2C_XInitHandler(x: X2C_XHandler);
+PROCEDURE / X2C_XRETRY;
+PROCEDURE / X2C_XREMOVE;
+PROCEDURE / X2C_XOFF;
+PROCEDURE / X2C_XON;
+PROCEDURE / X2C_doRaise(source: X2C_XSource);
+(* Preceeding 5 procs are used in TRY EXCEPT scope. C,X86 *)
+PROCEDURE / X2C_init_exceptions;
+
+PROCEDURE / X2C_TRAP_FC(trap_no: INT32; file: X2C_pCHAR; line: CARD32);
+(* Used to implement new-style checks with filemane and lineno, C,X86 *)
+PROCEDURE / X2C_TRAP_F(trap_no: INT32);
+(* Used to implement all old-style checks, C,X86 *)
+PROCEDURE / X2C_ASSERT_F(trap_no: CARD32);
+(* Used to implement ASSERT traps, C,X86 *)
+PROCEDURE / X2C_ASSERT_FC(code: CARD32; file: X2C_pCHAR; line: CARD32);
+(* Used to implement ASSERT traps, C,X86 *)
+
+(* Implementation of this procedures is in TERMINATION.m *)
+PROCEDURE / X2C_FINALEXE ( proc :PROC );
+(* X86 *)
+PROCEDURE / X2C_FINALDLL ( VAR finalHead :ADDRESS; proc: PROC );
+(* X86 *)
+PROCEDURE / X2C_HALT (halt_no: INT32);
+(* ??? C,X86 *)
+PROCEDURE / X2C_ABORT;
+(* ??? C,X86 *)
+PROCEDURE / X2C_EXIT;     (* RETURN from main module body *)
+(* ??? C,X86 *)
+PROCEDURE / X2C_EXITDLL ( VAR finalHead :ADDRESS );  (* finalization of DLL module *)
+(* X86 *)
+TYPE X2C_EXIT_PROC = PROCEDURE;
+PROCEDURE / X2C_atexit(proc: X2C_EXIT_PROC); (* Register an "at exit" procedure *)
+(* C,X86 *)
+
+PROCEDURE / X2C_HIS_SAVE(VAR sv: INT16);
+(* Save the current history state. C only. *)
+PROCEDURE / X2C_HIS_RESTORE(sv: INT16);
+(* Restore saved history state. C only. *)
+PROCEDURE / X2C_show_history;
+(* Prints the procedure call stack for current process. C & X86 *)
+PROCEDURE / X2C_show_profile;
+(* Prints the profiler information. C only *)
+PROCEDURE / X2C_ini_profiler;
+(* Initialize profiler. C only *)
+PROCEDURE / X2C_scanStackHistory(from,to: ADDRESS; exact: BOOLEAN);
+(* Scan the stack and gether information about procedure calls. *)
+PROCEDURE / X2C_ini_termination;
+
+PROCEDURE / X2C_PROT(): PROTECTION;
+(* ??? C only. *)
+
+PROCEDURE / X2C_InitCoroutine(c: X2C_Coroutine; stk_start: ADDRESS);
+PROCEDURE / X2C_RegisterCoroutine(c: X2C_Coroutine);
+PROCEDURE / X2C_UnregisterCoroutine(c: X2C_Coroutine);
+PROCEDURE / X2C_CopyJmpBuf(c: X2C_Coroutine);
+(* copies actual contense of c^.jmp_buf to c^.reg_dump *)
+
+PROCEDURE / X2C_PROTECT(VAR old: PROTECTION; new: PROTECTION);
+(* ISO PROTECT. C,X86 *)
+PROCEDURE / X2C_TRANSFER   (VAR from: X2C_Coroutine; to: X2C_Coroutine);
+(* ISO COROUTINES.TRANSFER. C,X86 *)
+PROCEDURE / X2C_IOTRANSFER (VAR from: X2C_Coroutine; to: X2C_Coroutine);
+(* ISO COROUTINES.IOTRANSFER. C,X86 *)
+PROCEDURE / X2C_NEWPROCESS (proc: PROC; space: ADDRESS; size: CARD32;
+                            prot: PROTECTION; VAR prs: X2C_Coroutine);
+(* ISO COROUTINES.NEWPROCESS. C,X86 *)
+PROCEDURE / X2C_ini_coroutines(stack_start: ADDRESS);
+
+PROCEDURE / X2C_reg_stackbotm(stack_start :ADDRESS);
+
+(*            xTech portable memory manager.
+
+  Integrated allocator/garbage collector for Modula-2 and
+  Oberon-2.
+
+*)
+
+TYPE
+  X2C_LENS_TYPE=size_t[1..MAX(size_t)];
+
+PROCEDURE / X2C_ALLOCATE(VAR a: ADDRESS; size: size_t);
+(* Modula-2 NEW & Storage.ALLOCATE. C,X86 *)
+
+PROCEDURE / X2C_DEALLOCATE(VAR a: ADDRESS);
+(* Modula-2 DISPOSE & Storage.DEALLOCATE. C,X86 *)
+
+PROCEDURE / X2C_DYNALLOCATE(VAR a: ADDRESS;
+                         size    : size_t;
+                         lens    : ARRAY OF X2C_LENS_TYPE;
+                         dim     : size_t);
+(* Modula-2 NEW for dynamic arrays. C,X86 *)
+
+PROCEDURE / X2C_DYNDEALLOCATE(VAR a: ADDRESS);
+(* Modula-2 DISPOSE & Storage.DEALLOCATE. C,X86 *)
+
+PROCEDURE / X2C_DYNCALLOCATE(VAR a: ADDRESS;
+                           size   : size_t;
+                           lens   : ARRAY OF X2C_LENS_TYPE;
+                           dim    : size_t);
+(* Modula-2 NEW for dynamic arrays referenced by C pointers. C,X86 *)
+
+PROCEDURE / X2C_DYNCDEALLOCATE(VAR a: ADDRESS);
+(* Modula-2 DISPOSE & Storage.DEALLOCATE. C,X86 *)
+
+PROCEDURE / X2C_NEW(    td      : X2C_TD;
+                        VAR a   : ADDRESS;
+                        size    : size_t;
+                        sys     : BOOLEAN);
+(* Oberon-2 NEW. C,X86 *)
+
+PROCEDURE / X2C_NEW_OPEN(td     : X2C_TD;
+                        VAR a   : ADDRESS;
+                        size    : size_t;
+                        lens    : ARRAY OF X2C_LENS_TYPE;
+                        dim     : size_t;
+                        sys     : BOOLEAN);
+(* Oberon-2 NEW for ARRAY OF. C,X86 *)
+
+PROCEDURE / X2C_DISPOSE(VAR a: ADDRESS);
+(* Oberon-2 SYSTEM.DISPOSE. C,X86 *)
+
+PROCEDURE / X2C_COLLECT;
+(* Libraries. Run garbage collector. C,X86 *)
+
+PROCEDURE / X2C_PrepareToGC;
+PROCEDURE / X2C_FreeAfterGC;
+
+TYPE X2C_DPROC = PROCEDURE [0] (ADDRESS);
+
+PROCEDURE / X2C_DESTRUCTOR(a: ADDRESS; p: X2C_DPROC);
+(* Libraries. Registry of finalizer. C,X86 *)
+
+PROCEDURE / X2C_GUARDP_F(p: X2C_pVOID; td: X2C_TD): X2C_pVOID;
+(* ??? C only *)
+PROCEDURE / X2C_GUARDV_F(vt,td: X2C_TD): X2C_TD;
+(* ??? C only *)
+PROCEDURE / X2C_GUARDPE_F(p: X2C_pVOID; td: X2C_TD): X2C_pVOID;
+(* ??? C only *)
+PROCEDURE / X2C_GUARDVE_F(vt,td: X2C_TD): X2C_TD;
+(* ??? C only *)
+PROCEDURE / X2C_GC_INIT (gcauto: BOOLEAN; threshold,heaplimit: CARD32) :BOOLEAN;
+(* Library. Memory manager initialization. C,X86 *)
+
+PROCEDURE / X2C_GC_INCREASE (gcauto: BOOLEAN; threshold,heaplimit: CARD32);
+(* threshold & heaplimit increasing. X86 *)
+
+PROCEDURE / X2C_EXIT_PROFILER (isExe: BOOLEAN);
+(* flush profiler data counted *)
+
+<* IF __GEN_C__ THEN *>
+
+PROCEDURE X2C_MODULE(md: X2C_MD);
+(* Registry of starting Oberon-2 module. C,X86 *)
+
+<* ELSE *>
+
+PROCEDURE / X2C_MODULE(md: X2C_MD);
+(* Registry of starting Oberon-2 module. C,X86 *)
+
+<* END *>
+
+VAR (* Memory manager statisticks *)
+  X2C_objects    : CARD32;
+
+  X2C_busymem    : CARD32; (* total memory allocated from system *)
+  X2C_busylheap  : CARD32; (* part of busymem occupied by local heap *)
+  X2C_smallbusy  : CARD32; (* part of busymem occupied by SMALL  blocks *)
+  X2C_normalbusy : CARD32; (* part of busymem occupied by NORMAL blocks *)
+  X2C_largebusy  : CARD32; (* part of busymem occupied by LARGE  blocks *)
+
+  X2C_usedmem    : CARD32; (* total memory used by objects       *)
+  X2C_smallused  : CARD32; (* part of usedmem occupied by SMALL  objects *)
+  X2C_normalused : CARD32; (* part of usedmem occupied by NORMAL objects *)
+
+  X2C_usedlheap  : CARD32; (* memory used by local heap objects *)
+
+  X2C_maxmem     : CARD32; (* max. allowed memory for allocation *)
+  X2C_threshold  : CARD32;
+  x2c_td_null    : X2C_TD;
+  x2c_td_ptr     : X2C_TD;
+  X2C_fs_init    : BOOLEAN;
+
+  X2C_MaxGCTimePercent :CARD32;  (* max GC duration, % of mutator time *)
+  X2C_GCThrashWarning  :BOOLEAN; (* warning of GC thrashing *)
+
+
+PROCEDURE / X2C_BEGIN(VAR argc: int; argv: X2C_ppCHAR;
+                 gc_auto: int; gc_threshold: INT32; heap_limit: INT32);
+(* Start of runtime. C,X86 *)
+
+PROCEDURE X2C_INIT_RTS;
+(* Dummy function, should be empty, used to work around silly linkers. *)
+
+<* IF __GEN_X86__ THEN *>
+
+  PROCEDURE / X2C_EXPRR(base: LONGREAL;    ex: LONGREAL): LONGREAL;
+
+  PROCEDURE / X2C__EXPCI(base: COMPLEX;     ex: INT32):    COMPLEX;
+  (* ??? X86 only *)
+  PROCEDURE / X2C__EXPLI(base: LONGCOMPLEX; ex: INT32):    LONGCOMPLEX;
+  (* ??? X86 only *)
+  PROCEDURE / X2C__EXPCR(base: COMPLEX;     ex: LONGREAL): COMPLEX;
+  (* ??? X86 only *)
+  PROCEDURE / X2C__EXPLR(base: LONGCOMPLEX; ex: LONGREAL): LONGCOMPLEX;
+  (* ??? X86 only *)
+
+  PROCEDURE / X2C_InitFPP;
+  (* is called from initialization of all modules using
+    floating point operations *)
+
+<* END *>
+
+<* IF __GEN_C__ THEN  *>
+
+  PROCEDURE / X2C_CHKINX_F(i: CARD32; len: CARD16): CARD16;
+  PROCEDURE / X2C_CHKINXL_F(i: CARD32; len: CARD32): CARD32;
+  (* ???. C only. *)
+
+  PROCEDURE / X2C_CHKS_F (i: INT16): INT16;
+  PROCEDURE / X2C_CHKSL_F(i: INT32): INT32;
+  (* IF i<0 THEN trap() END. C only *)
+
+  PROCEDURE / X2C_CHK_F (a: INT16; min: INT16; max: INT16): INT16;
+  PROCEDURE / X2C_CHKL_F(a: INT32; min: INT32; max: INT32): INT32;
+  (* IF (a<min) OR (a>max) THEN trap() END; RETURN a. C only *)
+
+  PROCEDURE / X2C_CHKU_F (a: CARD16; min: CARD16; max: CARD16): CARD16;
+  PROCEDURE / X2C_CHKUL_F(a: CARD32; min: CARD32; max: CARD32): CARD32;
+  (* IF (a<min) OR (a>max) THEN trap() END; RETURN a. C only *)
+
+  PROCEDURE / X2C_CHKNIL_F(p: X2C_pVOID): X2C_pVOID;
+  PROCEDURE / X2C_CHKPROC_F(p: PROC): PROC;
+  (* ???. C only *)
+
+  PROCEDURE / X2C_REM_F(a: INT32; b: INT32): INT32;
+  PROCEDURE / X2C_QUO_F(a: INT32; b: INT32): INT32;
+  PROCEDURE / X2C_MOD_F(a: INT32; b: INT32): INT32;
+  PROCEDURE / X2C_DIV_F(a: INT32; b: INT32): INT32;
+  (* ??? C only *)
+
+  PROCEDURE / X2C_IN(i: CARD32; bits: CARD16; set: SET32): BOOLEAN;
+  (* ??? C only *)
+  PROCEDURE / X2C_SET(a: CARD32; b: CARD32; bits: CARD16): SET32;
+  (* ??? C only *)
+
+  PROCEDURE / X2C_INL(i: CARD32; bits: CARD16; set: LSET): BOOLEAN;
+  (* ??? C only *)
+
+  PROCEDURE / CPLX_CMP(x,y: COMPLEX): int;
+  PROCEDURE / CPLX_ADD(x,y: COMPLEX): COMPLEX;
+  PROCEDURE / CPLX_SUB(x,y: COMPLEX): COMPLEX;
+  PROCEDURE / CPLX_MUL(x,y: COMPLEX): COMPLEX;
+  PROCEDURE / CPLX_DIV(x,y: COMPLEX): COMPLEX;
+  PROCEDURE / CPLX_NEG(x: COMPLEX): COMPLEX;
+  (* COMPLEX arythmetics. C only *)
+
+  PROCEDURE / CPLX_LCMP(x,y: LONGCOMPLEX): int;
+  PROCEDURE / CPLX_LADD(x,y: LONGCOMPLEX): LONGCOMPLEX;
+  PROCEDURE / CPLX_LSUB(x,y: LONGCOMPLEX): LONGCOMPLEX;
+  PROCEDURE / CPLX_LMUL(x,y: LONGCOMPLEX): LONGCOMPLEX;
+  PROCEDURE / CPLX_LDIV(x,y: LONGCOMPLEX): LONGCOMPLEX;
+  PROCEDURE / CPLX_LNEG(x: LONGCOMPLEX): LONGCOMPLEX;
+  PROCEDURE / CPLX_L(x: COMPLEX): LONGCOMPLEX;
+  (* LONGCOMPLEX arythmetics. C only *)
+
+  PROCEDURE / X2C_EXPCI(base: COMPLEX;     ex: INT32): COMPLEX;
+  (* ??? C only *)
+  PROCEDURE / X2C_EXPLI(base: LONGCOMPLEX; ex: INT32): LONGCOMPLEX;
+  (* ??? C only *)
+  PROCEDURE / X2C_EXPCR(base: COMPLEX;     ex: LONGREAL): COMPLEX;
+  (* ??? C only *)
+  PROCEDURE / X2C_EXPLR(base: LONGCOMPLEX; ex: LONGREAL): LONGCOMPLEX;
+  (* ??? C only *)
+
+  PROCEDURE / X2C_INCC (VAR x: CHAR;   y: CARD8;  min,max: CHAR): CHAR;
+  (* Operator INC(CHAR). C only *)
+  PROCEDURE / X2C_INCS (VAR x: INT8;   y,min,max: INT8): INT8;
+  (* Operator INC(SHORTINT). C only *)
+  PROCEDURE / X2C_INCI (VAR x: INT16;  y,min,max: INT16): INT16;
+  (* Operator INC(INT16). C only *)
+  PROCEDURE / X2C_INC  (VAR x: INT32;  y,min,max: INT32): INT32;
+  (* Operator INC(INT32). C only *)
+  PROCEDURE / X2C_INCUS(VAR x: CARD8;  y,min,max: CARD8): CARD8;
+  (* Operator INC(CARD8). C only *)
+  PROCEDURE / X2C_INCUI(VAR x: CARD16; y,min,max: CARD16): CARD16;
+  (* Operator INC(CARD16). C only *)
+  PROCEDURE / X2C_INCU (VAR x: CARD32; y,min,max: CARD32): CARD32;
+  (* Operator INC(CARD32). C only *)
+
+  PROCEDURE / X2C_DECC (VAR x: CHAR;   y: CARD8;  min,max: CHAR): CHAR;
+  (* Operator DEC(CHAR). C only *)
+  PROCEDURE / X2C_DECS (VAR x: INT8;   y,min,max: INT8): INT8;
+  (* Operator DEC(INT8). C only *)
+  PROCEDURE / X2C_DECI (VAR x: INT16;  y,min,max: INT16): INT16;
+  (* Operator DEC(INT16). C only *)
+  PROCEDURE / X2C_DEC  (VAR x: INT32;  y,min,max: INT32): INT32;
+  (* Operator DEC(INT32). C only *)
+  PROCEDURE / X2C_DECUS(VAR x: CARD8;  y,min,max: CARD8): CARD8;
+  (* Operator DEC(CARD8). C only *)
+  PROCEDURE / X2C_DECUI(VAR x: CARD16; y,min,max: CARD16): CARD16;
+  (* Operator DEC(CARD16). C only *)
+  PROCEDURE / X2C_DECU (VAR x: CARD32; y,min,max: CARD32): CARD32;
+  (* Operator DEC(CARD32). C only *)
+
+  PROCEDURE / X2C_VAL_REAL(x: LONGREAL): REAL;
+  (* VAL(REAL,x: LONGREAL). C only *)
+
+  PROCEDURE / X2C_ABS_INT8 (x: INT8 ): INT8;
+  (* C only *)
+  PROCEDURE / X2C_ABS_INT16(x: INT16): INT16;
+  (* C only *)
+  PROCEDURE / X2C_ABS_INT32(x: INT32): INT32;
+  (* C only *)
+
+  PROCEDURE / X2C_PCOPY(VAR p: X2C_pVOID; size: size_t);
+  (* Allocate memory & copy parameter of procedure. C only *)
+  PROCEDURE / X2C_PFREE(p: X2C_pVOID);
+  (* Free memory allocated for the procedure parameter. C only *)
+
+  PROCEDURE / X2C_Profiler;
+
+  <* IF NOT NATIVE_LIBRARY THEN *>
+    (* Procedures from xrHistory *)
+    PROCEDURE / X2C_PROC_INP_F(file: ARRAY OF CHAR; line: INT32);
+    PROCEDURE / X2C_PROC_PRF_F(file: ARRAY OF CHAR; line: INT32; VAR prf: X2C_Profile_STR);
+    PROCEDURE / X2C_PROC_OUT_F;
+    PROCEDURE / X2C_Profiler_clock;
+
+    PROCEDURE / X2C_FINALLY(proc: PROC);
+  <* END *>
+
+<* END *>
+
+<* IF NOT __GEN_C__ THEN *>
+PROCEDURE X2C_FINALIZE_RT ();
+<* END *>
+
+END xmRTS.

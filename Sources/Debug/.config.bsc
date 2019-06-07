@@ -1,0 +1,115 @@
+# XDS-x86 Debugger: Build System Configuration
+
+UNIT_NAME=XDS-x86-Debugger
+
+ALL_COMPONENTS=xd_utl,xd_ditls,xd_nb04,xd_nb09,xd_edif,xd,xd_demon,xd_srv,xd_trans,his,xstrip,xprofapi,xpdump,xprof,xprofmem,xpview
+PRIMARY_COMPONENTS=xd_utl,xd_ditls,xd_nb04,xd_nb09,xd_edif,xd,xd_demon,xd_srv,xd_trans,his,xstrip,xprofapi,xpdump,xprof,xprofmem,xpview
+DEFAULT_COMPONENT=xd
+
+# Tools necessary to build component
+ENVIRONMENT=XDSDIR,MSVC_HOME
+
+# External files which are part of this component  
+EXTDEPS=
+
+
+#=============================================================================
+# Build Debuger
+#=============================================================================
+# debuger: $(XD_UTL) $(XD_DITLS) $(XD_NB04) $(XD_NB09) $(XD_EDIF) $(XD) $(XD_SRV) $(XD_TCP) $(XD_DEMON) $(HIS)      
+#        @echo ====== XDS-x86 Debugger successfully built =====
+
+# XD_UTL     = xd_utl.dll 
+# XD_DITLS   = xd_ditls.dll 
+# XD_NB04    = xd_nb04.dll
+# XD_NB09    = xd_nb09.dll 
+# XD_EDIF    = xd_edif.dll 
+# XD         = xd.exe 
+# XD_SRV     = xd_srv.exe
+# XD_DEMON   = xd_demon.exe
+# XD_TCP     = xd_t_tcp.dll
+# HIS        = his.exe 
+
+# DLLSTARTUP = xds\lib\x86\xstartd.lib
+# STIMPLIB   = xds\lib\x86\xds25i.lib
+# WINSYM_X86 = xds\sym\x86\Windows.sym
+
+# EXESTARTUP = xds\lib\x86\xstart.lib
+# STLIB      = xds\lib\x86\libxds.lib 
+
+# $(XD_UTL): $(DLLSTARTUP) $(STIMPLIB) $(WINSYM_X86)
+#        xc =p src\xd_prj\xd.prj -mode:=enduser -component:=xd_utl $(DLL_OPTIONS)  1>log\xd_utl.out 2>&1
+#        @echo ====== XD_UTL.DLL ============ OK!
+
+# $(XD_DITLS): $(DLLSTARTUP) $(STIMPLIB) $(XD_UTL) $(WINSYM_X86)
+#        xc =p src\xd_prj\xd.prj -mode:=enduser -component:=xd_ditls $(DLL_OPTIONS)  1>log\xd_ditls.out 2>&1  
+#        @echo ====== XD_DITLS.DLL ============ OK!
+
+# $(XD_NB04): $(DLLSTARTUP) $(XD_UTL) $(XD_DITLS) $(WINSYM_X86)
+#        xc =p src\xd_prj\xd.prj -mode:=enduser -component:=xd_nb04 $(DLL_OPTIONS)  1>log\xd_nb04.out 2>&1  
+#        @echo ====== XD_NB04.DLL ============ OK!
+
+# $(XD_NB09): $(DLLSTARTUP) $(XD_UTL) $(XD_DITLS) $(WINSYM_X86)
+#        xc =p src\xd_prj\xd.prj -mode:=enduser -component:=xd_nb09 $(DLL_OPTIONS)  1>log\xd_nb09.out 2>&1  
+#        @echo ====== XD_NB09.DLL ============ OK!
+
+# $(XD_EDIF): $(DLLSTARTUP) $(XD_UTL) $(XD_DITLS) $(WINSYM_X86)
+#        xc =p src\xd_prj\xd.prj -mode:=enduser -component:=xd_edif $(DLL_OPTIONS)  1>log\xd_edif.out 2>&1  
+#        @echo ====== XD_EDIF.DLL ============ OK!
+
+# $(XD): $(EXESTARTUP) $(STIMPLIB) $(XD_UTL) $(XD_DITLS) $(XD_NB04) $(XD_NB09) $(XD_EDIF) $(WINSYM_X86)
+#        xc =p =a src\xd_prj\xd.prj -mode:=enduser -component:=xd -edition:=professional $(DLL_OPTIONS) 1>log\xd.out 2>&1  
+#        @echo ====== XD.EXE ============ OK!
+
+# $(XD_SRV): $(XD)
+#        xc =p src\xd_prj\xd_srv.prj -mode:=enduser $(DLL_OPTIONS)  1>log\xd_srv.out 2>&1  
+#        @echo ====== XD_SRV.EXE ============ OK!
+
+# $(XD_DEMON): $(XD)
+#        xc =p src\xd_prj\xd_demon.prj -mode:=enduser $(DLL_OPTIONS)  1>log\xd_demon.out 2>&1  
+#        @echo ====== XD_DEMON.EXE ============ OK!
+
+# $(XD_TCP): $(DLLSTARTUP) $(STIMPLIB) $(WINSYM_X86)
+#        xc =p src\xd_prj\xd_trans.prj -mode:=enduser -transport:=tcp $(DLL_OPTIONS)  1>log\xd_tcp.out 2>&1  
+#        @echo ====== XD_T_TCP.DLL ============ OK!
+
+# $(HIS): $(EXESTARTUP) $(STIMPLIB) $(XD_UTL) $(XD_DITLS)
+#        xc src\xd_prj\his =p -mode:=enduser $(DLL_OPTIONS)  1>log\his.out 2>&1  
+#        @echo ====== HIS.EXE =========== OK!
+
+
+#=============================================================================
+# Build XProf Tools
+#=============================================================================
+# xprof: $(XPROF) $(XPROFMEM) $(XPROFAPI) $(XPVIEW)
+#        @echo ====== XProf successfully built =====
+
+# XPROFAPI = xprofapi.dll
+# XPDUMP   = xpdump.exe 
+# XPROF    = xprof.exe 
+# XPROFMEM = xprofmem.exe 
+
+# DLLSTARTUP = xds\lib\x86\xstartd.lib
+# STIMPLIB   = xds\lib\x86\xds25i.lib
+# XD_UTL     = xd_utl.dll 
+# XD_DITLS   = xd_ditls.dll 
+# WINSYM_X86 = xds\sym\x86\Windows.sym
+
+# EXESTARTUP = xds\lib\x86\xstart.lib
+# STLIB      = xds\lib\x86\libxds.lib 
+
+# $(XPROFAPI): $(DLLSTARTUP) $(STIMPLIB) $(XD_UTL) $(XD_DITLS) $(WINSYM_X86)
+#         xc src\xd_prj\xpdump =p -mode:=enduser -component:=xprofapi $(DLL_OPTIONS)  
+#         @echo ====== XPROFAPI.DLL =========== OK!
+
+# $(XPDUMP): $(EXESTARTUP) $(XPROFAPI) 
+#         xc src\xd_prj\xpdump =p -mode:=enduser -component:=xpdump $(DLL_OPTIONS)  
+#         @echo ====== XPDUMP.EXE =========== OK!
+
+# $(XPROF): $(EXESTARTUP) $(STLIB) $(XD_UTL) $(XD_DITLS) $(WINSYM_X86) $(XPROFAPI)
+#         xc src\xd_prj\xprof =p -mode:=enduser $(DLL_OPTIONS)   
+#         @echo ====== XPROF.EXE =========== OK!
+
+# $(XPROFMEM): $(EXESTARTUP) $(STLIB) $(XD_UTL) $(XD_DITLS) $(WINSYM_X86) $(XPROFAPI)
+#         xc src\xd_prj\xprofmem =p -mode:=enduser $(DLL_OPTIONS)  
+#         @echo ====== XPROFMEM.EXE =========== OK!

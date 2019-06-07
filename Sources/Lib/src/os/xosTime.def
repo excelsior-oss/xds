@@ -1,0 +1,18 @@
+(* Copyright (c) xTech 1992,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+<* +NOHEADER *>
+DEFINITION MODULE ["C"] xosTime; (* Hady. 04.06.96 11:59 *)
+
+IMPORT  SYSTEM, xlibOS;
+
+TYPE
+  X2C_TimeStruct = xlibOS.X2C_TimeStruct;
+
+PROCEDURE X2C_CanGetTime(): BOOLEAN;
+PROCEDURE X2C_CanSetTime(): BOOLEAN;
+PROCEDURE X2C_GetTime(VAR t: X2C_TimeStruct);
+PROCEDURE X2C_SetTime(VAR t: X2C_TimeStruct);
+PROCEDURE X2C_FracsPerSec(): SYSTEM.CARD32;
+
+
+END xosTime.

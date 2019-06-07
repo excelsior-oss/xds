@@ -1,0 +1,43 @@
+% Copyright (c) Excelsior, LLC 2015. All rights reserved.
+%
+% Windos API for Modula-2/Oberon-2
+%
+
+-lookup = *.def = $!
+
+!if defined sym_place then
+  -lookup = *.sym = $(sym_place)
+!elsif backend="X86" then
+  -lookup = *.def = $!/../xds
+  -lookup = *.sym = $!/../../sym/x86
+!elsif backend="C" then
+  -lookup = *.sym = $!/../../sym/C
+!end
+
+!if backend="C" then
+  -noheader+
+  -woff354+
+!end
+
+-gendll-
+-compilerheap=40000000
+-link=
+
+!if defined genremovescript and genremovescript then
+  -makefile+
+  -mkfname  = rmsym
+  -mkfext   = bat
+  -lookup = *.bat = .
+  -template = $!/rmsym.tem
+  -link=
+!else
+  -makefile-
+!end
+
+!module CDErr CommDlg DDE DDEML Dlgs IMM LZexpand mcx MMSystem NB30 OLE
+!module ShellAPI WinBase WinCon WinDef Windows WinError WinGDI WinNetwk
+!module WinNLS WinNT WinPerf WinReg WinSock WinSpool WinSvc WinUser WinVer
+!module CommCtrl
+!if backend="X86" then
+  !module Win32IOChan Win32Processes
+!end

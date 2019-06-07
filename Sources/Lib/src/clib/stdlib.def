@@ -1,0 +1,57 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE [2] stdlib;
+
+FROM SYSTEM IMPORT ADDRESS, INT32, int, unsigned, size_t;
+FROM xmRTS IMPORT X2C_pVOID, X2C_pCHAR;
+
+TYPE
+  div_t  = RECORD
+	     quot: int;
+	     rem : int;
+	   END;
+  ldiv_t = RECORD
+	     quot: INT32;
+	     rem : INT32;
+	   END;
+  CompProc = PROCEDURE(ADDRESS,ADDRESS): int;
+  PROC     = PROCEDURE;
+
+PROCEDURE abort;
+PROCEDURE abs(num: int): int;
+
+PROCEDURE atexit(func: PROC): int;
+PROCEDURE atof(nptr: ARRAY OF CHAR): LONGREAL;
+PROCEDURE atoi(nptr: ARRAY OF CHAR): int;
+PROCEDURE atol(nptr: ARRAY OF CHAR): INT32;
+
+PROCEDURE bsearch(key,base: ADDRESS; num,width: size_t;
+		  compare: CompProc): X2C_pVOID;
+
+PROCEDURE calloc(num,size: size_t): X2C_pVOID;
+
+PROCEDURE div(numer,denom: int): div_t;
+
+PROCEDURE exit(code: int);
+PROCEDURE free(block: ADDRESS);
+PROCEDURE getenv(name: ARRAY OF CHAR): X2C_pCHAR;
+PROCEDURE labs(j: INT32): INT32;
+
+PROCEDURE ldiv(numer,denom: INT32): ldiv_t;
+
+PROCEDURE malloc(size: size_t): X2C_pVOID;
+
+PROCEDURE qsort(base: ADDRESS; num,width: size_t; compare: CompProc);
+
+PROCEDURE rand(): int;
+PROCEDURE realloc(block: ADDRESS; size: int): X2C_pVOID;
+PROCEDURE srand(seed: unsigned);
+PROCEDURE strtod(s: ARRAY OF CHAR; endptr: ADDRESS): LONGREAL;
+PROCEDURE strtol(s: ARRAY OF CHAR; endptr: ADDRESS; base: int): INT32;
+PROCEDURE strtoul(s: ARRAY OF CHAR; endptr: ADDRESS; base: int): BITSET;
+PROCEDURE system(string: ARRAY OF CHAR): int;
+
+END stdlib.

@@ -1,0 +1,9 @@
+DEFINITION MODULE Names;
+
+IMPORT dt := DI_Types;
+
+
+(* Выдать полное имя объекта, для отображения в диалоговом отладчике *)
+PROCEDURE ObjectNameGetAndCorrect (object: dt.OBJECT; VAR name: ARRAY OF CHAR);
+
+END Names.

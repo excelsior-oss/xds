@@ -1,0 +1,120 @@
+\chapter{Seamless Compilation}\label{seamless}
+\index{seamless compilation}
+
+We will use the term {\em seamless compilation} if the \xds{}
+is configured to call a C compiler, linker or make implicitly
+to prepare an executable for your program.
+There are several means to achieve seamless compilation:
+\begin{enumerate}
+\item
+        You can define a C compiler invocation command line,
+        to call your C compiler after each successful compilation
+        of a module, and
+        a linker command line, to call linker after successful
+        completion of a project (See \ref{seamless:comp}).
+\item
+        A makefile can be produced after successful completion
+        of a project and implicitly called then to compile
+        and link your program (See \ref{seamless:make}).
+\end{enumerate}
+
+\section{Specifying your C Compiler and Linker}\label{seamless:comp}
+
+The \OERef{COMPILE}
+equation determines the command line for
+invoking a C compiler. The format of the line is the same as in
+template files (See \ref{xc:template}).
+An additional argument  MODULE  corresponding to the current module
+can be used in the equation\footnote{
+  The {\tt EXT} extension specifier cannot be used with the MODULE
+  argument.
+}.
+In the {\bf COMPILE} equation one have to specify:
+\begin{itemize}
+\item   a name of your C compiler;
+\item   C compiler flags, including {\em do compile only} flag;
+\item   path to the library header files;
+\item   a name of C source file to compile.
+\end{itemize}
+
+As a rule, the setting analogous to the following is used
+(in the configuration or project file):
+\begin{verbatim}
+  -COMPILE = "cc -c -I/xds/include %s",module#code;
+\end{verbatim}
+Then after the successful compilation of the module {\tt A}
+\begin{flushleft} \tt
+        \XC{} A.mod
+\end{flushleft}
+the following command line will be invoked:
+\begin{flushleft} \tt
+cc -c -I/xds/include A.c
+\end{flushleft}
+
+{\bf Note:} The \XDS{} uses the file name extension defined
+by the {\bf OBJEXT} equation to locate object file.
+This equation should be set to the correct value for your system
+(default {\bf \Obj}).
+
+The \OERef{LINK}
+equation sets the command line which will be invoked after
+successful compilation of the project in PROJECT or MAKE operation modes.
+As a rule one have to specify in the equation:
+\begin{itemize}
+\item   a name of your linker;
+\item   linker flags;
+\item   a set of libraries (and path to the library directory, if required).
+\item   a list of modules to link.
+\end{itemize}
+For example, if your program consists of two modules $A$ and $B$,
+where $A$ is the main module and it uses $B$ and project file
+({\tt A.prj}) contains following lines:
+\begin{verbatim}
+-OBJEXT = o
+-LINK = "link "; {"%s ",imp+main+oberon#objext;}
+\end{verbatim}
+then the call
+\begin{flushleft} \tt
+        \XC{} A =p
+\end{flushleft}
+will cause the following command to invoke:
+\begin{verbatim}
+link A.o B.o
+\end{verbatim}
+
+In the big project it may be desirable to use separate directories for
+different parts of your project. If the option {\bf LONGNAME} is set
+ON, the \XDS{} will generate file names according to the current redirection.
+E.g. if the following lines are defined in {\tt A.prj}
+\begin{verbatim}
+-longname+
+-lookup = *.o = objects
+\end{verbatim}
+the command line to invoke the linker will be generated as
+\begin{verbatim}
+link objects/A.o objects/B.o
+\end{verbatim}
+
+\section{Using Make}\label{seamless:make}
+
+Another way to achieve seamless compilation is to generate
+makefile (See \ref{xc:modes:gen}) and then call the make
+utility using the {\bf LINK} equation (See previous section).  It has
+important advantage: a C compiler will be called only when all modules
+constituting your program will be compiled.
+
+Following is the sketch of project file:
+\begin{verbatim}
+-makefile+         % to generate makefile
+-mkfname=makefile  % name of generated makefile
+-mkfext=           % empty extension for makefile
+-template=<name of template file>
+-link="make";      % to call make
+!module A.mod      % list of modules
+\end{verbatim}
+
+Your package contains a sample of a template file
+on the BIN directory ({\tt makefile.tem}).
+
+See also options {\bf MODULENAME} and {\bf LONGNAME}.
+

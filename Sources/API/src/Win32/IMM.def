@@ -1,0 +1,695 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] IMM;
+
+(**********************************************************************)
+(*                                                                    *)
+(*      IMM.def - Input Method Manager definitions                    *)
+(*                                                                    *)
+(**********************************************************************)
+
+IMPORT SYSTEM;
+FROM WinDef IMPORT DWORD, BOOL, UINT, LONG, PVOID, LPCVOID, 
+                   WCHAR, PSTR, PWSTR, PCSTR, PCWSTR,
+                   POINT, PPOINT, RECT, HKL, HWND, LPARAM, WPARAM, LRESULT;
+FROM WinGDI IMPORT LOGFONTA, LOGFONTW, PLOGFONTA, PLOGFONTW;
+
+TYPE HIMC  = DWORD;
+     HIMCC = DWORD;
+
+     PHKL = POINTER TO HKL;
+
+(* bit field for IMC_SETCOMPOSITIONWINDOW, IMC_SETCANDIDATEWINDOW *)
+
+TYPE CFS_ENUM = (CFS__RECT,            (* 0 *)
+                 CFS__POINT,           (* 1 *)
+                 CFS__SCREEN,          (* 2 *)
+                 CFS__3, CFS__4,
+                 CFS__FORCE_POSITION,  (* 5 *)
+                 CFS__CANDIDATEPOS,    (* 6 *)
+                 CFS__EXCLUDE);        (* 7 *)
+
+TYPE CFS_SET = SET OF CFS_ENUM;
+
+CONST CFS_DEFAULT        = CFS_SET {};                    (* 0000h *)
+      CFS_RECT           = CFS_SET {CFS__RECT};           (* 0001h *)
+      CFS_POINT          = CFS_SET {CFS__POINT};          (* 0002h *)
+      CFS_SCREEN         = CFS_SET {CFS__SCREEN};         (* 0004h *)
+      CFS_FORCE_POSITION = CFS_SET {CFS__FORCE_POSITION}; (* 0020h *)
+      CFS_CANDIDATEPOS   = CFS_SET {CFS__CANDIDATEPOS};   (* 0040h *)
+      CFS_EXCLUDE        = CFS_SET {CFS__EXCLUDE};        (* 0080h *)
+
+TYPE COMPOSITIONFORM = RECORD
+                              dwStyle      : CFS_SET;
+                              ptCurrentPos : POINT;
+                              rcArea       : RECT;
+                       END;
+    PCOMPOSITIONFORM = POINTER TO COMPOSITIONFORM;
+
+TYPE CANDIDATEFORM = RECORD
+                            dwIndex      : DWORD;
+                            dwStyle      : CFS_SET;
+                            ptCurrentPos : POINT;
+                            rcArea       : RECT;
+                     END;
+    PCANDIDATEFORM = POINTER TO CANDIDATEFORM;
+
+(* style of candidate *)
+
+TYPE IME_CAND_ENUM = (IME_CAND_UNKNOWN,  (* 0000h *)
+                      IME_CAND_READ,     (* 0001h *)
+                      IME_CAND_CODE,     (* 0002h *)
+                      IME_CAND_MEANING,  (* 0003h *)
+                      IME_CAND_RADICAL,  (* 0004h *)
+                      IME_CAND_STROKE);  (* 0005h *)
+
+TYPE CANDIDATELIST = RECORD
+                            dwSize      : DWORD;
+                            dwStyle     : IME_CAND_ENUM;
+                            dwCount     : DWORD;
+                            dwSelection : DWORD;
+                            dwPageStart : DWORD;
+                            dwPageSize  : DWORD;
+                            dwOffset    : ARRAY [0..0] OF DWORD;
+                     END;
+    PCANDIDATELIST = POINTER TO CANDIDATELIST;
+
+TYPE REGISTERWORDA = RECORD
+                            lpReading : PSTR;
+                            lpWord    : PSTR;
+                     END;
+    PREGISTERWORDA = POINTER TO REGISTERWORDA;
+
+TYPE REGISTERWORDW = RECORD
+                            lpReading : PWSTR;
+                            lpWord    : PWSTR;
+                     END;
+    PREGISTERWORDW = POINTER TO REGISTERWORDW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  REGISTERWORD =  REGISTERWORDW;
+      TYPE PREGISTERWORD = PREGISTERWORDW;
+<* ELSE *>
+      TYPE  REGISTERWORD =  REGISTERWORDA;
+      TYPE PREGISTERWORD = PREGISTERWORDA;
+<* END *>
+
+(* style of word registration *)
+
+TYPE IME_REGWORD_STYLE_TYPE = DWORD;
+
+CONST IME_REGWORD_STYLE_EUDC          = VAL (IME_REGWORD_STYLE_TYPE, 00000001h);
+      IME_REGWORD_STYLE_USER_FIRST    = VAL (IME_REGWORD_STYLE_TYPE, 80000000h);
+      IME_REGWORD_STYLE_USER_LAST     = VAL (IME_REGWORD_STYLE_TYPE, 0FFFFFFFFh);
+
+CONST STYLE_DESCRIPTION_SIZE = 32;
+
+TYPE STYLEBUFA = RECORD
+                        dwStyle       : IME_REGWORD_STYLE_TYPE;
+                        szDescription : ARRAY [0..STYLE_DESCRIPTION_SIZE-1] OF CHAR;
+                 END;
+    PSTYLEBUFA = POINTER TO STYLEBUFA;
+
+TYPE STYLEBUFW = RECORD
+                        dwStyle       : IME_REGWORD_STYLE_TYPE;
+                        szDescription : ARRAY [0..STYLE_DESCRIPTION_SIZE-1] OF WCHAR;
+                 END;
+    PSTYLEBUFW = POINTER TO STYLEBUFW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  STYLEBUF =  STYLEBUFW;
+      TYPE PSTYLEBUF = PSTYLEBUFW;
+<* ELSE *>
+      TYPE  STYLEBUF =  STYLEBUFA;
+      TYPE PSTYLEBUF = PSTYLEBUFA;
+<* END *>
+
+(* prototype of IMM API *)
+
+PROCEDURE ImmInstallIMEA (IMEFileName : ARRAY OF CHAR;  lpszLayoutText : ARRAY OF CHAR)  : HKL;
+PROCEDURE ImmInstallIMEW (IMEFileName : ARRAY OF WCHAR; lpszLayoutText : ARRAY OF WCHAR) : HKL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmInstallIME = ImmInstallIMEW;
+<* ELSE *>
+      CONST ImmInstallIME = ImmInstallIMEA;
+<* END *>
+
+PROCEDURE ImmGetDefaultIMEWnd (hwnd : HWND) : HWND;
+
+PROCEDURE ImmGetDescriptionA (hkl : HKL; VAR descr : ARRAY OF CHAR;  uBufLen : UINT) : UINT;
+PROCEDURE ImmGetDescriptionW (hkl : HKL; VAR descr : ARRAY OF WCHAR; uBufLen : UINT) : UINT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmGetDescription = ImmGetDescriptionW;
+<* ELSE *>
+      CONST ImmGetDescription = ImmGetDescriptionA;
+<* END *>
+
+PROCEDURE ImmGetIMEFileNameA (hkl : HKL; VAR name : ARRAY OF CHAR;  uBufLen : UINT) : UINT;
+PROCEDURE ImmGetIMEFileNameW (hkl : HKL; VAR name : ARRAY OF WCHAR; uBufLen : UINT) : UINT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmGetIMEFileName = ImmGetIMEFileNameW;
+<* ELSE *>
+      CONST ImmGetIMEFileName = ImmGetIMEFileNameA;
+<* END *>
+
+(* ID for dwIndex of ImmGetProperty *)
+
+TYPE IGP_TYPE = LONG;
+
+CONST IGP_GETIMEVERSION               = VAL (IGP_TYPE, -4);
+      IGP_PROPERTY                    = VAL (IGP_TYPE, 00000004h);
+      IGP_CONVERSION                  = VAL (IGP_TYPE, 00000008h);
+      IGP_SENTENCE                    = VAL (IGP_TYPE, 0000000ch);
+      IGP_UI                          = VAL (IGP_TYPE, 00000010h);
+      IGP_SETCOMPSTR                  = VAL (IGP_TYPE, 00000014h);
+      IGP_SELECT                      = VAL (IGP_TYPE, 00000018h);
+
+PROCEDURE ImmGetProperty (hkl : HKL; index : IGP_TYPE) : DWORD;
+
+PROCEDURE ImmIsIME (hkl : HKL) : BOOL;
+
+PROCEDURE ImmSimulateHotKey (hwnd : HWND; HotKeyId : DWORD) : BOOL;
+
+PROCEDURE ImmCreateContext    () : HIMC;
+PROCEDURE ImmDestroyContext   (himc : HIMC) : BOOL;
+PROCEDURE ImmGetContext       (hwnd : HWND) : HIMC;
+PROCEDURE ImmReleaseContext   (hwnd : HWND; himc : HIMC) : BOOL;
+PROCEDURE ImmAssociateContext (hwnd : HWND; himc : HIMC) : HIMC;
+
+(* parameter of ImmGetCompositionString *)
+
+TYPE GCS_TYPE = DWORD;
+
+CONST GCS_COMPREADSTR                 = VAL (GCS_TYPE, 0001h);
+      GCS_COMPREADATTR                = VAL (GCS_TYPE, 0002h);
+      GCS_COMPREADCLAUSE              = VAL (GCS_TYPE, 0004h);
+      GCS_COMPSTR                     = VAL (GCS_TYPE, 0008h);
+      GCS_COMPATTR                    = VAL (GCS_TYPE, 0010h);
+      GCS_COMPCLAUSE                  = VAL (GCS_TYPE, 0020h);
+      GCS_CURSORPOS                   = VAL (GCS_TYPE, 0080h);
+      GCS_DELTASTART                  = VAL (GCS_TYPE, 0100h);
+      GCS_RESULTREADSTR               = VAL (GCS_TYPE, 0200h);
+      GCS_RESULTREADCLAUSE            = VAL (GCS_TYPE, 0400h);
+      GCS_RESULTSTR                   = VAL (GCS_TYPE, 0800h);
+      GCS_RESULTCLAUSE                = VAL (GCS_TYPE, 1000h);
+
+
+PROCEDURE ImmGetCompositionStringA (himc : HIMC; index : GCS_TYPE; buf : PVOID; buflen : DWORD) : LONG;
+PROCEDURE ImmGetCompositionStringW (himc : HIMC; index : GCS_TYPE; buf : PVOID; buflen : DWORD) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmGetCompositionString = ImmGetCompositionStringW;
+<* ELSE *>
+      CONST ImmGetCompositionString = ImmGetCompositionStringA;
+<* END *>
+
+(* dwIndex for ImmSetCompositionString API *)
+
+CONST SCS_SETSTR                       = GCS_COMPREADSTR    + GCS_COMPSTR;
+      SCS_CHANGEATTR                   = GCS_COMPREADATTR   + GCS_COMPATTR;
+      SCS_CHANGECLAUSE                 = GCS_COMPREADCLAUSE + GCS_COMPCLAUSE;
+
+PROCEDURE ImmSetCompositionStringA (himc : HIMC; Index : GCS_TYPE; Comp : LPCVOID;
+                                    CompLen : DWORD; Read : LPCVOID; ReadLen : DWORD) : BOOL;
+PROCEDURE ImmSetCompositionStringW (himc : HIMC; Index : GCS_TYPE; Comp : LPCVOID;
+                                    CompLen : DWORD; Read : LPCVOID; ReadLen : DWORD) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmSetCompositionString = ImmSetCompositionStringW;
+<* ELSE *>
+      CONST ImmSetCompositionString = ImmSetCompositionStringA;
+<* END *>
+
+PROCEDURE ImmGetCandidateListCountA (himc : HIMC; VAR ListCount : DWORD) : DWORD;
+PROCEDURE ImmGetCandidateListCountW (himc : HIMC; VAR ListCount : DWORD) : DWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmGetCandidateListCount = ImmGetCandidateListCountW;
+<* ELSE *>
+      CONST ImmGetCandidateListCount = ImmGetCandidateListCountA;
+<* END *>
+
+PROCEDURE ImmGetCandidateListA (himc : HIMC; Index : DWORD; VAR List : CANDIDATELIST; BufLen : DWORD) : DWORD;
+PROCEDURE ImmGetCandidateListW (himc : HIMC; Index : DWORD; VAR List : CANDIDATELIST; BufLen : DWORD) : DWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmGetCandidateList = ImmGetCandidateListW;
+<* ELSE *>
+      CONST ImmGetCandidateList = ImmGetCandidateListA;
+<* END *>
+
+(* ID for deIndex of ImmGetGuideLine *)
+
+TYPE GGL_ENUM = (GGL_0,
+                 GGL_LEVEL,     (* 00000001h *)
+                 GGL_INDEX,     (* 00000002h *)
+                 GGL_STRING,    (* 00000003h *)
+                 GGL_PRIVATE);  (* 00000004h *)
+
+PROCEDURE ImmGetGuideLineA (himc : HIMC;
+                            dwIndex : GGL_ENUM;
+                            VAR [NIL] Buf : ARRAY OF CHAR;
+                            BufLen : DWORD) : DWORD;
+PROCEDURE ImmGetGuideLineW (himc : HIMC;
+                            dwIndex : GGL_ENUM;
+                            VAR [NIL] Buf : ARRAY OF WCHAR;
+                            BufLen : DWORD) : DWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmGetGuideLine = ImmGetGuideLineW;
+<* ELSE *>
+      CONST ImmGetGuideLine = ImmGetGuideLineA;
+<* END *>
+
+(* bit field for conversion mode *)
+
+TYPE IME_CMODE_ENUM = (IME_CMODE__NATIVE,       (* 0 *)
+                       IME_CMODE__KATAKANA,     (* 1 *)
+                       IME_CMODE__FULLSHAPE,    (* 3 *)
+                       IME_CMODE__ROMAN,        (* 4 *)
+                       IME_CMODE__CHARCODE,     (* 5 *)
+                       IME_CMODE__HANJACONVERT, (* 6 *)
+                       IME_CMODE__SOFTKBD,      (* 7 *)
+                       IME_CMODE__NOCONVERSION, (* 8 *)
+                       IME_CMODE__EUDC,         (* 9 *)
+                       IME_CMODE__SYMBOL);      (* 10 *)
+
+TYPE IME_CMODE_SET = SET OF IME_CMODE_ENUM;
+
+CONST IME_CMODE_ALPHANUMERIC = IME_CMODE_SET {};                         (* 0000h *)
+      IME_CMODE_NATIVE       = IME_CMODE_SET {IME_CMODE__NATIVE};        (* 0001h *)
+      IME_CMODE_CHINESE      = IME_CMODE_NATIVE;
+      IME_CMODE_HANGEUL      = IME_CMODE_NATIVE;
+      IME_CMODE_JAPANESE     = IME_CMODE_NATIVE;
+      IME_CMODE_KATAKANA     = IME_CMODE_SET {IME_CMODE__KATAKANA};       (* 0002h only effect under IME_CMODE_NATIVE *)
+      IME_CMODE_LANGUAGE     = IME_CMODE_NATIVE + IME_CMODE_KATAKANA;    (* 0003h *)
+      IME_CMODE_FULLSHAPE    = IME_CMODE_SET {IME_CMODE__FULLSHAPE};     (* 0008h *)
+      IME_CMODE_ROMAN        = IME_CMODE_SET {IME_CMODE__ROMAN};         (* 0010h *)
+      IME_CMODE_CHARCODE     = IME_CMODE_SET {IME_CMODE__CHARCODE};      (* 0020h *)
+      IME_CMODE_HANJACONVERT = IME_CMODE_SET {IME_CMODE__HANJACONVERT};  (* 0040h *)
+      IME_CMODE_SOFTKBD      = IME_CMODE_SET {IME_CMODE__SOFTKBD};       (* 0080h *)
+      IME_CMODE_NOCONVERSION = IME_CMODE_SET {IME_CMODE__NOCONVERSION};  (* 0100h *)
+      IME_CMODE_EUDC         = IME_CMODE_SET {IME_CMODE__EUDC};          (* 0200h *)
+      IME_CMODE_SYMBOL       = IME_CMODE_SET {IME_CMODE__SYMBOL};        (* 0400h *)
+
+(* bit field for sentnence mode *)
+
+TYPE IME_SMODE_ENUM = (IME_SMODE__PLAURALCLAUSE,  (* 0 *)
+                       IME_SMODE__SINGLECONVERT,  (* 1 *)
+                       IME_SMODE__AUTOMATIC,      (* 2 *)
+                       IME_SMODE__PHRASEPREDICT); (* 3 *)
+
+     IME_SMODE_SET = SET OF IME_SMODE_ENUM;
+
+CONST IME_SMODE_PLAURALCLAUSE = IME_SMODE_SET {IME_SMODE__PLAURALCLAUSE}; (* 0001h *)
+      IME_SMODE_SINGLECONVERT = IME_SMODE_SET {IME_SMODE__SINGLECONVERT}; (* 0002h *)
+      IME_SMODE_AUTOMATIC     = IME_SMODE_SET {IME_SMODE__AUTOMATIC};     (* 0004h *)
+      IME_SMODE_PHRASEPREDICT = IME_SMODE_SET {IME_SMODE__PHRASEPREDICT}; (* 0008h *)
+
+PROCEDURE ImmGetConversionStatus (himc : HIMC;
+                                  VAR ConVersion : IME_CMODE_SET;
+                                  VAR Sentence : IME_SMODE_SET) : BOOL;
+
+PROCEDURE ImmSetConversionStatus (himc : HIMC;
+                                  ConVersion : IME_CMODE_SET;
+                                  Sentence : IME_SMODE_SET) : BOOL;
+
+PROCEDURE ImmGetOpenStatus (himc : HIMC) : BOOL;
+PROCEDURE ImmSetOpenStatus (himc : HIMC; Open : BOOL) : BOOL;
+
+PROCEDURE ImmGetCompositionFontA (himc : HIMC; VAR font : LOGFONTA) : BOOL;
+PROCEDURE ImmGetCompositionFontW (himc : HIMC; VAR font : LOGFONTW) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmGetCompositionFont = ImmGetCompositionFontW;
+<* ELSE *>
+      CONST ImmGetCompositionFont = ImmGetCompositionFontA;
+<* END *>
+
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE ImmSetCompositionFontA (himc : HIMC; font : LOGFONTA (*!*)) : BOOL;
+<* ELSE *>
+PROCEDURE ImmSetCompositionFontA (himc : HIMC; font : PLOGFONTA (*!*)) : BOOL;
+<* END *>
+<* IF BACKEND # "C" THEN *>
+PROCEDURE ImmSetCompositionFontW (himc : HIMC; font : LOGFONTW (*!*)) : BOOL;
+<* ELSE *>
+PROCEDURE ImmSetCompositionFontW (himc : HIMC; font : PLOGFONTW (*!*)) : BOOL;
+<* END *>
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmSetCompositionFont = ImmSetCompositionFontW;
+<* ELSE *>
+      CONST ImmSetCompositionFont = ImmSetCompositionFontA;
+<* END *>
+
+(* dialog mode of ImmConfigureIME *)
+
+TYPE IME_CONFIG_ENUM = (IME_CONFIG_0,
+                        IME_CONFIG_GENERAL,           (* 1 *)
+                        IME_CONFIG_REGISTERWORD,      (* 2 *)
+                        IME_CONFIG_SELECTDICTIONARY); (* 3 *)
+
+PROCEDURE ImmConfigureIMEA (hkl : HKL; hwnd : HWND; mode : IME_CONFIG_ENUM; pdata : PVOID) : BOOL;
+PROCEDURE ImmConfigureIMEW (hkl : HKL; hwnd : HWND; mode : IME_CONFIG_ENUM; pdata : PVOID) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmConfigureIME = ImmConfigureIMEW;
+<* ELSE *>
+      CONST ImmConfigureIME = ImmConfigureIMEA;
+<* END *>
+
+(* dialog mode of ImmEscape *)
+
+TYPE IME_ESC_TYPE = UINT;
+
+CONST IME_ESC_QUERY_SUPPORT           = VAL (IME_ESC_TYPE, 0003h);
+      IME_ESC_RESERVED_FIRST          = VAL (IME_ESC_TYPE, 0004h);
+      IME_ESC_RESERVED_LAST           = VAL (IME_ESC_TYPE, 07FFh);
+      IME_ESC_PRIVATE_FIRST           = VAL (IME_ESC_TYPE, 0800h);
+      IME_ESC_PRIVATE_LAST            = VAL (IME_ESC_TYPE, 0FFFh);
+      IME_ESC_SEQUENCE_TO_INTERNAL    = VAL (IME_ESC_TYPE, 1001h);
+      IME_ESC_GET_EUDC_DICTIONARY     = VAL (IME_ESC_TYPE, 1003h);
+      IME_ESC_SET_EUDC_DICTIONARY     = VAL (IME_ESC_TYPE, 1004h);
+      IME_ESC_MAX_KEY                 = VAL (IME_ESC_TYPE, 1005h);
+      IME_ESC_IME_NAME                = VAL (IME_ESC_TYPE, 1006h);
+      IME_ESC_SYNC_HOTKEY             = VAL (IME_ESC_TYPE, 1007h);
+      IME_ESC_HANJA_MODE              = VAL (IME_ESC_TYPE, 1008h);
+      IME_ESC_AUTOMATA                = VAL (IME_ESC_TYPE, 1009h);
+      IME_ESC_PRIVATE_HOTKEY          = VAL (IME_ESC_TYPE, 100Ah);
+
+PROCEDURE ImmEscapeA (hkl : HKL; himc : HIMC; escape : IME_ESC_TYPE; data : PVOID) : LRESULT;
+PROCEDURE ImmEscapeW (hkl : HKL; himc : HIMC; escape : IME_ESC_TYPE; data : PVOID) : LRESULT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmEscape = ImmEscapeW;
+<* ELSE *>
+      CONST ImmEscape = ImmEscapeA;
+<* END *>
+
+(* conversion direction for ImmGetConversionList *)
+
+TYPE GCL_ENUM = (GCL_0,
+                 GCL_CONVERSION,        (* 1 *)
+                 GCL_REVERSECONVERSION, (* 2 *)
+                 GCL_REVERSE_LENGTH);   (* 3 *)
+
+PROCEDURE ImmGetConversionListA (hkl : HKL; himc : HIMC; src : ARRAY OF CHAR;
+                                 VAR [NIL] dest : CANDIDATELIST; BufLen : DWORD;
+                                 uFlag : GCL_ENUM) : DWORD;
+
+PROCEDURE ImmGetConversionListW (hkl : HKL; himc : HIMC; src : ARRAY OF WCHAR;
+                                 VAR [NIL] dest : CANDIDATELIST; BufLen : DWORD;
+                                 uFlag : GCL_ENUM) : DWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmGetConversionList = ImmGetConversionListW;
+<* ELSE *>
+      CONST ImmGetConversionList = ImmGetConversionListA;
+<* END *>
+
+(* wParam for WM_IME_CONTROL to the soft keyboard *)
+(* dwAction for ImmNotifyIME *)
+
+TYPE NI_TYPE = DWORD;
+
+CONST NI_OPENCANDIDATE                = VAL (NI_TYPE, 0010h);
+      NI_CLOSECANDIDATE               = VAL (NI_TYPE, 0011h);
+      NI_SELECTCANDIDATESTR           = VAL (NI_TYPE, 0012h);
+      NI_CHANGECANDIDATELIST          = VAL (NI_TYPE, 0013h);
+      NI_FINALIZECONVERSIONRESULT     = VAL (NI_TYPE, 0014h);
+      NI_COMPOSITIONSTR               = VAL (NI_TYPE, 0015h);
+      NI_SETCANDIDATE_PAGESTART       = VAL (NI_TYPE, 0016h);
+      NI_SETCANDIDATE_PAGESIZE        = VAL (NI_TYPE, 0017h);
+
+(* dwIndex for ImmNotifyIME/NI_COMPOSITIONSTR *)
+
+CONST CPS_COMPLETE                    = 0001h;
+      CPS_CONVERT                     = 0002h;
+      CPS_REVERT                      = 0003h;
+      CPS_CANCEL                      = 0004h;
+
+PROCEDURE ImmNotifyIME (himc : HIMC; Action : NI_TYPE; Index : DWORD; Value : DWORD) : BOOL;
+
+PROCEDURE ImmGetStatusWindowPos (himc : HIMC; VAR pt : POINT) : BOOL;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE ImmSetStatusWindowPos (himc : HIMC; pt : POINT (*!*)) : BOOL;
+<* ELSE *>
+PROCEDURE ImmSetStatusWindowPos (himc : HIMC; pt : PPOINT (*!*)) : BOOL;
+<* END *>
+PROCEDURE ImmGetCompositionWindow (himc : HIMC; VAR CompForm : COMPOSITIONFORM) : BOOL;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE ImmSetCompositionWindow (himc : HIMC;     CompForm : COMPOSITIONFORM (*!*)) : BOOL;
+<* ELSE *>
+PROCEDURE ImmSetCompositionWindow (himc : HIMC;     CompForm : PCOMPOSITIONFORM (*!*)) : BOOL;
+<* END *>
+PROCEDURE ImmGetCandidateWindow (himc : HIMC; BufLen : DWORD; VAR Candidate : CANDIDATEFORM) : BOOL;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE ImmSetCandidateWindow (himc : HIMC; Candidate : CANDIDATEFORM (*!*)) : BOOL;
+<* ELSE *>
+PROCEDURE ImmSetCandidateWindow (himc : HIMC; Candidate : PCANDIDATEFORM (*!*)) : BOOL;
+<* END *>
+
+PROCEDURE ImmIsUIMessageA (hwnd : HWND; msg : UINT; wparam : WPARAM; lparam : LPARAM) : BOOL;
+PROCEDURE ImmIsUIMessageW (hwnd : HWND; msg : UINT; wparam : WPARAM; lparam : LPARAM) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmIsUIMessage = ImmIsUIMessageW;
+<* ELSE *>
+      CONST ImmIsUIMessage = ImmIsUIMessageA;
+<* END *>
+
+PROCEDURE ImmGetVirtualKey (hwnd : HWND) : UINT;
+
+TYPE REGISTERWORDENUMPROCA = PROCEDURE (ARRAY OF CHAR,  DWORD, ARRAY OF CHAR,  PVOID) : INTEGER;
+TYPE REGISTERWORDENUMPROCW = PROCEDURE (ARRAY OF WCHAR, DWORD, ARRAY OF WCHAR, PVOID) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE REGISTERWORDENUMPROC = REGISTERWORDENUMPROCW;
+<* ELSE *>
+      TYPE REGISTERWORDENUMPROC = REGISTERWORDENUMPROCA;
+<* END *>
+
+PROCEDURE ImmRegisterWordA (hkl : HKL; Reading : ARRAY OF CHAR;
+                            Style : IME_REGWORD_STYLE_TYPE;
+                            Register : ARRAY OF CHAR) : BOOL;
+PROCEDURE ImmRegisterWordW (hkl : HKL; Reading : ARRAY OF WCHAR;
+                            Style : IME_REGWORD_STYLE_TYPE;
+                            Register : ARRAY OF WCHAR): BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmRegisterWord = ImmRegisterWordW;
+<* ELSE *>
+      CONST ImmRegisterWord = ImmRegisterWordA;
+<* END *>
+
+PROCEDURE ImmUnregisterWordA (hkl : HKL; Reading : ARRAY OF CHAR;
+                              Style : IME_REGWORD_STYLE_TYPE;
+                              Unregister : ARRAY OF CHAR) : BOOL;
+PROCEDURE ImmUnregisterWordW (hkl : HKL; Reading : ARRAY OF WCHAR;
+                              Style : IME_REGWORD_STYLE_TYPE;
+                              Unregister : ARRAY OF WCHAR) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmUnregisterWord = ImmUnregisterWordW;
+<* ELSE *>
+      CONST ImmUnregisterWord = ImmUnregisterWordA;
+<* END *>
+
+PROCEDURE ImmGetRegisterWordStyleA (hkl : HKL; nItem : UINT; VAR StyleBuf : STYLEBUFA) : UINT;
+PROCEDURE ImmGetRegisterWordStyleW (hkl : HKL; nItem : UINT; VAR StyleBuf : STYLEBUFW) : UINT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmGetRegisterWordStyle = ImmGetRegisterWordStyleW;
+<* ELSE *>
+      CONST ImmGetRegisterWordStyle = ImmGetRegisterWordStyleA;
+<* END *>
+
+PROCEDURE ImmEnumRegisterWordA (hkl : HKL;
+                                EnumProc : REGISTERWORDENUMPROCA;
+                                Reading : PCSTR; (* NIL *)
+                                Style : IME_REGWORD_STYLE_TYPE;
+                                Register : PCSTR; (* NIL *)
+                                pData : PVOID) : UINT;
+
+PROCEDURE ImmEnumRegisterWorWA (hkl : HKL;
+                                EnumProc : REGISTERWORDENUMPROCW;
+                                Reading  : PCWSTR; (* NIL *)
+                                Style : IME_REGWORD_STYLE_TYPE;
+                                Register : PCWSTR; (* NIL *)
+                                pData : PVOID) : UINT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ImmEnumRegisterWord = ImmEnumRegisterWordW;
+<* ELSE *>
+      CONST ImmEnumRegisterWord = ImmEnumRegisterWordA;
+<* END *>
+
+(* wParam for WM_IME_CONTROL *)
+
+CONST IMC_GETCANDIDATEPOS      = 0007h;
+      IMC_SETCANDIDATEPOS      = 0008h;
+      IMC_GETCOMPOSITIONFONT   = 0009h;
+      IMC_SETCOMPOSITIONFONT   = 000Ah;
+      IMC_GETCOMPOSITIONWINDOW = 000Bh;
+      IMC_SETCOMPOSITIONWINDOW = 000Ch;
+      IMC_GETSTATUSWINDOWPOS   = 000Fh;
+      IMC_SETSTATUSWINDOWPOS   = 0010h;
+      IMC_CLOSESTATUSWINDOW    = 0021h;
+      IMC_OPENSTATUSWINDOW     = 0022h;
+
+
+(* lParam for WM_IME_SETCONTEXT *)
+
+CONST ISC_SHOWUICANDIDATEWINDOW       = 00000001h;
+      ISC_SHOWUICOMPOSITIONWINDOW     = 80000000h;
+      ISC_SHOWUIGUIDELINE             = 40000000h;
+      ISC_SHOWUIALLCANDIDATEWINDOW    = 0000000Fh;
+      ISC_SHOWUIALL                   = 0C000000Fh;
+
+(* the modifiers of hot key were here but moved to WinUser.def *)
+
+(* Windows for Simplified Chinese Edition hot key ID from 0x10 - 0x2F *)
+
+CONST IME_CHOTKEY_IME_NONIME_TOGGLE           = 10h;
+      IME_CHOTKEY_SHAPE_TOGGLE                = 11h;
+      IME_CHOTKEY_SYMBOL_TOGGLE               = 12h;
+
+(* Windows for Japanese Edition hot key ID from 0x30 - 0x4F *)
+
+CONST IME_JHOTKEY_CLOSE_OPEN                  = 30h;
+
+(* Windows for Korean Edition hot key ID from 0x50 - 0x6F *)
+
+CONST IME_KHOTKEY_SHAPE_TOGGLE                = 50h;
+      IME_KHOTKEY_HANJACONVERT                = 51h;
+      IME_KHOTKEY_ENGLISH                     = 52h;
+
+(* Windows for Tranditional Chinese Edition hot key ID from 0x70 - 0x8F *)
+
+CONST IME_THOTKEY_IME_NONIME_TOGGLE           = 70;
+      IME_THOTKEY_SHAPE_TOGGLE                = 71h;
+      IME_THOTKEY_SYMBOL_TOGGLE               = 72h;
+
+(* direct switch hot key ID from 0x100 - 0x11F *)
+
+CONST IME_HOTKEY_DSWITCH_FIRST                = 100h;
+      IME_HOTKEY_DSWITCH_LAST                 = 11Fh;
+
+(* IME private hot key from 0x200 - 0x21F *)
+
+CONST IME_HOTKEY_PRIVATE_FIRST                = 200h;
+      IME_ITHOTKEY_RESEND_RESULTSTR           = 200h;
+      IME_ITHOTKEY_PREVIOUS_COMPOSITION       = 201h;
+      IME_ITHOTKEY_UISTYLE_TOGGLE             = 202h;
+      IME_HOTKEY_PRIVATE_LAST                 = 21Fh;
+
+(* style bit flags for WM_IME_COMPOSITION *)
+
+CONST CS_INSERTCHAR                   = 2000h;
+      CS_NOMOVECARET                  = 4000h;
+
+(* bits of fdwInit of INPUTCONTEXT *)
+(* IME version constants *)
+
+CONST IMEVER_0310                     = 0003000Ah;
+      IMEVER_0400                     = 00040000h;
+
+(* IME property bits *)
+
+CONST IME_PROP_AT_CARET               = 00010000h;
+      IME_PROP_SPECIAL_UI             = 00020000h;
+      IME_PROP_CANDLIST_START_FROM_1  = 00040000h;
+      IME_PROP_UNICODE                = 00080000h;
+
+(* IME UICapability bits *)
+
+CONST UI_CAP_2700                     = 00000001h;
+      UI_CAP_ROT90                    = 00000002h;
+      UI_CAP_ROTANY                   = 00000004h;
+
+(* ImmSetCompositionString Capability bits *)
+
+CONST SCS_CAP_COMPSTR                 = 00000001h;
+      SCS_CAP_MAKEREAD                = 00000002h;
+
+(* IME WM_IME_SELECT inheritance Capability bits *)
+CONST SELECT_CAP_CONVERSION           = 00000001h;
+      SELECT_CAP_SENTENCE             = 00000002h;
+
+(* ID for dwLevel of GUIDELINE Structure *)
+
+CONST GL_LEVEL_NOGUIDELINE            = 00000000h;
+      GL_LEVEL_FATAL                  = 00000001h;
+      GL_LEVEL_ERROR                  = 00000002h;
+      GL_LEVEL_WARNING                = 00000003h;
+      GL_LEVEL_INFORMATION            = 00000004h;
+
+(* ID for dwIndex of GUIDELINE Structure *)
+
+CONST GL_ID_UNKNOWN                   = 00000000h;
+      GL_ID_NOMODULE                  = 00000001h;
+      GL_ID_NODICTIONARY              = 00000010h;
+      GL_ID_CANNOTSAVE                = 00000011h;
+      GL_ID_NOCONVERT                 = 00000020h;
+      GL_ID_TYPINGERROR               = 00000021h;
+      GL_ID_TOOMANYSTROKE             = 00000022h;
+      GL_ID_READINGCONFLICT           = 00000023h;
+      GL_ID_INPUTREADING              = 00000024h;
+      GL_ID_INPUTRADICAL              = 00000025h;
+      GL_ID_INPUTCODE                 = 00000026h;
+      GL_ID_INPUTSYMBOL               = 00000027h;
+      GL_ID_CHOOSECANDIDATE           = 00000028h;
+      GL_ID_REVERSECONVERSION         = 00000029h;
+      GL_ID_PRIVATE_FIRST             = 00008000h;
+      GL_ID_PRIVATE_LAST              = 0000FFFFh;
+
+(* attribute for COMPOSITIONSTRING Structure *)
+
+CONST ATTR_INPUT                      = 00h;
+      ATTR_TARGET_CONVERTED           = 01h;
+      ATTR_CONVERTED                  = 02h;
+      ATTR_TARGET_NOTCONVERTED        = 03h;
+      ATTR_INPUT_ERROR                = 04h;
+
+(* wParam of report message WM_IME_NOTIFY *)
+
+CONST IMN_CLOSESTATUSWINDOW    = 0001h;
+      IMN_OPENSTATUSWINDOW     = 0002h;
+      IMN_CHANGECANDIDATE      = 0003h;
+      IMN_CLOSECANDIDATE       = 0004h;
+      IMN_OPENCANDIDATE        = 0005h;
+      IMN_SETCONVERSIONMODE    = 0006h;
+      IMN_SETSENTENCEMODE      = 0007h;
+      IMN_SETOPENSTATUS        = 0008h;
+      IMN_SETCANDIDATEPOS      = 0009h;
+      IMN_SETCOMPOSITIONFONT   = 000Ah;
+      IMN_SETCOMPOSITIONWINDOW = 000Bh;
+      IMN_SETSTATUSWINDOWPOS   = 000Ch;
+      IMN_GUIDELINE            = 000Dh;
+      IMN_PRIVATE              = 000Eh;
+
+(* error code of ImmGetCompositionString *)
+
+CONST IMM_ERROR_NODATA                = SYSTEM.CAST (DWORD, VAL (LONG, -1));
+      IMM_ERROR_GENERAL               = SYSTEM.CAST (DWORD, VAL (LONG, -2));
+
+(* type of soft keyboard *)
+(* for Windows Tranditional Chinese Edition *)
+
+CONST SOFTKEYBOARD_TYPE_T1            = 0001h;
+
+(* for Windows Simplified Chinese Edition *)
+
+CONST SOFTKEYBOARD_TYPE_C1            = 0002h;
+
+
+END IMM.
+

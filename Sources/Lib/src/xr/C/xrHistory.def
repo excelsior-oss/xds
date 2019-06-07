@@ -1,0 +1,24 @@
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrHistory; (* Hady. 24.05.96 14:48 *)
+
+FROM SYSTEM   IMPORT
+	ADDRESS, CARD8, CARD16, CARD32, INT8, INT16, INT32, SET32, SET16;
+IMPORT  xmRTS;
+
+PROCEDURE X2C_PROC_INP_F(file: ARRAY OF CHAR; line: INT32);
+(* Registration of current procedure in history. C only. *)
+PROCEDURE X2C_PROC_PRF_F(file: ARRAY OF CHAR; line: INT32; VAR prf: xmRTS.X2C_Profile_STR);
+(* Registration of current procedure in history & profiler. C only. *)
+PROCEDURE X2C_PROC_OUT_F;
+(* Deregistration of current procedure in history & profiler. C only. *)
+PROCEDURE X2C_Profiler_clock;
+(* Clock interrupt handler for Profiler. C only. *)
+PROCEDURE X2C_scanStackHistory(from, to: ADDRESS; exact: BOOLEAN);
+
+PROCEDURE X2C_HIS_SAVE(VAR sv: INT16);
+PROCEDURE X2C_HIS_RESTORE(sv: INT16);
+
+PROCEDURE X2C_show_history;
+PROCEDURE X2C_show_profile;
+
+END xrHistory.

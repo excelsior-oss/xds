@@ -1,0 +1,54 @@
+-- Организация работы с остановами (нижний уровень). Содержит процедуры
+-- для добавления, поиска и удаления остановов.
+
+DEFINITION MODULE KrnIndex;
+
+(* Организация работы с остановами. Содержит процедуры для добавления,
+   поиска и удаления остановов. *)
+
+IMPORT SYSTEM;
+IMPORT KrnTypes;
+
+
+TYPE
+  ACCESS_ID = ( NONE
+              , READ
+              , READ_REG
+              , WRITE
+              , WRITE_REG
+              , EXECUTE);
+  INDEX_REC = RECORD
+                Busy  : BOOLEAN;
+                Access: ACCESS_ID;
+                Addr  : KrnTypes.ADDRESS;
+                Len   : CARDINAL;
+                RegNo : CARDINAL;
+                OpCode: KrnTypes.BREAK_CODE;
+              END;
+
+  PINDEX = POINTER TO ARRAY OF INDEX_REC;
+  INDEX  = RECORD
+             Index: PINDEX;
+             Free : CARDINAL;
+           END;
+
+VAR
+  Index: INDEX;
+
+
+CONST
+  Invalid_Index = 0;
+  NoOpcode = KrnTypes.BREAK_CODE{0 BY KrnTypes.BreakLen};
+  NEW_INDEX = INDEX_REC{ TRUE, NONE, MAX(CARDINAL), MAX(CARDINAL), MAX(CARDINAL), NoOpcode};
+
+
+(* Добавит новый индекс, вернет его номер *)
+PROCEDURE AddIndex (I: INDEX_REC): CARDINAL;
+
+(* Удалит индекс по номеру, если не было - вернет FALSE *)
+PROCEDURE DelIndex (N: CARDINAL; VAR I: INDEX_REC): BOOLEAN;
+
+(* Существует ли подобный в индексе *)
+PROCEDURE Find (N: CARDINAL): BOOLEAN;
+
+END KrnIndex.

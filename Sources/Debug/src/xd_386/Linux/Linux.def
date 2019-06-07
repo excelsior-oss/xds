@@ -1,0 +1,188 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+--<* NOHEADER+ *> -- NEVER GET THE HEADER FOR THIS FILE
+
+DEFINITION MODULE ["C"] Linux;
+
+
+IMPORT
+  sys := SYSTEM;
+
+FROM SYSTEM IMPORT INT32, CARD32, CARD8;
+
+
+TYPE
+--  PHANDLE = POINTER TO INTEGER;
+--  THANDLE = POINTER TO CARDINAL;
+  THREAD_INFO = RECORD
+    pid: CARDINAL;
+    lwp: CARDINAL;
+    tid: CARDINAL;
+  END;
+  THANDLE = POINTER TO THREAD_INFO;
+
+
+
+TYPE
+  (*
+  REGS = (EBX, ECX, EDX, ESI, EDI, EBP, EAX, XDS,
+    XES, XFS, XGS, ORIG_EAX, EIP, XCS, EFLAGS, ESP, XSS);
+  *)
+  FPREGS = (CWD, SWD, TWD, FIP, FCS, FOO, FOS, ST_SPACE);
+
+CONST
+  REGS_NO = 17;
+  EBX = 0;
+  ECX = 1;
+  EDX = 2;
+  ESI = 3;
+  EDI = 4;
+  EBP = 5;
+  EAX = 6;
+  XDS = 7;
+  XES = 8;
+  XFS = 9;
+  XGS = 10;
+  ORIG_EAX = 11;
+  EIP = 12;
+  XCS = 13;
+  EFLAGS = 14;
+  ESP = 15;
+  XSS = 16;
+
+
+  FPREGS_NO = 27;
+  DBGREGS_NO = 8;
+
+  -- memory segment access flags
+  VM_EXEC = 1;
+  VM_READ = 2;
+  VM_WRITE = 4;
+
+  -- program header's segment flags 
+  PF_X = 1; -- Segment is executable
+  PF_W = 2; -- Segment is writable
+  PF_R = 4; -- Segment is readable
+
+
+TYPE
+  PCHAR = POINTER TO ARRAY OF CHAR;
+  ARGS_ARRAY = ARRAY OF sys.ADDRESS;
+
+  debug_event_type = (DE_0,
+                      DE_INITIALIZED,
+                      DE_ASK_AGAIN,
+                      DE_EXITPROCESS,
+                      DE_EXCEPTION,
+                      DE_LOAD_SOLIB,
+                      DE_UNLOAD_SOLIB,
+                      DE_THREAD_CREATED,
+                      DE_THREAD_EXITED);
+
+  exit_process_debug_info = RECORD
+    exit_code: INTEGER;
+    status: INTEGER;
+    pc: INTEGER;
+    is_terminated: INTEGER;
+  END;
+
+  solib_debug_info = RECORD
+    name: PCHAR;
+    hfile: INTEGER;
+    base: CARDINAL;
+    is_loaded: INTEGER;
+    is_program: INTEGER;
+  END;
+
+  thread_debug_info = RECORD
+    new_thread_info: THANDLE;
+  END;
+
+  exception_event_type = (EE_0, EE_EXCEPTION, EE_BREAKPOINTHIT, EE_SINGLESTEP, EE_HIDDEN_EXCEPTION);
+
+  exception_debug_info = RECORD
+    type: exception_event_type;
+    pc: INTEGER;
+    signal: INTEGER;
+  END;
+
+  debug_event = RECORD
+    type: debug_event_type;
+    thread_info: THANDLE;
+    CASE :INTEGER OF
+      | 0: exception: exception_debug_info;
+      | 1: exit_process: exit_process_debug_info;
+      | 2: solib: solib_debug_info;
+      | 3: thread: thread_debug_info;
+    END;
+  END;
+
+  BFD = POINTER TO INTEGER;
+  BFD_SECT = BFD;
+  BFD_SEGM = BFD;
+
+VAR 
+  null_ptid: THANDLE;
+
+
+PROCEDURE init_linux_layer ();
+
+PROCEDURE create_process (program: ARRAY OF CHAR; argv: ARGS_ARRAY): THANDLE;
+PROCEDURE terminate_process (): BOOLEAN;
+--PROCEDURE get_pid (proc: THANDLE): PID;
+
+--PROCEDURE get_main_thread_handle (proc: THANDLE): THANDLE;
+
+PROCEDURE wait_for_debug_event ((*thr: THANDLE;*) VAR di: debug_event): BOOLEAN;
+PROCEDURE continue_debug_event (thr: THANDLE; do_singlestep, cont_flag: BOOLEAN): BOOLEAN;
+
+
+PROCEDURE proc_get_reg (thr: THANDLE; no: INTEGER): INTEGER;
+PROCEDURE proc_set_reg (thr: THANDLE; no, value: INTEGER): BOOLEAN;
+PROCEDURE proc_get_regs (thr: THANDLE; VAR buffer: ARRAY OF CARDINAL): BOOLEAN;
+PROCEDURE proc_set_regs (thr: THANDLE;     buffer: ARRAY OF CARDINAL): BOOLEAN;
+PROCEDURE proc_get_fpregs (thr: THANDLE; VAR buffer: ARRAY OF CARDINAL): BOOLEAN;
+PROCEDURE proc_set_fpregs (thr: THANDLE;     buffer: ARRAY OF CARDINAL): BOOLEAN;
+PROCEDURE proc_get_dbgregs (thr: THANDLE; VAR buffer: ARRAY OF CARDINAL): BOOLEAN;
+PROCEDURE proc_set_dbgregs (thr: THANDLE;     buffer: ARRAY OF CARDINAL): BOOLEAN;
+
+--PROCEDURE get_thread_info (thr: THANDLE; VAR tid, lwp: INTEGER): BOOLEAN;
+
+
+PROCEDURE proc_get_memory (proc: THANDLE; source: CARDINAL; len: CARDINAL; dest: sys.ADDRESS): BOOLEAN;
+PROCEDURE proc_set_memory (proc: THANDLE; source: sys.ADDRESS; len: CARDINAL; dest: CARDINAL): BOOLEAN;
+
+
+PROCEDURE get_segment_info (addr: CARDINAL; VAR begin: CARDINAL; VAR len, access_flags: INTEGER): BOOLEAN;
+
+PROCEDURE get_base_addr (selector: CARDINAL): LONGCARD;
+
+PROCEDURE is_multithreaded (): BOOLEAN;
+
+
+PROCEDURE my_bfd_open (name: ARRAY OF CHAR): BFD;
+PROCEDURE my_bfd_close (bfd: BFD);
+PROCEDURE my_bfd_check_format (bfd: BFD): BOOLEAN;
+PROCEDURE my_bfd_get_startup_entry (bfd: BFD): CARDINAL;
+(*
+PROCEDURE my_bfd_get_section_number (bfd: BFD): INTEGER;
+PROCEDURE my_bfd_get_first_section (bfd: BFD): BFD_SECT;
+PROCEDURE my_bfd_get_next_section (sect: BFD_SECT): BFD_SECT;
+PROCEDURE my_bfd_get_section_info (sect: BFD_SECT; base: CRADINAL; VAR start, end, is_data: INTEGER);
+*)
+PROCEDURE my_bfd_get_elf_phdr_upper_bound (bfd: BFD): INTEGER;
+
+-- returns number of LOAD segments
+PROCEDURE my_bfd_get_elf_phdrs (bfd: BFD; VAR phdrs: ARRAY OF CHAR): INTEGER;
+
+-- returns true if the segment is loadable
+PROCEDURE my_bfd_get_segment_info (phdr: ARRAY OF CHAR; index: INTEGER; base: CARDINAL; VAR start, end, flags: CARDINAL): BOOLEAN;
+
+PROCEDURE my_bfd_get_symtab_upper_bound (bfd: BFD): INTEGER;
+PROCEDURE my_bfd_canonicalize_symtab (bfd: BFD; VAR buffer: ARRAY OF CHAR): INTEGER;
+PROCEDURE my_bfd_get_symbol_info (symtab: ARRAY OF CHAR; index: INTEGER; VAR symaddr: CARDINAL; VAR name: ARRAY OF CHAR);
+
+
+END Linux.

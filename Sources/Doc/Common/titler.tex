@@ -1,0 +1,103 @@
+% XDS User Manual
+%
+% Title page and copyright notices (Russian)
+%
+
+\pagenumbering{roman}
+
+\begin{titlepage}
+
+%\hfill\epsfxsize=0.4\textwidth\epsfbox{../logo3.eps}
+
+\begin{center}
+\large\bf Программные Продукты Серии XDS 
+\end{center}
+\vspace{1 in}
+\begin{center}
+\large\bf
+\ifcommon
+\else
+  \ifonline
+    \ProductName
+    \par \large для
+    \ifosii       IBM Operating System/2
+    \else\iflinux Linux Operating System
+    \else\ifwinnt Microsoft Windows 
+    \else\ifunix  Unix
+    \else\JNO
+    \fi\fi\fi\fi
+    \par Версия \VersionNumber
+  \else
+     \par {\bfseries \ProductName} 
+     \par {\bfseries \large \BookName} 
+     \par {\bfseries \large \DocumentType} 
+     \par \DocumentNumber
+  \fi %-- ifonline
+  \vfill
+\fi % ------- ifcommon
+\end{center}
+
+\ifonline
+\begin{center}
+\large\bf \BookName{}
+\end{center}
+\fi
+
+\vfill
+\begin{center}
+\ifonline
+  {\Large Excelsior, LLC}
+
+  \url{http://www.excelsior-usa.com}
+\else
+  \includegraphics[scale=0.7]{../Common/logo.pdf}
+
+  {\sf http://www.excelsior-usa.com}
+\fi
+\end{center}
+
+\pagebreak
+\thispagestyle{empty}
+\setcounter{page}{0}
+{\small
+
+Программное обеспечение и документация Excelsior copyright \copyright{}
+2001-2019 Excelsior, LLC.
+
+Все права защищены. Вы можете использовать прилагаемое программное
+обеспечение на одном компьютере; переносить его с одного компьютера на
+другой, при условии, что программное обеспечение используется единовременно
+только на одном компьютере и что вы удаляете все копии данного программного 
+обеспечения с компьютера, с которого произведено копирование; создавать
+резервные копии программного обеспечения.
+
+Программное обеспечение и документация \XDS{} были протестированы и 
+просмотрены. Тем не менее, \XDS{} не дает никаких гарантий и обязательств,
+как явных, так и подразумеваемых, относительно программного обеспечения и
+документации, входящих в состав продукта \XDS{}. Ни при каких обстоятельствах
+\XDS{} не может быть привлечена к ответственности за прямые, косвенные,
+особые, случайные или последовательные повреждения и потери, явившиеся
+результатом любого недостатка в программном обеспечении или документации,
+входящих в состав данного продукта. В частности, \XDS{} не несет 
+ответственности за любые программы и данные, используемые совместно с этим
+продуктом, включая стоимость восстановления программ или данных.
+
+\XDS{} - торговая марка XDS Ltd.
+
+\ifcommon \else % not a common document
+  \ifosii
+    IBM, Operating System/2, OS/2, Presentation Manager, C Set/2, VisualAge
+    - торговые марки IBM Corporation.
+  \fi
+
+  \ifwinnt
+    Microsoft, Windows 95, Windows NT - торговые марки или зарегистрированные
+    торговые марки Microsoft Corporation.
+  \fi
+\fi
+
+Все торговые марки и авторские права, упомянутые в данном документе,
+являются собственностью сответствующих владельцев.
+
+} % end small
+\end{titlepage}

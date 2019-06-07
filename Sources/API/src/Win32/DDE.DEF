@@ -1,0 +1,164 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] DDE;
+
+(******************************************************************************
+*                                                                             *
+* DDE.def - Dynamic Data Exchange structures and definitions                  *
+*                                                                             *
+******************************************************************************)
+
+FROM WinDef IMPORT BYTE, WORD, BOOL, SHORT, HWND, UINT, LONG;
+FROM WinNT IMPORT SECURITY_QUALITY_OF_SERVICE, PSECURITY_QUALITY_OF_SERVICE;
+
+
+(* DDE window messages *)
+
+CONST WM_DDE_FIRST      = 03E0h;
+      WM_DDE_INITIATE   = WM_DDE_FIRST;
+      WM_DDE_TERMINATE  = WM_DDE_FIRST+1;
+      WM_DDE_ADVISE     = WM_DDE_FIRST+2;
+      WM_DDE_UNADVISE   = WM_DDE_FIRST+3;
+      WM_DDE_ACK        = WM_DDE_FIRST+4;
+      WM_DDE_DATA       = WM_DDE_FIRST+5;
+      WM_DDE_REQUEST    = WM_DDE_FIRST+6;
+      WM_DDE_POKE       = WM_DDE_FIRST+7;
+      WM_DDE_EXECUTE    = WM_DDE_FIRST+8;
+      WM_DDE_LAST       = WM_DDE_FIRST+8;
+
+
+(* Following are constants for "flag" field in the structures *)
+
+CONST fAckReq   = VAL (WORD, 8000h);
+      fDeferUpd = VAL (WORD, 4000h);
+      fBusy     = VAL (WORD, 4000h);
+      fRelease  = VAL (WORD, 2000h);
+      fResponse = VAL (WORD, 1000h);
+
+(*----------------------------------------------------------------------------
+|       DDEACK structure
+|
+|        Structure of wStatus (LOWORD(lParam)) in WM_DDE_ACK message
+|       sent in response to a WM_DDE_DATA, WM_DDE_REQUEST, WM_DDE_POKE,
+|       WM_DDE_ADVISE, or WM_DDE_UNADVISE message.
+|
+----------------------------------------------------------------------------*)
+
+TYPE DDEACK = WORD;
+ (* bit  8000h  = fBusy;
+         4000h  = fAck;
+    bits 0..FFh = bAppReturnCode;
+
+ *)
+
+(*----------------------------------------------------------------------------
+|       DDEADVISE structure
+|
+|        WM_DDE_ADVISE parameter structure for hOptions (LOWORD(lParam))
+|
+----------------------------------------------------------------------------*)
+
+
+TYPE DDEADVISE = RECORD
+                        flags    : WORD;
+                        cfFormat : SHORT;
+                 END;
+
+(* fDeferUpd and fAckReq allowed in flags *)
+
+(*----------------------------------------------------------------------------
+|       DDEDATA structure
+|
+|       WM_DDE_DATA parameter structure for hData (LOWORD(lParam)).
+|       The actual size of this structure depends on the size of
+|       the Value array.
+|
+----------------------------------------------------------------------------*)
+
+TYPE DDEDATA = RECORD
+                      flags    : WORD;
+                      cfFormat : SHORT;
+                      Value    : ARRAY [0..0] OF BYTE;
+               END;
+
+(* flag field constants *)
+
+(* fResponse, fRelease, fAckReq allowed in flags *)
+
+
+(*----------------------------------------------------------------------------
+|        DDEPOKE structure
+|
+|        WM_DDE_POKE parameter structure for hData (LOWORD(lParam)).
+|       The actual size of this structure depends on the size of
+|       the Value array.
+|
+----------------------------------------------------------------------------*)
+
+TYPE DDEPOKE = RECORD
+                      flags    : WORD;
+                      cfFormat : SHORT;
+                      Value    : ARRAY [0..0] OF BYTE;
+               END;
+
+(* the only flag allowed uf fRelease *)
+
+
+(*----------------------------------------------------------------------------
+The following types were used in previous versions of the Windows SDK.
+They are still valid.  The above typedef's define exactly the same structures
+as those below.  The above typedef names are recommended, however, as they
+are more meaningful.
+----------------------------------------------------------------------------*)
+
+TYPE DDELN = RECORD
+                    flags : WORD;
+                    cfFormat : SHORT;
+             END;
+
+(*  fRelease, fDeferUpd, fAckReq allowed in flags *)
+
+TYPE DDEUP = RECORD
+                    flags    : WORD;
+                    cfFormat : SHORT;
+                    rgb      : ARRAY [0..0] OF BYTE;
+             END;
+
+(* fAck, fRelease, fReserved, fAckReq allowed *)
+
+
+(*
+ * DDE SECURITY
+ *)
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE DdeSetQualityOfService
+             (hwndClient       : HWND;
+              osNew            : SECURITY_QUALITY_OF_SERVICE;  (*!*)
+              VAR [NIL] osPrev : SECURITY_QUALITY_OF_SERVICE) : BOOL;
+<* ELSE *>
+PROCEDURE DdeSetQualityOfService
+             (hwndClient       : HWND;
+              osNew            : PSECURITY_QUALITY_OF_SERVICE;  (*!*)
+              VAR [NIL] osPrev : SECURITY_QUALITY_OF_SERVICE) : BOOL;
+<* END *>
+
+PROCEDURE ImpersonateDdeClientWindow (hWndClient : HWND;
+                                      hWndServer : HWND) : BOOL;
+
+
+
+(*
+ * DDE message packing APIs
+ *)
+PROCEDURE PackDDElParam   (msg : UINT; uiLo, uiHi : UINT) : LONG;
+PROCEDURE UnpackDDElParam (msg : UINT; lParam : LONG; VAR uiLo, uiHi : UINT) : BOOL;
+PROCEDURE FreeDDElParam   (msg : UINT; lParam : LONG) : BOOL;
+PROCEDURE ReuseDDElParam  (lParam : LONG; msgIn, msgOut, uiLo, uiHi : UINT) : LONG;
+
+
+
+END DDE.

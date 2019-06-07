@@ -1,0 +1,74 @@
+(* Copyright (c) 1994,97 XDS Ltd, Russia. All Rights Reserved. *)
+(* Quick sequential data streams *)
+(* Based on ISO StreamFile *)
+DEFINITION MODULE QFile;
+
+IMPORT IOChan, ChanConsts, SYSTEM;
+
+TYPE
+  ChanId = IOChan.ChanId;
+  FlagSet = ChanConsts.FlagSet;
+  OpenResults = ChanConsts.OpenResults;
+ 
+  (* Accepted singleton values of FlagSet *)
+
+CONST
+  read = FlagSet{ChanConsts.readFlag};   (* input operations are requested/available *)
+  write = FlagSet{ChanConsts.writeFlag}; (* output operations are requested/available *)
+  old = FlagSet{ChanConsts.oldFlag};     (* a file may/must/did exist before the channel is
+                                            opened *)
+  text = FlagSet{ChanConsts.textFlag};   (* text operations are requested/available *)
+  raw = FlagSet{ChanConsts.rawFlag};     (* raw operations are requested/available *)
+
+PROCEDURE OpenRead(VAR cid: ChanId; name: ARRAY OF CHAR;
+                                   flags: FlagSet;
+                                 VAR res: OpenResults);
+(* Attempts   to  obtain  and  open  a  channel  connected  to  a
+   raw sequential stream of the given name.
+
+   The read, old and raw flags are implied.
+
+   Returns "wrongFlags" result if write operations are requested.
+
+   If  successful,  assigns  to  cid  the  identity of the opened
+   channel,  assigns  the  value opened to res, and selects input
+   mode, with the read position corresponding to the start of the
+   file.
+
+   If  a  channel  cannot be opened as required, the value of res
+   indicates the reason, and cid identifies the invalid channel.
+*)
+
+PROCEDURE OpenWrite(VAR cid: ChanId; name: ARRAY OF CHAR;
+                                    flags: FlagSet;
+                                  VAR res: OpenResults);
+(* Attempts   to  obtain  and  open  a  channel  connected  to  a
+   raw sequential stream of the given name.
+
+   The write and raw flags are implied.
+
+   Returns "wrongFlags" result if read operations are requested.
+
+   If  successful,  assigns  to  cid  the  identity of the opened
+   channel,  assigns  the value opened to res, and selects output
+   mode,  with  the write position at the start of the file (i.e.
+   the file is of zero length).
+
+   If  a  channel  cannot be opened as required, the value of res
+   indicates the reason, and cid identifies the invalid channel.
+*)
+
+PROCEDURE Length(cid: ChanId): SYSTEM.CARD32;
+(* Returns the lenght of the file. *)
+
+PROCEDURE IsQFile(cid: ChanId): BOOLEAN;
+(* Tests if the channel identified by cid is open to a quick file. *)
+
+PROCEDURE Close(VAR cid: ChanId);
+(* If  the  channel identified by cid is not open to a quick
+   file,  the exception wrongDevice is raised; otherwise closes
+   the  channel,  and  assigns  the value identifying the invalid
+   channel to cid.
+*)
+
+END QFile.

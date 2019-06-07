@@ -1,0 +1,10 @@
+TARGET = o2rep
+SRCDIR = src
+
+SOURCE = $(SRCDIR)\o2rep.tex
+
+!if "$(TARGET_FMT)" == ""
+TARGET_FMT = pdf
+!endif
+
+!include ..\Common\$(TARGET_FMT).inc

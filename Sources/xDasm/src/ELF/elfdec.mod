@@ -1,0 +1,3 @@
+IMPLEMENTATION MODULE ElfDec;
+
+END ElfDec.

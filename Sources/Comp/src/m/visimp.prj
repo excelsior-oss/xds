@@ -1,0 +1,9 @@
+-lookup = *.ob2  = $!/../fe; $!/../u; $!/../vs; $!/../be_null; $!/../xmlib
+-lookup = *.def  = $!/../vs; $!/../fe
+-lookup = *.mod  = $!/../vs; $!/../fe
+-lookup = *.exe  = d:/lang/xds/bin
+!if env_target="x86nt" then
+  -link = "xlink @%s",mkfname#mkfext
+!end
+
+!module visimp.ob2

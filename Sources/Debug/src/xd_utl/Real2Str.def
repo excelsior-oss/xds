@@ -1,0 +1,41 @@
+-- Преобразование длинных вещественных чисел в строковое представление.
+
+DEFINITION MODULE Real2Str;
+
+<*- M2BASE16 *>
+
+VAR
+  MAX_LONGLONGREAL: LONGLONGREAL;
+
+PROCEDURE power10(e: CARDINAL; VAR ovr: BOOLEAN): LONGLONGREAL;
+(* return 10.0 ** e *)
+
+
+PROCEDURE to_float (r: LONGLONGREAL;
+                    digs, round, max: INTEGER;
+                    exp: CHAR;
+                    tail: BOOLEAN;
+                    esig: BOOLEAN;
+                    VAR str: ARRAY OF CHAR);
+(*
+  digs - number of significant digits
+  max  - max number of significant digits
+*)
+
+
+PROCEDURE to_fixed(r: LONGLONGREAL;
+                   place,max: INTEGER;
+                   VAR str: ARRAY OF CHAR);
+(*
+place - round to the given place relative to the decimal point
+        max   - max number of significant digits
+*)
+
+
+PROCEDURE to_any(r    : LONGLONGREAL;
+                 len  : INTEGER;
+                 max  : INTEGER;  (* max number of digits *)
+                 VAR s: ARRAY OF CHAR);      (* result string *)
+
+
+END Real2Str.

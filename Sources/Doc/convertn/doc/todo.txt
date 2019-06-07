@@ -1,0 +1,35 @@
+Common:
+	Implement math characters used in XDS manuals
+        Support of \part and article style (no \chapters)
+        Indexes
+        suppress font switching in headers
+        gentext & emittext should be different
+        Improve footnotes
+        empty lines in tables should not be translated as \par
+        Tables and figures
+        Spaces elimination
+        Alignment
+        User manual
+        Configuraton file:
+                Font mapping
+        \index before first sectioning command -> trap
+        thebibliography env.
+        parse tabular in LR mode
+        tabular* env.
+        improve table formatting for long lines
+        _ and ^ are math-mode only
+        exclude sections with "*" from contents
+        switch font after table
+
+IPF:
+        correct heading levels
+        autolink for multi-label topics
+
+RTF:
+        Remove leading spaces at the beginning of a paragraph?
+        EOP should not reset font
+        improve verbatim generation
+        improve description
+
+HTML:
+        Remove leading spaces at the beginning of a paragraph?

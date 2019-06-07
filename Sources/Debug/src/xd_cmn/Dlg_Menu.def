@@ -1,0 +1,18 @@
+-- Обработчики меню, горизонтального и выпадающих.
+
+DEFINITION MODULE Dlg_Menu;
+
+IMPORT DlgTypes;
+IMPORT Dlg_Win;
+
+PROCEDURE SkipMenus(): DlgTypes.HWND;
+
+PROCEDURE GetMenuHwnd (menu: DlgTypes.PullDownMenus): DlgTypes.HWND;
+
+PROCEDURE UpdateMenuHwnd (menu: DlgTypes.PullDownMenus; hwnd: Dlg_Win.HWND);
+
+PROCEDURE DebuggerStateIndicator (waiting: BOOLEAN);
+
+
+END Dlg_Menu.
+

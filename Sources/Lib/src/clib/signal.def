@@ -1,0 +1,30 @@
+(* Copyright (c) xTech 1993,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE [2] signal;
+
+FROM SYSTEM IMPORT int;
+
+TYPE sig_atomic_t;
+
+TYPE sigfun = PROCEDURE (int);
+PROCEDURE signal (signo: int; func: sigfun);
+PROCEDURE raise  (signo: int);
+
+(* it is constants indeed but declared as read-only variables *)
+(* to provide portability *)
+
+VAR
+  SIG_DFL -: sigfun;
+  SIG_ERR -: sigfun;
+  SIG_IGN -: sigfun;
+
+  SIGABRT -: int;
+  SIGFPE  -: int;
+  SIGILL  -: int;
+  SIGINT  -: int;
+  SIGSEGV -: int;
+  SIGTERM -: int;
+
+END signal.

@@ -1,0 +1,87 @@
+\ifgencode
+\chapter{Optimizing a program}\label{optimize}
+\index{optimizing a program}
+
+% !!! IDE style sheets
+% !!! Linker options
+
+It sometimes happens with almost all compilers that the unoptimized
+version of a program works properly, but the optimized one does not or vice versa.
+If the compiler has a dozen of optimization control options it may be extremely
+difficult to test the compiler itself. The compiler manufacturer has to
+check all possible combinations of options. Fortunately, this
+is not the case with \XDS{}.
+
+Unlike many other compilers, \XDS{} performs optimizations by default.
+Most of them may be turned off by setting the \OERef{NOOPTIMIZE} option ON.
+However, the code generator always performs some low-level
+optimizations\footnote{As a result, disabling optimizations
+optimizer significantly {\em slows down} the complier}.
+Instruction scheduling can be turned on or off using the \OERef{DOREORDER}
+option. The last option that implicitly disables some of optimizations
+is the \OERef{GENDEBUG} option.
+
+There are still several ways to control the generated code.
+First of all, you have to choose what is more important for you: performance
+or compactness. By default, the option \OERef{SPACE} is set OFF,
+forcing the compiler to favor the code effeciency.
+
+To get the maximum performance, do the following:
+\begin{itemize}
+\item turn \OERef{GENFRAME} off
+\item turn \OERef{SPACE} off            % !!! References for printed version
+\item turn \OERef{GENDEBUG} off
+\item turn \OERef{NOOPTIMIZE} off
+\iflinux \else % ALIGNMENT should ALWAYS be set to 4 for Linux   % !!!
+\item set \OERef{ALIGNMENT} to 4 (to 8 if your program operates with LONGREALs)
+\fi
+\item turn \OERef{DOREORDER} on
+\item set \OERef{CPU} and \OERef{MINCPU} equations according to your
+      target
+\item turn run-time checks and overflow checks off
+\end{itemize}
+It is possible not to turn run-time checks off in the product versions
+of your programs, because the code generator usually removes redundant
+checks. A typical program runs only 10-15\% faster with all run-time
+checks turned off (but the code size is usually significantly smaller).
+
+Two options should be used with care:
+\begin{itemize}
+\item the \OERef{PROCINLINE} option allows the compiler to expand
+      procedures in-line. As a rule, switching the option ON leads
+      to faster but bigger code.
+      However, the effect of this option depends on your
+      programming style (size of procedures, etc).
+\item the \OERef{NOPTRALIAS} option allows
+      the compiler to assume that there is no
+      pointer aliasing, i.e. there are no pointers bounded to
+      non-structure variables.
+      The code quality is better if the option is ON.
+\end{itemize}
+
+\paragraph{Example of project file for maximum performance}
+\begin{verbatim}
+    -alignment=4          % is unnecessary under Linux
+    -noptralias+
+    -procinline+
+    -space
+    -doreorder+
+    -cpu=486
+    -genframe
+
+    -checkindex
+    -checkrange
+    -checknil
+    -ioverflow
+    -coverflow
+
+    -gendebug
+    -genhistory
+    -lineno
+    !module Foo.mod
+\end{verbatim}
+In some cases, it may be better to set different options for
+different modules in your program. See {\tt dry.mod} from \XDS{}
+samples.
+
+\fi % end ifgencode ----------------------

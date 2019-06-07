@@ -1,0 +1,17 @@
+(* Base Win32 API - Min *)
+MODULE Import;
+
+IMPORT WinDef;
+IMPORT WinNT;
+IMPORT WinBase;
+IMPORT WinError;
+IMPORT WinGDI;
+IMPORT WinUser;
+IMPORT WinCon;
+IMPORT WinVer;
+IMPORT WinSock;
+IMPORT CommDlg;
+
+BEGIN
+
+END Import.

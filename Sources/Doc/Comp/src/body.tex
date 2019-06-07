@@ -1,0 +1,60 @@
+% 10-Dec-1999: \part commented out due to problems caused by it on double-side printers
+
+\input{src/intro.tex}
+\input{src/start.tex}
+% \ifonline\else\part{Tools Reference}\fi
+\input{src/config.tex}
+\input{src/usage.tex}
+\ifgenc
+  %\input{src/program.tex}  % programming in the large
+\fi
+\input{src/options.tex}
+\input{src/errors.tex}
+\ifgencode
+  \ifxlink   \input{src/xlink.tex} \fi
+  \ifxlib    \input{src/xlib.tex}  \fi
+\fi
+%\input{src/osa.tex}
+\ifgencode
+  \ifprofile \input{src/profile.tex} \fi
+\fi
+% \ifonline\else\part{Programming Guide}\fi
+\input{src/modula2.tex}
+\input{src/oberon2.tex}
+\input{src/rts.tex}
+\input{src/multlang.tex}
+\ifgencode
+  \input{src/optimize.tex}
+\fi
+\ifgencode
+  \ifthreads \input{src/threads.tex} \fi
+  \ifdll \input{src/dll.tex} \fi
+  \input{src/lowlevel.tex}
+  \input{src/asm.tex}
+\fi
+\ifgenc
+  \input{src/maptoc.tex}
+  \input{src/problems.tex}
+\fi
+\ifwinnt
+  \input{src/win32api.tex}
+\fi
+\ifosii
+  \input{src/os2api.tex}
+\fi
+\appendix
+\input{src/limits.tex}
+\iftopspeed
+  \input{src/tscp.tex}
+\fi
+\ifdll
+  \input{src/redistr.tex}
+\fi
+\ifonline \else % Convertor does not support bibliography yet
+\input{../Common/bibliog.tex}
+\fi
+
+\printindex
+
+%installation guide (or READ.ME) !!!
+%

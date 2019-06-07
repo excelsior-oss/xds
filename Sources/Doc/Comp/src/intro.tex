@@ -1,0 +1,108 @@
+\chapter{About \XDS}
+\pagenumbering{arabic}
+
+\section{Welcome to \XDS}
+
+\ifonline \xds{}\else $\mbox{XDS}^{\mbox{\tiny TM}}$\fi{} is a family name
+for professional \mt{}/\ot{} programming systems for 
+Intel x86-based PCs (Windows and Linux editions are available).
+\ifgenc XDS-C is a "via C" cross-compiler that allows you
+to target virtually any system, from embedded to Unix servers.
+\fi
+\xds{} provides an
+uniform programming environment for the mentioned
+platforms and allows design and implementation of portable software.
+
+The system contains both \mt{} and \ot{} compilers. These
+languages are often called {\bf ``safe''} and {\bf ``modular''}. The
+principle innovation of the language \mt{} was the module concept,
+information hiding and separate compilation.
+
+\ot{} is an object-oriented programming (OOP) language based on
+\mt. With the introduction of object-oriented facilities,
+extensible project design became much easier. At the same time, \ot{} is
+quite simple and easy to learn and use, unlike other OOP
+languages, such as C++ or Smalltalk.
+
+The \xds{} \mt{} compiler implements ISO 10514 standard of \mt{}.
+The ISO standard library set is accessible from both \mt{} and \ot{}.
+
+\xds{} is based on a platform-independent front-end for both source
+languages which performs all syntactic and semantic checks on the
+source program. The compiler builds an internal representation of
+the compilation unit in memory and performs platform-independent
+analysis and optimizations. After that the compiler emits output
+code. It can be either native code for the target platform or
+text in the ANSI C language. ANSI C code generation allows you to
+cross compile \mt{}/\ot{} for almost any platform. 
+
+Moving to a new language usually means throwing away or rewriting
+your existing library set which could have been the work of many
+years. \xds{} allows the programmer to mix \mt{}, \ot{}, C and
+Assembler modules and libraries in a single project.
+
+\xds{} includes standard ISO and PIM libraries along with a set
+of utility libraries and an interface to the ANSI C library set.
+
+\ifgenc
+
+ \xds{} compilers produce optimized ANSI C code which is further
+ compiled by a C compiler. The call of a C compiler can be done
+ transparent for the user. However, \xds{} can be used as
+ \mt/\ot{} to C translator, as it produces easy readable and
+ understandable text. It is also possible to preserve your source
+ code comments in their original context.
+
+\fi
+\ifgencode
+   \xds{} compilers produce highly optimized 32-bit code and debug
+   information in the
+   \iflinux {\bf stabs} format.\else {\bf Codeview} and {\bf HLL4} formats.\fi{}
+ \ifwinnt
+   It is possible to access the Win32 API from both \mt{} and \ot{}
+   programs with the help of supplied defition modules.
+ \fi
+ \iflinux % !!! In fact, if Unix
+   Definition modules for the POSIX API and the entire X Window/Motif API
+   are included in the XDS distribution package.
+ \fi
+
+\fi % \ifgencode
+
+\section{Conventions used in this manual}
+
+\subsection{Language descriptions}
+
+Where formal descriptions for language syntax constructions appear, an
+extended Backus-Naur Formalism (EBNF) is used.
+
+These descriptions are set in the {\tt Courier} font.
+
+\verb'    Text = Text [ { Text } ] | Text.'
+
+In EBNF, brackets "\verb'['" and "\verb']'" denote optionality of the
+enclosed expression, braces "\verb'{'" and "\verb'}'" denote repetition
+(possibly 0 times), and the vertival line "\verb'|'" separates
+mutually exclusive variants. % ??? What about parenthesis.
+
+Non-terminal symbols start with an upper case letter (\verb'Statement').
+Terminal symbols either start with a lower case letter (\verb'ident'), or are
+written in all upper case letters (\verb'BEGIN'), or are enclosed within
+quotation marks (e.g. \verb'":="').
+
+\subsection{Source code fragments}
+
+When fragments of a source code are used for examples or appear within
+a text they are set in the {\tt Courier} font.
+
+\begin{verbatim}
+    MODULE Example;
+
+    IMPORT InOut;
+
+    BEGIN
+      InOut.WriteString("This is an example");
+      InOut.WriteLn;
+    END Example.
+\end{verbatim}
+

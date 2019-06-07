@@ -1,0 +1,27 @@
+DEFINITION MODULE XPrs;
+
+IMPORT SYSTEM, COROUTINES;
+
+CONST
+  MAGIC = 5FEBH;
+
+TYPE
+  State = (st_waiting, st_ready, st_passive);
+  Process = POINTER TO ProcessDesc;
+  ProcessDesc = RECORD
+    magic   : CARDINAL;
+    bck,fwd : Process;
+    param   : SYSTEM.ADDRESS;
+    info    : SYSTEM.ADDRESS;
+    body    : COROUTINES.COROUTINE;
+    urgency : INTEGER;
+    wsp     : SYSTEM.ADDRESS;
+    wsp_size: CARDINAL;
+    state   : State;
+    execBody: PROC;
+  END;
+
+VAR
+  current: Process;
+
+END XPrs.

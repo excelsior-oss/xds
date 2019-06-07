@@ -1,0 +1,35 @@
+DEFINITION MODULE opCard64;
+
+IMPORT SYSTEM;
+
+TYPE
+    int   = SYSTEM.INT32;
+    word  = SYSTEM.CARD32;
+    dword = RECORD
+                lo, hi: word;
+            END;
+
+(*
+  Supplement word procedures
+*)
+
+PROCEDURE log2    (d: word): word;
+PROCEDURE is_pow2 (n: word): BOOLEAN;
+PROCEDURE labs    (x: word): word;
+PROCEDURE neg     (x: word): word;
+
+(*
+  Some 64-bit cardinal operations
+*)
+
+PROCEDURE lo (x: dword): word;
+PROCEDURE lshift (x: dword): dword;
+PROCEDURE lshift_n (x: dword; n: int): dword;
+PROCEDURE u_rshift (x: dword): dword;
+PROCEDURE add (x, y: dword): dword;
+PROCEDURE sub (x, y: dword): dword;
+PROCEDURE ge (a, b: dword): BOOLEAN;
+PROCEDURE pow2 (n: int): dword;
+PROCEDURE div (x: dword; y: word): dword;
+
+END opCard64.

@@ -1,0 +1,48 @@
+-- Предоставляет процедуры для диассемблирования команды
+-- по заданому адресу.
+-- Модуль является системо-зависимым.
+
+DEFINITION MODULE Krn_Dasm;
+
+(* Предоставляет процедуры для диассемблирования команды
+   по заданому адресу. *)
+
+
+IMPORT kt := KrnTypes;
+
+
+
+(* Дисассемблирование одной инструкции целевого процессора         *)
+
+-- get_prefix_only - получить только ПЕРВЫЙ префикс команды
+PROCEDURE Disasm (addr: kt.ADDRESS; curr: BOOLEAN; VAR asm, info: ARRAY OF CHAR; VAR len: CARDINAL; get_prefix_only := FALSE: BOOLEAN): BOOLEAN;
+
+TYPE
+  RESOLVE_ADDR_PROC = PROCEDURE ( kt.ADDRESS
+                                , kt.ADDRESS
+                                , VAR ARRAY OF CHAR): BOOLEAN;
+
+  RESOLVE_EA_PROC = PROCEDURE ( kt.ADDRESS
+                              , kt.ADDRESS
+                              , CARDINAL
+                              , VAR ARRAY OF CHAR);
+VAR
+  ResolveAddr: RESOLVE_ADDR_PROC;
+  ResolveEA:   RESOLVE_EA_PROC;
+
+
+PROCEDURE IsCall (addr: kt.ADDRESS): CARDINAL;
+
+
+<* IF DEST_XDS THEN *>
+
+VAR
+  Seg16: BOOLEAN;
+
+PROCEDURE IsRet (addr: kt.ADDRESS): BOOLEAN;
+
+PROCEDURE IsJmpForDll (addr: kt.ADDRESS): kt.ADDRESS;
+
+<* END *>
+
+END Krn_Dasm.

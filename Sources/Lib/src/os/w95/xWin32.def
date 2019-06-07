@@ -1,0 +1,530 @@
+(* Copyright (c) xTech 1995,96.  All Rights Reserved *)
+(*
+ * XDS library.
+ * Interface of XDS to WinNT/Win95.
+ *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE [2] xWin32;
+
+IMPORT  SYSTEM;
+
+TYPE
+  HANDLE = SYSTEM.CARD32; (* Windows95 handle *)
+  WORD  = SYSTEM.CARD16;
+  DWORD = SYSTEM.CARD32;
+  BOOL  = SYSTEM.BOOL32;
+  SET32 = SYSTEM.SET32;
+
+CONST
+  INVALID_HANDLE_VALUE = HANDLE(0FFFFFFFFH);
+
+CONST
+  MAX_PATH = 260;
+
+TYPE
+  WCHAR = SYSTEM.INT16;
+  CreateMethod = SYSTEM.CARD32;
+  FileTime = RECORD low,high: SYSTEM.CARD32 END;
+  FindData = RECORD
+    attrs: BITSET;
+    creation: FileTime;
+    access  : FileTime;
+    write   : FileTime;
+    szhigh  : SYSTEM.CARD32;
+    szlow   : SYSTEM.CARD32;
+    res,res1: SYSTEM.CARD32; (* reserved *)
+    name    : ARRAY [0..MAX_PATH-1] OF CHAR;
+    aname   : ARRAY [0..13] OF CHAR;
+  END;
+
+
+CONST (* access bits; Note: {} means no access to the file *)
+  GENERIC_READ  = {31};
+  GENERIC_WRITE = {30};
+  READ_WRITE    = GENERIC_READ+GENERIC_WRITE;
+
+CONST (* share bits; Note: {} means prevent sharing *)
+  FILE_SHARE_READ  = {0};
+  FILE_SHARE_WRITE = {1};
+
+CONST (* creation methods *)
+  CREATE_NEW        = CreateMethod(1);
+  CREATE_ALWAYS     = CreateMethod(2);
+  OPEN_EXISTING     = CreateMethod(3);
+  OPEN_ALWAYS       = CreateMethod(4);
+  TRUNCATE_EXISTING = CreateMethod(5);
+
+CONST (* File attributes and flags *)
+  FILE_ATTRIBUTE_READONLY = {0};
+  FILE_ATTRIBUTE_HIDDEN = {1};
+  FILE_ATTRIBUTE_SYSTEM = {2};
+  FILE_ATTRIBUTE_DIRECTORY = {4};
+  FILE_ATTRIBUTE_ARCHIVE = {5};
+  FILE_ATTRIBUTE_NORMAL = {7};
+  FILE_ATTRIBUTE_TEMPORARY = {8};
+
+  FILE_FLAG_WRITE_THROUGH = {31};
+  FILE_FLAG_OVERLAPPED = {30};
+  FILE_FLAG_NO_BUFFERING = {29};
+  FILE_FLAG_RANDOM_ACCESS = {28};
+  FILE_FLAG_SEQUENTIAL_SCAN = {27};
+  FILE_FLAG_DELETE_ON_CLOSE = {27};
+
+CONST
+  IMAGE_DOS_SIGNATURE = 5A4Dh;      (* MZ *)
+  IMAGE_NT_SIGNATURE  = 00004550h;  (* PE00 *)
+  IMAGE_SUBSYSTEM_UNKNOWN     = 0;
+  IMAGE_SUBSYSTEM_WINDOWS_GUI = 2;
+  IMAGE_SUBSYSTEM_WINDOWS_CUI = 3;
+
+PROCEDURE ["StdCall"] / CreateFileA(
+            szname: SYSTEM.ADDRESS;
+            access: BITSET;
+            share : BITSET;
+            seq   : SYSTEM.ADDRESS; (* may be NIL ? *)
+            method: CreateMethod;
+            attrs : BITSET;
+            template: HANDLE): HANDLE;
+CONST CreateFile = CreateFileA;
+
+PROCEDURE ["StdCall"] / CloseHandle(handle: HANDLE): BOOL;
+(* TRUE means success *)
+
+CONST
+  DUPLICATE_SAME_ACCESS = DWORD(2);
+
+PROCEDURE ["StdCall"] / DuplicateHandle(
+                            sPrs: HANDLE;
+                            sHnd: HANDLE;
+                            tPrs: HANDLE;
+                        VAR rHnd: HANDLE;
+                          access: SYSTEM.SET32;
+                           inher: BOOL;
+                            opts: DWORD): BOOL;
+
+PROCEDURE ["StdCall"] / WriteFile(file: HANDLE; buf: SYSTEM.ADDRESS; len: CARDINAL; VAR wlen: CARDINAL; addparm: SYSTEM.ADDRESS): BOOL;
+PROCEDURE ["StdCall"] / ReadFile (file: HANDLE; buf: SYSTEM.ADDRESS; len: CARDINAL; VAR wlen: CARDINAL; addparm: SYSTEM.ADDRESS): BOOL;
+
+PROCEDURE ["StdCall"] / DeleteFileA(szname: SYSTEM.ADDRESS): BOOL;
+CONST DeleteFile = DeleteFileA;
+
+PROCEDURE ["StdCall"] / MoveFileA(szname,sznewname: SYSTEM.ADDRESS): BOOL;
+CONST MoveFile = MoveFileA;
+
+PROCEDURE ["StdCall"] / GetFullPathNameA (
+                                    lpszFile: SYSTEM.ADDRESS;
+                                     cchPath: DWORD;
+                                    lpszPath: SYSTEM.ADDRESS;
+                            VAR ppszFilePart: SYSTEM.ADDRESS): DWORD;
+CONST GetFullPathName = GetFullPathNameA;
+
+CONST
+  FILE_BEGIN   = 0;
+  FILE_CURRENT = 1;
+  FILE_END     = 2;
+
+PROCEDURE ["StdCall"] / SetFilePointer(
+                                  file: HANDLE;
+                                  where: SYSTEM.WORD;
+                                  hwhere: SYSTEM.ADDRESS;
+                                  method: SYSTEM.CARD32): SYSTEM.CARD32;
+PROCEDURE ["StdCall"] / GetFileSize(file: HANDLE; hsize: SYSTEM.ADDRESS): SYSTEM.CARD32;
+PROCEDURE ["StdCall"] / GetFileAttributesA (lpFileName : SYSTEM.ADDRESS): DWORD;
+
+PROCEDURE ["StdCall"] / FindFirstFileA(szname: SYSTEM.ADDRESS; VAR data: FindData): HANDLE;
+CONST FindFirstFile = FindFirstFileA;
+PROCEDURE ["StdCall"] / FindNextFileA(hnd: HANDLE; VAR data: FindData): BOOL;
+CONST FindNextFile = FindNextFileA;
+
+PROCEDURE ["StdCall"] / FindClose(h: HANDLE): BOOL;
+PROCEDURE ["StdCall"] / FlushFileBuffers(h: HANDLE): BOOL;
+PROCEDURE ["StdCall"] / SetEndOfFile(h: HANDLE): BOOL;
+
+CONST (* Standard file idents *)
+  STD_INPUT_HANDLE = SYSTEM.CARD32(0FFFFFFF6H);
+  STD_OUTPUT_HANDLE = SYSTEM.CARD32(0FFFFFFF5H);
+  STD_ERROR_HANDLE = SYSTEM.CARD32(0FFFFFFF4H);
+
+PROCEDURE ["StdCall"] / GetStdHandle(what: SYSTEM.CARD32): HANDLE;
+PROCEDURE ["StdCall"] / SetStdHandle(what: SYSTEM.CARD32; file: HANDLE): BOOL;
+
+CONST (* File types *)
+  FILE_TYPE_UNKNOWN = 0000h;
+  FILE_TYPE_DISK    = 0001h;
+  FILE_TYPE_CHAR    = 0002h;
+  FILE_TYPE_PIPE    = 0003h;
+  FILE_TYPE_REMOTE  = 8000h;
+
+PROCEDURE ["StdCall"] / GetFileType(file : HANDLE): DWORD;
+
+PROCEDURE ["StdCall"] / GetVolumeInformationA(
+                          lpRootPathName           : SYSTEM.ADDRESS;
+                          lpVolumeNameBuffer       : SYSTEM.ADDRESS;
+                          nVolumeNameSize          : DWORD;
+                          lpVolumeSerialNumber     : SYSTEM.ADDRESS;
+                          lpMaximumComponentLength : SYSTEM.ADDRESS;
+                          lpFileSystemFlags        : SYSTEM.ADDRESS;
+                          lpFileSystemNameBuffer   : SYSTEM.ADDRESS;
+                          nFileSystemNameSize      : DWORD) : BOOL;
+
+TYPE
+  TimeDate = RECORD
+    year,month,weekday,day,hour,min,sec,frac: SYSTEM.CARD16;
+  END;
+  TimeZone = RECORD
+    bias: SYSTEM.INT32;
+    name: ARRAY [0..31] OF WCHAR;
+    standardDate: TimeDate;
+    standardBias: SYSTEM.INT32;
+    daylightName: ARRAY [0..31] OF WCHAR;
+    daylightDate: TimeDate;
+    daylightBias: SYSTEM.INT32;
+  END;
+
+PROCEDURE ["StdCall"] / GetSystemTime(VAR data: TimeDate);
+PROCEDURE ["StdCall"] / SetSystemTime(data: TimeDate): BOOL;
+PROCEDURE ["StdCall"] / GetLocalTime(VAR data: TimeDate);
+PROCEDURE ["StdCall"] / SetLocalTime(data: TimeDate):  BOOL;
+PROCEDURE ["StdCall"] / GetTimeZoneInformation(VAR data: TimeZone): SYSTEM.CARD32;
+PROCEDURE ["StdCall"] / SetTimeZoneInformation(data: TimeZone): BOOL;
+
+PROCEDURE ["StdCall"] / SystemTimeToFileTime (st: TimeDate; VAR ft: FileTime): BOOL;
+PROCEDURE ["StdCall"] / LocalFileTimeToFileTime(VAR lt,ft: FileTime): BOOL;
+PROCEDURE ["StdCall"] / FileTimeToSystemTime (ft: FileTime; VAR st: TimeDate): BOOL;
+PROCEDURE ["StdCall"] / FileTimeToLocalFileTime(VAR ft,lt: FileTime): BOOL;
+PROCEDURE ["StdCall"] / SetFileTime(hFile: HANDLE; 
+                                    VAR [NIL] lpCreationTime,
+                                              lpLastAccessTime,
+                                              lpLastWriteTime: FileTime
+                                   ): BOOL;
+
+CONST (* DOSRESs *)
+  NO_ERROR = 0;
+  ERROR_FILE_NOT_FOUND = 2;
+  ERROR_PATH_NOT_FOUND = 3;
+  ERROR_TOO_MANY_OPEN_FILES = 4;
+  ERROR_ACCESS_DENIED =  5;
+  ERROR_INVALID_HANDLE = 6;
+  ERROR_NOT_ENOUGH_MEMORY = 8;
+  ERROR_NO_MORE_FILES = 18;
+  ERROR_SHARING_VIOLATION = 32;
+  ERROR_LOCK_VIOLATION = 33;
+  ERROR_FILE_EXISTS = 80H;
+  ERROR_INVALID_PARAMETER = 87;
+  ERROR_INSUFFICIENT_BUFFER = 122;
+  ERROR_TOO_MANY_POSTS = 298;
+
+
+
+PROCEDURE ["StdCall"] / GetLastError(): SYSTEM.CARD32;
+
+CONST (* flags to heap operations *)
+  HEAP_NO_SERIALIZE        = SET32{1};
+  HEAP_GENERATE_EXCEPTIONS = SET32{2};
+  HEAP_ZERO_MEMORY         = SET32{3};
+
+PROCEDURE ["StdCall"] / GetProcessHeap(): HANDLE;
+PROCEDURE ["StdCall"] / HeapAlloc(heap: HANDLE; flags: SET32; bytes: SYSTEM.CARD32): SYSTEM.ADDRESS;
+PROCEDURE ["StdCall"] / HeapFree(heap: HANDLE; flags: SET32; addr: SYSTEM.ADDRESS): BOOL;
+PROCEDURE ["StdCall"] / HeapCreate(opts: SET32; initSize: DWORD; limit: DWORD): HANDLE;
+PROCEDURE ["StdCall"] / HeapDestroy (hHeap : HANDLE) : BOOL;
+
+CONST (* allocation types for VirtualAlloc *)
+  MEM_COMMIT = {12};
+  MEM_RESERVE = {13};
+  MEM_TOP_DOWN = {20};
+CONST(* protection types for VirtualAlloc *)
+  PAGE_NOACCESS          =   1H;
+  PAGE_READONLY          =   2H;
+  PAGE_READWRITE         =   4H;
+  PAGE_WRITECOPY         =   8H;
+  PAGE_EXECUTE           =  10H;
+  PAGE_EXECUTE_READ      =  20H;
+  PAGE_EXECUTE_READWRITE =  40H;
+  PAGE_EXECUTE_WRITECOPY =  80H;
+  PAGE_GUARD             = 100H;
+  PAGE_NOCACHE           = 200H;
+CONST (* free types of VirtualFree *)
+  MEM_DECOMMIT = 4000H;
+  MEM_RELEASE  = 8000H;
+
+PROCEDURE ["StdCall"] / VirtualAlloc(
+                          dadr: SYSTEM.ADDRESS;
+                          size: CARDINAL;
+                          alloctype: BITSET;
+                          prottype: CARDINAL): SYSTEM.ADDRESS;
+PROCEDURE ["StdCall"] / VirtualFree(adr: SYSTEM.ADDRESS; size: CARDINAL; freetype: CARDINAL): BOOL;
+
+PROCEDURE ["StdCall"] / RtlFillMemory(a: SYSTEM.ADDRESS; sz: SYSTEM.CARD32; patt: CHAR);
+CONST FillMemory = RtlFillMemory;
+
+PROCEDURE ["StdCall"] / CopyMemory(d,s: SYSTEM.ADDRESS; sz: SYSTEM.CARD32);
+
+PROCEDURE ["StdCall"] / GetEnvironmentVariableA(
+  szname: SYSTEM.ADDRESS;
+  buf: SYSTEM.ADDRESS;
+  bufsize: SYSTEM.CARD32): SYSTEM.CARD32;
+CONST GetEnvironmentVariable = GetEnvironmentVariableA;
+
+PROCEDURE ["StdCall"] GetCommandLineA(): SYSTEM.ADDRESS;
+CONST GetCommandLine = GetCommandLineA;
+
+(* Process controll Win32 API calls *)
+
+TYPE
+  STARTUPINFO = RECORD
+    cb: SYSTEM.CARD32; (* Must be initialized by "SIZE(STARTUPINFO)" value *)
+    lpReserved0,lpDesktop,lpTitle: SYSTEM.ADDRESS; (* POITERS to strings *)
+    dwX,dwY,dwXSize,dwYSize: SYSTEM.CARD32;
+    dwXCountChars: SYSTEM.CARD32;
+    dwYCountChars: SYSTEM.CARD32;
+    dwFillAttribute: SYSTEM.CARD32;
+    dwFlags: BITSET;
+    wShowWindow: SYSTEM.CARD16;
+    wcbReserved: SYSTEM.CARD16;
+    lpReserved1 : SYSTEM.ADDRESS;
+    stdin,stdout,stderr: HANDLE;
+  END;
+
+  PROCESS_INFORMATION = RECORD
+    hprs,hthr: HANDLE;
+    prsId,thrId: DWORD;
+  END;
+
+  CONST
+    DETACHED_PROCESS = SYSTEM.SET32{3};
+
+PROCEDURE ["StdCall"] / CreateProcessA(
+                           name,argstr: SYSTEM.ADDRESS;
+                           seqPrs,seqThr: SYSTEM.ADDRESS; (* may be NIL *)
+                           inhHandles: BOOL;
+                           flags: SYSTEM.SET32;
+                           env: SYSTEM.ADDRESS; (* environmnt, NIL accepted *)
+                           cdname: SYSTEM.ADDRESS; (* CD; NIL accepted *)
+                           startinfo: STARTUPINFO;
+                           VAR prsinfo: PROCESS_INFORMATION): BOOL;
+CONST CreateProcess = CreateProcessA;
+
+PROCEDURE ["StdCall"] / ExitProcess(code: SYSTEM.CARD32);
+PROCEDURE ["StdCall"] / ExitThread(code: SYSTEM.CARD32);
+PROCEDURE ["StdCall"] / GetExitCodeProcess(prs: HANDLE; VAR code: DWORD): BOOL;
+PROCEDURE ["StdCall"] / GetCurrentProcess(): HANDLE;
+
+CONST
+  SIZE_OF_80387_REGISTERS = 80;
+  EXCEPTION_MAXIMUM_PARAMETERS = 15;
+
+CONST (* Exception Codes *)
+  EXCEPTION_ACCESS_VIOLATION        = 0C0000005H;
+  EXCEPTION_ARRAY_BOUNDS_EXCEEDED   = 0C000008CH;
+  EXCEPTION_FLOAT_DENORMAL_OPERAND  = 0C000008DH;
+  EXCEPTION_FLOAT_DIVIDE_BY_ZERO    = 0C000008EH;
+  EXCEPTION_FLOAT_INEXACT_RESULT    = 0C000008FH;
+  EXCEPTION_FLOAT_INVALID_OPERATION = 0C0000090H;
+  EXCEPTION_FLOAT_OVERFLOW          = 0C0000091H;
+  EXCEPTION_FLOAT_STACK_CHECK       = 0C0000092H;
+  EXCEPTION_FLOAT_UNDERFLOW         = 0C0000093H;
+  EXCEPTION_INTEGER_DIVIDE_BY_ZERO  = 0C0000094H;
+  EXCEPTION_INTEGER_OVERFLOW        = 0C0000095H;
+  EXCEPTION_STACK_OVERFLOW          = 0C00000FDH;
+
+CONST
+  CONTEXT_i386 = {16};
+  CONTEXT_CONTROL = CONTEXT_i386 + {0}; (* SS:SP, CS:IP, FLAGS, BP *)
+  CONTEXT_INTEGER = CONTEXT_i386 + {1}; (* AX, BX, CX, DX, SI, DI *)
+  CONTEXT_SEGMENTS= CONTEXT_i386 + {2}; (* DS, ES, FS, GS *)
+  CONTEXT_FLOATING_POINT = CONTEXT_i386 + {3}; (* 387 state *)
+  CONTEXT_DEBUG_REGISTERS = CONTEXT_i386 + {4}; (* DB 0-3,6,7 *)
+  CONTEXT_FULL = CONTEXT_CONTROL + CONTEXT_INTEGER + CONTEXT_SEGMENTS;
+
+TYPE
+  FLOATING_SAVE_AREA = RECORD
+    ControlWord,
+    StatusWord,
+    TagWord,
+    ErrorOffset,
+    ErrorSelector,
+    DataOffset,
+    DataSelector: DWORD;
+    RegisterArea: ARRAY [1..SIZE_OF_80387_REGISTERS] OF CHAR;
+    Cr0NpxState: DWORD;
+  END;
+
+  CONTEXT = RECORD
+    flags: SYSTEM.SET32;
+    Dr0,
+    Dr1,
+    Dr2,
+    Dr3,
+    Dr6,
+    Dr7  : DWORD;
+    floatSave: FLOATING_SAVE_AREA;
+    SegGs,
+    SegFs,
+    SegEs,
+    SegDs: DWORD;
+    Edi,
+    Esi,
+    Ebx,
+    Edx,
+    Ecx,
+    Eax  : DWORD;
+    Ebp,
+    Eip,
+    SegCs,
+    EFlags,
+    Esp,
+    SegSs: DWORD;
+  END;
+
+  PCONTEXT = POINTER TO CONTEXT;
+
+  PEXCEPTION_RECORD = POINTER TO EXCEPTION_RECORD;
+  EXCEPTION_RECORD = RECORD
+    ExceptionCode: DWORD;
+    ExceptionFlags: DWORD;
+    ExceptionRecord: PEXCEPTION_RECORD;
+    ExceptionAddress: SYSTEM.ADDRESS;
+    NumberParameters: DWORD;
+    ExceptionInformation: ARRAY [1..EXCEPTION_MAXIMUM_PARAMETERS] OF DWORD;
+  END;
+
+  EXCEPTION_POINTERS = RECORD
+    ExceptionRecord: PEXCEPTION_RECORD;
+    ContextRecord: PCONTEXT;
+  END;
+
+  UnhandledExceptionFilter = PROCEDURE ["StdCall"](VAR EXCEPTION_POINTERS): SYSTEM.CARD32;
+
+CONST (* RETURN  values for UnhandledExceptionFilter *)
+  EXCEPTION_CONTINUE_SEARCH = 0;
+  EXCEPTION_EXECUTE_HANDLER = 1;
+  EXCEPTION_CONTINUE_EXECUTION = 0FFFFFFFFH;
+
+PROCEDURE ["StdCall"] / SetUnhandledExceptionFilter(proc: UnhandledExceptionFilter): UnhandledExceptionFilter;
+
+CONST (* SetErrorMode parm/res bits *)
+  SEM_FAILCRITICALERRORS = SYSTEM.SET16{0};
+  SEM_NOGPFAULTERRORBOX  = SYSTEM.SET16{1};
+  SEM_NOOPENFILEERRORBOX = SYSTEM.SET16{15};
+
+PROCEDURE ["StdCall"] / SetErrorMode(mode: SYSTEM.SET16): SYSTEM.SET16;
+
+PROCEDURE ["StdCall"] / GetModuleHandleA(name: SYSTEM.ADDRESS): SYSTEM.ADDRESS;
+CONST GetModuleHandle = GetModuleHandleA;
+
+PROCEDURE ["StdCall"] / GetModuleFileNameA(mod: DWORD; buff: SYSTEM.ADDRESS; blen: CARDINAL): CARDINAL;
+CONST GetModuleFileName = GetModuleFileNameA;
+
+PROCEDURE ["StdCall"] / TlsAlloc(): DWORD;
+PROCEDURE ["StdCall"] / TlsFree(x: DWORD): BOOL;
+PROCEDURE ["StdCall"] / TlsGetValue(x: DWORD): SYSTEM.ADDRESS;
+PROCEDURE ["StdCall"] / TlsSetValue(x: DWORD; val: SYSTEM.ADDRESS): BOOL;
+
+PROCEDURE ["StdCall"] / GetCurrentThread(): HANDLE;
+PROCEDURE ["StdCall"] / GetCurrentThreadId(): DWORD;
+
+TYPE CRITICAL_SECTION = RECORD
+       debug: SYSTEM.ADDRESS;
+       LockCount: SYSTEM.INT32;
+       RecursionCount: SYSTEM.INT32;
+       OwningThread: HANDLE;
+       LockSemaphore: HANDLE;
+       Reserved: DWORD;
+     END;
+
+PROCEDURE ["StdCall"] / InitializeCriticalSection(VAR sec: CRITICAL_SECTION);
+PROCEDURE ["StdCall"] / DeleteCriticalSection(VAR sec: CRITICAL_SECTION);
+PROCEDURE ["StdCall"] / EnterCriticalSection(VAR sec: CRITICAL_SECTION);
+PROCEDURE ["StdCall"] / LeaveCriticalSection(VAR sec: CRITICAL_SECTION);
+
+PROCEDURE ["StdCall"] / CreateSemaphoreA(seq: SYSTEM.ADDRESS;
+                                    init,max: SYSTEM.INT32;
+                                        name: SYSTEM.ADDRESS): HANDLE;
+PROCEDURE ["StdCall"] / ReleaseSemaphore(sem: HANDLE;
+                                         inc: SYSTEM.INT32;
+                              VAR [NIL] prev: SYSTEM.INT32): BOOL;
+
+CONST
+  WAIT_FAILED = 0FFFFFFFFH;
+  WAIT_ABANDONED = 80H;
+  WAIT_OBJECT_0 = 0;
+  WAIT_TIMEOUT = 102H;
+
+PROCEDURE ["StdCall"] / WaitForSingleObject(obj: HANDLE; timeout: SYSTEM.CARD32): DWORD;
+PROCEDURE ["StdCall"] / WaitForMultipleObjects(no: DWORD; objarr: SYSTEM.ADDRESS; waitAll: BOOL; to: DWORD): DWORD;
+
+TYPE
+  THREAD_START_ROUTINE = PROCEDURE ["StdCall"] (SYSTEM.ADDRESS): SYSTEM.INT32;
+
+CONST
+  CREATE_SUSPENDED = SYSTEM.SET32{2};
+
+PROCEDURE ["StdCall"] / CreateThread(seq: SYSTEM.ADDRESS; stksz: SYSTEM.CARD32;
+                                     proc: THREAD_START_ROUTINE;
+                                     param: SYSTEM.ADDRESS;
+                                     flags: SYSTEM.SET32;
+                                   VAR tid: SYSTEM.CARD32): HANDLE;
+PROCEDURE ["StdCall"] / ResumeThread(thread: HANDLE): DWORD;
+PROCEDURE ["StdCall"] / SuspendThread(thread: HANDLE): DWORD;
+PROCEDURE ["StdCall"] / TerminateThread(thread: HANDLE; code: DWORD): BOOL;
+
+CONST
+  THREAD_PRIORITY_ERROR_RETURN = MAX(SYSTEM.INT32);
+
+PROCEDURE ["StdCall"] / GetThreadPriority(thread: HANDLE): SYSTEM.INT32;
+PROCEDURE ["StdCall"] / SetThreadPriority(thread: HANDLE; prio: SYSTEM.INT32): BOOL;
+
+PROCEDURE ["StdCall"] / GetThreadContext(thread: HANDLE; VAR buf: CONTEXT): BOOL;
+PROCEDURE ["StdCall"] / SetThreadContext(thread: HANDLE;     buf: CONTEXT): BOOL;
+
+PROCEDURE ["StdCall"] / CreateMutexA(sec: SYSTEM.ADDRESS; own: BOOL; make: SYSTEM.ADDRESS): HANDLE;
+PROCEDURE ["StdCall"] / ReleaseMutex(h: HANDLE): BOOL;
+
+(* direct consoles *)
+CONST
+  ENABLE_PROCESSED_INPUT = SYSTEM.SET32{0};
+  ENABLE_LINE_INPUT      = SYSTEM.SET32{1};
+  ENABLE_ECHO_INPUT      = SYSTEM.SET32{2};
+  ENABLE_WINDOW_INPUT    = SYSTEM.SET32{3};
+  ENABLE_MOUSE_INPUT     = SYSTEM.SET32{4};
+
+  ENABLE_PROCESSED_OUTPUT   = SYSTEM.SET32{0};
+  ENABLE_WRAP_AT_EOL_OUTPUT = SYSTEM.SET32{1};
+
+PROCEDURE ["StdCall"] / GetConsoleMode(h: HANDLE; VAR mode: SYSTEM.SET32): BOOL;
+PROCEDURE ["StdCall"] / SetConsoleMode(h: HANDLE;     mode: SYSTEM.SET32): BOOL;
+
+PROCEDURE ["StdCall"] / ReadConsoleA(h: HANDLE; buf: SYSTEM.ADDRESS; cc: DWORD;
+                                     VAR rd: DWORD; res: SYSTEM.ADDRESS): BOOL;
+PROCEDURE ["StdCall"] / WriteConsoleA(h: HANDLE; buf: SYSTEM.ADDRESS; cc: DWORD;
+                                     VAR rd: DWORD; res: SYSTEM.ADDRESS): BOOL;
+CONST WriteConsole = WriteConsoleA;
+TYPE
+  HANDLER_ROUTINE = PROCEDURE ["StdCall"] (DWORD): BOOL;
+
+PROCEDURE ["StdCall"] / SetConsoleCtrlHandler(h: HANDLER_ROUTINE; fAdd: BOOL): BOOL;
+
+PROCEDURE ["StdCall"] / GetCurrentDirectoryA(bufsz: DWORD; buf: SYSTEM.ADDRESS): DWORD;
+CONST GetCurrentDirectory = GetCurrentDirectoryA;
+PROCEDURE ["StdCall"] / SetCurrentDirectoryA(buf: SYSTEM.ADDRESS): BOOL;
+CONST SetCurrentDirectory = SetCurrentDirectoryA;
+
+PROCEDURE ["StdCall"] / CreateDirectoryA(name: SYSTEM.ADDRESS; secAttr: SYSTEM.ADDRESS): BOOL;
+CONST CreateDirectory = CreateDirectoryA;
+PROCEDURE ["StdCall"] / RemoveDirectoryA(name: SYSTEM.ADDRESS): BOOL;
+CONST RemoveDirectory = RemoveDirectoryA;
+
+CONST
+  MB_OK            = 00000000H;
+  MB_ICONERROR     = 00000010H;
+  MB_TASKMODAL     = 00002000H;
+  MB_SETFOREGROUND = 00010000H;
+
+PROCEDURE ["StdCall"] / MessageBoxA (hWnd : HANDLE;
+                                     Text : SYSTEM.ADDRESS;
+                                     Caption : SYSTEM.ADDRESS;
+                                     Type : SYSTEM.CARD32) : SYSTEM.INT32;
+
+PROCEDURE ["StdCall"] / Sleep(time: SYSTEM.CARD32);
+END xWin32.

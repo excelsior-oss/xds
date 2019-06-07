@@ -1,0 +1,21 @@
+
+DEFINITION MODULE PrgNames;
+
+
+IMPORT kt  := KrnTypes;
+(*
+IMPORT win := Windows;
+*)
+
+TYPE PI =  POINTER TO INTEGER;
+
+PROCEDURE SearchProgram (name: ARRAY OF CHAR; VAR full_name: ARRAY OF CHAR): BOOLEAN;
+
+PROCEDURE RetrieveModuleInfo (hFile: PI (*win.HANDLE*); VAR exec_info: kt.EXEC_INFO; get_name: BOOLEAN): CARDINAL;
+
+PROCEDURE ReadName (lpImageName: PI (*win.PVOID*); fUnicode: INTEGER(*win.WORD*); VAR name: ARRAY OF CHAR): BOOLEAN;
+
+PROCEDURE ConvertUnicode (VAR name: ARRAY OF CHAR; len: CARDINAL);
+
+
+END PrgNames.

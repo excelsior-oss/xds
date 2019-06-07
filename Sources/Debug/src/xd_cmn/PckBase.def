@@ -1,0 +1,49 @@
+-- Содержит набор процедур, используемых пакетным отладчик для
+-- интерпретации апкета, задания и проверки режимов работы,
+-- определения идентификаторов для режимов и способов их переключения
+
+DEFINITION MODULE PckBase;
+
+IMPORT pt := PckTypes;
+
+
+PROCEDURE GetParam (st: ARRAY OF CHAR; VAR p:CARDINAL; VAR dest: ARRAY OF CHAR): BOOLEAN;
+
+PROCEDURE SkipBlanks (st: ARRAY OF CHAR; VAR p: CARDINAL) : BOOLEAN;
+
+
+PROCEDURE ModeOn  (mode: pt.MODE_FLAGS);
+
+PROCEDURE ModeOff (mode: pt.MODE_FLAGS);
+
+PROCEDURE CheckMode (mode: pt.MODE_FLAGS): BOOLEAN;
+
+
+PROCEDURE SetModeName (mode: pt.MODE_FLAGS; first, second: ARRAY OF CHAR);
+
+PROCEDURE SetPrefixMode ();
+
+PROCEDURE SetPostfixMode ();
+
+PROCEDURE SetModeOn (on: ARRAY OF CHAR);
+
+PROCEDURE SetModeOff (off: ARRAY OF CHAR);
+
+PROCEDURE GetMode (name: ARRAY OF CHAR; VAR mode: pt.MODE_FLAGS; VAR active: BOOLEAN): BOOLEAN;
+
+PROCEDURE ShiftMode (mode: pt.MODE_FLAGS; active: BOOLEAN);
+
+
+PROCEDURE GetBreakMode (name: ARRAY OF CHAR; VAR mode: pt.MODE_FLAGS): BOOLEAN;
+
+
+PROCEDURE SetIdentName (ident: pt.IDENT; name: ARRAY OF CHAR);
+
+PROCEDURE GetIdent (name: ARRAY OF CHAR; VAR ident: pt.IDENT): BOOLEAN;
+
+
+
+PROCEDURE FileName (full: ARRAY OF CHAR; VAR name: ARRAY OF CHAR);
+
+
+END PckBase.

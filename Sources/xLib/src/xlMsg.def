@@ -1,0 +1,14 @@
+(** Copyright (c) 1995 xTech Ltd, Russia. All Rights Reserved. *)
+(** XDS Librarian. Messages output. *)
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE xlMsg; (* Hady. 20.10.95 16:28 *)
+
+IMPORT  SYSTEM;
+
+PROCEDURE print (fmt: ARRAY OF CHAR; SEQ arg: SYSTEM.BYTE);
+PROCEDURE perror(fmt: ARRAY OF CHAR; SEQ arg: SYSTEM.BYTE);
+
+PROCEDURE error  (fmt: ARRAY OF CHAR; SEQ arg: SYSTEM.BYTE);
+PROCEDURE warning(fmt: ARRAY OF CHAR; SEQ arg: SYSTEM.BYTE);
+
+END xlMsg.

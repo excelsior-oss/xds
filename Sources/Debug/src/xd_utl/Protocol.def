@@ -1,0 +1,53 @@
+-- Модуль управления созданием протокола отладки и выдачей сообщений
+--
+-- Данный модуль берет список сообщений из заданого файла.
+-- Поиск файла осуществляеться по red-файлу системы, если
+-- не найден - поиск продолжаеться в "домашней", т.е.
+-- откуда запущен.
+
+DEFINITION MODULE Protocol;
+
+IMPORT sys := SYSTEM;
+
+IMPORT xStr;
+
+TYPE
+  (* Процедура для печати *)
+  WRITE_PROC = PROCEDURE ((*text:*)ARRAY OF CHAR);
+
+VAR
+  (* управление выдачей протокола *)
+  to_screen: BOOLEAN;     (* выдача протокола на экран *)
+  to_file  : BOOLEAN;     (* выдача протокола в файл *)
+  pre_msg  : PROC;        (* вызывается перед выдачей сообщения *)
+  post_msg : PROC;        (* вызывается после выдачи сообщения  *)
+
+PROCEDURE InitProtocol (msg_file_name: ARRAY OF CHAR);
+(* Инициализация протокола *)
+
+PROCEDURE Get (no: CARDINAL) : xStr.txt_ptr;
+(* Возвращает указатель на сообщение по номеру *)
+
+PROCEDURE GetMsg (no: CARDINAL; VAR s:ARRAY OF CHAR);
+(* Возвращает сообщение по номеру *)
+
+PROCEDURE WriteMsg (text:ARRAY OF CHAR; screen,file : BOOLEAN);
+(* Выводит текст сообщения в указаное место (на экран, в файл) *)
+
+PROCEDURE WriteMsgNo(no: CARDINAL; screen,file: BOOLEAN; SEQ arg: sys.BYTE);
+(* Выводит текст сообщения в указаное место (на экран, в файл) по номеру *)
+
+PROCEDURE Create(VAR name: ARRAY OF CHAR) : BOOLEAN;
+(* создать файл протокола *)
+
+PROCEDURE SetSafeMode;
+(* Устанавливает режим работы с закрытым файлом протокола  *)
+
+PROCEDURE SetRegularMode;
+(* Устанавливает режим работы с открытым файлом протокола  *)
+
+PROCEDURE DefaultProtocol;
+(* Устанавливает выдачу сообщений в протокол с умолчательным именем *)
+
+END Protocol.
+

@@ -1,0 +1,80 @@
+IMPLEMENTATION MODULE COROUTINES;
+(** Sem 22-Sep-93. *)
+
+IMPORT xmRTS, SYSTEM, M2EXCEPTION;
+
+TYPE
+  COROUTINE=xmRTS.X2C_Coroutine;
+
+VAR
+  handlers: ARRAY INTERRUPTSOURCE OF COROUTINE;
+
+PROCEDURE NEWCOROUTINE (procBody: PROC;
+			workspace: SYSTEM.ADDRESS; size: CARDINAL;
+			VAR cr: COROUTINE; initProtection: PROTECTION);
+BEGIN
+  xmRTS.X2C_NEWPROCESS(procBody,workspace,size,initProtection,cr);
+END NEWCOROUTINE;
+
+PROCEDURE TRANSFER (VAR from: COROUTINE; to: COROUTINE);
+BEGIN
+  xmRTS.X2C_TRANSFER(from,to);
+END TRANSFER;
+
+PROCEDURE IOTRANSFER (VAR from: COROUTINE; to: COROUTINE);
+BEGIN
+  xmRTS.X2C_IOTRANSFER(from,to);
+END IOTRANSFER;
+
+PROCEDURE ATTACH (source: INTERRUPTSOURCE);
+BEGIN
+  handlers[source]:=xmRTS.X2C_GetCurrent();
+  handlers[source]^.int_no:=ORD(source);
+END ATTACH;
+
+PROCEDURE DETACH (source: INTERRUPTSOURCE);
+  VAR current: xmRTS.X2C_Coroutine;
+BEGIN
+  current:=xmRTS.X2C_GetCurrent();
+  IF (SYSTEM.CAST(CARDINAL,VAL(INTEGER,current^.int_no))#ORD(source)) OR
+     (handlers[source]#current)
+  THEN
+    xmRTS.X2C_TRAP_F(ORD(M2EXCEPTION.coException));
+  END;
+  current^.int_no:=-1;
+  handlers[source]:=NIL;
+END DETACH;
+
+PROCEDURE IsATTACHED (source: INTERRUPTSOURCE): BOOLEAN;
+BEGIN
+  RETURN handlers[source]#NIL;
+END IsATTACHED;
+
+PROCEDURE HANDLER (source: INTERRUPTSOURCE): COROUTINE;
+BEGIN
+  RETURN handlers[source];
+END HANDLER;
+
+PROCEDURE CURRENT (): COROUTINE;
+BEGIN
+  RETURN xmRTS.X2C_GetCurrent();
+END CURRENT;
+
+PROCEDURE LISTEN (p: PROTECTION);
+  VAR o: PROTECTION;
+BEGIN
+  xmRTS.X2C_PROTECT(o,p);
+END LISTEN;
+
+PROCEDURE PROT (): PROTECTION;
+  VAR current: xmRTS.X2C_Coroutine;
+BEGIN
+  current:=xmRTS.X2C_GetCurrent();
+  RETURN current^.prot;
+END PROT;
+
+VAR i: INTERRUPTSOURCE;
+
+BEGIN
+  FOR i:=MIN(INTERRUPTSOURCE) TO MAX(INTERRUPTSOURCE) DO handlers[i]:=NIL END;
+END COROUTINES.

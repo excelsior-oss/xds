@@ -1,0 +1,15 @@
+(* Copyright (c) Excelsior 1999-2002.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+<* IF __GEN_C__ THEN *>
+<* +NOHEADER *>
+<* END *>
+DEFINITION MODULE ["C"] xosExit; (* Hady. 24.05.96 11:29 *)
+
+IMPORT
+  xmRTS;
+
+PROCEDURE X2C_iniexit;
+PROCEDURE X2C_atexit(proc: xmRTS.X2C_EXIT_PROC);
+PROCEDURE X2C_doexit(code: INTEGER);
+
+END xosExit.

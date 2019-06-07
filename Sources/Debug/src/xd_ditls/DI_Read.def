@@ -1,0 +1,19 @@
+-- Проверка наличия отладочной информации для программы,
+-- вызывает соответствующий конвертор.
+
+DEFINITION MODULE DI_Read;
+
+FROM KrnTypes IMPORT EXEC_INFO;
+FROM DI_Types IMPORT ComNo, COMPONENT, RAW_DEBUG_INFO, PROCESS_DEBUGINFO_PROC, BUILD_FOR_MOD;
+
+(* Имя программы нужно указать полное         *)
+
+PROCEDURE CheckDebugInfoVersion (exec_info: EXEC_INFO): BOOLEAN;
+
+
+VAR
+  ProcessDebugInfo: PROCESS_DEBUGINFO_PROC;
+  ReadModules: PROCESS_DEBUGINFO_PROC;
+  BuildForMod: BUILD_FOR_MOD;
+
+END DI_Read.

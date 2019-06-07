@@ -1,0 +1,30 @@
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrnStart; (* VitVit *)
+
+IMPORT SYSTEM,xOS2;
+
+TYPE
+  BreakHandler = PROCEDURE ["C"] (): SYSTEM.BOOL32;
+
+PROCEDURE X2C_SetBreakHandler(new: BreakHandler): BreakHandler;
+(* Ctrl-C *)
+
+PROCEDURE X2C_SetOSXHandler(VAR eh :xOS2.EXCEPTIONREGISTRATIONRECORD):xOS2.APIRET;
+(* set a system exception handler for a calling thread *)
+
+PROCEDURE X2C_EstablishMain ( mainAdr :SYSTEM.ADDRESS );
+(*  this module needs an address of a main procedure that is in
+    an object file being linked. If this module placed in DLL
+   ( not linked into ), it cannot obtain that address through
+    external/public resolving as in the case when run-time library
+    is linked into *)
+
+PROCEDURE X2C_xStart ( mod_handle :CARDINAL;         (* ESP+4  *)
+                       zero       :CARDINAL;         (* ESP+8  *)
+                       env_ptr    :SYSTEM.ADDRESS;   (* ESP+12 *)
+                       cmd_line   :SYSTEM.ADDRESS);  (* ESP+16 *)
+(* this is an entry point in LX format
+   WARNING: it may be called ONLY after the call to X2C_EstablishMain
+ *)
+
+END xrnStart.

@@ -1,0 +1,34 @@
+DEFINITION MODULE List;
+
+IMPORT SYSTEM;
+
+TYPE
+  List;
+
+  Info = SYSTEM.ADDRESS;
+
+  Operator = PROCEDURE (List): BOOLEAN;
+
+
+PROCEDURE New (): List;
+
+PROCEDURE Dispose (VAR item: List);
+
+PROCEDURE Add (VAR head: List): List;
+
+PROCEDURE Delete (VAR head: List; item: List);
+
+PROCEDURE Next (item: List): List;
+
+PROCEDURE Iterate (item: List; operator: Operator): List;
+
+PROCEDURE Assign (item: List; info: Info);
+
+PROCEDURE Clear (item: List);
+
+PROCEDURE Get (item: List): Info;
+
+PROCEDURE Find (item: List; info: Info): List;
+
+   
+END List.

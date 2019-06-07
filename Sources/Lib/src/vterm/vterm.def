@@ -1,0 +1,268 @@
+(* Copyright (c) 1998 XDS Ltd *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE VTerm;   (* based on Graph *)
+IMPORT StdChans;
+
+(* NOTE:
+ * 'TW' in the object name means that this object denotes to the text
+ *  window (the window under the graphic one);
+ *
+ *  All the objects without 'TW' in the name denotes to the Graphic
+ *  window (f.ex. Rows, Columns...)
+ *)
+
+VAR                      (* Don't change this values! *)
+
+  Width,
+  Depth     :LONGCARD;   (* Graph window size                  *)
+  Rows      :LONGCARD;   (* number of rows  in the text window *)
+  Columns   :LONGCARD;   (* number of columns /                *)
+  NumPColor :LONGCARD;   (* number of palette colors on the device in use  *)
+
+  TWDepth   :LONGCARD;   (* Text window height (width is the same)*)
+  TWRows    :LONGCARD;   (* number of rows  in the text window    *)
+  TWColumns :LONGCARD;   (* number of columns /                   *)
+
+TYPE
+  GraphCoords = RECORD
+                  xcoord,
+                  ycoord: INTEGER;
+                END;
+
+
+CONST
+  _GBORDER       =  FALSE;   (* draw outline only *)
+  _GFILLINTERIOR =  TRUE;    (* fill using current fill mask *)
+
+CONST
+  _BLACK         =  0000000H;
+  _BLUE          =  00000B0H;
+  _GREEN         =  000B000H;
+  _CYAN          =  0008080H;
+  _RED           =  0B00000H;
+  _MAGENTA       =  0800080H;
+  _BROWN         =  0B06000H;
+  _WHITE         =  0C0C0C0H;
+  _GRAY          =  0808080H;
+  _LIGHTBLUE     =  00000FFH;
+  _LIGHTGREEN    =  000FF00H;
+  _LIGHTCYAN     =  000FFFFH;
+  _LIGHTRED      =  0FF0000H;
+  _LIGHTMAGENTA  =  0FF00FFH;
+  _LIGHTYELLOW   =  0FFFF00H;
+  _BRIGHTWHITE   =  0FFFFFFH;
+
+
+  _clrBLACK         =  0;
+  _clrBLUE          =  1;
+  _clrGREEN         =  2;
+  _clrCYAN          =  3;
+  _clrRED           =  4;
+  _clrMAGENTA       =  5;
+  _clrBROWN         =  6;
+  _clrWHITE         =  7;
+  _clrGRAY          =  8;
+  _clrLIGHTBLUE     =  9;
+  _clrLIGHTGREEN    =  10;
+  _clrLIGHTCYAN     =  11;
+  _clrLIGHTRED      =  12;
+  _clrLIGHTMAGENTA  =  13;
+  _clrLIGHTYELLOW   =  14;
+  _clrBRIGHTWHITE   =  15;
+
+
+PROCEDURE Init (xLeft, yTop, xd, yd, ydTW :LONGCARD ) :BOOLEAN;
+(* if keepSess TRUE, Exit is disable *)
+
+
+PROCEDURE Exit;
+
+
+(* clear screen modes *)
+CONST
+  _GCLEARSCREEN = 0;
+  _GVIEWPORT    = 1;
+  _GWINDOW      = 2;
+
+PROCEDURE ClearScreen (Area :CARDINAL);
+
+
+(*///////////////// attr setting //////////////////*)
+
+(* line styles *)
+VAR
+  LNSTYLE_SOLID,
+  LNSTYLE_DOT,
+  LNSTYLE_SHORTDASH,
+  LNSTYLE_DASHDOT,
+  LNSTYLE_DASHDOUBLEDOT,
+  LNSTYLE_INVISIBLE  :LONGINT;
+
+PROCEDURE SetLineStyle ( Style :LONGINT );
+PROCEDURE GetLineStyle () :LONGINT;
+
+
+(* hatch patterns *)
+VAR
+  PATSYM_DENSE1,
+  PATSYM_DENSE2,
+  PATSYM_VERT,
+  PATSYM_HORIZ,
+  PATSYM_DIAG1,
+  PATSYM_DIAG2,
+  PATSYM_SOLID  :LONGINT;
+
+
+
+PROCEDURE SetStdFillMask( Mask :LONGINT);
+PROCEDURE GetStdFillMask() :LONGINT;
+
+TYPE
+  FillMaskType = ARRAY [0..7] OF SHORTCARD;
+
+PROCEDURE SetFillMask ( Mask :FillMaskType );
+PROCEDURE GetFillMask ( VAR Mask :FillMaskType );
+
+PROCEDURE SetBkColor ( Color :LONGCARD ) :LONGCARD;
+PROCEDURE GetBkColor() :LONGCARD;
+
+
+CONST
+  _TRANSPARENT = FALSE;
+  _OPAQUE      = TRUE;
+
+PROCEDURE SetBkMix ( isOpaque :BOOLEAN );
+
+
+PROCEDURE KeyPressed (): BOOLEAN;
+PROCEDURE GetKey (): CHAR;
+
+(*/////////////////////////////// graphic primitives /////////////////////////*)
+
+PROCEDURE Plot( x, y :LONGCARD; Color :LONGCARD );
+(* set a single pixel to given color *)
+
+PROCEDURE Point(x, y :LONGCARD) :LONGCARD;
+(* read a pixel of the screen *)
+
+PROCEDURE HLine(x,y,x2: CARDINAL; FillColor: CARDINAL);
+(* draw a horizontal line of given color (used for filling) *)
+
+PROCEDURE Line( x1, y1, x2, y2 :LONGCARD; Color: LONGCARD);
+(* draw an arbitrary line in given color *)
+
+
+PROCEDURE Ellipse ( x0,y0:LONGCARD;   -- center
+                    a,b  :LONGCARD;   -- semi-axes
+                    c    :LONGCARD;   -- color
+                    fill :BOOLEAN );  -- whether filled
+
+
+PROCEDURE Disc(x0, y0, r, c :LONGCARD);
+(* filled circle, centre x0,y0; radius r *)
+
+
+PROCEDURE Circle(x0, y0, r, c :LONGCARD);
+(* centre x0,y0; radius r *)
+
+
+PROCEDURE Rectangle (x0, y0, x1, y1 :LONGCARD; Color :LONGCARD; Fill :BOOLEAN);
+
+
+
+PROCEDURE SetClipRgn( x1, y1, x2, y2 :LONGCARD );
+
+PROCEDURE CancelClipRgn;
+
+
+PROCEDURE Polygon(n :LONGCARD; px, py :ARRAY OF LONGCARD; FillColor :LONGCARD; Fill :BOOLEAN);
+(* polygon of n points *)
+
+CONST
+  _GTOP          =  TRUE;    (* draw top of cube *)
+  _GNOTOP        =  FALSE;
+
+PROCEDURE Cube(top :BOOLEAN; x1, y1, x2, y2, depth :LONGCARD; Color :LONGCARD; Fill:BOOLEAN);
+
+
+PROCEDURE FloodFill ( x, y :LONGCARD; Color, Boundary :LONGCARD );
+
+CONST
+  StackFill = FloodFill;
+
+
+PROCEDURE Arc ( x1, y1, x2, y2 :LONGCARD; startAngle, sweepAngle :LONGREAL; Color :LONGCARD );
+
+PROCEDURE Pie ( x1, y1, x2, y2 :LONGCARD; startAngle, sweepAngle :LONGREAL;
+                Color :CARDINAL; Fill :BOOLEAN);
+
+
+(*////////////////////////// text procedures ////////////////////////////*)
+
+CONST
+  _GWRAPOFF  =  FALSE;
+  _GWRAPON   =  TRUE;
+
+TYPE
+  TextCoords = RECORD
+                 row, col :LONGCARD;
+               END;
+
+PROCEDURE RawOutText (x1, y1, Color :LONGCARD; Text :ARRAY OF CHAR );
+
+
+PROCEDURE SetTextPosition ( col, row :LONGCARD);
+PROCEDURE GetTextPosition() :TextCoords;
+
+PROCEDURE GetTextColumn() :LONGCARD;
+PROCEDURE GetTextRow()    :LONGCARD;
+
+PROCEDURE GetTextColor() :LONGCARD;
+PROCEDURE SetTextColor (Color :LONGCARD) :LONGCARD;
+PROCEDURE SetTextWindow (c1, r1, c2, r2 :LONGCARD);
+
+PROCEDURE Wrapon ( Opt :BOOLEAN) :BOOLEAN;
+
+PROCEDURE DisplayCursor( Toggle :BOOLEAN) :BOOLEAN;
+
+PROCEDURE OutText ( Text :ARRAY OF CHAR);
+
+
+(*/////////////////////////// Bitmap operations //////////////////////////////*)
+
+(* bitmap pasting mode *)
+VAR
+  _GPSET,
+  _GPRESET,
+  _GAND,
+  _GOR,
+  _GXOR :LONGCARD;
+
+TYPE
+  HBITMAP = LONGCARD;  (* bitmap handle *)
+
+PROCEDURE GetImage  (x1, y1, x2, y2 :LONGCARD; VAR handle :HBITMAP );
+PROCEDURE PutImage  (x, y :LONGCARD; hbm :HBITMAP; Action :LONGCARD);
+PROCEDURE DelImage  ( hbm :HBITMAP );
+
+
+(*///////////////////////////// Palette operations ////////////////////////////*)
+
+
+PROCEDURE InitStdPalette;
+
+PROCEDURE RemapPalette (palItem :CARDINAL; Color :LONGCARD) :LONGCARD;
+
+PROCEDURE RemapAllPalette (colArray :ARRAY OF LONGCARD) :LONGCARD;
+
+
+(*/////////////////////////////////////////////////////////////////////////////*)
+
+PROCEDURE Delay(t :CARDINAL);
+
+
+END VTerm.
+

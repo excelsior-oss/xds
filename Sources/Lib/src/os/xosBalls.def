@@ -1,0 +1,22 @@
+(* Copyright (c) XDS Ltd. 1999.  All Rights Reserved *)
+
+<* +M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] xosBalls;
+
+(* "Balls" is meant as Block ALLocation System here -- VitVit ;*)
+
+FROM SYSTEM IMPORT ADDRESS;
+
+PROCEDURE X2C_initBalls (nBlocks, blockSize :CARDINAL) :ADDRESS;
+(* returns the base of reserved address space *)
+
+PROCEDURE X2C_allocBlock(adr :ADDRESS) :ADDRESS;
+(* commits memory for block *)
+ 
+PROCEDURE X2C_freeBlock (adr :ADDRESS);
+(* decommits block's memory *)
+
+PROCEDURE X2C_freeAll ();
+
+END xosBalls.

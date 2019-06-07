@@ -1,0 +1,27 @@
+(* Copyright (c) 1997,2000 Excelsior, Russia. All Rights Reserved. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+<*-DLLEXPORT    *>
+
+
+(*  run-time library dynalinking support - use in RT instead of dllRTS which
+   is linked into each component *)
+
+DEFINITION MODULE ["C"] xosDLL;
+
+IMPORT SYSTEM;
+
+
+PROCEDURE X2C_GetModuleName ( hmod      :SYSTEM.ADDRESS;
+                              VAR mname :ARRAY OF CHAR;
+                              nmlen     :SYSTEM.CARD32 );
+(* get executable component name *)
+
+PROCEDURE / X2C_GetMyHandle(): SYSTEM.ADDRESS;
+(* get current component's handle. Implemented in startup module. *)
+
+
+END xosDLL.
+
+

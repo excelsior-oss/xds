@@ -1,0 +1,1789 @@
+(* Copyright (c) Excelsior 1998-2007. All Rights Reserved. *)
+
+(*
+    This module contains definitions of types and constants shared between
+    RTS, compiler and linker.
+*)
+
+<* M2EXTENSIONS+ *>
+<* DLLEXPORT- *>
+<* ALIGNMENT = "1" *>
+<* ENUMSIZE  = "2" *>
+
+DEFINITION MODULE ["StdCall"] xjRTS;
+
+FROM SYSTEM IMPORT
+        ADDRESS, BYTE,
+        CARD8, CARD16, CARD32,
+        INT8, INT16, INT32, INT64,
+        BOOL8, BOOL16, BOOL32,
+        SET32, SET16,
+        int, size_t, void, CAST;
+
+IMPORT xrjsetjmp;
+
+
+CONST
+  X2C_NAMELEN     = 1024;  (* max length of "C" string processed in RT *)
+  X2J_MAXPATHLEN   = 1024;
+
+  X2C_REGSIZE      = 16;   (* max number of CPU registers *)
+  NBITS            = MAX(BITSET)+1; -- CPU bus capacity
+
+  MIN_TLH_ROOT     = 2;
+  MAX_TLH_ROOT     = 32;
+
+  MAX_RT_INUM      = MAX(CARD16); -- max number of interfaces loaded at run time
+
+  MAX_JAVA_METHOD_PARAMS = 255;   -- max number of parameters in Java method
+
+  MAX_JAVA_ARRAY_DIM     = 255;   -- max number of dimensions in Java array
+
+  MIN_STACK_LIMIT  = 16*1024; -- min. acceptable value for STACKLIMIT compiler equation
+
+TYPE
+  ClassCode = (
+     -- Exceptions with hard-coded numbers
+     X2C_StackOverflowError,
+     X2C_ArithmeticException,
+     X2C_NullPointerException,
+     X2C_ArrayStoreException,
+     X2C_ArrayIndexOutOfBoundsException,
+     X2C_IllegalMonitorStateException,
+
+     -- Other exceptions
+     X2C_Error,
+     X2C_LinkageError,
+     X2C_ClassCircularityError,
+     X2C_ClassFormatError,
+     X2C_UnsupportedClassVersionError,
+     X2C_ExceptionInInitializerError,
+     X2C_IncompatibleClassChangeError,
+     X2C_AbstractMethodError,
+     X2C_IllegalAccessError,
+     X2C_InstantiationError,
+     X2C_NoSuchFieldError,
+     X2C_NoSuchMethodError,
+     X2C_NoClassDefFoundError,
+     X2C_UnsatisfiedLinkError,
+     X2C_VerifyError,
+     X2C_VirtualMachineError,
+     X2C_InternalError,
+     X2C_OutOfMemoryError,
+     X2C_UnknownError,
+
+     X2C_Exception,
+     X2C_ClassNotFoundException,
+     X2C_CloneNotSupportedException,
+     X2C_IllegalAccessException,
+     X2C_InstantiationException,
+     X2C_InterruptedException,
+     X2C_NoSuchMethodException,
+     X2C_NoSuchFieldException,
+     
+     X2C_RuntimeException,
+     X2C_ClassCastException,
+     X2C_IllegalArgumentException,
+     X2C_IllegalThreadStateException,
+     X2C_NumberFormatException,
+     X2C_IndexOutOfBoundsException,
+     X2C_StringIndexOutOfBoundsException,
+     X2C_NegativeArraySizeException,
+     X2C_IllegalStateException,
+     X2C_SecurityException,
+
+     X2C_ThreadDeath,
+
+     X2C_IOException,
+     X2C_UTFDataFormatException,
+     X2C_SyncFailedException,
+     X2C_InterruptedIOException,
+
+     X2C_ZipException,
+     X2C_DataFormatException,
+
+     X2C_SocketTimeoutException,
+     X2C_PortUnreachableException,
+
+     X2C_ConnectionResetException,      -- since 1.4.1
+
+     X2C_SocketException,
+     X2C_UnknownHostException,
+     X2C_BindException,
+     X2C_ConnectException,
+     X2C_NoRouteToHostException,
+     X2C_ProtocolException
+ );
+
+
+TYPE
+  UCHAR   = CARD16;
+  PCHAR   = POINTER TO CHAR;
+  PUCHAR  = POINTER TO UCHAR;
+
+  X2C_pCHAR  = PCHAR;
+  X2C_pCARD  = POINTER TO CARDINAL;
+
+  X2C_pADR   = POINTER TO ADDRESS;
+
+  X2C_Thread      = ADDRESS;
+
+  X2C_ExecEnv     = POINTER TO X2C_ExecEnv_STR;
+  X2C_XHandler    = POINTER TO X2C_XHandler_STR;
+
+  X2J_OBJECT      = POINTER TO X2J_OBJECT_STR;
+  X2J_STRING      = POINTER TO X2J_STRING_STR;
+
+  X2C_TD          = POINTER TO X2C_TD_STR;
+  X2J_ID          = POINTER TO X2J_ID_STR;
+  PrimTD          = POINTER TO PrimTD_STR;
+  ArrayTD         = POINTER TO ArrayTD_STR;
+  reflectionTD    = POINTER TO reflectionTD_STR;
+  reflectionID    = POINTER TO reflectionID_STR;
+  X2J_IOBJECT     = POINTER TO X2J_IOBJECT_STR;
+  X2J_DYNARR      = POINTER TO X2J_DYNARR_STR;
+  X2C_LINK        = POINTER TO X2C_LINK_STR;
+  ClassObject     = POINTER TO ClassObject_STR;
+  ClassObjectData = POINTER TO ClassObjectData_STR;
+  ComponentDescriptor = POINTER TO ComponentDescriptor_STR;
+  JavaPackage         = POINTER TO JavaPackage_STR;
+  PNativeMethodDesc   = POINTER TO NativeMethodDesc;
+
+  AbsentClass      = POINTER TO AbsentClass_STR;
+  ReflAbsentClass  = POINTER TO ReflAbsentClass_STR;
+
+  X2J_IFakeOBJECT = INT64;
+
+-------------------------- Exception & call sites ---------------------------
+
+TYPE
+  -- the sequence of these records is accessible from 1st TD layer
+  CodeSegment = RECORD
+    vnum :CARD16;  -- packed .vnum & .parsz fields (see CodeSegment_Large)
+    size :CARD16;  -- length of code segment, divided by ProcSizeAlignment
+    -- if 'size' field equals MAX(CARD16) then this record is followed
+    -- by CodeSegment_Large record which contains actual data
+  END;
+
+  CodeSegment_Large = RECORD
+    vnum  :INT32;  -- virt # of method or -index in sproc table
+    parsz :INT32;  -- size of parameter frame in 4-byte words
+    size  :CARD32; -- length of code segment, divided by ProcSizeAlignment
+  END;
+
+  -- all structures reside in 2nd TD layer
+  -- {
+    -- various types of CodeSegmentInfo records
+    CodeSegmentInfo2 = RECORD
+      frameBase :CARD16;
+      nsites    :CARD16; -- # of xsites for that codeseg & their kind
+      startPos  :CARD32; -- offset of xsites array from the base (.xsites1)
+    END;
+
+    CodeSegmentInfo1 = RECORD
+      frameBase :CARD8;
+      nsites    :CARD8;  -- # of xsites for that codeseg
+      startPos  :CARD16; -- packed .startPos & .xsitesKind fields
+    END;
+
+    -- various types of ExceptionSite records
+    ExceptionSite1 = SET32;
+
+    ExceptionSite2 = RECORD
+      regionStart    :CARD16;
+      frameSize      :CARD8;
+      inlineListHead :CARD8;
+      handlerOffset  :CARD16;
+    END;
+
+    ExceptionSite3 = RECORD
+      regionStart    :CARDINAL;
+      frameSize      :CARDINAL;
+      inlineListHead :CARDINAL;
+      handlerOffset  :CARDINAL;
+    END;
+  -- }
+
+CONST
+  ProcSizeAlignment = 8;
+
+CONST
+  -- special values for various xsite fields, decoded
+  UndefinedFrameSize = MAX(CARDINAL);  -- JavaCallSite*.frameSize, CodeSegmentInfo.frameBase
+  NoInlinedMethods   = MAX(CARDINAL);  -- *.inlineListHead
+  NonCallRegionMark  = MAX(CARDINAL)-1;-- ExceptionSite*.inlineListHead
+  UnknownStackDepth  = MAX(CARDINAL);  -- ExceptionSite*.frameSize
+
+  CodeSegment_vnum_mask   = 001FFH;      (* mask for .vnum w/o sign - 9 bits *)
+  CodeSegment_vnum_sign   = 00200H;      (* mask for sign of .vnum   *)
+  CodeSegment_parsz_mask  = 0FC00H;      (* mask for .parsz - 6 bits *)
+  CodeSegment_parsz_shift = 10;
+
+CONST
+  CSI1_startPos_mask         = 03FFFH;
+  CSI1_xskind_shift          = 14;
+
+  CSI2_nsites_mask           = 03FFFH;
+  CSI2_xskind_shift          = 14;
+
+  CSI1_startPos_align = 2;
+
+  CSI1_UndefinedFrame    = MAX(CARD8);
+  CSI2_UndefinedFrame    = MAX(CARD16);
+
+  ExceptionSite1_regofs_mask = {00..11}; (* mask for ExceptionSite1.regionStart    *)
+  ExceptionSite1_framsz_mask = {12..15}; (* mask for ExceptionSite1.frameSize      *)
+  ExceptionSite1_inllhd_mask = {16..19}; (* mask for ExceptionSite1.inlineListHead *)
+  ExceptionSite1_hndofs_mask = {20..31}; (* mask for ExceptionSite1.handlerOffset  *)
+
+  ExceptionSite1_regofs_shift = 00;      (* shift for ExceptionSite1.regionStart    *)
+  ExceptionSite1_framsz_shift = 12;      (* shift for ExceptionSite1.frameSize      *)
+  ExceptionSite1_inllhd_shift = 16;      (* shift for ExceptionSite1.inlineListHead *)
+  ExceptionSite1_hndofs_shift = 20;      (* shift for ExceptionSite1.handlerOffset  *)
+
+  -- special values for ExceptionSite* fields, encoded
+  ExceptionSite1_NoInlinedMethods  = (-{})*ExceptionSite1_inllhd_mask;
+  ExceptionSite1_NonCallRegionMark = (-{})*ExceptionSite1_inllhd_mask - {ExceptionSite1_inllhd_shift};
+  ExceptionSite2_NoInlinedMethods  = MAX(CARD8);
+  ExceptionSite2_NonCallRegionMark = MAX(CARD8)-1;
+
+  ExceptionSite1_UnknownStackDepth = (-{})*ExceptionSite1_framsz_mask;
+  ExceptionSite2_UnknownStackDepth = MAX(CARD8);
+
+  -- Both reflectionTD_STR & reflectionID_STR have 'xsites0' and 'xsites1' fields.
+  -- These fields are used to search xsites at runtime.
+  -- Note: relofs(X) means offset of X from reflection_STR address
+  --       relofs(X) = (&X - &reflection_STR)
+
+  -- (.xsites0 & ~1) = relofs(CodeSegmentInfo* array)
+  -- bit 0 = 1: indicates CodeSegmentInfo1 records
+  -- bit 0 = 0: indicates CodeSegmentInfo2 records
+  csiOffsMask      = 0FFFFFFFEH;
+  csi1Mask         = 000000001H;
+  -- .xsites1 = base for ExceptionSite* arrays (relofs)
+
+
+-----------------------------------------------------------------------------
+
+CONST
+  up2Chin = 0FFFFFFH;
+
+  frameSizeAlignment   = SIZE(ADDRESS);
+  frameAdrIncrement    = -8;
+
+  (* Special values for RTCallList.frameAdr *)
+  PrivilegedFrameMark        = ADDRESS(0FFFFFFFFH);
+  PrivilegedFrameMark4Inline = ADDRESS(0FFFFFFFEH);
+  RootFrameMark              = ADDRESS(0FFFFFFFDH);
+  UndefinedFrameMark         = ADDRESS(0FFFFFFFCH);
+
+TYPE
+  X2C_PTD          = POINTER TO X2C_TD;
+  X2C_PARR_CHAR    = POINTER TO ARRAY [0..7FFFFFF4H] OF CHAR;
+  X2C_PARR_BITSET  = POINTER TO ARRAY [0..up2Chin] OF BITSET;
+  X2C_PARR_SET16   = POINTER TO ARRAY [0..up2Chin] OF SET16;
+  X2C_PARR_pCHAR   = POINTER TO ARRAY [0..up2Chin] OF X2C_pCHAR;
+  X2C_PARR_TD      = POINTER TO ARRAY [0..up2Chin] OF X2C_TD;
+  X2C_PARR_PTD     = POINTER TO ARRAY [0..up2Chin] OF X2C_PTD;
+  X2C_PARR_ARRTD   = POINTER TO ARRAY [0..up2Chin] OF X2C_PARR_TD;
+  X2C_PARR_ARR_PTD = POINTER TO ARRAY [0..up2Chin] OF X2C_PARR_PTD; -- TD**** in C ;)
+
+  X2C_PARR_ID      = POINTER TO ARRAY [0..up2Chin] OF X2J_ID;
+  X2C_PARR_DYNARR  = POINTER TO ARRAY [0..up2Chin] OF X2J_DYNARR;
+  X2C_PARR_ADDR    = POINTER TO ARRAY [0..up2Chin] OF ADDRESS;
+  X2C_PARR_PROC    = POINTER TO ARRAY [0..up2Chin] OF PROC;
+  X2C_PARR_PPROC   = POINTER TO ARRAY [0..up2Chin] OF X2C_PARR_PROC;
+  X2C_PARR_INT16   = POINTER TO ARRAY [0..up2Chin] OF INT16;
+  X2C_PARR_INT32   = POINTER TO ARRAY [0..up2Chin] OF INT32;
+  X2C_PARR_CARD8   = POINTER TO ARRAY [0..up2Chin] OF CARD8;
+  X2C_PARR_CARD16  = POINTER TO ARRAY [0..up2Chin] OF CARD16;
+  X2C_PARR_CARD32  = POINTER TO ARRAY [0..up2Chin] OF CARD32;
+  X2C_PARR_PARR_CARD16 = POINTER TO ARRAY [0..up2Chin] OF X2C_PARR_CARD16;
+
+  PARR_CodeSegmentInfo1 = POINTER TO ARRAY [0..up2Chin] OF CodeSegmentInfo1;
+  PARR_CodeSegmentInfo2 = POINTER TO ARRAY [0..up2Chin] OF CodeSegmentInfo2;
+  PARR_ExceptionSite1   = POINTER TO ARRAY [0..up2Chin] OF ExceptionSite1;
+  PARR_ExceptionSite2   = POINTER TO ARRAY [0..up2Chin] OF ExceptionSite2;
+  PARR_ExceptionSite3   = POINTER TO ARRAY [0..up2Chin] OF ExceptionSite3;
+
+  X2C_OFFSET       = INT16;
+  X2C_TDINDEX      = CARD16;
+  X2C_TDINDEX32    = INT32;
+  X2C_JSYNC_TYPE   = BITSET;
+
+  PTR_ARR_TDINDEX       = POINTER TO ARRAY [0..up2Chin] OF X2C_TDINDEX;
+  PTR_ARR_AbsentClass   = POINTER TO ARRAY [0..up2Chin] OF AbsentClass;
+
+  X2J_PLONG       = POINTER TO RECORD
+                                 lo :CARDINAL;
+                                 hi :CARDINAL;
+                               END;
+
+  pRTCallList          = POINTER TO RTCallList;
+  pPrivilegedFrame     = POINTER TO PrivilegedFrame;
+  pPrivilegedFrameInfo = POINTER TO PrivilegedFrameInfo;
+
+  RTCallList = RECORD
+    frameAdr :ADDRESS;       -- PrivilegedFrameMark, PrivilegedFrameMark4Inline,
+                             -- or (ADR(frame) - frameAdrIncrement)
+    next     :pRTCallList;
+    paramSize:CARDINAL;
+  END;
+
+  PrivilegedFrameInfo = RECORD
+    clazz   :X2C_TD;      -- the class of the caller of privileged action
+    context :X2J_OBJECT;
+  END;
+
+  PrivilegedFrame = RECORD
+    callListEntry :RTCallList;
+    privInfo      :PrivilegedFrameInfo;
+  END;
+
+
+  HMOD             = ADDRESS;
+
+-------------------------- Java Calling Conventions --------------------------
+
+CONST
+  JavaCall = "JavaCall";
+
+TYPE
+  <* IF (JAVA_CALLCONV = "NOEE") THEN *>
+
+    Java_ZeroParamInstanceMethod = PROCEDURE [JavaCall] ((* this *) ADDRESS) :ADDRESS;
+
+    Java_OneParamConstructor = PROCEDURE [JavaCall] ((* this  *) ADDRESS,
+                                                     (* param *) CARD32) :ADDRESS;
+
+    Java_DefaultConstructor = PROCEDURE [JavaCall] ((* this *) ADDRESS) :ADDRESS;
+
+    Java_ClinitMethod = PROCEDURE [JavaCall] ();
+
+    Java_finalizeMethod = PROCEDURE [JavaCall] ((* this *) ADDRESS);
+
+  <* ELSE *>
+
+    Java_ZeroParamInstanceMethod = PROCEDURE [JavaCall] ((* this *) ADDRESS,
+                                                         (* env  *) X2C_ExecEnv) :ADDRESS;
+
+    Java_DefaultConstructor = PROCEDURE [JavaCall] ((* this *) ADDRESS,
+                                                    (* env *)  X2C_ExecEnv) :ADDRESS;
+
+    Java_OneParamConstructor = PROCEDURE [JavaCall] ((* this  *) ADDRESS,
+                                                     (* param *) CARD32,
+                                                     (* env   *) X2C_ExecEnv) :ADDRESS;
+
+    Java_ClinitMethod = PROCEDURE [JavaCall] ((* env *) X2C_ExecEnv);
+
+    Java_finalizeMethod = PROCEDURE [JavaCall] ((* this *) ADDRESS,
+                                                (* env  *) X2C_ExecEnv);
+  <* END *>
+
+------------------------- Thread Execution Environment ------------------------
+
+TYPE
+
+  TLHDesc = RECORD
+    fmem      :X2C_LINK;
+    mem       :X2C_LINK;
+    eomofs    :CARDINAL;
+    zero      :CARDINAL;
+    nAllocs   :CARDINAL;
+  END;
+
+  <* IF DEFINED(SYNC_STAT) & SYNC_STAT THEN *>
+  SyncStatKind = (SS_UnreservedLock,
+                  SS_UncontendedLockAsOwner,
+                  SS_UncontendedLockAsOther,
+                  SS_HeavyLock,
+                  SS_NestedLock,
+                  SS_NestedLockAsOwner,
+                  SS_FlatContention,
+                  SS_RCnt1,
+                  SS_RCnt2,
+                  SS_RCnt3,
+                  SS_RCntOverflow
+                 );
+  <* END *>
+
+  ThreadBody = PROCEDURE ["StdCall"] ((* env *) X2C_ExecEnv);
+
+  X2C_ExecEnv_STR = RECORD
+    env          :ADDRESS;    -- JNI method table
+    xobj         :ADDRESS;    -- object thrown (or NIL)
+
+    tmask_free   :X2C_JSYNC_TYPE;  -- lockword mask {shape=0, rcnt=0, other=0,   owner=cur, owner_status=0}
+    tmask_locked1:X2C_JSYNC_TYPE;  -- lockword mask {shape=0, rcnt=0, other=0,   owner=cur, owner_status=1}
+    tmask_other  :X2C_JSYNC_TYPE;  -- lockword mask {shape=0, rcnt=0, other=cur, owner=0,   owner_status=0}
+
+    thread_state :INT32;      -- current state (xrThreads.TS_*)
+    lockObj      :X2J_OBJECT; -- the object which the thread is waiting on
+
+    blockedCount :CARDINAL;  -- java.lang.management.ThreadInfo.blockedCount
+    waitedCount  :CARDINAL;  -- java.lang.management.ThreadInfo.waitedCount
+
+    lref_pool    :X2C_PARR_ADDR;
+    lref_poolLen :CARDINAL;
+    lref_poolIdx :CARDINAL;
+
+    stk_start    :ADDRESS;   -- used by GC
+    stk_end      :ADDRESS;   --
+
+    fwd          :X2C_ExecEnv;
+    bck          :X2C_ExecEnv;
+
+    handler      :X2C_XHandler;
+    rtCalls      :RTCallList;
+    reg_dump     :ARRAY [0..X2C_REGSIZE-1] OF CARD32; (* buffer for registers dump (GC) *)
+    reg_dsize    :CARD32;    (* number of words actually occupied by regs *)
+
+    thread       :X2J_OBJECT; -- current java.lang.Thread object
+    interrupt_ev :ADDRESS;    -- xosSync.Event
+    osthread     :X2C_Thread; -- OS handle
+    rtags        :BITSET;
+    threadID     :CARDINAL;   -- OS Thread ID
+    threadTIB    :ADDRESS;    -- OS Thread TIB, used as fast unique ID
+
+    snext        :X2C_ExecEnv; -- links in waiting thread double linked list
+    sprev        :X2C_ExecEnv; -- (for efficient J signals implementation) 
+
+    exceptionIP  :ADDRESS; -- address (IP) where exception occurred
+    exceptionSP  :ADDRESS; -- for use in RT_Rethrow / RTINTR_Rethrow
+
+    tlh          :ARRAY [MIN_TLH_ROOT..MAX_TLH_ROOT] OF TLHDesc;
+    keytlh       :ARRAY [MIN_TLH_ROOT..MAX_TLH_ROOT] OF TLHDesc;
+    gcUnsafe     :BOOL32;
+
+    destrListHead :X2C_LINK;
+    destrListTail :X2C_LINK;
+
+    body         :ThreadBody;  -- thread body, for system threads
+
+    parkEvent    :ADDRESS;    -- xosSync.Event, event used for waiting in park
+    permit       :CARDINAL;   -- thread permit
+
+    stopException :ADDRESS;   -- JNI GlobalRef
+
+    stackBase    :CARDINAL;   -- stack base of the thread
+                              -- used for stack overflow checks
+
+    classCircularityInfo :ADDRESS; -- the field is used during class loading
+                                   -- for class circularity error check
+
+    transforming :BOOLEAN;    -- set if the thread is currently
+                              -- transforming bytecode
+
+    waiting      :BOOLEAN;    -- thread is waiting on Java object
+                              -- and can be notified
+
+    <* IF DEFINED(SYNC_STAT) & SYNC_STAT THEN *>
+    reserved1    :CARD8;
+    reserved2    :CARD8;
+    syncStat     :ARRAY SyncStatKind OF CARDINAL; -- Java synchronization statistics
+    <* END *>
+  END;
+
+
+  X2C_XHandler_STR = RECORD
+    next          :X2C_XHandler;
+    buf           :xrjsetjmp.JumpBuffer;
+  END;
+
+  TryBlockInfo = X2C_XHandler_STR;
+
+----------------------------- String reference ------------------------------
+
+TYPE
+  (* Static reference to (byte) string. Layout:
+
+           0 | len       | offset in globalByteStringsPool
+          ------------------------------------------------
+           1 |      index in globalByteStringsInfo
+          ------------------------------------------------
+          31 | 30     24 | 23                            0
+
+          globalByteStringsPool - bundle of symbols
+          globalByteStringsInfo - array of ByteStringInfo
+  *)
+
+  StringRef = BITSET;
+
+  PARR_StringRef = POINTER TO ARRAY [0..up2Chin] OF StringRef;
+
+CONST
+  IndexedStringBit = 31;
+  LengthMask       = {24..30};
+  LengthShift      = 24;
+  OffsetMask       = {0 ..23};
+  IndexMask        = {0 ..30};
+  MaxOffset        = 0FFFFFFH;  -- 2^^LengthShift-1;
+  MaxLength        = 07FH;      -- 2^^(IndexedStringBit-LengthShift)-1;
+
+  ZeroString       = {};
+
+TYPE
+  ByteStringInfo = RECORD
+                     offs :CARDINAL;
+                     len  :CARDINAL;
+                   END;
+
+  PTR_ARR_ByteStringInfo = POINTER TO ARRAY [0..up2Chin] OF ByteStringInfo;
+
+----------------------------- Null Check Info -------------------------------
+
+CONST
+  NullCheckAccessAddrIncrement = 8;
+  MinNullCheckAccessAddr       = 0H     - NullCheckAccessAddrIncrement;
+  MaxNullCheckAccessAddr       = 0FFFFH - NullCheckAccessAddrIncrement;
+
+----------------------------- Native methods --------------------------------
+
+TYPE
+  NativeMethodDesc = RECORD
+    name  :StringRef;
+    sig   :StringRef;
+    nargs :CARDINAL;
+  END;
+
+  PARR_NativeMethodDesc = POINTER TO ARRAY [0..up2Chin] OF NativeMethodDesc;
+
+------------------------ Dynamic verification checks ------------------------
+
+TYPE
+  VerifyCheck = RECORD     -- Dynamic check for absent types assignability
+    from   :X2C_TDINDEX;
+    to     :X2C_TDINDEX;
+    errMsg :StringRef;     -- error message for VerifyError exception
+                           -- in case of check failure
+  END;
+
+  PARR_VerifyCheck = POINTER TO ARRAY [0..up2Chin] OF VerifyCheck;
+
+------------------------ Enclosing method reflection  ------------------------
+
+TYPE
+  EnclosingMethodInfo = POINTER TO EnclosingMethodInfo_STR;
+
+  EnclosingMethodInfo_STR = RECORD
+    enclosingClass :X2C_TDINDEX;
+    methodName     :StringRef;
+    methodSig      :StringRef;
+  END;
+
+-------------------------------- TypesTable stuff ---------------------------------
+
+CONST
+  TypesTable_Magic = 054540003H;  -- 'TT' 0003. The low word is used as
+                                  -- a version of types table format.
+
+TYPE
+  TypesTable = X2C_PARR_TD;
+
+TYPE
+  TypesTable_HashIndex = POINTER TO ARRAY [0..up2Chin] OF INTEGER;
+
+TYPE
+  TypesTable_Header = POINTER TO TypesTable_Header_STR;
+
+  TypesTable_Header_STR = RECORD
+    tableBase        :INTEGER;    -- base for the X2C_TDINDEX32 in this table
+    totalTDs         :INTEGER;    -- total number of entries in the table
+    nextTable        :TypesTable; -- next types table in component
+    initialized      :BOOL32;
+
+    -- array types occupy table[arrayBase .. arrayBase+arraysNum-1]
+    arraysBase       :INTEGER;
+    arraysNum        :INTEGER;
+
+    -- imported types occupy table[importedBase .. importedBase+importedNum-1]
+    importedBase     :INTEGER;
+    importedNum      :INTEGER;
+
+    -- exported types occupy table[exportedBase .. exportedBase+exportedNum-1]
+    exportedBase     :INTEGER;
+    exportedNum      :INTEGER;
+    hashIndex        :TypesTable_HashIndex;
+
+    -- absent types occupy table[absentBase .. absentBase+absentNum-1]
+    absentBase       :INTEGER;
+    absentNum        :INTEGER;
+    absentTypesTable :PTR_ARR_AbsentClass;
+
+    magic            :CARDINAL;
+  END;
+
+-------------------------------- Heap stuff ---------------------------------
+
+CONST
+ BlockSize = 16*1024;
+
+TYPE
+
+  X2C_LINK_STR = RECORD
+    CASE :INTEGER OF
+      |0: size : CARD32;   --| packed fields:
+      |1: tags : SET32;    --|    (tags, heap object size)
+    END;
+    CASE :INTEGER OF
+      |0: td   : X2C_TD;   -- for alive object ONLY: type
+      |1: next : X2C_LINK; -- |1. for free object: next object in free list
+                           -- |2. for moved objects - address of copy
+    END;                   -- |3. when GCollecting, link for list of marked objects
+  END;
+
+
+CONST (* bits in X2C_LINK^.tags *)
+  _flcbit     = 0;  (* Flat Contention: for fast synchronization *)
+  _markbit    = 16; (* for mark phase                            *)
+  _large      = 25;
+
+---------
+
+  td_initialized  = 0;
+  td_cloneable    = 2;
+  td_serializable = _markbit;
+
+CONST
+  VALID_TAGS = -{td_initialized, td_cloneable, td_serializable};
+
+  (*
+     the above tags exist only in .objTags of TD;
+     they may overlap other object tags with no harm, excepting for the below
+     (including SZ_MASK) which are also generated by the compiler
+   *)
+
+  _hasFinalizer= 1;  (* object has non-trivial finalizer                *)
+  _leaf        = 22; (* object has no GC traceable fields    |          *)
+  _singletrace = 23; (* object has the only traceable field  | for      *)
+  _ref         = 24; (* weak ref wrapper                     | GC speed *)
+  _hasoverhead = 29; (* object has free 4-byte heap overhead |          *)
+  _array       = 30; (* fast GC and array casts                         *)
+  _chabit      = 31; (* CHA bit: quasy-inline condition is met          *)
+
+
+CONST
+  stackObjTags  = {};
+  staticObjTags = {_markbit, _large};
+
+  SZ_MASK = {3..13}; -- small/normal object size mask
+
+  LINK_SZ = SIZE (X2C_LINK_STR);
+
+  ADAPTIVE_HEAPLIMIT = 0;
+
+VAR
+  (* Memory manager parameters *)
+  X2C_busymem        :CARD32;  (* total memory allocated from RT Heap *)
+  X2C_usedmem        :CARD32;  (* total memory used by NEW-created objects  *)
+  X2C_xusedmem       :CARD32;  (* total memory used by ALLOCATE-created objects  *)
+  X2C_maxmem         :CARD32;  (* max. memory allowed for allocation: HEAPLIMIT   *)
+
+  X2C_lastusedmem    :CARD32;  (* total memory after last GC invocation *)
+  X2C_naturfragm     :CARD32;  (* difference between used & busy mem GC cannot
+                                  remove (or 0 if unknown)  *)
+
+-------------
+
+CONST 
+  jsyncFreeObject = CAST(X2C_JSYNC_TYPE, 0);
+
+  -- Part of the lockword structure, used by compiler.
+  -- See xrJSync.def for details.
+  SHAPE_MASK      = {8};
+  OTHER_MASK      = {18..31};
+
+
+TYPE
+  X2J_OBJECT_STR = RECORD
+    jsync     :X2C_JSYNC_TYPE;
+  END;
+
+  (* java.lang.String object's layout *)
+  X2J_STRING_STR = RECORD
+    jsync     :X2C_JSYNC_TYPE;
+    value     :X2J_DYNARR;
+    offset    :INT32;
+    count     :INT32;
+    hash      :INT32;
+  END;
+
+CONST
+  JSTRING_OBJ_SIZE = ((LINK_SZ + SIZE(X2J_STRING_STR) + LINK_SZ-1) DIV LINK_SZ) * LINK_SZ;
+  JSTRING_OBJ_TAGS = BITSET(JSTRING_OBJ_SIZE) + {_singletrace, _hasoverhead};
+
+
+CONST
+  TD_OFFS    = -4;  -- this constant should match that in arraycopy.asm
+  FIRST_OFFS = SIZE (X2J_OBJECT_STR);
+
+  (* the below constants are for inline generation of interf casts *)
+  TDDISTANCE_OFFS = 0;
+  ITABLE_OFFS     = SIZE (ADDRESS);
+
+TYPE
+  <* PUSH *>
+  <* ENUMSIZE = "2" *>
+
+  TDKinds = (k_primitive,
+             k_array,        -- for reflection purposes only
+             k_reserved_1,
+             k_class, k_interface, k_gc_array, k_obj_array,
+             k_reserved_2,
+             k_absentclass, k_compiledesc);
+    -- indexes of k_primitive, k_gc_array should match those in arraycopy.asm
+
+
+  primTCodes = (void_t, byte_t, boolean_t, char_t, short_t, int_t, long_t,
+                float_t, double_t);
+
+CONST
+  Object_t       = ORD (MAX (primTCodes)) + 1;
+  Cloneable_t    = ORD (MAX (primTCodes)) + 2;
+  Serializable_t = ORD (MAX (primTCodes)) + 3;
+  Other_t        = MAX (CARD8);
+
+TYPE
+  -- offsets of the fields of this structure should match those in arraycopy.asm
+  X2J_DYNARR_STR = RECORD
+    CASE :BOOLEAN OF
+      |TRUE:  jsync       :X2C_JSYNC_TYPE; (* for array objects *)
+      |FALSE: classObject :ClassObject;    (* Class Object corresponding to this type, for k_array *)
+    END;
+
+    CASE :BOOLEAN OF
+      |TRUE: kind      : TDKinds;         (* tag = k_obj_array | k_array *)
+             elTCode   : CARD8;           (* code of element type *)
+             dimnum    : CARD8;           (* number of dimensions *)
+
+      |FALSE: bundle   : CARDINAL;        (* to clone both by single mov *)
+    END;
+
+    CASE :BOOLEAN OF
+      |TRUE:  length    :INT32;       (* for array descriptor *)
+      |FALSE: next      :X2J_DYNARR;  (* for refAD class descriptor *)
+    END;
+    elemtype  : X2C_TD;
+    (* array's body is following here *)
+  END;
+
+CONST
+  BODY_OFFS = SIZE(X2J_DYNARR_STR); -- this constant should match that in arraycopy.asm
+
+CONST
+  DYNARR_HEADER_SZ = LINK_SZ + SIZE(X2J_DYNARR_STR);
+
+CONST
+  -- 'bundle' field of array descriptor for char[]
+  ENCODED_BUNDLE_CHAR_ARRAY = ORD (k_obj_array)         +
+                              ORD(char_t)         << 16 +
+                              1 (* 1-dim array *) << 24;
+
+  -- 'bundle' field of array descriptor for java.lang.Object[]
+  ENCODED_BUNDLE_JLO_ARRAY  = ORD (k_obj_array)         +
+                              Object_t            << 16 +
+                              1 (* 1-dim array *) << 24;
+
+
+-------------  CFG profiling 
+
+TYPE 
+  PPROFDATA = POINTER TO ARRAY [0..up2Chin] OF CARD32;
+
+CONST
+  PROF_MAGIC = 0AD8D0001H;    -- low word is version of profile file format
+  PROF_COUNTER_SIZE = 4;      -- depends from profile file format
+
+  PROF_CFG_DATA_MAGIC        = 0A2345000H; -- edge-profiling data magic
+  PROF_CALL_ORDER_DATA_MAGIC = 05432A000H; -- call-order-profiling data magic
+  PROF_DATA_END_MAGIC        = 0ACDFE000H; -- profile data block end
+
+  PROF_STARTUP_HEADER = "@JET Start-up Profile, v 1.0";
+  PROF_STARTUP_SECTION_START = "@profile start";
+  PROF_STARTUP_SECTION_END = "@profile end";
+
+-------------
+
+CONST
+  BASE_INLINE = 6;
+
+CONST
+  RT_NUM_NOT_ALLOCATED = 0;      -- RT number is not allocated for this type yet
+  MAX_RT_NUM           = 07FFFH; -- Max value of the RT number of type
+
+CONST
+  TD_MAGIC = 6789002CH;   (* this value (lower word) can be used as "version" of type descriptor *)
+
+TYPE
+
+  (* type descriptor *)
+  X2C_TD_STR = RECORD
+    (* ARRAY [0..iVMTCapacity-1] OF PROC; -- interface VMTs *)
+    classObject   :ClassObject;          (* Class Object corresponding to this type *)
+    -- offsets of the field 'kind' of this structure should match those in arraycopy.asm
+    kind          :TDKinds;              (* tag                                   *)
+    rtNum         :CARD16;               (* class # at run-time                   *)
+    magic         :CARD32;
+
+    hash          :INTEGER;              (* hashCode of type name                 *)
+    name          :CARDINAL;             (* OFFS TO ARR OF CHAR*) (* type name    *)
+
+    elTCode       :CARD8;                (* element type code for array of this type *)
+    reserved0     :CARD8;
+    reserved1     :CARD16;
+
+    -----------------------------------------
+
+    metaInfo      :reflectionTD;         (* Second part of TD *)
+    typesTable    :TypesTable;           (* Types Table for this TD *)
+
+    modifiers     :BITSET;
+
+    import        :PTR_ARR_TDINDEX;      (* List of imported types, 0-terminated  *)
+    begin         :PROC;                 (* addr of BEGIN-part *)
+
+    CASE :BOOLEAN OF
+    |FALSE:
+      clinit      :PROC;                 (* addr of static initializer *)
+      clinit_ee   :X2C_ExecEnv;          (* info for class init synchronization *)
+    |TRUE:                               (* for types with mdf_verifyerror *)
+      errCode     :ClassCode;            (* exception code                 *)
+      reserved3   :CARD16;
+      errMsg      :StringRef             (* exception message              *)
+    END;
+    initialized   :BOOL32;
+
+    chksum        :CARD32;               (* check sum of class bytecode *)
+    timestamp     :CARD32;               (* time stamp of the class compilation (for pre-compiled) *)
+    classID       :CARD32;               (* unique ID of class in DLL *)
+    compDesc      :ComponentDescriptor;  (* descriptor of component with this TD   *)
+    classLoader   :X2J_OBJECT;           (* ClassLoader                            *)
+    pd            :X2J_OBJECT;           (* protection domain                      *)
+    jname         :X2J_STRING;           (* type name as J String (unicode)        *)
+    verifyChecks  :CARD32;               (*OFFS TO ARR OF VerifyCheck *) (* verification checks *)
+
+    package       :JavaPackage;          (* the descriptor of java package           *)
+    sfBundle      :ADDRESS;              (* address of static fields bundle          *)
+    sfIObjects    :CARD16;               (* number of interface object static fields *)
+    sfObjects     :CARD16;               (* number of object static fields           *)
+    accflags      :SET16;                (* access flags, as declared in class file *)
+
+    -----------------------------------------
+
+    nativenum     :CARD16;               (* # of native methods             *)
+    nativeDesc    :PARR_NativeMethodDesc;(* description of native methods   *)
+
+    profiledata   :PPROFDATA;               (* addr of profile counters        *)
+
+<* IF edition="professional" THEN *>
+    level         :INTEGER;                          (* of inheritance hierarchy        *)
+    base          :ARRAY [1..BASE_INLINE] OF X2C_TD; (* ancestors (including this)  [1..BASE_INLINE]      *)
+    base0         :X2C_PARR_TD;                      (* ancestors (including this), [BASE_INLINE+1..+inf) *)
+
+    objTags       :BITSET;               (* tags of newly allocated object of this type *)
+    size          :size_t;               (* for type - size                 *)
+<* ELSIF edition="evaluation" THEN *>
+    base          :ARRAY [1..BASE_INLINE] OF X2C_TD; (* ancestors (including this)  [1..BASE_INLINE]      *)
+    base0         :X2C_PARR_TD;                      (* ancestors (including this), [BASE_INLINE+1..+inf) *)
+    level         :INTEGER;                          (* of inheritance hierarchy        *)
+
+    objTags       :BITSET;               (* tags of newly allocated object of this type *)
+    size          :size_t;               (* for type - size                 *)
+<* ELSIF edition="standard" THEN *>
+    size          :size_t;               (* for type - size                 *)
+
+    level         :INTEGER;                          (* of inheritance hierarchy        *)
+    base          :ARRAY [1..BASE_INLINE] OF X2C_TD; (* ancestors (including this)  [1..BASE_INLINE]      *)
+    base0         :X2C_PARR_TD;                      (* ancestors (including this), [BASE_INLINE+1..+inf) *)
+
+    objTags       :BITSET;               (* tags of newly allocated object of this type *)
+<* ELSIF edition="enterprise" THEN *>
+    objTags       :BITSET;               (* tags of newly allocated object of this type *)
+    size          :size_t;               (* for type - size                 *)
+
+    level         :INTEGER;                          (* of inheritance hierarchy        *)
+    base          :ARRAY [1..BASE_INLINE] OF X2C_TD; (* ancestors (including this)  [1..BASE_INLINE]      *)
+    base0         :X2C_PARR_TD;                      (* ancestors (including this), [BASE_INLINE+1..+inf) *)
+<* ELSIF edition="embedded" THEN *>
+    objTags       :BITSET;               (* tags of newly allocated object of this type *)
+
+    base          :ARRAY [1..BASE_INLINE] OF X2C_TD; (* ancestors (including this)  [1..BASE_INLINE]      *)
+    base0         :X2C_PARR_TD;                      (* ancestors (including this), [BASE_INLINE+1..+inf) *)
+    level         :INTEGER;                          (* of inheritance hierarchy        *)
+
+    size          :size_t;               (* for type - size                 *)
+<* ELSIF edition="embedded_evaluation" THEN *>
+    objTags       :BITSET;               (* tags of newly allocated object of this type *)
+    size          :size_t;               (* for type - size                 *)
+
+    base          :ARRAY [1..BASE_INLINE] OF X2C_TD; (* ancestors (including this)  [1..BASE_INLINE]      *)
+    base0         :X2C_PARR_TD;                      (* ancestors (including this), [BASE_INLINE+1..+inf) *)
+    level         :INTEGER;                          (* of inheritance hierarchy        *)
+<* ELSE *>
+    ERROR - "EDITION" EQUATION MUST BE DEFINED
+<* END *>
+
+    offs          :X2C_pCARD;            (* offset description - see below *)
+    adjoffs       :X2C_pCARD;            (* offsets for adjust GC phase    *)
+    singleOffs    :CARDINAL;             (* offset of single traceable field: used by GC *)
+    finusedoffs   :X2C_pCARD;            (* offsets of fields used in finalize() or NIL (if no fields used or trivial finalizer) *)
+
+    mlnext        :X2C_TD;               (* list of marked types; used by GC *)
+    link          :X2C_LINK;             (* list of objects (of THIS type) to be marked; used by GC *)
+
+    procsLen      :CARD32;               (* length of procs table *)
+    VMTCapacity   :CARD32;               (* # of VMT entries *)
+    iVMTCapacity  :CARD32;               (* # of entries in all interface VMTs *)
+
+    segMapSize    :CARD32;               (* number of code segments in class *)
+    segMap        :ADDRESS;              (* map of code segments *)
+
+    constrVNum    :INT16;                (* -(index in sproc of default constructor) or
+                                             0 (if there is no default constructor) *)
+    constrModif   :SET16;                (* modifiers of default constructor *)
+
+    iisFCache2L   :X2J_ID;               (* 2-L cache for false interface is *)
+    icastTCache2L :CARDINAL;             (* 2-L cache for successful interface cast *)
+
+    procs         :ARRAY [0..up2Chin] OF PROC; (* [0..procsLen-1], constsits of: *)
+    (* VMT        :ARRAY [0..VMTCapacity-1] OF PROC; -- virtual method table      *)
+    (* nativeMT   :ARRAY [0..nativenum-1]   OF PROC; -- native method table       *)
+    (* nativeMT2  :ARRAY [0..nativenum-1]   OF PROC; -- 2nd native method table   *)
+    (* staticMT   :ARRAY [0..smethodnum-1]  OF PROC; -- static method table       *)
+    (* nonvirtMT  :ARRAY []                 OF PROC; -- non-virtual method table  *)
+  END;
+
+  -- not-patchable part of type descriptor:
+  -- meta information (reflection & JNI), security info, tcf tables
+  reflectionTD_STR = RECORD
+    xsites0       :CARDINAL;             (* exception/call sites; see description above *)
+    xsites1       :CARDINAL;
+    inlineList    :CARDINAL;             (*PARR_TDINDEX*) (* Sequences of inlined methods' classes *)
+
+    codeSource    :StringRef;            (* CodeSource *)
+
+    declaredIn    :X2C_TDINDEX;          (* enclosing class (if any) *)
+    enclosingMeth :X2C_OFFSET;           (*OFFS TO EnclosingMethodInfo_STR*) (* enclosing method (if any) *)
+    nEclosedCls   :CARD16;               (* # of enclosed  classes   *)
+    encloses      :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX*) (* enclosed  classes (if any) *)
+
+    sfieldnum     :CARD16;               (* # of static fields     *)
+    sfieldofs     :X2C_OFFSET;           (*OFFS TO ARR OF CARD16   *) (* static fields offsets (relative to bundle start) *)
+    sfieldname    :X2C_OFFSET;           (*OFFS TO ARR OF StringRef*) (* names (lexicograph.ordered) *)
+    sFModifiers   :X2C_OFFSET;           (*OFFS TO ARR OF SET16    *) (* static fields modifiers     *)
+    sFTDs         :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX  *) (* static fields types         *)
+
+    genSignatures :X2C_OFFSET;           (*OFFS TO ARR OF StringRef *)    (* generic signatures of class, fields (static, instance), methods (static, instance) *)
+    annotations   :X2C_OFFSET;           (*OFFS TO AnnotationsInfo_STR *) (* annotations information *)
+
+    --------------------------------------
+
+    fieldnum      :CARD16;               (* # of non-static fields *)
+    fieldofs      :X2C_OFFSET;           (*OFFS TO ARR OF INT16    *) (* fields offsets relative to object *)
+    fieldname     :X2C_OFFSET;           (*OFFS TO ARR OF StringRef*) (* names (lexicograph.ordered)       *)
+    iFModifiers   :X2C_OFFSET;           (*OFFS TO ARR OF SET16    *) (* instance fields modifiers         *)
+    iFTDs         :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX  *) (* instance fields types             *)
+
+    methodnum     :CARD16;               (* number of instance methods *)
+    methodname    :X2C_OFFSET;           (*OFFS TO ARR OF StringRef*) (* names (lexicograph.ordered) *)
+    namekeys      :X2C_OFFSET;           (*OFFS TO ARR OF INT16*)   (* mapping: {alph numbers} -> {virtual method numbers} *)
+    framesz       :X2C_OFFSET;           (*OFFS TO ARR OF CARD8*)   (* size of parameter frame in bytes    *)
+    iMModifiers   :X2C_OFFSET;           (*OFFS TO ARR OF SET16*)   (* instance methods modifiers          *)
+    nIMPars       :X2C_OFFSET;           (*OFFS TO ARR OF INT16*)   (* # of parameters of instance methods *)
+    iMParTDs      :X2C_OFFSET;           (*OFFS TO ARR OF ARR OF TDINDEX*) (* parameter types of instance methods *)
+    iMRetTD       :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX*) (* return type of instance methods     *)
+    nIMThrows     :X2C_OFFSET;           (*OFFS TO ARR OF INT16*)   (* # of exceptions                     *)
+    iMThrows      :X2C_OFFSET;           (*OFFS TO ARR OF ARR OF TDINDEX*) (* exceptions declared by "throws" in instance methods *)
+
+    smethodnum    :CARD16;               (* # of static methods *)
+    smethodname   :X2C_OFFSET;           (*OFFS TO ARR OF StringRef*) (* names (lexicograph.ordered) *)
+    sframesz      :X2C_OFFSET;           (*OFFS TO ARR OF CARD8*)   (* size of parameter frame in bytes  *)
+    sMModifiers   :X2C_OFFSET;           (*OFFS TO ARR OF SET16*)   (* static   methods modifiers        *)
+    nSMPars       :X2C_OFFSET;           (*OFFS TO ARR OF INT16*)   (* # of parameters of static methods *)
+    sMParTDs      :X2C_OFFSET;           (*OFFS TO ARR OF ARR OF TDINDEX*) (* parameter types of static methods *)
+    sMRetTD       :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX*) (* return type of static methods     *)
+    nSMThrows     :X2C_OFFSET;           (*OFFS TO ARR OF INT16*)   (* # of exceptions                   *)
+    sMThrows      :X2C_OFFSET;           (*OFFS TO ARR OF ARR OF TDINDEX*) (* exceptions declared by "throws" in static methods *)
+
+    imminum       :INT16;                (* # of superinterf *)
+    immbase       :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX*) (* immediate superinterfaces *)
+    inum          :INT16;                (* # of interfaces implemented *)
+    interfs       :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX*) (* interfaces implemented *)
+    imethods      :X2C_OFFSET;           (*OFFS TO ARR OF INT16/INT32*) (* methods tables of the interfaces      *)
+                                                                        (* (offsets relative to type descriptor) *)
+  END;
+
+
+  (* primitive type descriptor *)
+  PrimTD_STR = RECORD
+    classObject   :ClassObject;          (* Class Object corresponding to this type *)
+    kind          :TDKinds;              (* tag = k_primitive                     *)
+    rtNum         :CARD16;
+    magic         :CARD32;
+
+    hash          :INTEGER;              (* hashCode of type name                 *)
+    name          :CARDINAL;             (* type name                             *)
+
+    elTCode       :CARD8;                (* element type code for array of this type *)
+    reserved0     :CARD8;
+    reserved1     :CARD16;
+
+    -----------------------------------------
+
+    typeCode      :primTCodes;           (* primitve type code                    *)
+    reserved2     :CARD16;
+    size          :INTEGER;              (* size                                  *)
+
+    -- offset of the field 'log2size' of this structure should match those in arraycopy.asm
+    log2size      :INTEGER;              (* log2 (size)                           *)
+  END;
+
+
+  (* array type descriptor *)
+  ArrayTD_STR = RECORD
+    classObject :ClassObject;    (* Class Object corresponding to this type *)
+
+    kind        :TDKinds;        (* tag = k_array *)
+    reserved0   :CARD8;
+    dimnum      :CARD8;          (* number of dimensions *)
+
+    next        :ArrayTD;
+    elemtype    :X2C_TD;
+  END;
+
+
+  (* Annotations information *)
+  AnnotationsInfo = POINTER TO AnnotationsInfo_STR;
+
+  AnnotationsInfo_STR = RECORD
+    runtimeAnnotData :X2C_OFFSET; (*OFFS TO ARR OF OFFS TO raw data *)  (* value  of "RuntimeVisibleAnnotations" attrubute of class, fields (static, instance), methods (static, instance) *)
+    paramsAnnotData  :X2C_OFFSET; (*OFFS TO ARR OF OFFS TO raw data *)  (* value  of "RuntimeVisibleParameterAnnotations" attrubute of methods (static, instance) *)
+    annotDefaultData :X2C_OFFSET; (*OFFS TO ARR OF OFFS TO raw data *)  (* value  of "AnnotationDefault" attrubute of methods (static, instance) *)
+  END;
+
+
+CONST
+  (* ------------------------ Java Modifiers ------------------------ *)
+
+                       (*   method  field  class *)
+  mdf_public       = 0;  --   +       +      +
+  mdf_private      = 1;  --   +       +      +
+  mdf_protected    = 2;  --   +       +      +
+  mdf_static       = 3;  --   +       +      +
+  mdf_final        = 4;  --   +       +      +
+  mdf_synchron     = 5;  --   +       -      -
+  mdf_volatile     = 6;  --   +       +      -
+  mdf_transient    = 7;  --   +       +      -
+  mdf_native       = 8;  --   +       -      -
+  mdf_interface    = 9;  --   -       -      +
+  mdf_abstract     = 10; --   +       -      +
+  mdf_strictfp     = 11; --   +       -      -
+  mdf_synthetic    = 12; --   +       +      +
+  mdf_annotation   = 13; --   -       -      +
+  mdf_enum         = 14; --   -       +      +
+
+  (* method *)
+  mdf_bridge       = mdf_volatile;
+  mdf_varargs      = mdf_transient;
+
+  JMDF_METHOD_MASK = {mdf_public, mdf_private,  mdf_protected, mdf_static,
+                      mdf_final,  mdf_synchron, mdf_bridge,    mdf_varargs,
+                      mdf_native, mdf_abstract, mdf_strictfp,  mdf_synthetic};
+
+  JMDF_FIELD_MASK  = {mdf_public, mdf_private,  mdf_protected, mdf_static,
+                      mdf_final,  mdf_volatile, mdf_transient, mdf_synthetic,
+                      mdf_enum};
+
+  JMDF_TYPE_MASK   = {mdf_public, mdf_private,   mdf_protected, mdf_static,
+                      mdf_final,  mdf_interface, mdf_abstract,  mdf_synthetic,
+                      mdf_annotation, mdf_enum};
+
+  acc_super        = 5;
+
+  ACC_FLAGS_MASK   = {mdf_public,    mdf_final,      mdf_interface, mdf_abstract,
+                      mdf_synthetic, mdf_annotation, mdf_enum,      acc_super};
+
+  (* ------------------------ Internal modifiers ------------------------ *)
+
+  (* method/field *)
+  mdf_longinterf   = 15; (** for field: its type is 8-byte interface
+                             for method: its interface-type parameters and return value are 8-byte *)
+
+  (* field/type *)
+  mdf_statini      = 8;  (** need static initialization             --FOR JIT *)
+
+  (* method *)
+  mdf_alien        = 9;  (** abstract method inherited from interface *)
+  mdf_constr       = 14; (** constructor *)
+
+  (* type descriptor *)
+  mdf_systemclass   = 16;  (** system class (no security)            *)
+  mdf_standardclass = 17;  (** standard class (standard DLLs)        *)
+  mdf_has_clinit    = 18;  (** non-empty <clinit> in bytecode        *)
+  mdf_emptydestr    = 19;  (** finalize() in this class is empty --FOR JIT *)
+  mdf_NOTUSED1      = 20;  (** not used *)
+  mdf_verifyerror   = 21;  (** VerifyError should be thrown during class preparation *)
+
+  (* the above "mdf" constants must correspond to "xot_*" declared in pcK *)
+
+  MDF_FIELD_MASK  = JMDF_FIELD_MASK  + {mdf_statini, mdf_longinterf};
+
+  MDF_METHOD_MASK = JMDF_METHOD_MASK + {mdf_constr, mdf_alien,
+                                        mdf_longinterf};
+
+  MDF_TYPE_MASK   = JMDF_TYPE_MASK   + {mdf_statini, mdf_systemclass, mdf_standardclass,
+                                        mdf_has_clinit, mdf_emptydestr, mdf_NOTUSED1,
+                                        mdf_verifyerror};
+
+  (* MDF_*_MASK is mask for xot_* tags to be written to 'modifiers' field *)
+
+  (* extra type descriptor modifiers. Used by RT, written by compiler.    *)
+  (* these modifiers DO NOT correspond to "xot_*" tags !                  *)
+  mdf_verified      =  7;  (** class was successfully verified       *)
+  mdf_weakref       = 22;  (** class extends java.lang.ref.Reference *)
+  mdf_classdeferror = 23;  (** class definition error: exception should be thrown on attempt to load class *)
+  mdf_NOTUSED2      = 24;  (** not used *)
+  mdf_importabsent  = 25;  (** class metainformation references to absent class *)
+
+  (* ----------------------------- RT modifiers ----------------------------- *)
+
+  (* type descriptor *)
+  mdf_jitcompiled  = 26; (** class was compiled by JIT compiler   *)
+  mdf_erroneous    = 27; (** class is in erroneous state          *)
+  mdf_dynamictd    = 28; (** dynamically created type descriptor  *)
+  mdf_prepared     = 29; (** type was prepared                    *)
+  mdf_pd_set       = 30; (** the protection domain was set        *)
+  mdf_underclosure = 31; (** TD is curTD in xrJMM.Closure         *)
+
+  (* ------------------------------------------------------------------------ *)
+
+CONST
+  USG_HEADER_OLD1 = "JET Usage List, v 2.5";
+
+  USG_HEADER = "JET Usage List, v 3.15";
+
+  usg_name             = 1; -- method, field
+  usg_namekeys         = 2; -- method
+  usg_framesz          = 3; -- method
+  usg_modifiers        = 4; -- method, field
+  usg_parTDs           = 5; -- method
+  usg_retTD            = 6; -- method
+  usg_throws           = 7; -- method
+  usg_call             = 8; -- method
+  usg_virtcall         = 9; -- method
+
+  usg_new              = 10; -- class
+  usg_load             = 11; -- class
+  usg_clinit           = 12; -- class
+
+  usg_type             = 13; -- field
+  usg_read             = 14; -- field
+  usg_write            = 15; -- field
+
+  usg_notfinal         = 16; -- class
+  usg_perfectfeedback  = 17; -- class
+  usg_entryclass       = 18; -- class contains entry methods
+
+  usg_default  = BITSET{ usg_name, usg_namekeys, usg_framesz, usg_modifiers, usg_parTDs,
+                         usg_retTD,  usg_throws, usg_call,
+                         usg_new, usg_load, usg_clinit,
+                         usg_type, usg_read, usg_write};
+
+TYPE
+  (* interface descriptor *)
+  X2J_ID_STR = RECORD
+    classObject   :ClassObject;          (* Class Object corresponding to this type *)
+    kind          :TDKinds;              (* tag = k_interface                     *)
+    rtNum         :CARD16;               (* interface # at run-time               *)
+    magic         :CARD32;
+
+    hash          :INTEGER;              (* hashCode of type name                 *)
+    name          :CARDINAL;             (* type name                             *)
+
+    elTCode       :CARD8;                (* element type code for array of this type *)
+    reserved0     :CARD8;
+    reserved1     :CARD16;
+
+    -----------------------------------------
+
+    metaInfo      :reflectionID;         (* Second part of ID *)
+    typesTable    :TypesTable;           (* Types Table for this TD *)
+
+    modifiers     :BITSET;
+
+    import        :PTR_ARR_TDINDEX;      (* List of imported types, 0-terminated  *)
+    begin         :PROC;                 (* addr of BEGIN-part *)
+
+    CASE :BOOLEAN OF
+    |FALSE:
+      clinit      :PROC;                 (* addr of static initializer *)
+      clinit_ee   :X2C_ExecEnv;          (* info for class init synchronization *)
+    |TRUE:                               (* for types with mdf_verifyerror *)
+      errCode     :ClassCode;            (* exception code                 *)
+      reserved3   :CARD16;
+      errMsg      :StringRef             (* exception message              *)
+    END;
+    initialized   :BOOL32;
+
+    chksum        :CARD32;               (* check sum of interface bytecode *)
+    timestamp     :CARD32;               (* time stamp of the class compilation (for pre-compiled) *)
+    classID       :CARD32;               (* unique ID of interface in DLL *)
+    compDesc      :ComponentDescriptor;  (* descriptor of component with this ID   *)
+    classLoader   :X2J_OBJECT;           (* ClassLoader                            *)
+    pd            :X2J_OBJECT;           (* protection domain                      *)
+    jname         :X2J_STRING;           (* type name as J String (unicode)        *)
+    verifyChecks  :CARD32;               (*OFFS TO ARR OF VerifyCheck *) (* verification checks *)
+
+    package       :JavaPackage;          (* the descriptor of java package           *)
+    sfBundle      :ADDRESS;              (* address of static fields bundle          *)
+    sfIObjects    :CARD16;               (* number of interface object static fields *)
+    sfObjects     :CARD16;               (* number of object static fields           *)
+    accflags      :SET16;                (* access flags, as declared in class file *)
+
+    -----------------------------------------
+
+    rtINum        :CARD16;               (* unique runtime # of the interface, for caching interface casts *)
+
+    IVMTstub         :ADDRESS;           (* IVMT stub cache: used by MightInterfCast *)
+    clinitCodeSegLen :CARDINAL;          (* length of code segment of <clinit>       *)
+  END;
+
+  -- not-patchable part of interface descriptor:
+  -- meta information (reflection & JNI), security info, tcf tables
+  reflectionID_STR = RECORD
+    xsites0       :CARDINAL;             (* exception/call sites; see description above *)
+    xsites1       :CARDINAL;
+    inlineList    :CARDINAL;             (*PARR_TDINDEX*) (* Sequences of inlined methods' classes *)
+
+    codeSource    :StringRef;            (* CodeSource *)
+
+    declaredIn    :X2C_TDINDEX;          (* enclosing class (if any) *)
+    enclosingMeth :X2C_OFFSET;           (*OFFS TO EnclosingMethodInfo_STR*) (* enclosing method (if any) *)
+    nEclosedCls   :CARD16;               (* # of enclosed  classes   *)
+    encloses      :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX*) (* enclosed  classes (if any) *)
+
+    sfieldnum     :CARD16;               (* # of static fields     *)
+    sfieldofs     :X2C_OFFSET;           (*OFFS TO ARR OF CARD16   *) (* static fields offsets (relative to bundle start) *)
+    sfieldname    :X2C_OFFSET;           (*OFFS TO ARR OF StringRef*) (* names (lexicograph.ordered) *)
+    sFModifiers   :X2C_OFFSET;           (*OFFS TO ARR OF SET16    *) (* static fields modifiers     *)
+    sFTDs         :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX  *) (* static fields types         *)
+
+    genSignatures :X2C_OFFSET;           (*OFFS TO ARR OF StringRef *)    (* generic signatures of class, methods (instance, static), fields (instance, static*)
+    annotations   :X2C_OFFSET;           (*OFFS TO AnnotationsInfo_STR *) (* annotations information *)
+
+    --------------------------------------
+
+    amethodnum    :CARD16;               (* # of abstract methods *)
+    amethodname   :X2C_OFFSET;           (*OFFS TO ARR OF StringRef*) (* names (lexicograph.ordered) *)
+    anamekeys     :X2C_OFFSET;           (*OFFS TO ARR OF CARD16*)    (* mapping: {alph numbers} -> {virtual method numbers} *)
+    aframesz      :X2C_OFFSET;           (*OFFS TO ARR OF CARD8*)     (* size of parameter frame in bytes *)
+
+    aMModifiers   :X2C_OFFSET;           (*OFFS TO ARR OF SET16*)     (* abstract methods modifiers          *)
+    nAMPars       :X2C_OFFSET;           (*OFFS TO ARR OF INT16*)     (* # of parameters of abstract methods *)
+    aMParTDs      :X2C_OFFSET;           (*OFFS TO ARR OF ARR OF TDINDEX*) (* parameter types of abstract methods *)
+    aMRetTD       :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX*)   (* return type of abstract methods     *)
+    nAMThrows     :X2C_OFFSET;           (*OFFS TO ARR OF INT16*)     (* # of exceptions                     *)
+    aMThrows      :X2C_OFFSET;           (*OFFS TO ARR OF ARR OF TDINDEX*) (* exceptions declared by "throws" in abstract methods *)
+
+    imminum       :INT16;                (* # of immediate superinterf  *)
+    immbase       :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX*) (* immediate superinterfaces *)
+    inum          :INT16;                (* # of superinterf *)
+    base          :X2C_OFFSET;           (*OFFS TO ARR OF TDINDEX*) (* superinterfaces *)
+
+    iVMTCapacity  :CARDINAL;             (* # of entries in interface VMT *)
+  END;
+
+
+  (* interface object *)
+  X2J_IOBJECT_STR = RECORD
+    this :ADDRESS;          (* object to pass in methods as THIS *)
+    proc :X2C_PARR_PROC;    (* methods table                     *)
+  END;
+
+
+CONST
+  CO_MAGIC = 0DADA0001H;
+
+TYPE
+  (* Class Object, e.g. instance of java.lang.Class.
+     It is actually a Java object with additional associated data.
+   *)
+  ClassObject_STR = RECORD
+    object :X2J_OBJECT_STR;  -- the structure inherited from the java.lang.Object
+  END;
+
+  (* Data associated with Class Object *)
+  ClassObjectData_STR = RECORD
+    magic         :CARD32;               (* class object data magic       *)
+
+    compileDesc   :ADDRESS;              (* compilation descriptor        *)
+    classFile     :ADDRESS;              (* class file representation     *)
+    cacheEntry    :ADDRESS;              (* corresponding jit cache entry *)
+  
+    signers       :ADDRESS;              (* class signers,     # RTAA     *)
+    protDomain    :ADDRESS;              (* protection domain, # RTAA     *)
+
+    arrayClass    :ClassObject;          (* array of this class           *)
+    reserved1     :CARD32;
+
+    td            :X2C_TD;               (* corresponding type descriptor *)
+    name          :X2C_pCHAR;            (* type name                     *)
+  END;
+
+
+CONST
+  amdf_should_be_class = 0;  -- absent class cannot be interface
+  amdf_loaded          = 1;  -- absent class is loaded
+  amdf_resolved        = 2;  -- absent class is resolved
+  amdf_log_usages      = 3;  -- log usages of absent class members in usg
+  amdf_log_meta_new    = 4;  -- log meta new in usg
+
+  AbsentMember   = MAX(CARD32); -- special value meaning absent member
+                                -- placeholders in absent class
+                                -- descriptor are filled with it
+
+  UNRESOLVED_TYPE = 077H;       -- entry in types table indicating absent type
+
+TYPE
+  AbsentMemberType = (um_invokevirtual,
+                      um_invokespecial,
+                      um_invokestatic,
+                      um_invokeinterface,
+                      um_putfield,
+                      um_getfield,
+                      um_putstatic,
+                      um_getstatic,
+                      um_interfflag );  -- field of absent type is wide interface
+                                        -- absent member of this type should follow um_{put/get}{field/static}
+
+  AbsentClass_STR = RECORD
+    reserved0     :ADDRESS;            -- not used
+    kind          :TDKinds;            -- k_absentclass
+
+    -------------------------------------
+
+    name          :X2C_OFFSET;         -- 16-bit offset to absent class name (relative to begin of AbsentClassDescriptor)
+    modifiers     :BITSET;             -- modifiers: amdf_xxx
+    td            :X2C_TD;             -- link to resolved actual TD
+    metaInfo      :ReflAbsentClass;    -- address of meta-info part (names & signatures)
+
+    curClass      :X2C_TD;             -- class, in which this absent class descriptor is defined
+                                       -- it is used to get values of TDINDEX and StringRef objects,
+                                       -- so it should reside in the current component
+
+    fromClass     :X2C_TDINDEX;        -- class that references this absent class
+                                       -- its classloader is used to resolve (find) absent class
+                                       -- also, access check are performed to ensure that fromClass can access
+                                       -- resolved absent class
+    reserved      :CARD16;
+
+    loadingError  :ClassObject;        -- class of the exception, occurred
+                                       -- during class loading
+
+    -------------------------------------
+    (*
+    members :ARRAY x OF ADDR/CARD32    -- member address/offset placeholders
+    *)
+  END;
+
+  ReflAbsentClass_STR = RECORD
+    membernum     :CARD16;               (* number of members *)
+    membername    :X2C_OFFSET;           (*OFFS TO ARR OF StringRef*) (* names *)
+    membersig     :X2C_OFFSET;           (*OFFS TO ARR OF StringRef*) (* signatures *)
+    membertype    :X2C_OFFSET;           (*OFFS TO ARR OF AbsentMemberType *) (* member types *)
+  END;
+
+------------------------------------------------------------------------------
+
+CONST
+  NUM_OF_PKG_CLASSLOADERS = 4; -- number of classloaders cached in
+                               -- package descriptor to prevent
+                               -- unnecessary registration
+
+TYPE
+  (*
+   * This structure describes Java package.
+   * All references to strings are generated by the compiler as the 
+   * relative offsets.
+   *)
+  JavaPackage_STR = RECORD
+    name        :X2C_pCHAR;   -- package name, /-separated, ends with /
+    jar         :X2C_pCHAR;   -- jar name
+
+    -- information for packages registered in non-system classloaders
+    specTitle   :X2C_pCHAR;   -- specification title
+    specVersion :X2C_pCHAR;   -- specification version
+    specVendor  :X2C_pCHAR;   -- specification vendor
+    implTitle   :X2C_pCHAR;   -- implementation title
+    implVersion :X2C_pCHAR;   -- implementation version
+    implVendor  :X2C_pCHAR;   -- implementation vendor
+
+    jarRelToJRE :BOOLEAN;     -- jar name is relative to JRE directory
+    sealed      :BOOLEAN;     -- package is sealed
+    systemReg   :BOOLEAN;     -- package was registered as system
+    prepared    :BOOLEAN;     -- package descriptor was prepared
+
+    -- for registration as system package
+    hash        :INT32;       -- hash of package name
+    next        :ADDRESS;     -- link in the hashtable of system packages
+    jarPath     :ADDRESS;     -- jar path jstring, RTAA
+
+    -- non-system classloaders in which the package was registered
+    classloaders:ARRAY [0..NUM_OF_PKG_CLASSLOADERS-1] OF ADDRESS; -- RTAA
+  END;
+
+
+------------------------------------------------------------------------------
+
+(* Stack Trace *)
+
+TYPE
+  STInlCtxEntry   = POINTER TO STInlCtxEntry_STR;
+  STExceptionSite = POINTER TO STExceptionSite_STR;
+  STMethodInfo    = POINTER TO STMethodInfo_STR;
+  STTableEntry    = POINTER TO STTableEntry_STR;
+  STTable         = POINTER TO STTable_STR;
+
+  -- compiler-generated
+
+  STExceptionSite_STR = RECORD
+    codeOffs   :CARD32;     -- offset of exception site, relative to method beginning
+    lineNo     :INT32;      -- line number
+    inlineCtx  :CARD32;     -- 0 or offset to inline context info, relative to start of stack trace info
+  END;
+
+  STInlCtxEntry_STR = RECORD
+    clazz      :X2C_TDINDEX;  -- declaring class of the method
+    last       :BOOL16;       -- TRUE for last entry in context
+    methodName :StringRef;    -- method name
+    source     :StringRef;    -- source file
+    lineNo     :INT32;        -- line number
+  END;
+
+  STMethodInfo_STR = RECORD
+    clazz      :X2C_TDINDEX32;              -- declaring class of the method
+    methodName :StringRef;                  -- method name
+    source     :StringRef;                  -- source file
+    nExcSites  :CARD32;                     -- number of exception sites
+    excSites   :ARRAY [0..up2Chin] OF STExceptionSite_STR;
+  END;
+
+  -- linker-generated
+
+  STTableEntry_STR = RECORD
+    addr     :ADDRESS;  -- CONSTADDR
+    length   :CARD32;
+    excSites :ADDRESS;  -- CONSTADDR
+  END;
+
+  STTable_STR = RECORD
+    nMethods :CARD32;  -- number of methods with stack trace info
+    methods  :ARRAY [0..up2Chin] OF STTableEntry_STR;
+  END;
+
+
+CONST
+  NO_STACK_TRACE_INFO = 0FFFFFFFFH;
+
+------------------------------------------------------------------------------
+
+  <* POP *>
+
+(*
+  Memory overhead - 3 dwords per object:
+    - size/tags
+    - type descriptor
+    - monitor word
+
+  Each type descriptor contains "offs" field - POINTER TO ARRAY OF CARDINAL;
+
+  This array lists tracing field offsets in type descriptor.
+  It is terminated by X2C_TAG_END.
+  Offsets are relative to the object's link (X2C_LINK).
+
+  Array type descriptors have the .offs = X2C_TAG_ARR.
+
+*)
+
+CONST
+  X2C_TAG_END  = 1;
+  X2C_TAG_ARR  = 2;
+
+CONST
+  STACK_ALIGNMENT = SIZE(ADDRESS);
+
+----------------
+
+VAR
+ (* primitive type descriptors *)
+  x2c_td_boolean,
+  x2c_td_byte,
+  x2c_td_char,
+  x2c_td_short,
+  x2c_td_int,
+  x2c_td_long,
+  x2c_td_float,
+  x2c_td_double,
+  x2c_td_void :X2C_TD;
+
+  (* descriptor for objects array *)
+  x2c_td_arrV :X2C_TD;
+
+  (* for primitive arrays and other non-scanned objects *)
+  x2c_td_null :X2C_TD;
+
+TYPE
+  ptSzArr = ARRAY primTCodes OF INTEGER;
+  ptNmArr = ARRAY primTCodes OF ARRAY [0..7] OF CHAR;
+
+CONST
+  primTNum     = 9;
+  primTSigns   = "VBZCSIJFD";
+  primTSizes   = ptSzArr {0, 1, 1, 2, 2, 4, 8, 4, 8};
+
+  primTNames   = ptNmArr { "void",
+                           "byte",
+                           "boolean",
+                           "char",
+                           "short",
+                           "int",
+                           "long",
+                           "float",
+                           "double"
+                         };
+VAR
+  primTDs :ARRAY primTCodes OF X2C_TD;
+  wrapTDs :ARRAY primTCodes OF X2C_TD;
+
+VAR
+ (* descriptor of the Class class *)
+  classClassDesc    :X2C_TD;
+
+  (* descriptor of the Object class  *)
+  classObjectDesc   :X2C_TD;
+
+  (* descriptor of the String class  *)
+  classStringDesc   :X2C_TD;
+
+  (* descriptor of the java.lang.ref.Reference class  *)
+  classReferenceDesc:X2C_TD;
+
+  (* descriptor of the java.lang.Cloneable interface  *)
+  interfCloneableDesc    :X2J_ID;
+
+  (* descriptor of the java.io.Serializable interface  *)
+  interfSerializableDesc :X2J_ID;
+
+  (* class objects (jclass) for use in natives *)
+  jclassObject   :ClassObject;
+  jclassClass    :ClassObject;
+  jclassString   :ClassObject;
+
+  jclassObjectArray :ClassObject;
+
+CONST
+  GETCLASS_WITH_CLINIT = MAX(CARDINAL);  -- special value for dimnum parameter
+                                         -- of X2J_GETCLASS() meaning
+                                         -- that the <clinit> should be called
+
+-------------------------------------------------
+
+PROCEDURE ["StdCall"] xjRTS_init ();
+
+PROCEDURE ["StdCall"] CheckConsistency (ee :X2C_ExecEnv);
+
+---------
+
+CONST
+  CDES_MAGIC   = 053454443H;      -- 'CDES'
+  CDES_VERSION = 2;
+
+TYPE
+  (* this structure should match that in xjcomponent.asm *)
+  ComponentDescriptor_STR = RECORD
+    magic              :CARD32;    (* Component descriptor magic            *)
+    version            :CARD32;    (* Component descriptor format version   *)
+
+    handle             :HMOD;      (* handle of the component               *)
+
+    next               :ComponentDescriptor;
+    prev               :ComponentDescriptor;
+
+    isEXE              :BOOL32;    (* EXE - TRUE, DLL - FALSE               *)
+
+    typesTable         :TypesTable;(* Global (the first) types table in component *)
+    javaStringChars    :ADDRESS;   (* J array of chars (constant strings)   *)
+
+    multiCPUenv        :BOOL32;    (* multi-processor environment indicator *)
+
+    CPUFlags           :BITSET;    (* CPU flags value *)
+    
+    reserved12         :CARDINAL;
+    reserved13         :CARDINAL;
+    reserved14         :CARDINAL;
+
+    codeSectionNumber  :CARDINAL;  (* # of code sec in component *)
+    codeSectionStart   :CARDINAL;  (* code sec start             *)
+    codeSectionEnd     :CARDINAL;  (* code sec end               *)
+
+    parametersBlock    :ADDRESS;   (* control parameters block              *)
+    paramsBlockLen     :CARDINAL;  (* length (in bytes) of CPB section      *)
+
+    idataSectionStart  :CARDINAL;  (* idata sec start            *)
+    idataSectionEnd    :CARDINAL;  (* idata sec end              *)
+
+    jidataSectionStart :CARDINAL;  (* J idata sec start          *)
+    jidataSectionEnd   :CARDINAL;  (* J idata sec end            *)
+
+    fullName           :X2C_pCHAR; (* Full path to the component,
+                                      currently set for in-mem components only *)
+
+    globalByteStringsPool :ADDRESS;                (* byte strings chars bundle *)
+    globalByteStringsInfo :PTR_ARR_ByteStringInfo; (* byte strings info         *)
+
+    imageRelocationDelta :INTEGER; (* (Actual ImageBase) - (Prefered ImageBase) *)
+
+    nullChecksTable    :ADDRESS;   (* table of null-checks       *)
+
+    tags               :BITSET;    (* attributes of component, ct_* *)
+    reserved15         :ADDRESS;
+
+    reserved2          :ADDRESS;
+
+    embeddedFileSys    :ADDRESS;   (* embedded file system          *)
+    stackTraceInfo     :STTable;   (* stack trace information       *)
+    versionInfo        :X2C_pCHAR; (* version information           *)
+
+    baseAddress        :ADDRESS;   (* Actual image base             *)
+
+    rtProcTable1       :ADDRESS;   (* RT procedures table 1         *)
+    rtProcTable2       :ADDRESS;   (* RT procedures table 2         *)
+
+    compatibilityString :ADDRESS;  (* Binary compatibility string   *)
+
+    refArrayDispTable  :ADDRESS;  (* Dispatch table for refarray allocation  *)
+    primArrayDispTable :ADDRESS;  (* Dispatch table for primarray allocation *)
+    keyStringDispTable :ADDRESS;  (* Dispatch table for key string allocation *)
+  END;
+
+
+CONST
+  ct_jitdll     = 1;   -- component was loaded thru JIT facilities
+  ct_registered = 2;   -- component is registered in RT
+
+---------
+
+TYPE
+  StringInfo = RECORD
+                 hash :INTEGER;
+                 pos  :INTEGER;
+                 len  :INTEGER;
+               END;
+
+  PTR_ARR_STRING     = POINTER TO ARRAY [0..up2Chin] OF X2J_STRING;
+  PTR_ARR_StringInfo = POINTER TO ARRAY [0..up2Chin] OF StringInfo;
+
+-----------------------------------------------------------------------------
+
+TYPE
+  pSEH_REGISTRATION_RECORD = POINTER TO SEH_REGISTRATION_RECORD;
+  SEH_REGISTRATION_RECORD = RECORD
+    -- general fields, present in any SEH record
+    next        :pSEH_REGISTRATION_RECORD;
+    handler     :PROC;
+
+    -- JET-specific fields, present in SEH records installed by JET runtime only
+    ee          :X2C_ExecEnv;
+
+    -- copy of the respective fields of ee
+    tmask_free    :X2C_JSYNC_TYPE; -- lockword mask {shape=0, rcnt=0, other=0, owner=cur, owner_status=0}
+    tmask_locked1 :X2C_JSYNC_TYPE; -- lockword mask {shape=0, rcnt=0, other=0, owner=cur, owner_status=1}
+  END;
+
+-----------------------------------------------------------------------------
+
+CONST
+  JIT_CACHE_DESCRIPTOR_HEADER_1 = "JET JIT Cache Descriptor v.1";
+  JIT_CACHE_DESCRIPTOR_HEADER_2 = "JET JIT Cache Descriptor v.2";
+  JIT_CACHE_DESCRIPTOR_HEADER_3 = "JET JIT Cache Descriptor v.3";
+  JIT_CACHE_DESCRIPTOR_HEADER_4 = "JET JIT Cache Descriptor v.4";
+
+  JIT_CACHE_MODEL_SINGLECOMP = "singlecomp";
+  JIT_CACHE_MODEL_DLL        = "dllmodel";
+
+------------------------------------------------------------------------------
+------------------------   Baseline exceptions   -----------------------------
+------------------------------------------------------------------------------
+
+TYPE
+  BaselineTableEntry = RECORD
+     startPC,
+     endPC,
+     handlerPC: CARDINAL;
+
+     catchType: X2C_TDINDEX32; -- 32 bit
+  END;
+    
+  BaselineTablePtr = POINTER TO BaselineTable;
+
+  BaselineTable = RECORD
+    tableLen   : CARDINAL;
+    methodStart: CARDINAL;
+    table      : ARRAY [0..7FFFFFH] OF BaselineTableEntry;
+  END;
+
+
+CONST
+  CATCH_TYPE_ANY = CAST(X2C_TDINDEX32, MAX(CARDINAL));
+
+------------------------------------------------------------------------------
+-------------------------  Built-in type descriptors--------------------------
+------------------------------------------------------------------------------
+TYPE BuiltInTD = (
+    bitd_void,
+    bitd_byte,
+    bitd_boolean,
+    bitd_char,
+    bitd_short,
+    bitd_int,
+    bitd_long,
+    bitd_float,
+    bitd_double,
+    bitd_objArray,
+    bitd_primArray );
+
+------------------------------------------------------------------------------
+-------------------------------  JET Editions  -------------------------------
+------------------------------------------------------------------------------
+
+CONST
+  EDITION_UNKNOWN             = 0;
+
+  EDITION_EVALUATION          = 2;
+  EDITION_PROFESSIONAL        = 3;
+  EDITION_STANDARD            = 4;
+  EDITION_ENTERPRISE          = 5;
+  EDITION_EMBEDDED            = 6;
+  EDITION_EMBEDDED_EVALUATION = 7;
+
+------------------------------------------------------------------------------
+-------------------------------  Method Test  --------------------------------
+------------------------------------------------------------------------------
+
+CONST
+  METHOD_TEST_BIT = 0;      -- this bit is set in address of method (in VMT)
+                            -- that is subject for method test
+
+
+------------------------------------------------------------------------------
+-------------------------------  StackOverflow handling  ---------------------
+------------------------------------------------------------------------------
+
+CONST
+  STACK_RESERVE_FOR_RTPROC        = 2048;
+  STACK_RESERVE_FOR_JAVA_METHOD   = STACK_RESERVE_FOR_RTPROC + 1024;
+  STACK_RESERVE_FOR_NATIVE_METHOD = 2048;
+
+------------------------------------------------------------------------------
+
+END xjRTS.

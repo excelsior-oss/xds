@@ -1,0 +1,36 @@
+(* Copyright (c) 1994-98 XDS Ltd. All Rights Reserved. *)
+(* Access to some non-standard C functions *)
+(* Implementation in C *)
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] x2cLib; (* Ned 19-Mar-94. *)
+
+IMPORT SYSTEM, xPOSIX, X2C, xmRTS;
+
+PROCEDURE X2C_Exists(fname: ARRAY OF CHAR): BOOLEAN;
+(* Returns TRUE, if file "fname" exists. *)
+
+PROCEDURE X2C_ModifyTime(fname: ARRAY OF CHAR;
+                  VAR time: LONGCARD;
+                VAR exists: BOOLEAN);
+(* Returns file modification time *)
+
+PROCEDURE X2C_Time(): LONGCARD;
+(* Returns time in seconds *)
+
+PROCEDURE X2C_Clock(): LONGCARD;
+(* Returns time in 1/100 fractions of second *)
+
+PROCEDURE X2C_SetFileModes(name: ARRAY OF CHAR; type: CHAR);
+(* setup system dependend output file mode for:
+	'R' - raw
+	'T' - text
+*)
+
+PROCEDURE X2C_FDup(VAR f: xPOSIX.FILE; type: ARRAY OF CHAR): SYSTEM.ADDRESS;
+PROCEDURE X2C_FDup2(VAR f1: xPOSIX.FILE; VAR f2: SYSTEM.ADDRESS): SYSTEM.int;
+PROCEDURE X2C_ChSize(VAR f: xPOSIX.FILE; sz: SYSTEM.INT32): SYSTEM.int;
+
+PROCEDURE X2C_GetFileType(VAR f: xPOSIX.FILE): SYSTEM.int;
+
+END x2cLib.

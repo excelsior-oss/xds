@@ -1,0 +1,336 @@
+-- Поддержка изображений элементов интерфейса на физический экран.
+-- Огранизация карты экрана. Содержит набор функций для
+-- различных режимов вывода символов и/или их цветов и работы с курсором.
+-- Содержит цветовые схемы для окон.
+--
+-- Перед использованием необходимо вызвать процедуру Ini, по окончании Exi;
+
+DEFINITION MODULE CRT;
+
+IMPORT DlgTypes;
+IMPORT Console;
+
+TYPE
+  HWND = DlgTypes.HWND;
+  ATTR = Console.ATTR;
+
+PROCEDURE Beep;
+
+VAR
+  Xmax, Ymax: CARDINAL;
+
+
+TYPE
+  CORNER      = ( UpperLeft  , UpperCenter  , UpperRight  ,
+                  MiddleLeft , MiddleCenter , MiddleRight ,
+                  LowerLeft  , LowerCenter  , LowerRight  , ZeroTerm );
+
+  FRAME       = ( Single, Double, Move );
+  FRAME_IMAGE = ARRAY CORNER OF CHAR;
+  ALL_FRAMES  = ARRAY FRAME OF FRAME_IMAGE;
+
+VAR
+  Frames: ALL_FRAMES;
+
+TYPE
+  SZ  = RECORD
+            x1, y1, x2, y2: CARDINAL;
+          END;
+
+  COLOR = ( Black, Blue, Green, Cyan, Red, Magenta, Brown, LightGray, DarkGray,
+            LightBlue, LightGreen, LightCyan, LightRed, LightMagenta, Yellow, White);
+
+
+  COLOR_NAME = ARRAY [0..12] OF CHAR;
+  COLOR_NAMES = ARRAY COLOR OF COLOR_NAME;
+
+CONST
+  Names = COLOR_NAMES{'Black', 'Blue', 'Green', 'Cyan', 'Red', 'Magenta', 'Brown',
+                      'LightGray', 'DarkGray', 'LightBlue', 'LightGreen',
+                      'LightCyan', 'LightRed', 'LightMagenta', 'Yellow', 'White'};
+  MAX_COLORS = 16;
+
+  WinCtrlClose = 2;
+
+TYPE
+  ATTR_NAME   = ARRAY [0..32] OF CHAR;
+
+  MSG_ELEM  = (Msg_Background, Msg_Frame, Msg_Header, Msg_Message, Msg_Button);
+  MSG_ATTR  = ARRAY MSG_ELEM OF ATTR;
+  MSG_NAMES = ARRAY MSG_ELEM OF ATTR_NAME;
+
+  MENU_ELEM  = (Menu_Background, Menu_Frame, Menu_Button, Menu_CurrentButton,
+               Menu_Lite, Menu_CurrentLite, Menu_Inactive, Menu_CurrInactive);
+  MENU_ATTR  = ARRAY MENU_ELEM OF ATTR;
+  MENU_NAMES = ARRAY MENU_ELEM OF ATTR_NAME;
+
+  PULL_ELEM  = (Pull_Background, Pull_Button, Pull_CurrentButton,
+                Pull_Lite, Pull_CurrentLite);
+  PULL_ATTR  = ARRAY PULL_ELEM OF ATTR;
+  PULL_NAMES = ARRAY PULL_ELEM OF ATTR_NAME;
+
+  SRC_ELEM  = (Src_Background, Src_Header, Src_ActiveHeader,
+               Src_Code, Src_NoCode, Src_Disasm, Src_Break, Src_BreakDisabled,
+               Src_UserCursor, Src_ExecCursor, Src_CallCursor);
+  SRC_ATTR  = ARRAY SRC_ELEM OF ATTR;
+  SRC_NAMES = ARRAY SRC_ELEM OF ATTR_NAME;
+
+  LIST_ELEM  = (List_Background, List_Frame, List_Header, List_ActiveHeader,
+                List_Line, List_CurrentLine);
+  LIST_ATTR  = ARRAY LIST_ELEM OF ATTR;
+  LIST_NAMES = ARRAY LIST_ELEM OF ATTR_NAME;
+
+
+  -- Элементы цветовой схемы для окон структурных переменных
+  -- Первые элементы должны соответствовать элемантам для списков
+  STRUCT_ELEM = ( Struct_Background
+                , Struct_Frame
+                , Struct_Header
+                , Struct_ActiveHeader
+                , Struct_Line
+                , Struct_CurrentLine
+                , Struct_AlternateLine );
+
+  STRUCT_ATTR  = ARRAY STRUCT_ELEM OF ATTR;
+  STRUCT_NAMES = ARRAY STRUCT_ELEM OF ATTR_NAME;
+
+
+  -- Элементы цветовой схемы для диалоговых окон
+  DIALOG_ELEM = ( Dialog_Background
+                , Dialog_ActiveEditor
+                , Dialog_InactiveEditor
+                , Dialog_Message
+                , Dialog_Button
+                , Dialog_ActiveButton
+                , Dialog_RadioHeader
+                , Dialog_RadioActive
+                , Dialog_RadioInactive
+                , Dialog_CheckHeader
+                , Dialog_CheckActive
+                , Dialog_CheckInactive
+                , Dialog_Lite );
+
+  DIALOG_ATTR  = ARRAY DIALOG_ELEM OF ATTR;
+  DIALOG_NAMES = ARRAY DIALOG_ELEM OF ATTR_NAME;
+
+
+<* IF TARGET_VAX THEN *>
+
+  REG_ELEM  = (Reg_Background, Reg_Frame, Reg_Header, Reg_ActiveHeader,
+               Reg_Normal, Reg_Current, Reg_Written, Reg_Readed, Reg_Both);
+<* ELSE *>
+
+  REG_ELEM  = (Reg_Background, Reg_Frame, Reg_Header, Reg_ActiveHeader,
+               Reg_Normal, Reg_Current, Reg_Written);
+<* END *>
+
+  REG_ATTR  = ARRAY REG_ELEM OF ATTR;
+  REG_NAMES = ARRAY REG_ELEM OF ATTR_NAME;
+
+  IO_ELEM  = (IO_Background, IO_Frame, IO_Header, IO_Button, IO_CurrentButton,
+              IO_Msg, IO_Byte, IO_CurrentByte, IO_Info, IO_Comment );
+
+  IO_ATTR  = ARRAY IO_ELEM OF ATTR;
+  IO_NAMES = ARRAY IO_ELEM OF ATTR_NAME;
+
+  DUMP_ELEM  = (Dump_Background, Dump_Frame, Dump_Header, Dump_ActiveHeader,
+                Dump_Address, Dump_Mem, Dump_CurMem);
+
+  DUMP_ATTR  = ARRAY DUMP_ELEM OF ATTR;
+  DUMP_NAMES = ARRAY DUMP_ELEM OF ATTR_NAME;
+
+
+  POPUP_ELEM  = ( Popup_Background
+                , Popup_Frame
+                , Popup_Line
+                , Popup_CurrentLine
+                , Popup_Inactive
+                , Popup_CurrInactive );
+
+  POPUP_ATTR  = ARRAY POPUP_ELEM OF ATTR;
+  POPUP_NAMES = ARRAY POPUP_ELEM OF ATTR_NAME;
+
+
+TYPE
+  PALLETTE_ITEM_NAME = ATTR_NAME;
+
+  PALLETTE_ITEM_ATTRS  = ARRAY [0..MAX_COLORS-1] OF ATTR;
+  PALLETTE_ITEM_PATTRS = POINTER TO PALLETTE_ITEM_ATTRS;
+
+  PALLETTE_ITEM_NAMES  = ARRAY [0..MAX_COLORS-1] OF ATTR_NAME;
+  PALLETTE_ITEM_PNAMES = POINTER TO PALLETTE_ITEM_NAMES;
+
+  PALLETTE_ITEM = RECORD
+                    Name  : PALLETTE_ITEM_NAME;   (* *)
+                    NameR : PALLETTE_ITEM_NAME;   (* *)
+                    N     : CARDINAL;             (* *)
+                    Attrs : PALLETTE_ITEM_PATTRS; (* *)
+                    Names : PALLETTE_ITEM_PNAMES; (* *)
+                  END;
+
+  PALLETTE = POINTER TO ARRAY OF PALLETTE_ITEM;
+
+VAR
+  Pallette: PALLETTE;
+
+CONST
+  Msg_Names  = MSG_NAMES{ 'Background' , 'Frame', 'Header', 'Message', 'Button'};
+  Menu_Names = MENU_NAMES{'Background', 'Frame', 'Button', 'CurrentButton', 'Lite',
+                          'CurrentLite', 'Inactive', 'CurrInactive' };
+  Pull_Names = PULL_NAMES{'Background', 'Button', 'CurrentButton', 'Lite', 'CurrentLite'};
+  List_Names = LIST_NAMES{ 'Background' , 'Frame',  'Header', 'ActiveHeader',
+                          'Line', 'CurrentLine'};
+  Src_Names  = SRC_NAMES{'Background', 'Header', 'ActiveHeader',
+                         'Code', 'NoCode', 'Disassembler', 'Break', 'BreakDisabled',
+                         'UserCursor', 'ExecCursor', 'CallCursor'};
+
+  -- Названия элементов цветовой схемы для окон структурных переменных
+  Struct_Names = STRUCT_NAMES{ 'Background'
+                             , 'Frame'
+                             , 'Header'
+                             , 'ActiveHeader'
+                             , 'Line'
+                             , 'CurrentLine'
+                             , 'AlternateLine'};
+
+  -- Названия элементов цветовой схемы для диалоговых окон
+  Dialog_Names = DIALOG_NAMES{ 'Background'
+                             , 'ActiveEditor'
+                             , 'InactiveEditor'
+                             , 'Message'
+                             , 'Button'
+                             , 'ActiveButton'
+                             , 'RadioHeader'
+                             , 'RadioActive'
+                             , 'RadioInactive'
+                             , 'CheckHeader'
+                             , 'CheckActive'
+                             , 'CheckInactive'
+                             , 'Lite' };
+
+
+<* IF TARGET_VAX THEN *>
+
+  Reg_Names  = REG_NAMES{'Background',  'Frame', 'Header', 'ActiveHeader',
+                          'Normal' , 'Current', 'Written', 'Readed', 'Both'};
+<* ELSE *>
+
+  Reg_Names  = REG_NAMES{'Background',  'Frame', 'Header', 'ActiveHeader',
+                          'Normal' , 'Current', 'Written' };
+<* END *>
+
+  Dump_Names  = DUMP_NAMES{'Background', 'Frame', 'Header', 'ActiveHeader',
+                          'Address', 'Mem', 'CurMem'};
+
+  Popup_Names = POPUP_NAMES { 'Background' , 'Frame'
+                            , 'Line'       , 'CurrentLine'
+                            , 'Inactive'   , 'CurrInactive' };
+
+VAR
+  Msg, Error : MSG_ATTR;
+  Info       : MSG_ATTR;
+  Menu       : MENU_ATTR;
+  Pulldown   : PULL_ATTR;
+  List       : LIST_ATTR;
+  Src        : SRC_ATTR;
+  Reg        : REG_ATTR;
+  Dump       : DUMP_ATTR;
+  Stack      : DUMP_ATTR;
+  PopupWindow: POPUP_ATTR;
+  StructAttr : STRUCT_ATTR;
+  DialogAttr : DIALOG_ATTR;
+
+<* IF TARGET_VAX THEN *>
+
+CONST
+  IO_Names   = IO_NAMES{'Background', 'Frame', 'Header', 'Button', 'CurrentButton',
+                        'Msg', 'Byte', 'CurrentByte', 'Info', 'Comment' };
+VAR
+  Model: IO_ATTR;
+
+<* END *>
+
+
+VAR
+  Modules_Active  : ATTR;
+  Modules_Inactive: ATTR;
+  Help_Background : ATTR;
+
+PROCEDURE Attr(foreground, background: COLOR): ATTR;
+(* получение атpибута текстового экpана по цвету foreground и bacground *)
+
+PROCEDURE Fg(attr: ATTR): COLOR;
+PROCEDURE Bg(attr: ATTR): COLOR;
+
+PROCEDURE BringColor (c: COLOR): COLOR;
+
+PROCEDURE SetPos(x,y: CARDINAL);
+(* Позиция для последующих безпозиционных опеpатоpов вывода *)
+
+PROCEDURE FindWindow (x,y: CARDINAL): HWND;
+PROCEDURE FindWord (x,y: CARDINAL; VAR start, end: CARDINAL; VAR word: ARRAY OF CHAR): BOOLEAN;
+PROCEDURE FindColor (str: ARRAY OF CHAR): COLOR;
+
+PROCEDURE DrawFrame    (hwnd: HWND; size: SZ; fr: FRAME; attr: ATTR);
+PROCEDURE DrawHeader   (hwnd: HWND; size: SZ; attr: ATTR);
+
+PROCEDURE DrawControls (hwnd: HWND; size: SZ; attr: ATTR; ctrls: DlgTypes.WND_CTRL_SET);
+
+PROCEDURE GetControl (size: SZ; x, y: CARDINAL; ctrls: DlgTypes.WND_CTRL_SET): DlgTypes.WND_CTRL;
+
+PROCEDURE FillWindow(hwnd: HWND; ch: CHAR; attr: ATTR );
+PROCEDURE FillWindowSize(hwnd: HWND; size: SZ; ch: CHAR; attr: ATTR );
+
+
+PROCEDURE UpdateRect(size: SZ);  (* процедура вывода в физический буфер содержимого
+                                    логического, размеры которого указаны в size    *)
+
+PROCEDURE RiseWindow(hwnd: HWND);
+PROCEDURE HideWindow(hwnd: HWND);
+
+
+
+PROCEDURE WrChar(hwnd: HWND; ch: CHAR; attr: ATTR);
+PROCEDURE WrNChar(hwnd: HWND; N: CARDINAL; ch: CHAR; attr: ATTR);
+
+PROCEDURE WrStr(hwnd: HWND; str: ARRAY OF CHAR;attr: ATTR);
+PROCEDURE WrStrFromPos(hwnd: HWND; str: ARRAY OF CHAR; attr: ATTR; pos: CARDINAL);
+
+PROCEDURE WrNStr(hwnd: HWND; N: CARDINAL; str: ARRAY OF CHAR;attr: ATTR);
+PROCEDURE WrNCharAbs(ch: CHAR; N: CARDINAL; attr: ATTR);
+
+PROCEDURE WrStrAbs(str: ARRAY OF CHAR;attr: ATTR);
+PROCEDURE WrStrNAbs(str: ARRAY OF CHAR; N: CARDINAL; attr: ATTR);
+
+(* меняет в окне hwnd цвет подложки у i стpоки начиная с pos и до конца окна *)
+PROCEDURE Hilite(hwnd: HWND; i, pos : CARDINAL; color: COLOR);
+
+PROCEDURE HilitePart(hwnd: HWND; i, pos1, pos2 : CARDINAL; color: COLOR);
+
+(* меняет в окне hwnd атpибут у i стpоки начиная с pos и до конца окна *)
+PROCEDURE Lite(hwnd: HWND; i, pos : CARDINAL; attr: ATTR);
+
+PROCEDURE LitePart(hwnd: HWND; i, pos1, pos2 : CARDINAL; attr: ATTR);
+
+
+PROCEDURE Save(hwnd: HWND);
+PROCEDURE RestoreStatic(size: SZ);
+PROCEDURE RestoreForMove(size, old_size: SZ);
+PROCEDURE RestoreMapFromMove;
+
+PROCEDURE Union(r1, r2: SZ): SZ;
+
+PROCEDURE CursorOff;
+PROCEDURE CursorOn;
+
+PROCEDURE IsCursorVisible(): BOOLEAN;
+
+PROCEDURE SetCurPos(x,y: CARDINAL);
+
+PROCEDURE Refresh;
+PROCEDURE Update;
+
+PROCEDURE Ini;
+PROCEDURE Exi;
+
+END CRT.

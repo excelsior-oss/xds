@@ -1,0 +1,12 @@
+-- Конвертор для формата EDIF во внутренее представление
+
+DEFINITION MODULE DI_EDIF;
+
+FROM DI_Types IMPORT ComNo, ModNo, COMPONENT, RAW_DEBUG_INFO, PROCESS_DEBUGINFO_PROC;
+
+PROCEDURE ProcessDebugInfo(com: ComNo; VAR Component: COMPONENT): CARDINAL;
+
+PROCEDURE ReadModules(com: ComNo; VAR Component: COMPONENT): CARDINAL;
+PROCEDURE BuildForMod(modno: ModNo; com: ComNo; VAR Component: COMPONENT);
+
+END DI_EDIF.

@@ -1,0 +1,25 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=xc.chm
+Contents file=xc.hhc
+Default Window=Main
+Default topic=xc.html
+Display compile progress=No
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=Native XDS-x86 User's Guide
+
+[WINDOWS]
+Main="Native XDS-x86 User's Guide","xc.hhc",,"xc000.html",,,,,,0x2520,,0x300e,[30,30,994,708],,,,,,,0
+
+[ALIAS]
+#include "xc.hha"
+
+[MAP]
+
+[FILES]
+xc.html
+..\default.css
+
+[INFOTYPES]
+

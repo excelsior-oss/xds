@@ -1,0 +1,658 @@
+<* M2EXTENSIONS+ *>
+
+DEFINITION MODULE ["StdCall"] CCtlRTL;
+
+FROM WinDef   IMPORT BOOL, UINT, BYTE, DWORD, WCHAR,
+                     WPARAM, LPARAM, LRESULT,
+                     PSTR, PCSTR, PWSTR, PCWSTR,
+                     HWND, HINSTANCE, HICON, HFONT, HCURSOR,
+                     COLORREF, POINT, RECT, PCRECT;
+FROM WinUser  IMPORT MSG, WS_SET, WNDPROC, NMHDR;
+FROM WinBase  IMPORT SYSTEMTIME, PSYSTEMTIME;
+FROM CommCtrl IMPORT HPROPSHEETPAGE, HIMAGELIST, HDITEMA, HDITEMW, HDLAYOUT, HTREEITEM,
+                     PFN_WM_NOTIFY_HANDLER,
+                     LVITEMA, LVFINDINFOA, LVCOLUMNA, LVBKIMAGEA,
+                     LVITEMW, LVFINDINFOW, LVCOLUMNW, LVBKIMAGEW,
+                     LVHITTESTINFO,
+                     TVHITTESTINFO, TVSORTCB,
+                     TVITEMA, TVINSERTSTRUCTA,
+                     TVITEMW, TVINSERTSTRUCTW,
+                     TCITEMA, TCITEMW, TCHITTESTINFO, PFNLVCOMPARE,
+                     MCHITTESTINFO, MONTHDAYSTATE,
+                     PSH_SET, PSWIZB_SET, PSBTN_ENUM, BIT_SET, LVIS_SET, LVNI_SET, LVSIL_ENUM,
+                     LVIR_ENUM, LVA_ENUM, LVSICF_SET, LVS_EX_SET, TVE_SET, TCS_EX_SET,
+                     TVGN_ENUM, MCSC_ENUM, GMR_ENUM, GDTR_SET, PGB_ENUM;
+
+IMPORT SYSTEM;
+
+(*  =============================== *)
+
+
+PROCEDURE HANDLE_WM_NOTIFY ( hwnd : HWND; wParam : WPARAM;
+                             lParam : LPARAM;
+                             fn : PFN_WM_NOTIFY_HANDLER ): LRESULT;
+
+PROCEDURE FORWARD_WM_NOTIFY ( hwnd : HWND; idFrom : INTEGER;
+                              VAR nmhdr : NMHDR; fn : WNDPROC ): LRESULT;
+
+
+(*  ========== Animate ============ *)
+
+PROCEDURE Animate_Create ( hwnd: HWND; id: UINT; dwStyle: WS_SET;
+                           hInstance: HINSTANCE ): HWND;
+
+PROCEDURE Animate_Close ( hwnd: HWND ): BOOL;
+
+PROCEDURE Animate_OpenA ( hwnd: HWND; szName: PSTR (* NIL *) ): BOOL;
+PROCEDURE Animate_OpenW ( hwnd: HWND; szName: PWSTR (* NIL *) ): BOOL;
+
+PROCEDURE Animate_OpenExA ( hwnd: HWND; hinst: HINSTANCE; szName: PSTR (* NIL *) ): BOOL;
+PROCEDURE Animate_OpenExW ( hwnd: HWND; hinst: HINSTANCE; szName: PWSTR (* NIL *) ): BOOL;
+
+PROCEDURE Animate_Play ( hwnd: HWND; wFrom, wTo, cRepeat: UINT ): BOOL;
+
+PROCEDURE Animate_Seek ( hwnd: HWND; wFrame: UINT ): BOOL;
+
+PROCEDURE Animate_Stop ( hwnd: HWND ): BOOL;
+
+
+(*  ============ DateTime ============= *)
+
+PROCEDURE DateTime_GetMonthCal ( hwndDP: HWND ): HWND;
+
+PROCEDURE DateTime_GetMonthCalColor ( hwndDP: HWND; iColor: MCSC_ENUM ): COLORREF;
+
+PROCEDURE DateTime_GetMonthCalFont ( hwndDP: HWND ): HFONT;
+
+PROCEDURE DateTime_GetRange ( hwndDP: HWND; VAR SysTimeArray: ARRAY OF SYSTEMTIME ): GDTR_SET;
+
+PROCEDURE DateTime_GetSystemtime ( hwndDP: HWND; VAR SysTime: SYSTEMTIME ): DWORD;
+
+PROCEDURE DateTime_SetFormatA ( hwndDP: HWND; szFormat: PCSTR (* NIL *) ): BOOL;
+PROCEDURE DateTime_SetFormatW ( hwndDP: HWND; szFormat: PCWSTR (* NIL *) ): BOOL;
+
+PROCEDURE DateTime_SetMonthCalColor ( hwndDP: HWND; iColor: MCSC_ENUM;
+                                      clr: COLORREF ): COLORREF;
+
+PROCEDURE DateTime_SetMonthCalFont ( hwndDP: HWND; hFont: HFONT; fRedraw: BOOL );
+
+PROCEDURE DateTime_SetRange ( hwndDP: HWND; flags: GDTR_SET;
+                              SysTimeArray: ARRAY OF SYSTEMTIME (*!*) ): BOOL;
+
+PROCEDURE DateTime_SetSystemtime ( hwndDP: HWND; flag: DWORD;
+                                   SysTime: SYSTEMTIME (*!*) ): BOOL;
+
+
+(*  ============ Header ============= *)
+
+PROCEDURE Header_CreateDragImage ( hwndHD: HWND; iIndex: INTEGER ): HIMAGELIST;
+
+PROCEDURE Header_DeleteItem ( hwndHD: HWND; iIndex: INTEGER ): BOOL;
+
+PROCEDURE Header_GetImageList ( hwndHD: HWND ): HIMAGELIST;
+
+PROCEDURE Header_GetItemA ( hwndHD: HWND; iIndex: INTEGER; VAR hdi: HDITEMA ): BOOL;
+PROCEDURE Header_GetItemW ( hwndHD: HWND; iIndex: INTEGER; VAR hdi: HDITEMW ): BOOL;
+
+PROCEDURE Header_GetItemCount ( hwndHD: HWND ): INTEGER;
+
+PROCEDURE Header_GetItemRect ( hwndHD: HWND; iIndex: INTEGER; VAR ItemRect: RECT ): BOOL;
+
+PROCEDURE Header_GetOrderArray ( hwndHD: HWND; iCount: INTEGER;
+                                 VAR iArray: ARRAY OF INTEGER ): BOOL;
+
+PROCEDURE Header_GetUnicodeFormat ( hwnd: HWND ): BOOL;
+
+PROCEDURE Header_InsertItemA ( hwndHD: HWND; iIndex: INTEGER; hdi: HDITEMA (*!*) ): INTEGER;
+PROCEDURE Header_InsertItemW ( hwndHD: HWND; iIndex: INTEGER; hdi: HDITEMW (*!*) ): INTEGER;
+
+PROCEDURE Header_Layout ( hwndHD: HWND; VAR layout: HDLAYOUT ): BOOL;
+
+PROCEDURE Header_OrderToIndex ( hwndHD: HWND; iOrder: INTEGER ): INTEGER;
+
+PROCEDURE Header_SetHotDivider ( hwndHD: HWND; flag: BOOL; dwInputValue: DWORD ): INTEGER;
+
+PROCEDURE Header_SetImageList ( hwndHD: HWND; himl: HIMAGELIST ): HIMAGELIST;
+
+PROCEDURE Header_SetItemA ( hwndHD: HWND; iIndex: INTEGER; hdItem: HDITEMA (*!*) ): BOOL;
+PROCEDURE Header_SetItemW ( hwndHD: HWND; iIndex: INTEGER; hdItem: HDITEMW (*!*) ): BOOL;
+
+PROCEDURE Header_SetOrderArray ( hwndHD: HWND; iCount: INTEGER;
+                                 iArray: ARRAY OF INTEGER (*!*) ): BOOL;
+
+PROCEDURE Header_SetUnicodeFormat ( hwnd: HWND; fUnicode: BOOL ): BOOL;
+
+
+(*  ============ ImageList ============= *)
+
+PROCEDURE ImageList_AddIcon ( himl: HIMAGELIST; hicon: HICON ): INTEGER;
+
+PROCEDURE ImageList_ExtractIcon ( hi: HINSTANCE; himl: HIMAGELIST;
+                                  i: INTEGER ): HICON;
+
+PROCEDURE ImageList_LoadBitmapA ( hi: HINSTANCE; pbmp: PCSTR;
+                                  cx, cGrow: INTEGER; crMask: COLORREF ): HIMAGELIST;
+PROCEDURE ImageList_LoadBitmapW ( hi: HINSTANCE; pbmp: PCWSTR;
+                                  cx, cGrow: INTEGER; crMask: COLORREF ): HIMAGELIST;
+
+PROCEDURE ImageList_RemoveAll ( himl: HIMAGELIST ): BOOL;
+
+PROCEDURE INDEXTOOVERLAYMASK ( iOverlay: UINT ): BIT_SET;
+
+
+(*  ============ IP Address ============= *)
+
+PROCEDURE MAKEIPRANGE ( low, high: BYTE ): LPARAM;
+
+PROCEDURE MAKEIPADDRESS ( b1, b2, b3, b4: BYTE ): LPARAM;
+
+PROCEDURE FIRST_IPADDRESS ( lParam: LPARAM ): BYTE;
+
+PROCEDURE SECOND_IPADDRESS ( lParam: LPARAM ): BYTE;
+
+PROCEDURE THIRD_IPADDRESS ( lParam: LPARAM ): BYTE;
+
+PROCEDURE FOURTH_IPADDRESS ( lParam: LPARAM ): BYTE;
+
+(* ====== DRAG LIST CONTROL =========== *)
+
+PROCEDURE rtlLBItemFromPt ( hLB: HWND; pt: POINT; bAutoScroll: BOOL ): INTEGER;
+
+(*  ============ ListView ============= *)
+
+PROCEDURE ListView_ApproximateViewRect ( hwndLV: HWND; cx, cy: INTEGER;
+                                         iCount: INTEGER ): DWORD;
+
+PROCEDURE ListView_Arrange ( hwndLV: HWND; code: LVA_ENUM ): BOOL;
+
+PROCEDURE ListView_CreateDragImage ( hwndLV: HWND; iItem: INTEGER;
+                                     VAR ptUpLeft: POINT ): HIMAGELIST;
+
+PROCEDURE ListView_DeleteAllItems ( hwndLV: HWND ): BOOL;
+
+PROCEDURE ListView_DeleteColumn ( hwndLV: HWND; iCol: INTEGER ): BOOL;
+
+PROCEDURE ListView_DeleteItem ( hwndLV: HWND; iItem: INTEGER ): BOOL;
+
+PROCEDURE ListView_EditLabelA ( hwndLV: HWND; iItem: INTEGER ): HWND;
+PROCEDURE ListView_EditLabelW ( hwndLV: HWND; iItem: INTEGER ): HWND;
+
+PROCEDURE ListView_EnsureVisible ( hwndLV: HWND; iItem: INTEGER; fPartialOK: BOOL ): BOOL;
+
+PROCEDURE ListView_FindItemA ( hwndLV: HWND; iStart: INTEGER; lvfi: LVFINDINFOA (*!*) ): INTEGER;
+PROCEDURE ListView_FindItemW ( hwndLV: HWND; iStart: INTEGER; lvfi: LVFINDINFOW (*!*) ): INTEGER;
+
+PROCEDURE ListView_GetBkColor ( hwndLV: HWND ): COLORREF;
+
+PROCEDURE ListView_GetBkImageA ( hwndLV: HWND; VAR lvbki: LVBKIMAGEA ): BOOL;
+PROCEDURE ListView_GetBkImageW ( hwndLV: HWND; VAR lvbki: LVBKIMAGEW ): BOOL;
+
+PROCEDURE ListView_GetCallbackMask ( hwndLV: HWND ): LVIS_SET;
+
+PROCEDURE ListView_GetCheckState ( hwndLV: HWND; iIndex: UINT ): BOOL;
+
+PROCEDURE ListView_GetColumnA ( hwndLV: HWND; iCol: INTEGER; VAR col: LVCOLUMNA ): BOOL;
+PROCEDURE ListView_GetColumnW ( hwndLV: HWND; iCol: INTEGER; VAR col: LVCOLUMNW ): BOOL;
+
+PROCEDURE ListView_GetColumnOrderArray ( hwndLV: HWND; iCount: INTEGER;
+                                         VAR iArray: ARRAY OF INTEGER ): BOOL;
+
+PROCEDURE ListView_GetColumnWidth ( hwndLV: HWND; iCol: INTEGER ): INTEGER;
+
+PROCEDURE ListView_GetCountPerPage ( hwndLV: HWND ): INTEGER;
+
+PROCEDURE ListView_GetEditControl ( hwndLV: HWND ): HWND;
+
+PROCEDURE ListView_GetExtendedListViewStyle ( hwndLV: HWND ): LVS_EX_SET;
+
+PROCEDURE ListView_GetHeader ( hwndLV: HWND ): HWND;
+
+PROCEDURE ListView_GetHotCursor ( hwndLV: HWND ): HCURSOR;
+
+PROCEDURE ListView_GetHotItem ( hwndLV: HWND ): INTEGER;
+
+PROCEDURE ListView_GetHoverTime ( hwndLV: HWND ): DWORD;
+
+PROCEDURE ListView_GetImageList ( hwndLV: HWND; iImageList: LVSIL_ENUM ): HIMAGELIST;
+
+PROCEDURE ListView_GetISearchStringA ( hwndLV: HWND; szText: PSTR (* NIL *) ): BOOL;
+PROCEDURE ListView_GetISearchStringW ( hwndLV: HWND; szText: PWSTR (* NIL *) ): BOOL;
+
+PROCEDURE ListView_GetItemA ( hwndLV: HWND; VAR item: LVITEMA ): BOOL;
+PROCEDURE ListView_GetItemW ( hwndLV: HWND; VAR item: LVITEMW ): BOOL;
+
+PROCEDURE ListView_GetItemCount ( hwndLV: HWND ): INTEGER;
+
+PROCEDURE ListView_GetItemPosition ( hwndLV: HWND; iItem: INTEGER; VAR pt: POINT ): BOOL;
+
+PROCEDURE ListView_GetItemRect ( hwndLV: HWND; iItem: INTEGER; VAR rc: RECT;
+                                 code: LVIR_ENUM ): BOOL;
+
+PROCEDURE ListView_GetItemSpacing ( hwndLV: HWND; fSmall: BOOL ): DWORD;
+
+PROCEDURE ListView_GetItemState ( hwndLV: HWND; iItem: INTEGER; mask: LVIS_SET ): LVIS_SET;
+
+PROCEDURE ListView_GetItemTextA ( hwndLV: HWND; iItem, iSubItem: INTEGER;
+                                  VAR szText: ARRAY OF CHAR; cchTextMax: INTEGER );
+PROCEDURE ListView_GetItemTextW ( hwndLV: HWND; iItem, iSubItem: INTEGER;
+                                  VAR szText: ARRAY OF WCHAR; cchTextMax: INTEGER );
+
+PROCEDURE ListView_GetNextItem ( hwndLV: HWND; iStart: INTEGER; flags: LVNI_SET ): INTEGER;
+
+PROCEDURE ListView_GetNumberOfWorkAreas ( hwndLV: HWND; VAR WorkAreas: UINT ): BOOL;
+
+PROCEDURE ListView_GetOrigin ( hwndLV: HWND; VAR ptOrg: POINT ): BOOL;
+
+PROCEDURE ListView_GetSelectedCount ( hwndLV: HWND ): UINT;
+
+PROCEDURE ListView_GetSelectionMark ( hwndLV: HWND ): INTEGER;
+
+PROCEDURE ListView_GetStringWidthA ( hwndLV: HWND; szText: ARRAY OF CHAR ): INTEGER;
+PROCEDURE ListView_GetStringWidthW ( hwndLV: HWND; szText: ARRAY OF WCHAR ): INTEGER;
+
+PROCEDURE ListView_GetSubItemRect ( hwndLV: HWND; iItem, iSubItem: INTEGER;
+                                    code: LVIR_ENUM; VAR rc: RECT ): BOOL;
+
+PROCEDURE ListView_GetTextBkColor ( hwndLV: HWND ): COLORREF;
+
+PROCEDURE ListView_GetTextColor ( hwndLV: HWND ): COLORREF;
+
+PROCEDURE ListView_GetToolTips ( hwndLV: HWND ): HWND;
+
+PROCEDURE ListView_GetTopIndex ( hwndLV: HWND ): INTEGER;
+
+PROCEDURE ListView_GetUnicodeFormat ( hwndLV: HWND ): BOOL;
+
+PROCEDURE ListView_GetViewRect ( hwndLV: HWND; VAR rc: RECT ): BOOL;
+
+PROCEDURE ListView_GetWorkAreas ( hwndLV: HWND; nWorkAreas: INTEGER;
+                                  VAR rc: ARRAY OF RECT );
+
+PROCEDURE ListView_HitTest ( hwndLV: HWND; VAR info: LVHITTESTINFO ): INTEGER;
+
+PROCEDURE ListView_InsertColumnA ( hwndLV: HWND; iCol: INTEGER;
+                                   col: LVCOLUMNA (*!*) ): INTEGER;
+PROCEDURE ListView_InsertColumnW ( hwndLV: HWND; iCol: INTEGER;
+                                   col: LVCOLUMNW (*!*) ): INTEGER;
+
+PROCEDURE ListView_InsertItemA ( hwndLV: HWND; item: LVITEMA (*!*) ): INTEGER;
+PROCEDURE ListView_InsertItemW ( hwndLV: HWND; item: LVITEMW (*!*) ): INTEGER;
+
+PROCEDURE ListView_RedrawItems ( hwndLV: HWND; iFirst, iLast: INTEGER ): BOOL;
+
+PROCEDURE ListView_Scroll ( hwndLV: HWND; dx, dy: INTEGER ): BOOL;
+
+PROCEDURE ListView_SetBkColor ( hwndLV: HWND; clrBk: COLORREF ): BOOL;
+
+PROCEDURE ListView_SetBkImageA ( hwndLV: HWND; lvbki: LVBKIMAGEA (*!*) ): BOOL;
+PROCEDURE ListView_SetBkImageW ( hwndLV: HWND; lvbki: LVBKIMAGEW (*!*) ): BOOL;
+
+PROCEDURE ListView_SetCallbackMask ( hwndLV: HWND; mask: LVIS_SET ): BOOL;
+
+PROCEDURE ListView_SetColumnA ( hwndLV: HWND; iCol: INTEGER; col: LVCOLUMNA (*!*) ): BOOL;
+PROCEDURE ListView_SetColumnW ( hwndLV: HWND; iCol: INTEGER; col: LVCOLUMNW (*!*) ): BOOL;
+
+PROCEDURE ListView_SetColumnOrderArray ( hwndLV: HWND; iCount: INTEGER;
+                                         iArray: ARRAY OF INTEGER (*!*) ): BOOL;
+
+PROCEDURE ListView_SetColumnWidth ( hwndLV: HWND; iCol: INTEGER; cx: INTEGER ): BOOL;
+
+PROCEDURE ListView_SetExtendedListViewStyle ( hwndLV: HWND; dwExStyle: LVS_EX_SET ): LVS_EX_SET;
+
+PROCEDURE ListView_SetExtendedListViewStyleEx ( hwndLV: HWND; dwExMask, dwExStyle: LVS_EX_SET ): LVS_EX_SET;
+
+PROCEDURE ListView_SetHotCursor ( hwndLV: HWND; hCursor: HCURSOR ): HCURSOR;
+
+PROCEDURE ListView_SetHotItem ( hwndLV: HWND; iIndex: INTEGER ): INTEGER;
+
+PROCEDURE ListView_SetHoverTime ( hwndLV: HWND; dwHoverTime: DWORD ): DWORD;
+
+PROCEDURE ListView_SetIconSpacing ( hwndLV: HWND; cx, cy: INTEGER ): DWORD;
+
+PROCEDURE ListView_SetImageList ( hwndLV: HWND; himl: HIMAGELIST;
+                                  iImageList: LVSIL_ENUM ): HIMAGELIST;
+
+PROCEDURE ListView_SetItemA ( hwndLV: HWND; item: LVITEMA (*!*) ): BOOL;
+PROCEDURE ListView_SetItemW ( hwndLV: HWND; item: LVITEMW (*!*) ): BOOL;
+
+PROCEDURE ListView_SetItemCount ( hwndLV: HWND; cItems: INTEGER ): BOOL;
+
+PROCEDURE ListView_SetItemCountEx ( hwndLV: HWND; cItems: INTEGER; dwFlags: LVSICF_SET ): BOOL;
+
+PROCEDURE ListView_SetItemPosition ( hwndLV: HWND; iItem: INTEGER; x, y: INTEGER ): BOOL;
+
+PROCEDURE ListView_SetItemPosition32 ( hwndLV: HWND; iItem: INTEGER; x, y: INTEGER );
+
+PROCEDURE ListView_SetItemState ( hwndLV: HWND; iItem: INTEGER; state, mask: LVIS_SET ): BOOL;
+
+PROCEDURE ListView_SetItemTextA ( hwndLV: HWND; iItem, iSubItem: INTEGER; szText: PCSTR (* NIL *) ): BOOL;
+PROCEDURE ListView_SetItemTextW ( hwndLV: HWND; iItem, iSubItem: INTEGER; szText: PCWSTR (* NIL *) ): BOOL;
+
+PROCEDURE ListView_SetSelectionMark ( hwndLV: HWND; iIndex: INTEGER ): INTEGER;
+
+PROCEDURE ListView_SetTextBkColor ( hwndLV: HWND; clrText: COLORREF ): BOOL;
+
+PROCEDURE ListView_SetTextColor ( hwndLV: HWND; clrText: COLORREF ): BOOL;
+
+PROCEDURE ListView_SetToolTips ( hwndLV: HWND; hwndToolTip: HWND ): HWND;
+
+PROCEDURE ListView_SetUnicodeFormat ( hwndLV: HWND; fUnicode: BOOL ): BOOL;
+
+PROCEDURE ListView_SetWorkAreas ( hwndLV: HWND; nWorkAreas: INTEGER; prc: PCRECT (* NIL *) );
+
+PROCEDURE ListView_SortItems ( hwndLV: HWND; pfnCompare: PFNLVCOMPARE;
+                               lParamSort: LPARAM ): BOOL;
+
+PROCEDURE ListView_SubItemHitTest ( hwndLV: HWND; VAR Info: LVHITTESTINFO ): INTEGER;
+
+PROCEDURE ListView_Update ( hwndLV: HWND; iItem: INTEGER ): BOOL;
+
+PROCEDURE INDEXTOSTATEIMAGEMASK ( i: UINT ): BIT_SET;
+
+
+(*  ============ MonthCal ============= *)
+
+PROCEDURE MonthCal_GetColor ( hwndMC: HWND; iColor: MCSC_ENUM ): COLORREF;
+
+PROCEDURE MonthCal_GetCurSel ( hwndMC: HWND; VAR SysTime: SYSTEMTIME ): BOOL;
+
+PROCEDURE MonthCal_GetFirstDayOfWeek ( hwndMC: HWND ): DWORD;
+
+PROCEDURE MonthCal_GetMaxSelCount ( hwndMC: HWND ): DWORD;
+
+PROCEDURE MonthCal_GetMaxTodayWidth ( hwndMC: HWND ): DWORD;
+
+PROCEDURE MonthCal_GetMinReqRect ( hwndMC: HWND; VAR RectInfo: RECT ): BOOL;
+
+PROCEDURE MonthCal_GetMonthDelta ( hwndMC: HWND ): INTEGER;
+
+PROCEDURE MonthCal_GetMonthRange ( hwndMC: HWND; dwFlag: GMR_ENUM;
+                                   rgSysTimeArray: PSYSTEMTIME (* NIL *) ): DWORD;
+
+PROCEDURE MonthCal_GetRange ( hwndMC: HWND; VAR rgSysTimeArray: ARRAY OF SYSTEMTIME ): GDTR_SET;
+
+PROCEDURE MonthCal_GetSelRange ( hwndMC: HWND; VAR rgSysTimeArray: ARRAY OF SYSTEMTIME ): BOOL;
+
+PROCEDURE MonthCal_GetToday ( hwndMC: HWND; VAR Today: SYSTEMTIME ): BOOL;
+
+PROCEDURE MonthCal_GetUnicodeFormat ( hwndMC: HWND ): BOOL;
+
+PROCEDURE MonthCal_HitTest ( hwndMC: HWND; VAR MCHitTest: MCHITTESTINFO ): DWORD;
+
+PROCEDURE MonthCal_SetColor ( hwndMC: HWND; iColor: MCSC_ENUM; clr: COLORREF ): COLORREF;
+
+PROCEDURE MonthCal_SetCurSel ( hwndMC: HWND; SysTime: SYSTEMTIME (*!*) ): BOOL;
+
+PROCEDURE MonthCal_SetDayState ( hwndMC: HWND; iMonths: INTEGER;
+                                 DayStateArray: ARRAY OF MONTHDAYSTATE (*!*) ): BOOL;
+
+PROCEDURE MonthCal_SetFirstDayOfWeek ( hwndMC: HWND; iDay: INTEGER ): DWORD;
+
+PROCEDURE MonthCal_SetMaxSelCount ( hwndMC: HWND; iMax: UINT ): BOOL;
+
+PROCEDURE MonthCal_SetMonthDelta ( hwndMC: HWND; iDelta: INTEGER ): INTEGER;
+
+PROCEDURE MonthCal_SetRange ( hwndMC: HWND; fWhichLimit: GDTR_SET;
+                              rgSysTimeArray: ARRAY OF SYSTEMTIME (*!*) ): BOOL;
+
+PROCEDURE MonthCal_SetSelRange ( hwndMC: HWND; rgSysTimeArray: ARRAY OF SYSTEMTIME (*!*) ): BOOL;
+
+PROCEDURE MonthCal_SetToday ( hwndMC: HWND; pSysTime: PSYSTEMTIME (* NIL *) );
+
+PROCEDURE MonthCal_SetUnicodeFormat ( hwndMC: HWND; fUnicode: BOOL ): BOOL;
+
+
+(*  ============ Pager ============= *)
+
+PROCEDURE Pager_ForwardMouse ( hwndPager: HWND; bForward: BOOL );
+
+PROCEDURE Pager_GetBkColor ( hwndPager: HWND ): COLORREF;
+
+PROCEDURE Pager_GetBorder ( hwndPager: HWND ): INTEGER;
+
+PROCEDURE Pager_GetButtonSize ( hwndPager: HWND ): INTEGER;
+
+PROCEDURE Pager_GetButtonState ( hwndPager: HWND; iButton: PGB_ENUM ): DWORD;
+
+PROCEDURE Pager_GetDropTarget ( hwndPager: HWND; VAR DropTarget: SYSTEM.ADDRESS );
+
+PROCEDURE Pager_GetPos ( hwndPager: HWND ): INTEGER;
+
+PROCEDURE Pager_RecalcSize ( hwndPager: HWND );
+
+PROCEDURE Pager_SetBkColor ( hwndPager: HWND; clrBk: COLORREF ): COLORREF;
+
+PROCEDURE Pager_SetBorder ( hwndPager: HWND; iBorder: INTEGER ): INTEGER;
+
+PROCEDURE Pager_SetButtonSize ( hwndPager: HWND; iButtonSize: INTEGER ): INTEGER;
+
+PROCEDURE Pager_SetChild ( hwndPager: HWND; hwndChild: HWND );
+
+PROCEDURE Pager_SetPos ( hwndPager: HWND; iPos: INTEGER ): INTEGER;
+
+
+(*  ============ PropSheet ============ *)
+
+PROCEDURE PropSheet_AddPage ( hPropSheetDlg: HWND; hpage: HPROPSHEETPAGE ): BOOL;
+
+PROCEDURE PropSheet_Apply ( hPropSheetDlg: HWND ): BOOL;
+
+PROCEDURE PropSheet_CancelToClose ( hPropSheetDlg: HWND );
+
+PROCEDURE PropSheet_Changed ( hPropSheetDlg: HWND; hwndPage: HWND ): BOOL;
+
+PROCEDURE PropSheet_GetCurrentPageHwnd ( hPropSheetDlg: HWND ): HWND;
+
+PROCEDURE PropSheet_GetTabControl ( hPropSheetDlg: HWND ): HWND;
+
+PROCEDURE PropSheet_IsDialogMessage ( hPropSheetDlg: HWND; VAR Msg: MSG ): BOOL;
+
+PROCEDURE PropSheet_PressButton ( hPropSheetDlg: HWND; iButton: PSBTN_ENUM ): BOOL;
+
+PROCEDURE PropSheet_QuerySiblings ( hPropSheetDlg: HWND; wParam: WPARAM; lParam: LPARAM ): INTEGER;
+
+PROCEDURE PropSheet_RebootSystem ( hPropSheetDlg: HWND );
+
+PROCEDURE PropSheet_RemovePage ( hPropSheetDlg: HWND; index: INTEGER; hpage: HPROPSHEETPAGE );
+
+PROCEDURE PropSheet_RestartWindows ( hPropSheetDlg: HWND );
+
+PROCEDURE PropSheet_SetCurSel ( hPropSheetDlg: HWND; hpage: HPROPSHEETPAGE; index: INTEGER ): BOOL;
+
+PROCEDURE PropSheet_SetCurSelByID ( hPropSheetDlg: HWND; id: INTEGER ): BOOL;
+
+PROCEDURE PropSheet_SetFinishTextA ( hPropSheetDlg: HWND; szText: PCSTR (* NIL *) );
+PROCEDURE PropSheet_SetFinishTextW ( hPropSheetDlg: HWND; szText: PCWSTR (* NIL *) );
+
+PROCEDURE PropSheet_SetTitleA ( hPropSheetDlg: HWND; dwStyle: PSH_SET; szText: PCSTR (* NIL *) );
+PROCEDURE PropSheet_SetTitleW ( hPropSheetDlg: HWND; dwStyle: PSH_SET; szText: PCWSTR (* NIL *) );
+
+PROCEDURE PropSheet_SetWizButtons ( hPropSheetDlg: HWND; dwFlags: PSWIZB_SET );
+
+PROCEDURE PropSheet_UnChanged ( hPropSheetDlg: HWND; hwndPage: HWND );
+
+
+(*  ============ TabCtrl ============= *)
+
+PROCEDURE TabCtrl_AdjustRect ( hwndTab: HWND; fLarger: BOOL; VAR rc: RECT );
+
+PROCEDURE TabCtrl_DeleteAllItems ( hwndTab: HWND ): BOOL;
+
+PROCEDURE TabCtrl_DeleteItem ( hwndTab: HWND; iItem: INTEGER ): BOOL;
+
+PROCEDURE TabCtrl_DeselectAll ( hwndTab: HWND; fExcludeFocus: BOOL );
+
+PROCEDURE TabCtrl_GetCurFocus ( hwndTab: HWND ): INTEGER;
+
+PROCEDURE TabCtrl_GetCurSel ( hwndTab: HWND ): INTEGER;
+
+PROCEDURE TabCtrl_GetExtendedStyle ( hwndTab: HWND ): TCS_EX_SET;
+
+PROCEDURE TabCtrl_GetImageList ( hwndTab: HWND ): HIMAGELIST;
+
+PROCEDURE TabCtrl_GetItemA ( hwndTab: HWND; iItem: INTEGER; VAR item: TCITEMA ): BOOL;
+PROCEDURE TabCtrl_GetItemW ( hwndTab: HWND; iItem: INTEGER; VAR item: TCITEMW ): BOOL;
+
+PROCEDURE TabCtrl_GetItemCount ( hwndTab: HWND ): INTEGER;
+
+PROCEDURE TabCtrl_GetItemRect ( hwndTab: HWND; iItem: INTEGER; VAR rc: RECT ): BOOL;
+
+PROCEDURE TabCtrl_GetRowCount ( hwndTab: HWND ): INTEGER;
+
+PROCEDURE TabCtrl_GetToolTips ( hwndTab: HWND ): HWND;
+
+PROCEDURE TabCtrl_GetUnicodeFormat ( hwndTab: HWND ): BOOL;
+
+PROCEDURE TabCtrl_HighlightItem ( hwndTab: HWND; iItem: INTEGER; fHighlight: BOOL ): BOOL;
+
+PROCEDURE TabCtrl_HitTest ( hwndTab: HWND; VAR info: TCHITTESTINFO ): INTEGER;
+
+PROCEDURE TabCtrl_InsertItemA ( hwndTab: HWND; iItem: INTEGER; item: TCITEMA (*!*) ): INTEGER;
+PROCEDURE TabCtrl_InsertItemW ( hwndTab: HWND; iItem: INTEGER; item: TCITEMW (*!*) ): INTEGER;
+
+PROCEDURE TabCtrl_RemoveImage ( hwndTab: HWND; iImage: INTEGER );
+
+PROCEDURE TabCtrl_SetCurFocus ( hwndTab: HWND; iItem: INTEGER );
+
+PROCEDURE TabCtrl_SetCurSel ( hwndTab: HWND; iItem: INTEGER ): INTEGER;
+
+PROCEDURE TabCtrl_SetExtendedStyle ( hwndTab: HWND; dwExStyle: TCS_EX_SET ): TCS_EX_SET;
+
+PROCEDURE TabCtrl_SetImageList ( hwndTab: HWND; himl: HIMAGELIST ): HIMAGELIST;
+
+PROCEDURE TabCtrl_SetItemA ( hwndTab: HWND; iItem: INTEGER; item: TCITEMA (*!*) ): BOOL;
+PROCEDURE TabCtrl_SetItemW ( hwndTab: HWND; iItem: INTEGER; item: TCITEMW (*!*) ): BOOL;
+
+PROCEDURE TabCtrl_SetItemExtra ( hwndTab: HWND; cb: INTEGER ): BOOL;
+
+PROCEDURE TabCtrl_SetItemSize ( hwndTab: HWND; cx, cy: INTEGER ): DWORD;
+
+PROCEDURE TabCtrl_SetMinTabWidth ( hwndTab: HWND; cx: INTEGER ): INTEGER;
+
+PROCEDURE TabCtrl_SetPadding ( hwndTab: HWND; cx, cy: INTEGER );
+
+PROCEDURE TabCtrl_SetToolTips ( hwndTab: HWND; hwndTT: HWND );
+
+PROCEDURE TabCtrl_SetUnicodeFormat ( hwndTab: HWND; fUnicode: BOOL ): BOOL;
+
+
+(*  ============ TreeView ============= *)
+
+PROCEDURE TreeView_CreateDragImage ( hwndTV: HWND; hitem: HTREEITEM ): HIMAGELIST;
+
+PROCEDURE TreeView_DeleteAllItems ( hwndTV: HWND ): BOOL;
+
+PROCEDURE TreeView_DeleteItem ( hwndTV: HWND; hitem: HTREEITEM ): BOOL;
+
+PROCEDURE TreeView_EditLabelA ( hwndTV: HWND; hitem: HTREEITEM ): HWND;
+PROCEDURE TreeView_EditLabelW ( hwndTV: HWND; hitem: HTREEITEM ): HWND;
+
+PROCEDURE TreeView_EndEditLabelNow ( hwndTV: HWND; fCancel: BOOL ): BOOL;
+
+PROCEDURE TreeView_EnsureVisible ( hwndTV: HWND; hitem: HTREEITEM ): BOOL;
+
+PROCEDURE TreeView_Expand ( hwndTV: HWND; hItem: HTREEITEM; flag: TVE_SET ): BOOL;
+
+PROCEDURE TreeView_GetBkColor ( hwndTV: HWND ): COLORREF;
+
+PROCEDURE TreeView_GetChild ( hwndTV: HWND; hitem: HTREEITEM ): HTREEITEM;
+
+PROCEDURE TreeView_GetCount ( hwndTV: HWND ): UINT;
+
+PROCEDURE TreeView_GetDropHilight ( hwndTV: HWND ): HTREEITEM;
+
+PROCEDURE TreeView_GetEditControl ( hwndTV: HWND ): HWND;
+
+PROCEDURE TreeView_GetFirstVisible ( hwndTV: HWND ): HTREEITEM;
+
+PROCEDURE TreeView_GetImageList ( hwndTV: HWND; iImage: INTEGER ): HIMAGELIST;
+
+PROCEDURE TreeView_GetIndent ( hwndTV: HWND ): UINT;
+
+PROCEDURE TreeView_GetInsertMarkColor ( hwndTV: HWND ): COLORREF;
+
+PROCEDURE TreeView_GetISearchStringA ( hwndTV: HWND; szText: PSTR (* NIL *) ): BOOL;
+PROCEDURE TreeView_GetISearchStringW ( hwndTV: HWND; szText: PWSTR (* NIL *) ): BOOL;
+
+PROCEDURE TreeView_GetItemA ( hwndTV: HWND; VAR item: TVITEMA ): BOOL;
+PROCEDURE TreeView_GetItemW ( hwndTV: HWND; VAR item: TVITEMW ): BOOL;
+
+PROCEDURE TreeView_GetItemHeight ( hwndTV: HWND ): INTEGER;
+
+PROCEDURE TreeView_GetItemRect ( hwndTV: HWND; hitem: HTREEITEM; VAR rc: RECT;
+                                 fItemRect: BOOL ): BOOL;
+
+PROCEDURE TreeView_GetLastVisible ( hwndTV: HWND ): HTREEITEM;
+
+PROCEDURE TreeView_GetNextItem ( hwndTV: HWND; hitem: HTREEITEM;
+                                 flag: TVGN_ENUM ): HTREEITEM;
+
+PROCEDURE TreeView_GetNextSibling ( hwndTV: HWND; hitem: HTREEITEM ): HTREEITEM;
+
+PROCEDURE TreeView_GetNextVisible ( hwndTV: HWND; hitem: HTREEITEM ): HTREEITEM;
+
+PROCEDURE TreeView_GetParent ( hwndTV: HWND; hitem: HTREEITEM ): HTREEITEM;
+
+PROCEDURE TreeView_GetPrevSibling ( hwndTV: HWND; hitem: HTREEITEM ): HTREEITEM;
+
+PROCEDURE TreeView_GetPrevVisible ( hwndTV: HWND; hitem: HTREEITEM ): HTREEITEM;
+
+PROCEDURE TreeView_GetRoot ( hwndTV: HWND ): HTREEITEM;
+
+PROCEDURE TreeView_GetScrollTime ( hwndTV: HWND ): UINT;
+
+PROCEDURE TreeView_GetSelection ( hwndTV: HWND ): HTREEITEM;
+
+PROCEDURE TreeView_GetTextColor ( hwndTV: HWND ): COLORREF;
+
+PROCEDURE TreeView_GetToolTips ( hwndTV: HWND ): HWND;
+
+PROCEDURE TreeView_GetUnicodeFormat ( hwndTV: HWND ): BOOL;
+
+PROCEDURE TreeView_GetVisibleCount ( hwndTV: HWND ): UINT;
+
+PROCEDURE TreeView_HitTest ( hwndTV: HWND; VAR ht: TVHITTESTINFO ): HTREEITEM;
+
+PROCEDURE TreeView_InsertItemA ( hwndTV: HWND; is: TVINSERTSTRUCTA (*!*) ): HTREEITEM;
+PROCEDURE TreeView_InsertItemW ( hwndTV: HWND; is: TVINSERTSTRUCTW (*!*) ): HTREEITEM;
+
+PROCEDURE TreeView_Select ( hwndTV: HWND; hitem: HTREEITEM; flag: TVGN_ENUM ): BOOL;
+
+PROCEDURE TreeView_SelectDropTarget ( hwndTV: HWND; hitem: HTREEITEM ): BOOL;
+
+PROCEDURE TreeView_SelectItem ( hwndTV: HWND; hitem: HTREEITEM ): BOOL;
+
+PROCEDURE TreeView_SelectSetFirstVisible ( hwndTV: HWND; hitem: HTREEITEM ): BOOL;
+
+PROCEDURE TreeView_SetBkColor ( hwndTV: HWND; clrBk: COLORREF ): COLORREF;
+
+PROCEDURE TreeView_SetImageList ( hwndTV: HWND; himl: HIMAGELIST; iImage: INTEGER ): HIMAGELIST;
+
+PROCEDURE TreeView_SetIndent ( hwndTV: HWND; indent: INTEGER ): BOOL;
+
+PROCEDURE TreeView_SetInsertMark ( hwndTV: HWND; htiInsert: HTREEITEM;
+                                   fAfter: BOOL ): BOOL;
+
+PROCEDURE TreeView_SetInsertMarkColor ( hwndTV: HWND; clrInsertMark: COLORREF ): COLORREF;
+
+PROCEDURE TreeView_SetItemA ( hwndTV: HWND; item: TVITEMA (*!*) ): BOOL;
+PROCEDURE TreeView_SetItemW ( hwndTV: HWND; item: TVITEMW (*!*) ): BOOL;
+
+PROCEDURE TreeView_SetItemHeight ( hwndTV: HWND; cyItem: INTEGER ): INTEGER;
+
+PROCEDURE TreeView_SetScrollTime ( hwndTV: HWND; uMaxScrollTime: UINT ): UINT;
+
+PROCEDURE TreeView_SetTextColor ( hwndTV: HWND; clrText: COLORREF ): COLORREF;
+
+PROCEDURE TreeView_SetToolTips ( hwndTV: HWND; hwndTooltip: HWND ): HWND;
+
+PROCEDURE TreeView_SetUnicodeFormat ( hwndTV: HWND; fUnicode: BOOL ): BOOL;
+
+PROCEDURE TreeView_SortChildren ( hwndTV: HWND; hitem: HTREEITEM;
+                                  fRecurse: BOOL ): BOOL;
+
+PROCEDURE TreeView_SortChildrenCB ( hwndTV: HWND; sort: TVSORTCB (*!*);
+                                    fRecurse: BOOL ): BOOL;
+
+
+END CCtlRTL.

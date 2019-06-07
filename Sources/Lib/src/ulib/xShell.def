@@ -1,0 +1,76 @@
+(** Copyright (c) 1996 xTech Ltd, Russia. All Rights Reserved. *)
+(** o2/m2 development system v2.x: shell interface *)
+
+DEFINITION MODULE xShell;
+
+PROCEDURE Start () : BOOLEAN;
+  (*   Start shell interface: TRUE - done   *)
+
+PROCEDURE Finish;
+  (*  Finish shell interface *)
+
+PROCEDURE String (s: ARRAY OF CHAR);
+  (*  Send the string to output window *)
+
+PROCEDURE Caption (s: ARRAY OF CHAR);
+  (*  Send global caption (for example, "Making project xxx") *)
+
+CONST                 (*  Shell error types  *)
+  MSG_TEXT    = 'T';  (* do not display line/col and do not jump to it       *)
+  MSG_NOTICE  = 'N';  (* display line/col and jump, but don't count as error *)
+  MSG_WARNING = 'W';  (* warning, it does not affect results of compiling    *)
+  MSG_ERROR   = 'E';  (* error                                               *)
+  MSG_SEVERE  = 'S';  (* fault - makes further compilation impossible        *)
+
+  (*  Send a message "s" with number "no" in file "fname", line "y", column "x",
+      error type "type".
+      File name or message body can be empty strings.
+      If file name is not empty, it should contain ABSOLUTE path.
+  *)
+PROCEDURE Error (type: CHAR;
+                   no: INTEGER;
+                 x, y: INTEGER;
+             fname, s: ARRAY OF CHAR);
+
+PROCEDURE ErrorIC (type: CHAR;
+                   no: INTEGER;
+                 x, y: INTEGER;
+             fname, s,
+                   ic: ARRAY OF CHAR);
+
+PROCEDURE Comment (s: ARRAY OF CHAR);
+  (*  Send current caption (for example, "Compiling xxx.mod"
+      or "Linking xxx.exe")
+  *)
+
+PROCEDURE StartJob (s: ARRAY OF CHAR; progress_limit: INTEGER);
+  (*  Start a job and draw progress indicator;
+      progress_limit - maximal value of progress indicator
+      comment - string to be drawn to the left of progress indicator
+  *)
+
+PROCEDURE Progress (comment_progress, progress: INTEGER);
+  (*  Move progress indicator and increase the number in the comment.
+      When comment_progress and progress are non-negative, they are treated
+      as offsets to current values.
+      Otherwise, their absolute values are treated as new values.
+  *)
+
+PROCEDURE StartFileList;
+  (*  Start output a list of files in a project *)
+
+PROCEDURE AppendFile (fullname: ARRAY OF CHAR);
+  (*  Append a file to a project *)
+
+PROCEDURE EndFileList;
+  (*  Finish output a list of files in a project (so that the shell knows
+      that the list is OK, compiler hadn't died during outputting)
+  *)
+
+PROCEDURE TurnSortingOn;
+  (*  Call that procedure to turn on errors sorting *)
+
+PROCEDURE TurnSortingOff;
+  (*  Call that procedure to turn off errors sorting *)
+
+END xShell.

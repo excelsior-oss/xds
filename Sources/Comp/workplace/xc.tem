@@ -1,0 +1,168 @@
+!if not defined multithread then
+  !new multithread-
+!end
+!if not defined gui then
+  !new gui-
+!end
+!if not defined libname then
+  !new libname=
+!end
+!if not defined genlib then
+  !new genlib-
+!elsif genlib and (libname="") then
+  !if project#"" then
+    !set libname = $(project)
+  !else
+    !set libname = default
+  !end
+!end
+!if not defined dllname then
+  !new dllname=
+!end
+!if not defined gendll then
+  !new gendll-
+!elsif gendll and (dllname="") then
+  !if project#"" then
+    !set dllname = $(project)
+  !else
+    !set dllname = default
+  !end
+!end
+!if not defined exename then
+  !new exename=
+!end
+!if not genlib and not gendll and (exename="") and (project#"") then
+  !set exename = $(project)
+!end
+!if not defined linker then
+  !new linker=xds
+!end
+!if (linker = "xds") and not genlib then
+  !set link = "xlink @%s",mkfname#mkfext
+  !if (defined __XDS_SHELL__) and __XDS_SHELL__ then
+    ! "/shell\n"
+  !end
+  !if gui then
+    ! "/sys=W\n"
+  !else
+    ! "/sys=C\n"
+  !end
+  !if gendebug or genhistory or lineno then
+    ! "/debug\n"
+  !end
+  !if defined stacklimit then
+    ! "/stack=%s\n",stacklimit;
+  !else
+    /stack=128K
+  !end
+  !if gendll then
+    ! "/name=%s\n",dllname#>dllext
+    ! "/dll"
+    ! { edf : "=%s",#}
+    ! "\n"
+  !else
+    !if exename#"" then
+      ! "/name=%s\n",exename#>exeext
+    !else
+      ! { main : "/name=%s\n",#>exeext }
+    !end
+  !end
+  !if defined tcsmodule then
+    ! "%s\n",tcsmodule#>objext
+  !end
+  ! { main imp oberon : "%s\n",#>objext }
+  !if gendll then
+    ! "%s\n","xstartd"#libext
+  !else
+    ! "%s\n","xstart"#libext 
+  !end
+  !if usedll then
+    !if multithread then
+      ! "%s\n","xds25mi"#"lib"
+      !if defined topspeed and topspeed then
+        ! "%s\n","xts25mi"#"lib"
+      !end
+    !else
+      ! "%s\n","xds25i"#"lib"
+      !if defined topspeed and topspeed then
+        ! "%s\n","xts25i"#"lib"
+      !end
+    !end
+  !else
+    !if multithread then
+      ! "%s\n","libxdsmt"#"lib"
+      !if defined topspeed and topspeed then
+        ! "%s\n","libtsmt"#"lib"
+      !end
+    !else
+      ! "%s\n","libxds"#"lib"
+      !if defined topspeed and topspeed then
+        ! "%s\n","libts"#"lib"
+      !end
+    !end
+  !end
+  ! "%s\n","import32"#"lib"
+  ! { lib : "%s\n",# }
+  ! { res : "%s\n",# }
+!elsif (linker = "xds") and genlib then
+  !set link = "xlib /new /nobak %s @%s",libname#>libext,mkfname#mkfext
+  ! { imp oberon : "+%s\n",#>objext }
+!elsif linker = "watcom" then
+  !set link = "wlink @%s",mkfname#mkfext
+  !if gendll then
+    ! "form WINDOWS NT dll initinstance terminstance\n"
+    ! "segment type DATA NONSHARED\n"
+  !end
+  !if gui then
+    ! "runtime windows\n"
+  !end
+  ! "op case\n"
+  ! "op el\n"
+  !if defined stacklimit then
+    ! "op stack=%s\n",stacklimit
+  !else
+    ! "op stack=32768\n"
+  !end
+  !if lineno or gendebug or genhistory then
+    ! "debug codeview\n"
+  !end
+  ! { main imp oberon : "file %s\n",#>objext }
+  !if gendll then
+    !if not defined dllname then
+       !if project="" then
+         ! new dllname = noname00  
+       !else
+         ! new dllname = $(project)
+       !end
+    !end
+    ! "name %s\n",dllname#>dllext
+  !else
+    !if project="" then
+      ! { main : "name %s\n",#>exeext }
+    !else
+      ! "name %s\n",project#>exeext
+    !end
+  !end
+  !if gendll then
+    ! "lib %s\n","xstartd"#"lib"
+  !else
+    ! "lib %s\n","xstart"#"lib"
+  !end
+  !if usedll then
+    !if multithread then
+      ! "lib %s\n","xds25mi"#"lib"
+    !else
+      ! "lib %s\n","xds25i"#"lib"
+    !end
+  !else 
+    !if multithread then
+      ! "lib %s\n","libxdsmt"#"lib"
+    !else
+      ! "lib %s\n","libxds"#"lib"
+    !end
+  !end
+  ! "lib %s\n","import32"#"lib"
+  ! { lib : "lib %s\n",# }
+!else
+  !set link =
+!end

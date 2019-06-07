@@ -1,0 +1,37 @@
+DEFINITION MODULE PrfBuild;
+
+IMPORT kt := KrnTypes;
+IMPORT dt := DI_Types;
+IMPORT pt := PrfTypes;
+
+
+VAR
+  TableComps      : pt.COMPS;
+  TableSnapshots  : pt.SNAPSHOTS;
+  TableMemUsed    : pt.MEM_USED_STR;
+  MemTraceResults : pt.MEM_TRACE_RESULT;
+  TableCProfile   : pt.TMODULES;
+  CProfileTime    : pt.TIME;
+  ProfMode        : pt.PROF_MODE;
+
+
+
+PROCEDURE AddTableComp (begin, end: kt.ADDRESS; name: ARRAY OF CHAR; index: CARDINAL);
+
+PROCEDURE AddTableSnapshot (snapshot: pt.SNAPSHOT);
+
+PROCEDURE AddTableMemUsed (mem_used: pt.MEM_USED);
+
+
+PROCEDURE GetInternalIndex (inx: dt.INDEX): dt.INDEX;
+
+
+PROCEDURE WriteProtocol (VAR name: ARRAY OF CHAR; util: pt.UTILITY): INTEGER;
+
+PROCEDURE ReadProtocol (name: ARRAY OF CHAR; VAR util: pt.UTILITY): INTEGER;
+
+
+PROCEDURE ClearDebugInfo;
+
+
+END PrfBuild.

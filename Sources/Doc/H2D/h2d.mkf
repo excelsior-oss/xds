@@ -1,0 +1,13 @@
+TARGET = h2d
+SRCDIR = src
+
+SOURCE = $(SRCDIR)\h2d.tex $(SRCDIR)\intro.tex $(SRCDIR)\config.tex \
+	 $(SRCDIR)\options.tex $(SRCDIR)\project.tex $(SRCDIR)\rules.tex \
+	 $(SRCDIR)\start.tex $(SRCDIR)\using.tex \
+	 $(SRCDIR)\body.tex $(SRCDIR)\preamble.tex
+
+!if "$(TARGET_FMT)" == ""
+TARGET_FMT = pdf
+!endif
+
+!include ..\Common\$(TARGET_FMT).inc

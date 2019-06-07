@@ -1,0 +1,160 @@
+advance		adds to counter
+alph		lower case letters for numerals
+appendix	start of an appendix
+arabic		arabic numerals
+arrow		custom
+baselineskip	set space between paragraphs
+begin		start new environment
+bf		bold type style
+bibitem		citation
+bigskip		standard vertical space
+bin		?
+BNFsize		custom
+caption		caption
+cfg		custom
+chapter		chapter (heading level 0)
+char		?
+cite		citation
+Code		custom
+commentfalse	custom
+compactfalse	custom
+copyright	copyright sign
+documentstyle	document style
+else		contitional
+em		emphasis (roman<->italic)
+end		environment end
+Example		custom
+Examples	custom
+extlib		?
+extracolsep	?
+f		?
+fi		conditional
+fill		? skip
+footnote	footnote
+footnotesize	set footnote-like font size
+Frame		custom
+framebox	put frame around text
+FuncArg		custom
+FuncFun		custom
+FuncName	custom
+FuncRes		custom
+gencodetrue	custom
+geq		greater or equal char
+havetowrite	custom
+header		?
+Header		custom
+hfill		\hspace\fill
+hline		?
+hspace		leave space
+Huge		largest font size
+if		conditional statement
+ifcomment	custom
+ifcompact	custom
+ifgenc		custom
+ifgencode	custom
+ifgeni		custom
+ifmac		custom
+ifmsdos		custom
+ifunix		custom
+ifwinnt		custom
+include		include file
+indent		force paragraph indent
+index		index entry
+inline		?
+input		include file
+item		list item
+kill		new line of table
+kwd		custom
+label		create xref label
+Large		set font size
+large		set font size
+ldots		?
+left		grow delimiter
+leq		less or equal char
+lib		?
+LIB		?
+lindex		custom
+linebreak	linebreaking control
+listoftables	list of tables
+mactrue		custom
+maddonly	custom
+makeindex	make index
+mbox		indivisible box
+mextonly	custom
+msdostrue	custom
+msg		custom
+mt		custom
+multicolumn	multicolumn text
+n		?
+neq		not equal char
+newcommand	create new command
+newif		create new condition
+newlength	?
+noindent	suppress paragraph indent
+nolinebreak	linebreaking control
+nopagebreak     pagebreaking control
+NOT		custom
+oextonly	custom
+onumextonly	custom
+Operand		custom
+Operator	custom
+ot		custom
+pagebreak	pagebreaking control
+pageref		page reference
+paragraph	paragraph (heading level 4)
+pi		pi
+printindex	?
+ProcArg		custom
+ProcFun		custom
+ProcName	custom
+r		?
+raggedbottom	disable vertical space adjustment
+red		?
+ref		label reference
+renewcommand	redefine existing command
+ResType         custom
+right		grow delimiter
+rm		roman type style
+section		section (heading level 1)
+Seealso		custom
+setcounter	set the value of a counter
+settowidth	set the length register to he width of a given text
+sl		slanted type style
+sloppy		allow large spaces between words
+small		set font size
+sqrt		square root
+subsection	subsection (heading level 2)
+subset		subset char
+subseteq	subset or equal char
+subsubsection	subsubsection (heading level 3)
+supseteq        superset or equal char
+surd		?
+Sym		?
+sym		?
+Sym		?
+SYM		?
+symantec	custom
+t		?
+tableofcontents	table of contents
+TError		?
+test		?
+textheight	set body text height
+textwidth	set body text width
+theenumi	set enum label style
+thispagestyle	change style for this page only
+times		?
+tiny		smallest font size
+topskip		page layout parameter
+tt		typewriter type style
+unixtrue	custom
+verb		inline verbatim text
+vfill		vertical fill
+watcom		custom
+winnttrue	custom
+xc		custom
+XC		custom
+xds		custom
+XDS		custom
+Xrf		custom
+xtech		custom
+xyz		custom

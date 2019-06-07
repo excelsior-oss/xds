@@ -1,0 +1,506 @@
+TESTPREFIX "whet"
+
+STDOUT "<.std_out.>"
+
+TEMPLATE EXTENSION "mod"
+"
+<.ref_aligned.>
+<.procinline.>
+<* IF __GEN_X86__ THEN *>
+  <*+NOPTRALIAS*>
+  <*-SPACE*>
+  <*-GENHISTORY*>
+  <*+DOREORDER*>
+<* ELSIF __GEN_MIPS__ THEN *>
+  <*IF NOT GHS THEN*> 
+    This module can be used only with GHS+ 
+  <* END *>
+<* END *>
+<* ALIGNMENT='4'*>
+<*+M2EXTENSIONS*>
+<*+M2ADDTYPES*>
+<*-CHECKINDEX*>
+<*-CHECKRANGE*>
+<*-CHECKNIL*>
+<*-IOVERFLOW*>
+<*-COVERFLOW*>
+
+MODULE <.name.>;
+FROM Printf IMPORT printf;
+IMPORT SysClock;
+FROM SYSTEM IMPORT CAST;
+
+(*
+ * These routines are provided for use by ACM SIGAda PIWG for making
+ * measurements. These routines are copyrighted and may only be used for
+ * performance measurements. These math routines must not be distributed
+ * without this notice. No permission is granted to any party to modify,
+ * to redistribute, to sell, to give away, or to otherwise use or
+ * transmit these math routines without express written permission from
+ * Westinghous Electric Corporation, c/o Jon Squire, P.O. Box 746 MS1615,
+ * Baltimore, MD 21203.
+ *)
+CONST pi_2 = 1.57079632679489661;
+
+PROCEDURE sin_ (x: LONGREAL): LONGREAL;
+CONST
+  c1 = 1.57079631847;
+  c3 = -0.64596371106;
+  c5 = 0.07968967928;
+  c7 = -0.00467376557;
+  c9 = 0.00015148419;
+
+VAR
+  x_norm : LONGREAL;
+  x_int : LONGREAL;
+  x_2 : LONGREAL;
+  y : LONGREAL;
+
+BEGIN
+  x_norm := x / pi_2;
+  IF (ABS (x_norm) > 4.0) THEN
+      x_int :=  CAST(LONGREAL, CAST(INTEGER, x_norm / 4.0));
+      x_norm := x_norm - 4.0 * x_int;
+  END;
+
+  IF (x_norm > 2.0) THEN x_norm := 2.0 - x_norm;
+  ELSIF (x_norm < -2.0) THEN x_norm := -2.0 - x_norm; END;
+
+  IF (x_norm > 1.0) THEN x_norm := 2.0 - x_norm;
+  ELSIF (x_norm < -1.0) THEN x_norm := -2.0 - x_norm; END;
+
+  x_2 := x_norm * x_norm;
+  y := (c1 + (c3 + (c5 + (c7 + c9 * x_2) * x_2) * x_2) * x_2) * x_norm;
+
+  RETURN y;
+END sin_;
+
+PROCEDURE cos_ (x: LONGREAL): LONGREAL;
+BEGIN
+  RETURN sin_ (x + pi_2);
+END cos_;
+
+PROCEDURE atan_ (x: LONGREAL): LONGREAL;
+CONST
+  c1 = 0.9999993329;
+  c3 = -0.3332985605;
+  c5 = 0.1994653599;
+  c7 = -0.1390853351;
+  c9 = 0.0964200441;
+  c11 = -0.0559098861;
+  c13 = 0.0218612288;
+  c15 = -0.0040540580;
+
+VAR
+  a_2 : LONGREAL;
+  y : LONGREAL;
+  a : LONGREAL;
+
+BEGIN
+  a := x;
+  IF (ABS (a) > 1.0) THEN a := 1.0 / a; END;
+
+  a_2 := a * a;
+  y := (c1 + (c3 + (c5 + (c7 + (c9 + (c11 + (c13 + c15 * a_2) * a_2) * a_2)
+      * a_2) * a_2) * a_2) * a_2) * a;
+
+  IF (ABS (x) >= 1.0) THEN
+     IF (x < 0.0) THEN y := -(pi_2 + y);
+     ELSE y := pi_2 - y; END; END;
+
+  RETURN y;
+END atan_;
+
+PROCEDURE sqrt_ (x: LONGREAL): LONGREAL;
+CONST
+  a = 2.1902;
+  b = -3.0339;
+  c = 1.5451;
+
+VAR
+  y, root_pwr, x_norm: LONGREAL;
+
+BEGIN
+  x_norm := x;
+  root_pwr := 1.0;
+
+  IF (x <= 0.0) THEN RETURN 0.0; END;
+
+  IF (x > 1.0) THEN
+     WHILE (x_norm > 1.0) DO
+          root_pwr := root_pwr * 2.0;
+          x_norm := x_norm * 0.25;
+     END;
+  ELSE
+     WHILE (x_norm < 0.25) DO
+          root_pwr := root_pwr * 0.5;
+          x_norm := x_norm * 4.0;
+     END;
+  END;
+
+  y := a + b / (c + x_norm);
+  y := 0.5 * (y + x_norm / y);
+  y := 0.5 * (y + x_norm / y);
+  y := y * root_pwr;
+
+  RETURN y;
+END sqrt_;
+
+PROCEDURE exp_ (x: LONGREAL): LONGREAL;
+CONST
+  c1 = 9.99999900943303E-01;
+  c2 = 5.00006347344554E-01;
+  c3 = 1.66667985598315E-01;
+  c4 = 4.16350120350139E-02;
+  c5 = 8.32859610677671E-03;
+  c6 = 1.43927433449119E-03;
+  c7 = 2.04699933614437E-04;
+
+VAR
+  x1 : LONGREAL;
+  y : LONGREAL;
+  e_pwr : LONGREAL;
+  e : LONGREAL;
+
+BEGIN
+  e_pwr := 1.0;
+  e := 2.71828182845905;
+  x1 := ABS (x);
+  IF (x1 > 88.0) THEN RETURN 0.0; END;
+
+  WHILE (x1 >= 1.0) DO
+      e_pwr := e_pwr * e * e;
+      x1 := x1 - 2.0;
+  END;
+
+  y := 1.0 + (c1 + (c2 + (c3 + (c4 + (c5 + (c6 + c7 * x1) * x1) * x1)
+      * x1) * x1) * x1) * x1;
+  y := y * e_pwr;
+  IF (x < 0.0) THEN y := 1.0 / y; END;
+
+  RETURN y;
+END exp_;
+
+PROCEDURE log10_ (x: LONGREAL): LONGREAL;
+CONST
+  c1 = 0.868591718;
+  c3 = 0.289335524;
+  c5 = 0.177522071;
+  c7 = 0.094376476;
+  c9 = 0.191337714;
+  c_r10 = 3.1622777;
+
+VAR
+  y : LONGREAL;
+  x_norm : LONGREAL;
+  x_log : LONGREAL;
+  frac : LONGREAL;
+  frac_2 : LONGREAL;
+
+BEGIN
+  x_log := 0.5;
+  x_norm := x;
+  IF (x <= 0.0) THEN RETURN 0.0; END;
+
+  IF (x >= 10.0) THEN
+     WHILE (x_norm >= 10.0) DO   (* reduce to 1.0 .. 10.0 *)
+          x_log := x_log + 1.0;
+          x_norm := x_norm * 0.1;
+     END;
+  ELSE
+     WHILE (x_norm < 1.0) DO     (* reduce to 1.0 .. 10.0 *)
+          x_log := x_log - 1.0;
+          x_norm := x_norm * 10.0;
+    END;
+  END;
+
+  frac := (x_norm - c_r10) / (x_norm + c_r10);
+  frac_2 := frac * frac;
+  y := (c1 + (c3 + (c5 + (c7 + c9 * frac_2) * frac_2) * frac_2) * frac_2) * frac;
+
+  RETURN y + x_log;
+END log10_;
+
+
+PROCEDURE log_ (x: LONGREAL): LONGREAL;
+BEGIN
+  RETURN 2.302585093 * log10_ (x);
+END log_;
+
+(*
+ * End of copyrighted section
+ *)
+
+(**********************************************************************
+C     Benchmark #2 -- Double  Precision Whetstone (A001)
+C
+C     o This is a LONGREAL*8 version of
+C       the Whetstone benchmark program.
+C     o FOR-loop semantics are ANSI-66 compatible.
+C     o Final measurements are to be made with all
+C       WRITE statements and FORMAT sttements removed.
+C
+C**********************************************************************)
+PROCEDURE time (VAR tm: INTEGER);
+VAR t: SysClock.DateTime;
+BEGIN
+    SysClock.GetClock (t);
+    tm := (t.hour * 60 + t.minute) * 60 + t.second;
+END time;
+
+TYPE ARRAY4 = ARRAY [1..4] OF LONGREAL;
+
+VAR E1                  : ARRAY4;
+    T, T1, T2           : LONGREAL;
+    J, K, L             : INTEGER;
+    ptime, time0, time1 : INTEGER;
+
+PROCEDURE PA (VAR E : ARRAY4);
+VAR J1 : INTEGER;
+BEGIN
+        J1 := 0;
+        REPEAT
+                E [1] := ( E [1] + E [2] + E [3] - E [4]) * T;
+                E [2] := ( E [1] + E [2] - E [3] + E [4]) * T;
+                E [3] := ( E [1] - E [2] + E [3] + E [4]) * T;
+                E [4] := (-E [1] + E [2] + E [3] + E [4]) / T2;
+                J1 := J1 + 1;
+        UNTIL J1 >= 6;
+END PA;
+
+PROCEDURE P0;
+BEGIN
+        E1 [J] := E1 [K]; E1 [K] := E1 [L]; E1 [L] := E1 [J];
+END P0;
+
+PROCEDURE P3 (X,Y : LONGREAL; VAR Z : LONGREAL);
+VAR X1, Y1 : LONGREAL;
+BEGIN
+        X1 := X;
+        Y1 := Y;
+        X1 := T * (X1 + Y1);
+        Y1 := T * (X1 + Y1);
+        Z := (X1 + Y1) / T2;
+END P3;
+
+PROCEDURE POUT (N, J, K : INTEGER; X1, X2, X3, X4 : LONGREAL);
+VAR time1 : INTEGER;
+BEGIN
+        time (time1);
+        printf('%2d%2d%6d%6d%6d',time1 - time0,time1 - ptime,N,J,K);
+        printf('%10f%10f%10f%10f\n',X1,X2,X3,X4);
+        ptime := time1;
+END POUT;
+
+PROCEDURE Do;
+VAR NLoop, I, II, JJ : INTEGER;
+    N1, N2, N3, N4, N5, N6, N7, N8, N9, N10, N11 : INTEGER;
+    X1, X2, X3, X4, X, Y, Z : LONGREAL;
+BEGIN
+        time (time0);
+        ptime := time0;
+(* The actual benchmark starts here. *)
+        T  := 0.499975;
+        T1 := 0.50025;
+        T2 := 2.0;
+(* With loopcount NLoop=10, one million Whetstone instructions
+   will be executed in each major loop.
+   A major loop is executed 'II' times to increase wall-clock timing accuracy *)
+        NLoop := 6;
+        II    := 40;
+        FOR JJ:=1 TO II DO
+(* Establish the relative loop counts of each module. *)
+                N1 := 0;
+                N2 := 12 * NLoop;
+                N3 := 14 * NLoop;
+                N4 := 345 * NLoop;
+                N5 := 0;
+                N6 := 210 * NLoop;
+                N7 := 32 * NLoop;
+                N8 := 899 * NLoop;
+                N9 := 616 * NLoop;
+                N10 := 0;
+                N11 := 93 * NLoop;
+(* Module 1: Simple identifiers *)
+                X1 := 1.0;
+                X2 := -1.0;
+                X3 := -1.0;
+                X4 := -1.0;
+                FOR I:=1 TO N1 DO
+                        X1 := (X1 + X2 + X3 - X4)*T;
+                        X2 := (X1 + X2 - X3 + X4)*T;
+                        X3 := (X1 - X2 + X3 + X4)*T;
+                        X4 := (-X1 + X2 + X3 + X4)*T;
+                END;
+                IF (JJ = II) THEN
+                        POUT (N1, N1, N1, X1, X2, X3, X4);
+                END;
+(* Module 2: Array elements *)
+                E1 [1] :=  1.0;
+                E1 [2] := -1.0;
+                E1 [3] := -1.0;
+                E1 [4] := -1.0;
+                FOR I:=1 TO N2 DO
+                        E1 [1] := (E1 [1] + E1 [2] + E1 [3] - E1 [4])*T;
+                        E1 [2] := (E1 [1] + E1 [2] - E1 [3] + E1 [4])*T;
+                        E1 [3] := (E1 [1] - E1 [2] + E1 [3] + E1 [4])*T;
+                        E1 [4] := (-E1 [1] + E1 [2] + E1 [3] + E1 [4])*T;
+                END;
+                IF (JJ = II) THEN
+                        POUT (N2, N3, N2, E1 [1], E1 [2], E1 [3], E1 [4]);
+                END;
+(* Module 3: Array as parameter *)
+                FOR I:=1 TO N3 DO
+                        PA (E1);
+                END;
+                IF (JJ = II) THEN
+                        POUT(N3, N2, N2, E1 [1], E1 [2], E1 [3], E1 [4]);
+                END;
+(* Module 4: Conditional jumps *)
+                J := 1;
+                FOR I:=1 TO N4 DO
+                        IF (J <> 1) THEN J := 3 ELSE J := 2 END;
+                        IF (J <= 2) THEN J := 1 ELSE J := 0 END;
+                        IF (J >= 1) THEN J := 0 ELSE J := 1 END;
+                END;
+                IF (JJ = II) THEN
+                        POUT (N4, J, J, X1, X2, X3, X4)
+                END;
+(* Module 5: Omitted; Module 6: Integer arithmetic *)
+                J := 1;
+                K := 2;
+                L := 3;
+                FOR I:=1 TO N6 DO
+                        J := J * (K-J) * (L-K);
+                        K := L * K - (L-J) * K;
+                        L := (L - K) * (K + J);
+                        E1 [L-1] := VAL (LONGREAL, (J + K + L));
+                        E1 [K-1] := VAL (LONGREAL, (J * K * L));
+                END;
+                IF (JJ = II) THEN
+                        POUT (N6, J, K, E1 [1], E1 [2], E1 [3], E1 [4]);
+                END;
+(* Module 7: Trigonometric functions *)
+                X := 0.5;
+                Y := 0.5;
+                FOR I:=1 TO N7 DO
+                        X:=T*atan_(T2*sin_(X)*cos_(X)/(cos_(X+Y)+cos_(X-Y)-1.0));
+                        Y:=T*atan_(T2*sin_(Y)*cos_(Y)/(cos_(X+Y)+cos_(X-Y)-1.0));
+                END;
+                IF (JJ = II) THEN
+                        POUT (N7, J, K, X, X, Y, Y);
+                END;
+(* Module 8: Procedure calls *)
+                X := 1.0;
+                Y := 1.0;
+                Z := 1.0;
+                FOR I:=1 TO N8 DO
+                        P3 (X,Y,Z);
+                END;
+                IF (JJ = II) THEN
+                        POUT (N8, J, K, X, Y, Z, Z);
+                END;
+(* Module 9: Array references *)
+                J := 1;
+                K := 2;
+                L := 3;
+                E1 [1] := 1.0;
+                E1 [2] := 2.0;
+                E1 [3] := 3.0;
+                FOR I:=1 TO N9 DO
+                        P0;
+                END;
+                IF (JJ = II) THEN
+                        POUT (N9, J, K, E1 [1], E1 [2], E1 [3], E1 [4])
+                END;
+(* Module 10: Integer arithmetic *)
+                J := 2;
+                K := 3;
+                FOR I:=1 TO N10 DO
+                        J := J + K;
+                        K := J + K;
+                        J := K - J;
+                        K := K - J - J;
+                END;
+                IF (JJ = II) THEN
+                        POUT (N10, J, K, X1, X2, X3, X4)
+                END;
+(* Module 11: Standard functions *)
+                X := 0.75;
+                FOR I:=1 TO N11 DO
+                        X := sqrt_ (exp_ (log_ (X)/T1))
+                END;
+                IF (JJ = II) THEN
+                        POUT (N11, J, K, X, X, X, X)
+                END;
+(* THIS IS THE END OF THE MAJOR LOOP. *)
+        END;
+(* Stop benchmark timing at this point. *)
+        time (time1);
+(*----------------------------------------------------------------
+      Performance in Whetstone KIP's per second is given by
+       (100*NLoop*II)/TIME
+      where TIME is in seconds.
+--------------------------------------------------------------------*)
+(*
+        printf('\nDouble Whetstone KIPS %d\n',TRUNC ((100.0 * FLOAT (NLoop) * FLOAT (II)) /
+                                                     FLOAT (time1 - time0)));
+        printf('Whetstone MIPS %f\n',FLOAT (NLoop) * FLOAT (II) /
+                                     FLOAT ((time1 - time0) * 10));
+*)
+END Do;
+
+BEGIN
+    Do;
+END <.name.>.
+"
+
+BEGIN
+  IF FEATURE('NATIVE_LIBRARY') THEN
+      std_out :=
+" 0 0     0     0     0         1        -1        -1        -1
+ 0 0    72    84    72 -0.067669  -0.46425 -0.731165 -1.127711
+ 0 0    84    72    72 -0.059783 -0.455005 -0.719842 -1.115089
+ 0 0  2070     1     1         1        -1        -1        -1
+ 0 0  1260     1     2         6         6 -0.719842 -1.115089
+ 0 0   192     1     2  0.494218  0.494218  0.494203  0.494203
+ 0 0  5394     1     2         1         1  0.999938  0.999938
+ 0 0  3696     1     2         3         2         3 -1.115089
+ 0 0     0     2     3         1        -1        -1        -1
+ 0 0   558     2     3   0.80427   0.80427   0.80427   0.80427
+";
+
+      ref_aligned := "";
+      FOREACH  procinline  IN
+        "<* -PROCINLINE *>"
+      , "<* +PROCINLINE *>"
+      DO
+          GENERATE RUN_OK;
+      END;
+
+  ELSE
+      std_out :=
+" 0 0     0     0     0  1.000000 -1.000000 -1.000000 -1.000000
+ 0 0    72    84    72 -0.067669 -0.464250 -0.731165 -1.127711
+ 0 0    84    72    72 -0.059783 -0.455005 -0.719842 -1.115089
+ 0 0  2070     1     1  1.000000 -1.000000 -1.000000 -1.000000
+ 0 0  1260     1     2  6.000000  6.000000 -0.719842 -1.115089
+ 0 0   192     1     2  0.494218  0.494218  0.494203  0.494203
+ 0 0  5394     1     2  1.000000  1.000000  0.999938  0.999938
+ 0 0  3696     1     2  3.000000  2.000000  3.000000 -1.115089
+ 0 0     0     2     3  1.000000 -1.000000 -1.000000 -1.000000
+ 0 0   558     2     3  0.804270  0.804270  0.804270  0.804270
+";
+      FOREACH  ref_aligned  IN
+        "<* -REF_ALIGNED *>"
+      , "<* +REF_ALIGNED *>"
+      DO
+          FOREACH  procinline  IN
+            "<* -PROCINLINE *>"
+          , "<* +PROCINLINE *>"
+          DO
+              GENERATE RUN_OK;
+          END;
+      END;
+  END;
+END

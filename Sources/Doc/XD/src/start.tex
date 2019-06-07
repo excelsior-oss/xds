@@ -1,0 +1,160 @@
+\chapter{Getting started}
+\label{start}
+
+\section{General considerations}
+\label{start:general}
+
+This section introduces some terms and principles to help you better
+understand the debugger.
+
+\subsection{Executable lines}
+\label{start:general:executable}
+
+In XD, a source line is considered {\it executable} if there are CPU
+instructions corresponding to it. \See{Breakpoints}{}{dialog:breaks} may
+be placed only on executable lines, only executable lines are displayed
+in the \See{{\bf Mixed} mode}{}{dialog:navigating:modes}, etc.
+Obviously, source lines containing comments or declarations are not executable.
+However, native code XDS compilers may generate no code even for lines
+containing statements, because of optimization or, for instance,
+if that code would be unreachable anyway:
+\begin{verbatim}
+    PROCEDURE P(i : CARDINAL): CARDINAL;
+    BEGIN
+      CASE i OF
+      |0: RETURN 1
+      |1: RETURN P(i-1)
+      END;
+      RETURN 2  (* Warning: Unreachable code *)
+    END P;
+\end{verbatim}
+In the above example, passing any value other than 0 or 1
+as an input parameter to \verb'P' would cause the language exception
+\verb'caseSelectException' to be raised. Hence, the code
+corresponding to the last \verb'RETURN' statement would never
+be executed and is omitted in the resulting object file.
+The "Unreachable code" warning is issued during compilation.
+
+\subsection{Procedure prologue and epilogue}
+\label{start:general:epilogue}
+
+In addition to the code correspondent to a procedure's body, a compiler
+usually inserts some initialization (so called {\em prologue})
+after its entry point and some cleanup ({\em epilogue})
+before the \verb'RET' instruction. In particular,
+the XDS compiler may generate code which
+saves and restores stack frame, installs and removes exception handlers, etc.
+
+The compiler maps a prologue to the source line containing the procedure's \verb'BEGIN',
+and an epilogue to the line containing \verb'END'.
+
+\subsection{Register variables}
+\label{start:general:regvars}
+
+Even if you turn the {\bf NOOPTIMIZE} option on, the compiler still performs
+some optimizations. In particular, it may place local variables onto CPU registers.
+The debugger prepends names of register variables with an exclamation mark in
+\See{information windows}{}{dialog:intro:info}.
+Such variables may not exist at certain points of procedure execution, so the
+displayed values may be incorrect and it is not possible to modify a register
+variable.
+
+When register variables are used in \See{expressions}{Chapter }{expr},
+they are treated as unsigned integers.
+
+\subsection{Program startup}
+\label{start:general:startup}
+
+In a C program, the \verb'main()' function has the public name
+\verb'main' or \verb'_main'. To ensure compatibility with third-party
+debuggers and other tools, XDS compilers assign one of these names
+to the main module body entry point, depending on the {\bf CC} option setting.
+After the program is loaded, XD searches its symbol table for
+these symbols and automatically executes the program's startup code
+up to the point the located symbol refers to. If you wish to debug the startup
+code, use the \See{{\bf Restart at startup}}{}{dialog:executing:startup} command
+or specify the \verb'/S' option in XD command line.
+
+If the program does not have a symbol table or there is no
+\verb'main' or \verb'_main' symbol in the code segment,
+the program will be stopped at the first possible point, 
+as if the \See{{\bf Restart at startup}}{}{dialog:executing:startup}
+command was used.
+
+\section{Preparing a program for debugging}
+\label{start:prepare}
+
+Before invoking the debugger, ensure that your program is built with
+line number and symbolic debug information. To do this, switch the
+{\bf LINENO} and {\bf GENDEBUG} options on in the project file
+or on the command line. You may also wish to switch on the
+{\bf NOOPTIMIZE} option in order to disable the machine-independent
+optimizer. Use the {\bf =ALL} submode to force all
+modules which constitute your program to be recompiled with
+these option settings.
+
+Do not forget to specify a linker option (\verb'/DEBUG' for XDS Linker)  % ref ???
+which would cause debugging information to be bound to the executable.
+If you are taking advantage of the XDS make facility, % \extern???
+it will be done automatically if you specify the {\bf GENDEBUG} compiler option,
+provided that you use a template file bundled with your XDS package.
+Refer to an appropriate documentation if you use a third-party linker
+which is not supported in standard template files.
+
+% ??? some words on debugging optimized code
+% ??? How to do this from the IDE?
+% ??? Note: it may be needed to edit the source of the samples
+% ??? Write about using the redirection file (strip path option)
+
+\subsection{Debug information formats}
+
+The Native XDS-x86 compiler is capable to produce debug information
+in two formats: CodeView (default) and HLL4.
+This is controlled by the {\bf DBGFMT} compiler
+option. The HLL4 format is more suitable for Modula-2/Oberon-2
+programs. For instance, it allows to represent sets and enumerations,
+which are not supported in CodeView. XDS Linker and XDS Debugger
+accept both formats on both platforms, so use HLL4 whenever possible.
+
+HLL4 support under Windows is probably an unique feature,
+so if you use any third-party tools, CodeView is your only option.
+
+\section{Starting XD}
+\label{start:invoking}
+
+To invoke XD from the command line, type
+
+\verb'    xd [<options>] [<executable> [<arguments>]]'
+
+or
+
+\verb'    xd /b [<options>] <control file>'
+
+and press {\bf Enter}. Available options are:
+
+\begin{tabular}{l|l}
+\tt /D          & Invoke XD in dialog mode (default) \\
+\tt /B          & Invoke XD in batch mode \\
+\tt /H          & Print a brief help message \\
+\tt /J          & Safe log \\
+\tt /L          & Create log file \\
+\tt /N          & Display file names without path \\
+% \tt /R={\it transport},{\it host} & Remote debug
+\tt /S          & Debug startup code \\
+\tt /X{\it nnn} & Set width of XD session window to {\it nnn}  \\
+\tt /Y{\it nnn} & Set height of XD session window to {\it nnn}
+\end{tabular}
+
+If you invoke XD without any parameters, it will start in dialog
+mode and display the {\bf Load Program} dialog.
+
+\section{Terminating XD}
+
+To exit the dialog mode, select {\bf Exit} from the {\bf File}
+menu or press {\bf Alt-X}. If the debugger was started in the
+dialog mode, it will terminate. Otherwise (the dialog mode
+was activated from a control file), control file proceccing will
+continue.
+
+To interrupt XD running in the batch mode, press {\bf Ctrl+C}. % ??? Is this true.
+

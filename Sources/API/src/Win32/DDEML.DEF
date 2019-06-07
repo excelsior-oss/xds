@@ -1,0 +1,693 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] DDEML;
+
+
+(******************************************************************************
+*                                                                             *
+*  DDEML.def - DDEML API definition file                                      *
+*                                                                             *
+******************************************************************************)
+
+FROM WinDef  IMPORT UINT, DWORD, BOOL, PBYTE,
+                    WCHAR, PSTR, PWSTR,
+                    HWND, HANDLE, WPARAM, LPARAM;
+FROM WinUser IMPORT CF_TYPE;
+FROM WinNT IMPORT SECURITY_QUALITY_OF_SERVICE;
+IMPORT SYSTEM;
+
+(******** public types ********)
+
+TYPE HCONVLIST = POINTER TO RECORD END;
+     HCONV     = POINTER TO RECORD END;
+     HSZ       = POINTER TO RECORD END;
+     HDDEDATA  = POINTER TO RECORD END;
+
+
+(* the following structure is for use with XTYP_WILDCONNECT processing. *)
+
+TYPE HSZPAIR = RECORD
+                      hszSvc   : HSZ;
+                      hszTopic : HSZ;
+               END;
+    PHSZPAIR = POINTER TO HSZPAIR;
+
+(* The following structure is used by DdeConnect() and DdeConnectList() and
+   by XTYP_CONNECT and XTYP_WILDCONNECT callbacks. *)
+
+TYPE CONVCONTEXT =
+     RECORD
+            cb         : UINT;      (* set to sizeof(CONVCONTEXT) *)
+            wFlags     : UINT;      (* none currently defined. *)
+            wCountryID : UINT;      (* country code for topic/item strings used. *)
+            iCodePage  : INTEGER;   (* codepage used for topic/item strings. *)
+            dwLangID   : DWORD;     (* language ID for topic/item strings. *)
+            dwSecurity : DWORD;     (* Private security code. *)
+            qos        : SECURITY_QUALITY_OF_SERVICE;  (* client side's quality of service *)
+     END;
+    PCONVCONTEXT = POINTER TO CONVCONTEXT;
+
+(***** conversation states (usState) *****)
+
+TYPE XST_ENUM = (XST_NULL,            (*  0 - quiescent states *)
+                 XST_INCOMPLETE,      (*  1 *)
+                 XST_CONNECTED,       (*  2 *)
+                 XST_INIT1,           (*  3 - mid-initiation states *)
+                 XST_INIT2,           (*  4 *)
+                 XST_REQSENT,         (*  5 - active conversation states *)
+                 XST_DATARCVD,        (*  6 *)
+                 XST_POKESENT,        (*  7 *)
+                 XST_POKEACKRCVD,     (*  8 *)
+                 XST_EXECSENT,        (*  9 *)
+                 XST_EXECACKRCVD,     (* 10 *)
+                 XST_ADVSENT,         (* 11 *)
+                 XST_UNADVSENT,       (* 12 *)
+                 XST_ADVACKRCVD,      (* 13 *)
+                 XST_UNADVACKRCVD,    (* 14 *)
+                 XST_ADVDATASENT,     (* 15 *)
+                 XST_ADVDATAACKRCVD); (* 16 *)
+
+(***** conversation status bits (fsStatus) *****)
+
+TYPE ST_ENUM = (ST__CONNECTED,   (* 0 *)
+                ST__ADVISE,      (* 1 *)
+                ST__ISLOCAL,     (* 2 *)
+                ST__BLOCKED,     (* 3 *)
+                ST__CLIENT,      (* 4 *)
+                ST__TERMINATED,  (* 5 *)
+                ST__INLIST,      (* 6 *)
+                ST__BLOCKNEXT,   (* 7 *)
+                ST__ISSELF);     (* 8 *)
+
+      ST_SET = SET OF ST_ENUM;
+
+CONST ST_CONNECTED  = ST_SET {ST__CONNECTED }; (* 0x0001 *)
+      ST_ADVISE     = ST_SET {ST__ADVISE    }; (* 0x0002 *)
+      ST_ISLOCAL    = ST_SET {ST__ISLOCAL   }; (* 0x0004 *)
+      ST_BLOCKED    = ST_SET {ST__BLOCKED   }; (* 0x0008 *)
+      ST_CLIENT     = ST_SET {ST__CLIENT    }; (* 0x0010 *)
+      ST_TERMINATED = ST_SET {ST__TERMINATED}; (* 0x0020 *)
+      ST_INLIST     = ST_SET {ST__INLIST    }; (* 0x0040 *)
+      ST_BLOCKNEXT  = ST_SET {ST__BLOCKNEXT }; (* 0x0080 *)
+      ST_ISSELF     = ST_SET {ST__ISSELF    }; (* 0x0100 *)
+
+(***** transaction types *****)
+
+TYPE XTYP = DWORD;
+
+CONST XTYPF_NOBLOCK         = 0002h;  (* CBR_BLOCK will not work *)
+      XTYPF_NODATA          = 0004h;  (* DDE_FDEFERUPD *)
+      XTYPF_ACKREQ          = 0008h;  (* DDE_FACKREQ *)
+
+CONST XCLASS_MASK           = 0FC00h;
+      XCLASS_BOOL           =  1000h;
+      XCLASS_DATA           =  2000h;
+      XCLASS_FLAGS          =  4000h;
+      XCLASS_NOTIFICATION   =  8000h;
+
+      XTYP_ERROR            = 0000h + XCLASS_NOTIFICATION  + XTYPF_NOBLOCK;
+      XTYP_ADVDATA          = 0010h + XCLASS_FLAGS;
+      XTYP_ADVREQ           = 0020h + XCLASS_DATA          + XTYPF_NOBLOCK;
+      XTYP_ADVSTART         = 0030h + XCLASS_BOOL;
+      XTYP_ADVSTOP          = 0040h + XCLASS_NOTIFICATION;
+      XTYP_EXECUTE          = 0050h + XCLASS_FLAGS;
+      XTYP_CONNECT          = 0060h + XCLASS_BOOL          + XTYPF_NOBLOCK;
+      XTYP_CONNECT_CONFIRM  = 0070h + XCLASS_NOTIFICATION  + XTYPF_NOBLOCK;
+      XTYP_XACT_COMPLETE    = 0080h + XCLASS_NOTIFICATION;
+      XTYP_POKE             = 0090h + XCLASS_FLAGS;
+      XTYP_REGISTER         = 00A0h + XCLASS_NOTIFICATION  + XTYPF_NOBLOCK;
+      XTYP_REQUEST          = 00B0h + XCLASS_DATA;
+      XTYP_DISCONNECT       = 00C0h + XCLASS_NOTIFICATION  + XTYPF_NOBLOCK;
+      XTYP_UNREGISTER       = 00D0h + XCLASS_NOTIFICATION  + XTYPF_NOBLOCK;
+      XTYP_WILDCONNECT      = 00E0h + XCLASS_DATA          + XTYPF_NOBLOCK;
+      XTYP_MONITOR          = 00F0h + XCLASS_NOTIFICATION  + XTYPF_NOBLOCK;
+
+      XTYP_MASK             = 00F0h;
+      XTYP_SHIFT            = 4;  (* shift to turn XTYP_ into an index *)
+
+(* The following structure is used by DdeQueryConvInfo(): *)
+
+TYPE CONVINFO =
+     RECORD
+            cb            : DWORD;       (* SIZE (CONVINFO)  *)
+            hUser         : DWORD;       (* user specified field  *)
+            hConvPartner  : HCONV;       (* hConv on other end or 0 if non-ddemgr partner  *)
+            hszSvcPartner : HSZ;         (* app name of partner if obtainable  *)
+            hszServiceReq : HSZ;         (* AppName requested for connection  *)
+            hszTopic      : HSZ;         (* Topic name for conversation  *)
+            hszItem       : HSZ;         (* transaction item name or NULL if quiescent  *)
+            wFmt          : UINT;        (* transaction format or NULL if quiescent  *)
+            wType         : XTYP;        (* XTYP_ for current transaction  *)
+            wStatus       : ST_SET;      (* ST_ constant for current conversation  *)
+            wConvst       : XST_ENUM;    (* XST_ constant for current transaction  *)
+            wLastError    : UINT;        (* last transaction error.  *)
+            hConvList     : HCONVLIST;   (* parent hConvList if this conversation is in a list *)
+            ConvCtxt      : CONVCONTEXT; (* conversation context *)
+            hwnd          : HWND;        (* window handle for this conversation *)
+            hwndPartner   : HWND;        (* partner window handle for this conversation *)
+     END;
+     PCONVINFO = POINTER TO CONVINFO;
+
+(* used in LOWORD(dwData1) of XTYP_ADVREQ callbacks... *)
+
+CONST CADV_LATEACK = 0FFFFh;
+
+(* DDE constants for wStatus field *)
+
+TYPE DDE_ENUM = (DDE__0, DDE__1, DDE__2, DDE__3,
+                 DDE__4, DDE__5, DDE__6, DDE__7,
+                 DDE__8, DDE__9, DDE_10, DDE_11,
+                 DDE__FREQUESTED,                (* 12 *)
+                 DDE__FRELEASE,                  (* 13 *)
+                 DDE__FBUSY,                     (* 14 *)
+                 DDE__FACK);                     (* 15 *)
+
+     DDE_SET = SET OF DDE_ENUM;
+
+CONST DDE_FACK          = DDE_SET {DDE__FACK};       (* 0x8000 *)
+      DDE_FBUSY         = DDE_SET {DDE__FBUSY};      (* 0x4000 *)
+      DDE_FRELEASE      = DDE_SET {DDE__FRELEASE};   (* 0x2000 *)
+      DDE_FREQUESTED    = DDE_SET {DDE__FREQUESTED}; (* 0x1000 *)
+      DDE_FAPPSTATUS    = DDE_SET {DDE__0..DDE__7};  (* 0x00ff *)
+      DDE_FNOTPROCESSED = DDE_SET {};                (* 0x0000 *)
+
+      DDE_FACKREQ       = DDE_FACK;  (* 0x8000 *)
+      DDE_FDEFERUPD     = DDE_FBUSY; (* 0x4000 *)
+
+      DDE_FACKRESERVED  = -(DDE_FACK + DDE_FBUSY + DDE_FAPPSTATUS);
+      DDE_FADVRESERVED  = -(DDE_FACKREQ + DDE_FDEFERUPD);
+      DDE_FDATRESERVED  = -(DDE_FACKREQ + DDE_FRELEASE + DDE_FREQUESTED);
+      DDE_FPOKRESERVED  = -DDE_FRELEASE;
+
+
+(***** message filter hook types *****)
+
+CONST  MSGF_DDEMGR = 8001h;
+
+(***** codepage constants ****)
+
+CONST CP_WINANSI    = 1004;  (* default codepage for windows & old DDE convs. *)
+      CP_WINUNICODE = 1200;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST CP_WINNEUTRAL = CP_WINUNICODE;
+<* ELSE *>
+      CONST CP_WINNEUTRAL = CP_WINANSI;
+<* END *>
+
+(***** Timeout constants *****)
+
+CONST TIMEOUT_ASYNC = 0FFFFFFFFh;
+
+(***** Transaction ID constants *****)
+
+CONST QID_SYNC = 0FFFFFFFFh;
+
+(****** public strings used in DDE ******)
+
+TYPE WCHARARRAY5  = ARRAY [0..4] OF WCHAR;
+     WCHARARRAY7  = ARRAY [0..6] OF WCHAR;
+     WCHARARRAY8  = ARRAY [0..7] OF WCHAR;
+     WCHARARRAY9  = ARRAY [0..8] OF WCHAR;
+     WCHARARRAY14 = ARRAY [0..13] OF WCHAR;
+
+<* IF DEFINED (UNICODE) THEN *>
+
+
+CONST SZDDESYS_TOPIC =
+               WCHARARRAY7 {ORD ('S'), ORD ('y'), ORD ('s'), ORD ('t'),
+                            ORD ('e'), ORD ('m'), 0};
+
+      SZDDESYS_ITEM_TOPICS   =
+               WCHARARRAY7 {ORD ('T'), ORD ('o'), ORD ('p'), ORD ('i'),
+                            ORD ('c'), ORD ('s'), 0};
+
+      SZDDESYS_ITEM_SYSITEMS =
+               WCHARARRAY9 {ORD ('S'), ORD ('y'), ORD ('s'),
+                            ORD ('I'), ORD ('t'), ORD ('e'),
+                            ORD ('m'), ORD ('s'), 0};
+
+      SZDDESYS_ITEM_RTNMSG   =
+               WCHARARRAY14 {ORD ('R'), ORD ('e'), ORD ('t'), ORD ('u'),
+                             ORD ('r'), ORD ('n'), ORD ('M'), ORD ('e'),
+                             ORD ('s'), ORD ('s'), ORD ('a'), ORD ('g'),
+                             ORD ('e'), 0};
+
+      SZDDESYS_ITEM_STATUS   =
+               WCHARARRAY7 {ORD ('S'), ORD ('t'), ORD ('a'), ORD ('t'),
+                            ORD ('u'), ORD ('s'), 0};
+
+      SZDDESYS_ITEM_FORMATS  =
+               WCHARARRAY8 {ORD ('F'), ORD ('o'), ORD ('r'), ORD ('m'),
+                            ORD ('a'), ORD ('t'), ORD ('s'), 0};
+
+      SZDDESYS_ITEM_HELP     =
+               WCHARARRAY5 {ORD ('H'), ORD ('e'), ORD ('l'), ORD ('p'), 0};
+
+      SZDDE_ITEM_ITEMLIST    =
+               WCHARARRAY14 {ORD ('T'), ORD ('o'), ORD ('p'), ORD ('i'),
+                             ORD ('c'), ORD ('I'), ORD ('t'), ORD ('e'),
+                             ORD ('m'), ORD ('L'), ORD ('i'), ORD ('s'),
+                             ORD ('t'), 0};
+
+<* ELSE *>
+
+CONST SZDDESYS_TOPIC         = "System";
+      SZDDESYS_ITEM_TOPICS   = "Topics";
+      SZDDESYS_ITEM_SYSITEMS = "SysItems";
+      SZDDESYS_ITEM_RTNMSG   = "ReturnMessage";
+      SZDDESYS_ITEM_STATUS   = "Status";
+      SZDDESYS_ITEM_FORMATS  = "Formats";
+      SZDDESYS_ITEM_HELP     = "Help";
+      SZDDE_ITEM_ITEMLIST    = "TopicItemList";
+
+<* END *>
+
+
+(****** API entry points ******)
+
+TYPE FNCALLBACK = PROCEDURE ((* wType   : *) UINT,
+                             (* wFmt    : *) UINT,
+                             (* hConv   : *) HCONV,
+                             (* hsz1    : *) HSZ,
+                             (* hsz2    : *) HSZ,
+                             (* hData   : *) HDDEDATA,
+                             (* dwData1 : *) DWORD,
+                             (* dwData2 : *) DWORD) : HDDEDATA;
+
+
+CONST CBR_BLOCK = SYSTEM.CAST (HDDEDATA, VAL (UINT, 0ffffffffh));
+
+(*
+ * Flags to use in DdeInitialize
+ *)
+
+TYPE DDEFLAGS_ENUM = (APPCLASS__MONITOR,            (* 0 *)
+                      APPCLASS__1, APPCLASS__2,
+                      APPCLASS__3,
+
+                      APPCMD__CLIENTONLY,           (* 4 *)
+                      APPCMD__FILTERINITS,          (* 5 *)
+                      APPCMD__6, APPCMD__7,
+                      APPCMD__8, APPCMD__9,
+                      APPCMD__10, APPCMD__11,
+
+                      CBF__FAIL_SELFCONNECTIONS,    (* 12 *)
+                      CBF__FAIL_CONNECTIONS,        (* 13 *)
+                      CBF__FAIL_ADVISES,            (* 14 *)
+                      CBF__FAIL_EXECUTES,           (* 15 *)
+                      CBF__FAIL_POKES,              (* 16 *)
+                      CBF__FAIL_REQUESTS,           (* 17 *)
+
+                      CBF__SKIP_CONNECT_CONFIRMS,   (* 18 *)
+                      CBF__SKIP_REGISTRATIONS,      (* 19 *)
+                      CBF__SKIP_UNREGISTRATIONS,    (* 20 *)
+                      CBF__SKIP_DISCONNECTS);       (* 21 *)
+
+     DDEFLAGS_SET = SET OF DDEFLAGS_ENUM;
+
+
+(*
+ * Callback filter flags for use with standard apps.
+ *)
+
+CONST CBF_FAIL_SELFCONNECTIONS     = DDEFLAGS_SET {CBF__FAIL_SELFCONNECTIONS};   (* 0x00001000 *)
+      CBF_FAIL_CONNECTIONS         = DDEFLAGS_SET {CBF__FAIL_CONNECTIONS};       (* 0x00002000 *)
+      CBF_FAIL_ADVISES             = DDEFLAGS_SET {CBF__FAIL_ADVISES};           (* 0x00004000 *)
+      CBF_FAIL_EXECUTES            = DDEFLAGS_SET {CBF__FAIL_EXECUTES};          (* 0x00008000 *)
+      CBF_FAIL_POKES               = DDEFLAGS_SET {CBF__FAIL_POKES};             (* 0x00010000 *)
+      CBF_FAIL_REQUESTS            = DDEFLAGS_SET {CBF__FAIL_REQUESTS};          (* 0x00020000 *)
+
+      CBF_FAIL_ALLSVRXACTIONS      = DDEFLAGS_SET {CBF__FAIL_SELFCONNECTIONS ..
+                                                   CBF__FAIL_REQUESTS};          (* 0x0003f000 *)
+
+      CBF_SKIP_CONNECT_CONFIRMS    = DDEFLAGS_SET {CBF__SKIP_CONNECT_CONFIRMS};  (* 0x00040000 *)
+      CBF_SKIP_REGISTRATIONS       = DDEFLAGS_SET {CBF__SKIP_REGISTRATIONS};     (* 0x00080000 *)
+      CBF_SKIP_UNREGISTRATIONS     = DDEFLAGS_SET {CBF__SKIP_UNREGISTRATIONS};   (* 0x00100000 *)
+      CBF_SKIP_DISCONNECTS         = DDEFLAGS_SET {CBF__SKIP_DISCONNECTS};       (* 0x00200000 *)
+
+      CBF_SKIP_ALLNOTIFICATIONS    = DDEFLAGS_SET {CBF__SKIP_CONNECT_CONFIRMS ..
+                                                   CBF__SKIP_DISCONNECTS};       (* 0x003c0000 *)
+
+(*
+* Application command flags
+*)
+      APPCMD_CLIENTONLY            = DDEFLAGS_SET {APPCMD__CLIENTONLY};          (* 0x00000010L*)
+      APPCMD_FILTERINITS           = DDEFLAGS_SET {APPCMD__FILTERINITS};         (* 0x00000020L*)
+      APPCMD_MASK                  = DDEFLAGS_SET {APPCMD__CLIENTONLY ..
+                                                   APPCMD__11};                  (* 0x00000FF0L*)
+
+(*
+* Application classification flags
+*)
+
+      APPCLASS_STANDARD            = DDEFLAGS_SET {};                               (* 0x00000000L*)
+      APPCLASS_MONITOR             = DDEFLAGS_SET {APPCLASS__MONITOR};              (* 0x00000001L *)
+
+      APPCLASS_MASK                = DDEFLAGS_SET {APPCLASS__MONITOR..APPCLASS__3}; (* 0x0000000FL*)
+
+
+(* DLL registration functions *)
+
+PROCEDURE DdeInitializeA (VAR Inst   : DWORD;
+                          fnCallback : FNCALLBACK;
+                          afCmd      : DDEFLAGS_SET;
+                          ulRes      : DWORD
+                         ) : UINT;
+
+PROCEDURE DdeInitializeW (VAR Inst   : DWORD;
+                          fnCallback : FNCALLBACK;
+                          afCmd      : DDEFLAGS_SET;
+                          ulRes      : DWORD
+                         ) : UINT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST DdeInitialize = DdeInitializeW;
+<* ELSE *>
+      CONST DdeInitialize = DdeInitializeA;
+<* END *>
+
+PROCEDURE DdeUninitialize (idInst : DWORD) : BOOL;
+
+(*
+ * conversation enumeration functions
+ *)
+
+PROCEDURE DdeConnectList (idInst       : DWORD;
+                          hszService   : HSZ;
+                          hszTopic     : HSZ;
+                          hConvList    : HCONVLIST;
+                          VAR [NIL] CC : CONVCONTEXT) : HCONVLIST;
+
+PROCEDURE DdeQueryNextServer (hConvList :  HCONVLIST;
+                              hConvPrev :  HCONV) : HCONV;
+
+PROCEDURE DdeDisconnectList (hConvList : HCONVLIST) : BOOL;
+
+(*
+ * conversation control functions
+ *)
+
+PROCEDURE DdeConnect (idInst       : DWORD;
+                      hszService   : HSZ;
+                      hszTopic     : HSZ;
+                      VAR [NIL] CC : CONVCONTEXT) : HCONV;
+PROCEDURE DdeDisconnect (hConv : HCONV) : BOOL;
+PROCEDURE DdeReconnect  (hConv : HCONV) : HCONV;
+PROCEDURE DdeQueryConvInfo (hConv : HCONV;
+                            idTransaction : DWORD;
+                            VAR  ConvInfo : CONVINFO) : UINT;
+
+PROCEDURE DdeSetUserHandle (hConv : HCONV;
+                            id    : DWORD;
+                            hUser : DWORD) : BOOL;
+
+PROCEDURE DdeAbandonTransaction (idInst : DWORD;
+                                 hConv  : HCONV;
+                                 idTransaction : DWORD) : BOOL;
+
+(*
+ * app server interface functions
+ *)
+
+PROCEDURE DdePostAdvise (idInst   : DWORD;
+                         hszTopic : HSZ;
+                         hszItem  : HSZ) : BOOL;
+
+TYPE EC_ENUM = ST_ENUM;
+
+CONST EC_ENABLEALL    = VAL (EC_ENUM, 0);
+      EC_ENABLEONE    = ST_BLOCKNEXT;
+      EC_DISABLE      = ST_BLOCKED;
+      EC_QUERYWAITING = VAL (EC_ENUM, 2);
+
+PROCEDURE DdeEnableCallback (idInst : DWORD; hConv : HCONV; wCmd : EC_ENUM) : BOOL;
+
+PROCEDURE DdeImpersonateClient (hConv : HCONV) : BOOL;
+
+TYPE DNS_ENUM = (DNS__REGISTER,    (* 0 *)
+                 DNS__UNREGISTER,  (* 1 *)
+                 DNS__FILTERON,    (* 2 *)
+                 DNS__FILTEROFF);  (* 3 *)
+
+     DNS_SET = SET OF DNS_ENUM;
+
+CONST DNS_REGISTER   = DNS_SET {DNS__REGISTER  }; (* 0x0001 *)
+      DNS_UNREGISTER = DNS_SET {DNS__UNREGISTER}; (* 0x0002 *)
+      DNS_FILTERON   = DNS_SET {DNS__FILTERON  }; (* 0x0004 *)
+      DNS_FILTEROFF  = DNS_SET {DNS__FILTEROFF }; (* 0x0008 *)
+
+PROCEDURE DdeNameService (idInst : DWORD;
+                          hsz1   : HSZ;
+                          hsz2   : HSZ;
+                          afCmd  : DNS_SET) : HDDEDATA;
+
+(*
+ * app client interface functions
+ *)
+
+PROCEDURE DdeClientTransaction (pData      : PBYTE;
+                                cbData     : DWORD;
+                                hConv      : HCONV;
+                                hszItem    : HSZ;
+                                wFmt       : CF_TYPE;
+                                wType      : XTYP;
+                                dwTimeout  : DWORD;
+                                VAR Result : DWORD) : HDDEDATA;
+
+(*
+ *data transfer functions
+ *)
+
+CONST HDATA_APPOWNED = 1;
+
+PROCEDURE DdeCreateDataHandle (idInst  : DWORD;
+                               pSrc    : PBYTE;
+                               cb      : DWORD;
+                               cbOff   : DWORD;
+                               hszItem : HSZ;
+                               wFmt    : CF_TYPE;
+                               afCmd   : UINT) : HDDEDATA;
+
+PROCEDURE DdeAddData (hData : HDDEDATA;
+                      pSrc  : PBYTE;
+                      cb    : DWORD;
+                      cbOff : DWORD) : HDDEDATA;
+
+PROCEDURE DdeGetData (hData : HDDEDATA;
+                      pDst  : PBYTE;
+                      cbMax : DWORD;
+                      cbOff : DWORD) : DWORD;
+
+PROCEDURE DdeAccessData (hData        : HDDEDATA;
+                         VAR DataSize : DWORD) : PBYTE;
+
+PROCEDURE DdeUnaccessData   (hData : HDDEDATA) : BOOL;
+PROCEDURE DdeFreeDataHandle (hData : HDDEDATA) : BOOL;
+
+PROCEDURE DdeGetLastError (idInst : DWORD) : UINT;
+
+
+CONST     DMLERR_NO_ERROR            = 0;
+
+          DMLERR_FIRST               = 4000h;
+
+          DMLERR_ADVACKTIMEOUT       = 4000h;
+          DMLERR_BUSY                = 4001h;
+          DMLERR_DATAACKTIMEOUT      = 4002h;
+          DMLERR_DLL_NOT_INITIALIZED = 4003h;
+          DMLERR_DLL_USAGE           = 4004h;
+          DMLERR_EXECACKTIMEOUT      = 4005h;
+          DMLERR_INVALIDPARAMETER    = 4006h;
+          DMLERR_LOW_MEMORY          = 4007h;
+          DMLERR_MEMORY_ERROR        = 4008h;
+          DMLERR_NOTPROCESSED        = 4009h;
+          DMLERR_NO_CONV_ESTABLISHED = 400ah;
+          DMLERR_POKEACKTIMEOUT      = 400bh;
+          DMLERR_POSTMSG_FAILED      = 400ch;
+          DMLERR_REENTRANCY          = 400dh;
+          DMLERR_SERVER_DIED         = 400eh;
+          DMLERR_SYS_ERROR           = 400fh;
+          DMLERR_UNADVACKTIMEOUT     = 4010h;
+          DMLERR_UNFOUND_QUEUE_ID    = 4011h;
+
+          DMLERR_LAST                = 4011h;
+
+
+PROCEDURE DdeCreateStringHandleA (idInst   : DWORD;
+                                  psz      : ARRAY OF CHAR;
+                                  CodePage : INTEGER) : HSZ;
+
+PROCEDURE DdeCreateStringHandleW (idInst   : DWORD;
+                                  psz      : ARRAY OF WCHAR;
+                                  CodePage : INTEGER) : HSZ;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST DdeCreateStringHandle = DdeCreateStringHandleW;
+<* ELSE *>
+      CONST DdeCreateStringHandle = DdeCreateStringHandleA;
+<* END *>
+
+PROCEDURE DdeQueryStringA (idInst       : DWORD;
+                           hsz          : HSZ;
+                           VAR [NIL] sz : ARRAY OF CHAR;
+                           cchMax       : DWORD;
+                           iCodePage    : INTEGER) : DWORD;
+
+PROCEDURE DdeQueryStringW (idInst       : DWORD;
+                           hsz          : HSZ;
+                           VAR [NIL] sz : ARRAY OF WCHAR;
+                           cchMax       : DWORD;
+                           iCodePage    : INTEGER) : DWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST DdeQueryString = DdeQueryStringW;
+<* ELSE *>
+      CONST DdeQueryString = DdeQueryStringA;
+<* END *>
+
+PROCEDURE DdeFreeStringHandle (idInst : DWORD; hsz : HSZ) : BOOL;
+PROCEDURE DdeKeepStringHandle (idInst : DWORD; hsz : HSZ) : BOOL;
+PROCEDURE DdeCmpStringHandles (hsz1, hsz2 : HSZ) : INTEGER;
+
+<* IF NOT DEFINED (NODDEMLSPY) THEN *>
+
+(*
+ * DDEML public debugging header file info
+ *)
+
+TYPE DDEML_MSG_HOOK_DATA =
+     RECORD                              (* new for NT *)
+        uiLo   : UINT;                   (* unpacked lo and hi parts of lParam *)
+        uiHi   : UINT;
+        cbData : DWORD;                  (* amount of data in message, if any. May be > than 32 bytes. *)
+        Data   : ARRAY [0..7] OF DWORD;  (* data peeking by DDESPY is limited to 32 bytes. *)
+     END;
+     PDDEML_MSG_HOOK_DATA = POINTER TO DDEML_MSG_HOOK_DATA;
+
+TYPE MONMSGSTRUCT = RECORD
+                           cb     : UINT;
+                           hwndTo : HWND;
+                           dwTime : DWORD;
+                           hTask  : HANDLE;
+                           wMsg   : UINT;
+                           wParam : WPARAM;
+                           lParam : LPARAM;
+                           dmhd   : DDEML_MSG_HOOK_DATA; (* new for NT *)
+                    END;
+    PMONMSGSTRUCT = POINTER TO MONMSGSTRUCT;
+
+TYPE MONCBSTRUCT = RECORD
+                          cb      : UINT;
+                          dwTime  : DWORD;
+                          hTask   : HANDLE;
+                          dwRet   : DWORD;
+                          wType   : XTYP;
+                          wFmt    : CF_TYPE;
+                          hConv   : HCONV;
+                          hsz1    : HSZ;
+                          hsz2    : HSZ;
+                          hData   : HDDEDATA;
+                          dwData1 : DWORD;
+                          dwData2 : DWORD;
+                          cc      : CONVCONTEXT; (* new for NT for XTYP_CONNECT callbacks *)
+                          cbData  : DWORD;       (* new for NT for data peeking *)
+                          Data    : ARRAY [0..7] OF DWORD; (* new for NT for data peeking *)
+                   END;
+    PMONCBSTRUCT = POINTER TO MONCBSTRUCT;
+
+TYPE MH_ENUM = (MH_0,
+                MH_CREATE,   (* 1 *)
+                MH_KEEP,     (* 2 *)
+                MH_DELETE,   (* 3 *)
+                MH_CLEANUP); (* 4 *)
+
+TYPE MONHSZSTRUCTA = RECORD
+                            cb       : UINT;
+                            fsAction : MH_ENUM;  (* MH_ value *)
+                            dwTime   : DWORD;
+                            hsz      : HSZ;
+                            hTask    : HANDLE;
+                            str      : ARRAY [0..0] OF CHAR;
+                     END;
+   PMONHSZSTRUCTA = POINTER TO MONHSZSTRUCTA;
+
+TYPE MONHSZSTRUCTW = RECORD
+                            cb       : UINT;
+                            fsAction : MH_ENUM;  (* MH_ value *)
+                            dwTime   : DWORD;
+                            hsz      : HSZ;
+                            hTask    : HANDLE;
+                            str      : ARRAY [0..0] OF WCHAR;
+                     END;
+   PMONHSZSTRUCTW = POINTER TO MONHSZSTRUCTW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  MONHSZSTRUCT =  MONHSZSTRUCTW;
+      TYPE PMONHSZSTRUCT = PMONHSZSTRUCTW;
+<* ELSE *>
+      TYPE  MONHSZSTRUCT =  MONHSZSTRUCTA;
+      TYPE PMONHSZSTRUCT = PMONHSZSTRUCTA;
+<* END *>
+
+TYPE MONERRSTRUCT = RECORD
+                           cb         : UINT;
+                           wLastError : UINT;
+                           dwTime     : DWORD;
+                           hTask      : HANDLE;
+                    END;
+    PMONERRSTRUCT = POINTER TO MONERRSTRUCT;
+
+TYPE MONLINKSTRUCT = RECORD
+                            cb           : UINT;
+                            dwTime       : DWORD;
+                            hTask        : HANDLE;
+                            fEstablished : BOOL;
+                            fNoData      : BOOL;
+                            hszSvc       : HSZ;
+                            hszTopic     : HSZ;
+                            hszItem      : HSZ;
+                            wFmt         : CF_TYPE;
+                            fServer      : BOOL;
+                            hConvServer  : HCONV;
+                            hConvClient  : HCONV;
+                     END;
+    PMONLINKSTRUCT = POINTER TO MONLINKSTRUCT;
+
+
+TYPE MONCONVSTRUCT = RECORD
+                            cb          : UINT;
+                            fConnect    : BOOL;
+                            dwTime      : DWORD;
+                            hTask       : HANDLE;
+                            hszSvc      : HSZ;
+                            hszTopic    : HSZ;
+                            hConvClient : HCONV; (* Globally unique value != apps local hConv *)
+                            hConvServer : HCONV; (* Globally unique value != apps local hConv *)
+                     END;
+    PMONCONVSTRUCT = POINTER TO MONCONVSTRUCT;
+
+CONST  MAX_MONITORS = 4;
+
+(*
+ * Callback filter flags for use with MONITOR apps - 0 implies no monitor
+ * callbacks.
+ *)
+
+CONST MF_HSZ_INFO   = {24};     (* 0x01000000 *)
+      MF_SENDMSGS   = {25};     (* 0x02000000 *)
+      MF_POSTMSGS   = {26};     (* 0x04000000 *)
+      MF_CALLBACKS  = {27};     (* 0x08000000 *)
+      MF_ERRORS     = {28};     (* 0x10000000 *)
+      MF_LINKS      = {29};     (* 0x20000000 *)
+      MF_CONV       = {30};     (* 0x40000000 *)
+
+      MF_MASK       = {24..31}; (* 0xFF000000 *)
+
+<* END *> (* NODDEMLSPY *)
+
+
+END DDEML.

@@ -1,0 +1,16 @@
+(* Copyright (c) xTech 1992,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosMem; (* Hady. 30.05.96 15:32 *)
+
+IMPORT  SYSTEM;
+
+PROCEDURE X2C_AllocMem(size: CARDINAL): SYSTEM.ADDRESS;
+PROCEDURE X2C_InitMem();
+
+PROCEDURE X2C_GetAvailablePhysicalMemory () :CARDINAL;
+
+<* IF (env_target = "x86nt") OR (env_target = "x86linux") THEN *>
+PROCEDURE X2C_SetSystemDependentHeapLimit (VAR HeapLimit :CARDINAL);
+<* END *>
+
+END xosMem.

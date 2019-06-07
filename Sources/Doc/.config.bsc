@@ -1,0 +1,12 @@
+# PowerPC Documentation: Build System Configuration
+
+UNIT_NAME=x86-Documentation
+ALL_COMPONENTS=convertn,Comp,H2D,O2Rep,XDSLib,XD
+PRIMARY_COMPONENTS=convertn,Comp,H2D,O2Rep,XDSLib,XD
+DEFAULT_COMPONENT=convertn
+
+# Tools necessary to build component
+ENVIRONMENT=
+
+# External files which are part of this component  
+EXTDEPS=

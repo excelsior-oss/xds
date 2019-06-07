@@ -1,0 +1,72 @@
+(* Copyright (c) XDS 1992,96,99.  All Rights Reserved *)
+(*
+  XDS library.
+  Interface to mathematic functions.
+*)
+<* +NOHEADER *>
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xMath; (* Hady. 01.06.96 17:33 *)
+
+IMPORT SYSTEM;
+
+<* IF __GEN_C__ THEN *>
+  CONST CallConv = "C";
+<* ELSIF __GEN_X86__ THEN *>
+  CONST CallConv = "StdCall";
+<* ELSE *>
+*** Not implemented ***
+<* END *>
+
+PROCEDURE [CallConv] / X2C_sin(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_cos(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_sqrt(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_tan(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_arcsin(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_arccos(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_arctan(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_arctan2(y,x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_exp(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_ln(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_lg(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_floor(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_long(x: REAL): INTEGER;
+PROCEDURE [CallConv] / X2C_ulong(x: REAL): CARDINAL;
+PROCEDURE [CallConv] / X2C_pow(base,exponent: REAL): REAL;
+PROCEDURE [CallConv] / X2C_sinh(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_cosh(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_tanh(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_arcsinh(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_arccosh(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_arctanh(x: REAL): REAL;
+PROCEDURE [CallConv] / X2C_rem(x, y: REAL): REAL;
+
+PROCEDURE [CallConv] / X2C_sinl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_cosl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_sqrtl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_tanl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_arcsinl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_arccosl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_arctanl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_arctan2l(y,x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_expl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_lnl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_lgl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_floorl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_longl(x: LONGREAL): INTEGER;
+PROCEDURE [CallConv] / X2C_ulongl(x: LONGREAL): CARDINAL;
+PROCEDURE [CallConv] / X2C_powl(base,exponent: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_sinhl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_coshl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_tanhl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_arcsinhl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_arccoshl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_arctanhl(x: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_reml (x, y: LONGREAL): LONGREAL;
+
+PROCEDURE [CallConv] / X2C_frexp (x: LONGREAL; VAR i: SYSTEM.int): LONGREAL;
+PROCEDURE [CallConv] / X2C_ldexp (x: LONGREAL; i: SYSTEM.int): LONGREAL;
+PROCEDURE [CallConv] / X2C_modf  (x: LONGREAL; VAR i: LONGREAL): LONGREAL;
+PROCEDURE [CallConv] / X2C_controlfp(new, mask: CARDINAL): CARDINAL;
+
+
+END xMath.

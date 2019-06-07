@@ -1,0 +1,36 @@
+(* Copyright (c) 2000 Excelsior, Russia. All Rights Reserved. *)
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE xrFName; (* paul 27-Jan-00 *)
+
+(* File name extracting procedures for use in RT lib.
+
+   File name consists of three parts:
+        - path
+        - name
+        - extensions.
+*)
+
+TYPE
+  Format = RECORD
+    ok: BOOLEAN;               (* result *)
+    dirPos, dirLen : CARDINAL; (* directory position and length *)
+    namePos,nameLen: CARDINAL; (* name position and length *)
+    extPos, extLen : CARDINAL; (* extension position and length *)
+  END;
+
+(*----------------------------------------------------------------*)
+
+PROCEDURE X2C_ParseFileName(str: ARRAY OF CHAR; VAR f: Format);
+(* Returns the format of the string.
+   The values of *Pos, *Len fields are undefined
+   if f.ok=FALSE. *)
+
+PROCEDURE X2C_ExtractPath (fname: ARRAY OF CHAR; VAR path: ARRAY OF CHAR);
+PROCEDURE X2C_ExtractBaseName(fname: ARRAY OF CHAR; VAR name: ARRAY OF CHAR);
+PROCEDURE X2C_ExtractFileExt (fname: ARRAY OF CHAR; VAR ext: ARRAY OF CHAR);
+
+PROCEDURE X2C_SplitFileName (fname: ARRAY OF CHAR;
+                         VAR path,name,ext: ARRAY OF CHAR);
+
+
+END xrFName.

@@ -1,0 +1,321 @@
+(* Copyright (C) 1996 xTech Ltd *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE Graph;
+
+VAR
+  Width,
+  Depth     :LONGCARD;   (* Graph window size                  *)
+  Rows      :LONGCARD;   (* number of rows  in the text window *)
+  Columns   :LONGCARD;   (* number of columns /                *)
+  NumPColor :LONGCARD;   (* number of palette colors on the device in use  *)
+
+CONST
+  (* adapter codes are remained only for smooth compilation of TS sources;
+     _VGA is always set *)
+
+  _MDPA     =  0001H;      (* Monochrome Display Adapter (MDPA) *)
+  _CGA      =  0002H;      (* Color Graphics Adapter     (CGA)  *)
+  _EGA      =  0004H;      (* Enhanced Graphics Adapter  (EGA)  *)
+  _VGA      =  0008H;      (* Video Graphics Array       (VGA)  *)
+  _MCGA     =  0010H;      (* MultiColor Graphics Array  (MCGA) *)
+  _HGC      =  0020H;      (* Hercules Graphics Card     (HGC)  *)
+
+  _MONO     =  0001H;      (* Monochrome *)
+  _COLOR    =  0002H;      (* Color (or Enhanced emulating color) *)
+  _ENHCOLOR =  0004H;      (* Enhanced Color *)
+  _ANALOG   =  0018H;      (* Analog *)
+
+  _DEFAULTMODE  =  MAX(CARDINAL);  (* restore screen to original mode *)
+  _TEXTBW40     =  0;       (* 40 x 25 text, 16 grey *)
+  _TEXTC40      =  1;       (* 40 x 25 text, 16/8 color *)
+  _TEXTBW80     =  2;       (* 80 x 25 text, 16 grey *)
+  _TEXTC80      =  3;       (* 80 x 25 text, 16/8 color *)
+  _MRES4COLOR   =  4;       (* 320 x 200, 4 color *)
+  _MRESNOCOLOR  =  5;       (* 320 x 200, 4 grey *)
+  _HRESBW       =  6;       (* 640 x 200, BW *)
+  _TEXTMONO     =  7;       (* 80 x 25 text, BW *)
+  _HERCMONO     =  8;       (* 720 x 348, BW for HGC *)
+  _MRES16COLOR  =  13;      (* 320 x 200, 16 color *)
+  _HRES16COLOR  =  14;      (* 640 x 200, 16 color *)
+  _ERESNOCOLOR  =  15;      (* 640 x 350, BW *)
+  _ERESCOLOR    =  16;      (* 640 x 350, 4 or 16 color *)
+  _VRES2COLOR   =  17;      (* 640 x 480, BW *)
+  _VRES16COLOR  =  18;      (* 640 x 480, 16 color *)
+  _MRES256COLOR =  19;      (* 320 x 200, 256 color *)
+
+TYPE
+  VideoConfig = RECORD
+    numxpixels    :CARDINAL;    (* number of pixels on X axis *)
+    numypixels    :CARDINAL;    (* number of pixels on Y axis *)
+    numtextcols   :CARDINAL;    (* number of text columns available *)
+    numtextrows   :CARDINAL;    (* number of text rows available *)
+    numcolors     :CARDINAL;    (* number of actual colors *)
+    bitsperpixel  :CARDINAL;    (* number of bits per pixel *)
+    numvideopages :CARDINAL;    (* number of available video pages *)
+    mode          :CARDINAL;    (* current video mode *)
+    adapter       :CARDINAL;    (* active display adapter *)
+    monitor       :CARDINAL;    (* active display monitor *)
+    memory        :CARDINAL;    (* adapter video memory in K bytes *)
+  END;
+
+  GraphCoords = RECORD
+                  xcoord,
+                  ycoord: INTEGER;
+                END;
+
+PROCEDURE GraphMode;
+
+PROCEDURE TextMode;
+
+
+PROCEDURE SetActivePage(Page :CARDINAL) :CARDINAL;
+
+PROCEDURE SetVisualPage(Page :CARDINAL) :CARDINAL;
+(* two above functions are stubs for smooth compilation
+   because only one page is available *)
+
+
+CONST
+  _GBORDER       =  FALSE;   (* draw outline only *)
+  _GFILLINTERIOR =  TRUE;    (* fill using current fill mask *)
+
+CONST
+  _BLACK         =  0000000H;
+  _BLUE          =  00000B0H;
+  _GREEN         =  000B000H;
+  _CYAN          =  0008080H;
+  _RED           =  0B00000H;
+  _MAGENTA       =  0800080H;
+  _BROWN         =  0B06000H;
+  _WHITE         =  0C0C0C0H;
+  _GRAY          =  0808080H;
+  _LIGHTBLUE     =  00000FFH;
+  _LIGHTGREEN    =  000FF00H;
+  _LIGHTCYAN     =  000FFFFH;
+  _LIGHTRED      =  0FF0000H;
+  _LIGHTMAGENTA  =  0FF00FFH;
+  _LIGHTYELLOW   =  0FFFF00H;
+  _BRIGHTWHITE   =  0FFFFFFH;
+
+
+  _clrBLACK         =  0;
+  _clrBLUE          =  1;
+  _clrGREEN         =  2;
+  _clrCYAN          =  3;
+  _clrRED           =  4;
+  _clrMAGENTA       =  5;
+  _clrBROWN         =  6;
+  _clrWHITE         =  7;
+  _clrGRAY          =  8;
+  _clrLIGHTBLUE     =  9;
+  _clrLIGHTGREEN    =  10;
+  _clrLIGHTCYAN     =  11;
+  _clrLIGHTRED      =  12;
+  _clrLIGHTMAGENTA  =  13;
+  _clrLIGHTYELLOW   =  14;
+  _clrBRIGHTWHITE   =  15;
+
+
+PROCEDURE Init (xLeft, yTop, xd, yd :LONGCARD) :BOOLEAN;
+
+PROCEDURE SetVideoMode (Mode :CARDINAL): BOOLEAN;
+(* it is just Init with default size *)
+
+PROCEDURE GetVideoConfig (VAR V :VideoConfig);
+
+PROCEDURE Exit;
+
+(* clear screen modes *)
+CONST
+  _GCLEARSCREEN = 0;
+  _GVIEWPORT    = 1;
+  _GWINDOW      = 2;
+
+PROCEDURE ClearScreen (Area :CARDINAL);
+
+
+(*///////////////// attr setting //////////////////*)
+
+(* line styles *)
+CONST
+  LNSTYLE_SOLID         = 0;  --
+  LNSTYLE_DOT           = 1;  --
+  LNSTYLE_SHORTDASH     = 2;  -- this order is important
+  LNSTYLE_DASHDOT       = 3;  --
+  LNSTYLE_DASHDOUBLEDOT = 4;  --
+  LNSTYLE_INVISIBLE     = 5;  --
+
+PROCEDURE SetLinestyle (Style :CARDINAL);
+PROCEDURE GetLinestyle () :CARDINAL;
+
+
+(* hatch patterns *)
+VAR
+  PATSYM_DENSE1,
+  PATSYM_DENSE2,
+  PATSYM_VERT,
+  PATSYM_HORIZ,
+  PATSYM_DIAG1,
+  PATSYM_DIAG2,
+  PATSYM_SOLID  :LONGINT;
+
+
+
+PROCEDURE SetStdFillMask( Mask :LONGINT);
+PROCEDURE GetStdFillMask() :LONGINT;
+
+TYPE
+  FillMaskType = ARRAY [0..7] OF SHORTCARD;
+
+PROCEDURE SetFillMask ( Mask :FillMaskType );
+PROCEDURE GetFillMask ( VAR Mask :FillMaskType );
+
+PROCEDURE SetBkColor ( Color :LONGCARD ) :LONGCARD;
+PROCEDURE GetBkColor() :LONGCARD;
+
+
+CONST
+  _TRANSPARENT = FALSE;
+  _OPAQUE      = TRUE;
+
+PROCEDURE SetBkMix ( isOpaque :BOOLEAN );
+
+
+
+(*/////////////////////////////// graphic primitives /////////////////////////*)
+
+PROCEDURE Plot( x, y :LONGCARD; Color :LONGCARD );
+(* set a single pixel to given color *)
+
+PROCEDURE Point(x, y :LONGCARD) :LONGCARD;
+(* read a pixel of the screen *)
+
+PROCEDURE HLine(x,y,x2: CARDINAL; FillColor: CARDINAL);
+(* draw a horizontal line of given color (used for filling) *)
+
+PROCEDURE Line( x1, y1, x2, y2 :LONGCARD; Color: LONGCARD);
+(* draw an arbitrary line in given color *)
+
+
+PROCEDURE Ellipse ( x0,y0:LONGCARD;   -- center
+                    a,b  :LONGCARD;   -- semi-axes
+                    c    :LONGCARD;   -- color
+                    fill :BOOLEAN );  -- whether filled
+
+
+PROCEDURE Disc(x0, y0, r, c :LONGCARD);
+(* filled circle, centre x0,y0; radius r *)
+
+
+PROCEDURE Circle(x0, y0, r, c :LONGCARD);
+(* centre x0,y0; radius r *)
+
+CONST
+  TrueCircle = Circle;
+  TrueDisc   = Disc;
+
+PROCEDURE Rectangle (x0, y0, x1, y1 :LONGCARD; Color :LONGCARD; Fill :BOOLEAN);
+
+
+
+PROCEDURE SetClipRgn( x1, y1, x2, y2 :LONGCARD );
+
+PROCEDURE CancelClipRgn;
+
+
+PROCEDURE Polygon(n :LONGCARD; px, py :ARRAY OF LONGCARD; FillColor :LONGCARD; Fill :BOOLEAN);
+(* polygon of n points *)
+
+CONST
+  _GTOP          =  TRUE;    (* draw top of cube *)
+  _GNOTOP        =  FALSE;
+
+PROCEDURE Cube(top :BOOLEAN; x1, y1, x2, y2, depth :LONGCARD; Color :LONGCARD; Fill:BOOLEAN);
+
+
+PROCEDURE FloodFill ( x, y :LONGCARD; Color, Boundary :LONGCARD );
+
+CONST
+  StackFill = FloodFill;
+
+
+PROCEDURE Arc(x1, y1, x2, y2, x3, y3, x4, y4: CARDINAL; Color: CARDINAL);
+
+PROCEDURE Pie(x1, y1, x2, y2, x3, y3, x4, y4: CARDINAL; Colr: CARDINAL; Fill: BOOLEAN);
+
+
+
+(*////////////////////////// text procedures ////////////////////////////*)
+
+CONST
+  _GWRAPOFF  =  FALSE;
+  _GWRAPON   =  TRUE;
+
+TYPE
+  TextCoords = RECORD
+                 row, col :LONGCARD;
+               END;
+
+PROCEDURE SetTextPosition (col, row :LONGCARD) :TextCoords;
+PROCEDURE GetTextPosition() :TextCoords;
+
+PROCEDURE GetTextColumn() :LONGCARD;
+PROCEDURE GetTextRow()    :LONGCARD;
+
+PROCEDURE GetTextColor() :LONGCARD;
+PROCEDURE SetTextColor (Color :LONGCARD) :LONGCARD;
+PROCEDURE SetTextWindow (c1, r1, c2, r2 :LONGCARD);
+
+PROCEDURE Wrapon ( Opt :BOOLEAN) :BOOLEAN;
+
+PROCEDURE DisplayCursor( Toggle :BOOLEAN) :BOOLEAN;
+
+PROCEDURE OutText ( Text :ARRAY OF CHAR);
+
+
+(*/////////////////////////// Bitmap operations //////////////////////////////*)
+
+(* bitmap pasting mode *)
+CONST
+  _GOR           =  0; --
+  _GAND          =  1; --
+  _GPRESET       =  2; --  do not change this order
+  _GPSET         =  3; --
+  _GXOR          =  4; --
+
+TYPE
+  HBITMAP = LONGCARD;  (* bitmap handle *)
+
+PROCEDURE GetImage  (x1, y1, x2, y2 :LONGCARD; VAR handle :HBITMAP );
+PROCEDURE PutImage  (x, y :LONGCARD; hbm :HBITMAP; Action :LONGCARD);
+PROCEDURE DelImage  ( hbm :HBITMAP );
+
+PROCEDURE ImageSize(x1, y1, x2, y2: CARDINAL) :CARDINAL;
+(* dummy procedure always returns 0 *)
+
+(*///////////////////////////// Palette operations ////////////////////////////*)
+
+
+PROCEDURE InitStdPalette;
+
+PROCEDURE RemapPalette (palItem :CARDINAL; Color :LONGCARD) :LONGCARD;
+
+PROCEDURE RemapAllPalette (colArray :ARRAY OF LONGCARD) :LONGCARD;
+
+(*//////////////////// Additional (XDS-specific) operations ////////////////////*)
+
+PROCEDURE RawOutText (x1, y1, Color :LONGCARD; Text :ARRAY OF CHAR );
+
+PROCEDURE SetGraphWindowTitle (text :ARRAY OF CHAR);
+
+PROCEDURE Arc_a ( x1, y1, x2, y2 :LONGCARD; startAngle, sweepAngle :LONGREAL; Color :LONGCARD );
+
+PROCEDURE Pie_a ( x1, y1, x2, y2 :LONGCARD; startAngle, sweepAngle :LONGREAL;
+                Color :CARDINAL; Fill :BOOLEAN);
+
+
+END Graph.
+

@@ -1,0 +1,22 @@
+
+ASMFLAGS= /dOS2 /ml /oi /q /r /t
+
+all: xstart.lib xstartd.lib
+
+xstart.obj:  xstart.asm
+  tasm $(ASMFLAGS)  .\xstart.asm
+
+xstartd.obj:  xstartd.asm
+  tasm $(ASMFLAGS)  .\xstartd.asm
+
+xstart.lib:  xstart.obj
+  xlib xstart xstart.obj
+
+xstartd.lib:  xstartd.obj
+  xlib xstartd xstartd.obj
+
+  -Del *.obj
+
+clean:
+  -Del *.lib
+

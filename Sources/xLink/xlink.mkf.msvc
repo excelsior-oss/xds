@@ -1,0 +1,213 @@
+OBJDIR  = .\ch
+SRCDIR  = .\src
+NAME    = .\workplace\xlink.exe
+
+OBJ     = \
+          $(OBJDIR)\link.obj \
+          $(OBJDIR)\struct.obj \
+          $(OBJDIR)\typestable.obj \
+          $(OBJDIR)\efs.obj \
+          $(OBJDIR)\implib.obj \
+          $(OBJDIR)\idents.obj \
+          $(OBJDIR)\writepe.obj \
+          $(OBJDIR)\writelx.obj \
+          $(OBJDIR)\writeelf.obj \
+          $(OBJDIR)\debug.obj \
+          $(OBJDIR)\dbghll.obj \
+          $(OBJDIR)\dbgcv.obj \
+          $(OBJDIR)\rdos2res.obj \
+          $(OBJDIR)\rdntres.obj \
+          $(OBJDIR)\readdll.obj \
+          $(OBJDIR)\readelf.obj \
+          $(OBJDIR)\xshell.obj \
+          $(OBJDIR)\readcoff.obj \
+          $(OBJDIR)\readedf.obj \
+          $(OBJDIR)\messages.obj \
+          $(OBJDIR)\xmem.obj \
+          $(OBJDIR)\xdebug.obj \
+          $(OBJDIR)\readomf0.obj \
+          $(OBJDIR)\readomf.obj \
+          $(OBJDIR)\readxomf.obj \
+          $(OBJDIR)\args.obj \
+          $(OBJDIR)\reader.obj \
+          $(OBJDIR)\writer.obj \
+          $(OBJDIR)\writeeil.obj \
+          $(OBJDIR)\readeil.obj \
+          $(OBJDIR)\dbgedif.obj \
+          $(OBJDIR)\xos.obj \
+          $(OBJDIR)\parser.obj \
+          $(OBJDIR)\dbg99.obj \
+          $(OBJDIR)\unzip.obj \
+          $(OBJDIR)\ioapi.obj \
+          $(OBJDIR)\adler32.obj \
+          $(OBJDIR)\compress.obj \
+          $(OBJDIR)\crc32.obj \
+          $(OBJDIR)\deflate.obj \
+          $(OBJDIR)\gzio.obj \
+          $(OBJDIR)\infback.obj \
+          $(OBJDIR)\inffast.obj \
+          $(OBJDIR)\inflate.obj \
+          $(OBJDIR)\inftrees.obj \
+          $(OBJDIR)\trees.obj \
+          $(OBJDIR)\uncompr.obj \
+          $(OBJDIR)\zutil.obj
+
+CC      = @cl
+LD      = @link
+
+xOS = xos_WINNT
+
+CFLAGS  = /D$(xOS) /nologo /c /EHsc /W3 /Zp1 /I./$(SRCDIR)/zlib /I./$(SRCDIR)/minizip /D_CRT_SECURE_NO_DEPRECATE
+LFLAGS  = /STACK:10485760
+
+$(NAME) : $(OBJ)
+          $(LD) $(LFLAGS) $(OBJ) /OUT:$(NAME)
+
+$(OBJDIR)\implib.obj : $(SRCDIR)\implib.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\omf.h $(SRCDIR)\implib.h $(SRCDIR)\xmem.h $(SRCDIR)\writer.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\implib.obj $(SRCDIR)\implib.cpp
+        
+$(OBJDIR)\idents.obj : $(SRCDIR)\idents.cpp $(SRCDIR)\xdefs.h $(SRCDIR)\idents.h $(SRCDIR)\xmem.h $(SRCDIR)\xdebug.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\idents.obj $(SRCDIR)\idents.cpp
+
+$(OBJDIR)\readcoff.obj : $(SRCDIR)\readcoff.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\debug.h $(SRCDIR)\xmem.h $(SRCDIR)\readcoff.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\readcoff.obj $(SRCDIR)\readcoff.cpp
+
+$(OBJDIR)\link.obj : $(SRCDIR)\link.cpp $(SRCDIR)\idents.h $(SRCDIR)\xshell.h $(SRCDIR)\messages.h $(SRCDIR)\xdefs.h $(SRCDIR)\xos.h $(SRCDIR)\readxomf.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\link.obj $(SRCDIR)\link.cpp
+
+$(OBJDIR)\struct.obj : $(SRCDIR)\struct.cpp $(SRCDIR)\struct.h $(SRCDIR)\jet.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\xmem.h $(SRCDIR)\reader.h $(SRCDIR)\writer.h $(SRCDIR)\cpb.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\struct.obj $(SRCDIR)\struct.cpp
+
+$(OBJDIR)\typestable.obj : $(SRCDIR)\typestable.cpp $(SRCDIR)\typestable.h $(SRCDIR)\struct.h $(SRCDIR)\jet.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\xmem.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\typestable.obj $(SRCDIR)\typestable.cpp
+
+$(OBJDIR)\efs.obj : $(SRCDIR)\efs.cpp $(SRCDIR)\efs.h $(SRCDIR)\struct.h $(SRCDIR)\jet.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\xmem.h $(SRCDIR)\parser.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\efs.obj $(SRCDIR)\efs.cpp
+
+$(OBJDIR)\xshell.obj : $(SRCDIR)\winmake.cpp $(SRCDIR)\winmake.h $(SRCDIR)\xshell.h $(SRCDIR)\xdefs.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\xshell.obj $(SRCDIR)\xshell.cpp
+
+$(OBJDIR)\writepe.obj : $(SRCDIR)\writepe.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\debug.h $(SRCDIR)\implib.h $(SRCDIR)\xmem.h $(SRCDIR)\writepe.h $(SRCDIR)\writer.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\writepe.obj $(SRCDIR)\writepe.cpp
+
+$(OBJDIR)\writelx.obj : $(SRCDIR)\writelx.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\debug.h $(SRCDIR)\implib.h $(SRCDIR)\xmem.h $(SRCDIR)\writelx.h $(SRCDIR)\writer.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\writelx.obj $(SRCDIR)\writelx.cpp
+
+$(OBJDIR)\writeelf.obj : $(SRCDIR)\writeelf.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\xmem.h $(SRCDIR)\writeelf.h $(SRCDIR)\xos.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\writeelf.obj $(SRCDIR)\writeelf.cpp
+
+$(OBJDIR)\debug.obj : $(SRCDIR)\debug.cpp $(SRCDIR)\struct.h $(SRCDIR)\debug.h $(SRCDIR)\dbghll.h $(SRCDIR)\dbg99.h $(SRCDIR)\dbgcv.h $(SRCDIR)\dbgedif.h $(SRCDIR)\xmem.h $(SRCDIR)\xdebug.h $(SRCDIR)\messages.h $(SRCDIR)\xos.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\debug.obj $(SRCDIR)\debug.cpp
+        
+$(OBJDIR)\dbghll.obj : $(SRCDIR)\dbghll.cpp $(SRCDIR)\struct.h $(SRCDIR)\xdebug.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\dbghll.h $(SRCDIR)\xmem.h $(SRCDIR)\debug.h $(SRCDIR)\writer.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\dbghll.obj $(SRCDIR)\dbghll.cpp
+
+$(OBJDIR)\dbgcv.obj : $(SRCDIR)\dbgcv.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\debug.h $(SRCDIR)\xmem.h $(SRCDIR)\writer.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\dbgcv.obj $(SRCDIR)\dbgcv.cpp
+
+$(OBJDIR)\rdntres.obj : $(SRCDIR)\rdntres.cpp $(SRCDIR)\struct.h $(SRCDIR)\messages.h $(SRCDIR)\xmem.h $(SRCDIR)\rdntres.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\rdntres.obj $(SRCDIR)\rdntres.cpp
+        
+$(OBJDIR)\rdos2res.obj : $(SRCDIR)\rdos2res.cpp $(SRCDIR)\struct.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\xmem.h $(SRCDIR)\rdos2res.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\rdos2res.obj $(SRCDIR)\rdos2res.cpp
+
+$(OBJDIR)\readdll.obj : $(SRCDIR)\readdll.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xmem.h $(SRCDIR)\readdll.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\readdll.obj $(SRCDIR)\readdll.cpp
+
+$(OBJDIR)\readelf.obj : $(SRCDIR)\readelf.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xmem.h $(SRCDIR)\readelf.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\readelf.obj $(SRCDIR)\readelf.cpp
+
+$(OBJDIR)\readedf.obj : $(SRCDIR)\readedf.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xmem.h $(SRCDIR)\readedf.h $(SRCDIR)\reader.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\readedf.obj $(SRCDIR)\readedf.cpp
+
+$(OBJDIR)\messages.obj : $(SRCDIR)\messages.cpp $(SRCDIR)\xdefs.h $(SRCDIR)\args.h $(SRCDIR)\xdebug.h $(SRCDIR)\messages.h $(SRCDIR)\xshell.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\messages.obj $(SRCDIR)\messages.cpp
+
+$(OBJDIR)\xmem.obj : $(SRCDIR)\xmem.cpp $(SRCDIR)\xmem.h $(SRCDIR)\messages.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\xmem.obj $(SRCDIR)\xmem.cpp
+
+$(OBJDIR)\xdebug.obj : $(SRCDIR)\xdebug.cpp $(SRCDIR)\struct.h $(SRCDIR)\xdebug.h $(SRCDIR)\idents.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\xdebug.obj $(SRCDIR)\xdebug.cpp
+
+$(OBJDIR)\readomf0.obj : $(SRCDIR)\readomf0.cpp $(SRCDIR)\struct.h $(SRCDIR)\debug.h $(SRCDIR)\omf.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\xmem.h $(SRCDIR)\readomf0.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\readomf0.obj $(SRCDIR)\readomf0.cpp
+
+$(OBJDIR)\readomf.obj : $(SRCDIR)\readomf.cpp $(SRCDIR)\struct.h $(SRCDIR)\debug.h $(SRCDIR)\omf.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\xmem.h $(SRCDIR)\readomf.h $(SRCDIR)\readomf0.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\readomf.obj $(SRCDIR)\readomf.cpp
+
+$(OBJDIR)\readxomf.obj : $(SRCDIR)\readxomf.cpp $(SRCDIR)\readomf.cpp $(SRCDIR)\struct.h $(SRCDIR)\debug.h $(SRCDIR)\omf.h $(SRCDIR)\xomf.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\xmem.h $(SRCDIR)\readxomf.h $(SRCDIR)\readomf0.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\readxomf.obj $(SRCDIR)\readxomf.cpp
+
+$(OBJDIR)\args.obj : $(SRCDIR)\args.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\xmem.h $(SRCDIR)\messages.h $(SRCDIR)\readedf.h $(SRCDIR)\reader.h $(SRCDIR)\xshell.h $(SRCDIR)\args.h $(SRCDIR)\cpb.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\args.obj $(SRCDIR)\args.cpp
+
+$(OBJDIR)\reader.obj : $(SRCDIR)\reader.cpp $(SRCDIR)\xos.h $(SRCDIR)\xdefs.h $(SRCDIR)\messages.h $(SRCDIR)\xmem.h $(SRCDIR)\args.h $(SRCDIR)\idents.h $(SRCDIR)\reader.h $(SRCDIR)\omf.h $(SRCDIR)\readomf.h $(SRCDIR)\readxomf.h $(SRCDIR)\readeil.h $(SRCDIR)\readcoff.h $(SRCDIR)\readdll.h $(SRCDIR)\rdntres.h $(SRCDIR)\rdos2res.h $(SRCDIR)\readelf.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\reader.obj $(SRCDIR)\reader.cpp
+
+$(OBJDIR)\writer.obj : $(SRCDIR)\writer.cpp $(SRCDIR)\xdefs.h $(SRCDIR)\xos.h $(SRCDIR)\xmem.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\args.h $(SRCDIR)\writepe.h $(SRCDIR)\writelx.h $(SRCDIR)\writeelf.h $(SRCDIR)\implib.h $(SRCDIR)\writeeil.h $(SRCDIR)\writer.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\writer.obj $(SRCDIR)\writer.cpp
+
+$(OBJDIR)\writeeil.obj : $(SRCDIR)\writeeil.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\xmem.h $(SRCDIR)\writer.h $(SRCDIR)\writeeil.h $(SRCDIR)\eil.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\writeeil.obj $(SRCDIR)\writeeil.cpp
+
+$(OBJDIR)\readeil.obj : $(SRCDIR)\readeil.cpp $(SRCDIR)\struct.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xdebug.h $(SRCDIR)\readeil.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\readeil.obj $(SRCDIR)\readeil.cpp
+
+$(OBJDIR)\dbg99.obj : $(SRCDIR)\dbg99.cpp $(SRCDIR)\dbghll.cpp $(SRCDIR)\struct.h $(SRCDIR)\xdebug.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\dbg99.h $(SRCDIR)\xmem.h $(SRCDIR)\debug.h $(SRCDIR)\writer.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\dbg99.obj $(SRCDIR)\dbg99.cpp
+        
+$(OBJDIR)\xos.obj : $(SRCDIR)\xos.cpp $(SRCDIR)\xos.h $(SRCDIR)\messages.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\xos.obj $(SRCDIR)\xos.cpp
+
+$(OBJDIR)\parser.obj : $(SRCDIR)\parser.cpp $(SRCDIR)\parser.h $(SRCDIR)\xos.h $(SRCDIR)\messages.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\parser.obj $(SRCDIR)\parser.cpp
+
+$(OBJDIR)\dbgedif.obj : $(SRCDIR)\dbgedif.cpp $(SRCDIR)\dbgedif.h $(SRCDIR)\debug.h $(SRCDIR)\struct.h $(SRCDIR)\xdebug.h $(SRCDIR)\idents.h $(SRCDIR)\messages.h $(SRCDIR)\xmem.h $(SRCDIR)\writer.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\dbgedif.obj $(SRCDIR)\dbgedif.cpp
+
+# objs for minizip
+                                                                    
+$(OBJDIR)\unzip.obj: $(SRCDIR)\minizip\unzip.c $(SRCDIR)\minizip\unzip.h $(SRCDIR)\minizip\ioapi.h $(SRCDIR)\minizip\crypt.h $(SRCDIR)\zlib\zlib.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\unzip.obj $(SRCDIR)\minizip\unzip.c
+
+$(OBJDIR)\ioapi.obj: $(SRCDIR)\minizip\ioapi.c $(SRCDIR)\minizip\ioapi.h
+        $(CC) $(CFLAGS) /Fo$(OBJDIR)\ioapi.obj $(SRCDIR)\minizip\ioapi.c
+
+$(OBJDIR)\adler32.obj: $(SRCDIR)\zlib\adler32.c $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\adler32.obj $(SRCDIR)\zlib\adler32.c
+
+$(OBJDIR)\compress.obj: $(SRCDIR)\zlib\compress.c $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\compress.obj $(SRCDIR)\zlib\compress.c
+
+$(OBJDIR)\crc32.obj: $(SRCDIR)\zlib\crc32.c $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h $(SRCDIR)\zlib\crc32.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\crc32.obj $(SRCDIR)\zlib\crc32.c
+
+$(OBJDIR)\deflate.obj: $(SRCDIR)\zlib\deflate.c $(SRCDIR)\zlib\deflate.h $(SRCDIR)\zlib\zutil.h $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\deflate.obj $(SRCDIR)\zlib\deflate.c         
+
+$(OBJDIR)\gzio.obj: $(SRCDIR)\zlib\gzio.c $(SRCDIR)\zlib\zutil.h $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\gzio.obj $(SRCDIR)\zlib\gzio.c        
+
+$(OBJDIR)\infback.obj: $(SRCDIR)\zlib\infback.c $(SRCDIR)\zlib\zutil.h $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h $(SRCDIR)\zlib\inftrees.h $(SRCDIR)\zlib\inflate.h \
+             $(SRCDIR)\zlib\inffast.h $(SRCDIR)\zlib\inffixed.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\infback.obj $(SRCDIR)\zlib\infback.c
+
+$(OBJDIR)\inffast.obj: $(SRCDIR)\zlib\inffast.c $(SRCDIR)\zlib\zutil.h $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h $(SRCDIR)\zlib\inftrees.h $(SRCDIR)\zlib\inflate.h \
+             $(SRCDIR)\zlib\inffast.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\inffast.obj $(SRCDIR)\zlib\inffast.c
+
+$(OBJDIR)\inflate.obj: $(SRCDIR)\zlib\inflate.c $(SRCDIR)\zlib\zutil.h $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h $(SRCDIR)\zlib\inftrees.h $(SRCDIR)\zlib\inflate.h \
+             $(SRCDIR)\zlib\inffast.h $(SRCDIR)\zlib\inffixed.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\inflate.obj $(SRCDIR)\zlib\inflate.c
+
+$(OBJDIR)\inftrees.obj: $(SRCDIR)\zlib\inftrees.c $(SRCDIR)\zlib\zutil.h $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h $(SRCDIR)\zlib\inftrees.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\inftrees.obj $(SRCDIR)\zlib\inftrees.c
+
+$(OBJDIR)\trees.obj: $(SRCDIR)\zlib\trees.c $(SRCDIR)\zlib\zutil.h $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h $(SRCDIR)\zlib\deflate.h $(SRCDIR)\zlib\trees.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\trees.obj $(SRCDIR)\zlib\trees.c
+
+$(OBJDIR)\uncompr.obj: $(SRCDIR)\zlib\uncompr.c $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\uncompr.obj $(SRCDIR)\zlib\uncompr.c
+
+$(OBJDIR)\zutil.obj: $(SRCDIR)\zlib\zutil.c $(SRCDIR)\zlib\zutil.h $(SRCDIR)\zlib\zlib.h $(SRCDIR)\zlib\zconf.h
+         $(CC) $(CFLAGS) /Fo$(OBJDIR)\zutil.obj $(SRCDIR)\zlib\zutil.c

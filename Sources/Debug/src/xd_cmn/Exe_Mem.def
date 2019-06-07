@@ -1,0 +1,68 @@
+-- Высокоуровневый доступ к памяти и регистрам. При чтении из памяти
+-- маскирует расставленные точки останова. Использует Krn_mem для
+-- непосредственного доступа к памяти. Организует кеширование.
+--
+-- Реализация зависит от целевой машины
+
+DEFINITION MODULE Exe_Mem;
+
+IMPORT sys := SYSTEM;
+
+IMPORT kt  := KrnTypes;
+
+---------------------- Доступ к памяти и регистрам -------------------------
+                      -----------------------------
+
+PROCEDURE GetCaches();
+
+
+(* Прочитать с адреса в буфер немного байтов *)
+(* Запрос кешируется                         *)
+PROCEDURE Get(source: kt.ADDRESS; dest: sys.ADDRESS; len: CARDINAL): BOOLEAN;
+
+(* Прочитать с адреса в буфер немного байтов                 *)
+(* Запрос кешируется, если выставлен флаг                    *)
+(* Память сканируется на точки останова, если выставлен флаг *)
+PROCEDURE Get_Special (source: kt.ADDRESS; dest: sys.ADDRESS; len: CARDINAL;
+                       cache: BOOLEAN; scan: BOOLEAN): BOOLEAN;
+
+(* Записать по адресу из буфера немного байтов *)
+PROCEDURE Put(dest: kt.ADDRESS; source: sys.ADDRESS; len: CARDINAL): BOOLEAN;
+
+(* Получить значение из регистра       *)
+PROCEDURE GetReg(regno: CARDINAL; VAR value: kt.REG_VALUE): BOOLEAN;
+
+(* Записать значение в регистр         *)
+PROCEDURE SetReg(regno: CARDINAL;     value: kt.REG_VALUE): BOOLEAN;
+
+
+<* IF DEST_XDS AND (TARGET_OS = "WINNT") THEN *>
+
+(* Получить данные о плавающих регитстрах *)
+PROCEDURE GetFloatRegs (VAR FloatRegs: kt.FLOATING_REGISTER_CACHE): BOOLEAN;
+
+(* Установить значения плавающих регитстров *)
+PROCEDURE SetFloatRegs (FloatRegs: kt.FLOATING_REGISTER_CACHE): BOOLEAN;
+
+<* END *>
+
+
+(* Получить тукещее значение IP *)
+PROCEDURE GetIP (): kt.REG_VALUE;
+
+(* Получить текущее значение SP *)
+PROCEDURE GetSP (): kt.REG_VALUE;
+
+(* Получить тукещее значение Frame pointer *)
+PROCEDURE GetFrame (): kt.REG_VALUE;
+
+PROCEDURE GetFlags(VAR flags: kt.FLAGS): BOOLEAN;
+
+PROCEDURE GetSegmentInfo(    addr  : kt.ADDRESS;
+                         VAR begin : kt.ADDRESS;
+                         VAR len   : CARDINAL;
+                         VAR access: kt.ATTRIBS): BOOLEAN;
+
+PROCEDURE IsAddrFromExecutableSeg(addr: kt.ADDRESS): BOOLEAN;
+
+END Exe_Mem.

@@ -1,0 +1,9 @@
+<* M2EXTENSIONS+ *>
+<* IF BACKEND = "C" THEN *>
+  <* NOHEADER+ *>
+  <* GENTYPEDEF+ *>
+<* ELSE *>
+  <* ALIGNMENT = "8" *>
+  <* ENUMSIZE = "4" *>
+  <* SETSIZE = "4" *>
+<* END *>

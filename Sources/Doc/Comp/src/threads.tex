@@ -1,0 +1,234 @@
+\chapter{Creating multithread programs}
+\label{threads}
+
+Multithreading is an operating system feature that is supported by Native XDS-x86
+for Windows. This chapter describes
+the creation of multithread programs using Native XDS-x86 and discusses
+restrictions that multithreading imposes on these programs.
+
+\section{Overview}
+
+A {\em thread} is the smallest unit of execution within a process.
+Each thread has its own stack and registers; other resources
+of a process, such as global data, files, pipes, etc., are shared by
+all its threads. Any process has at least one primary thread, also
+called the main thread or thread 1.
+It is started by the operating system when the process is created
+and may itself create other threads when necessary. When the main thread
+terminates, the whole process terminates.
+
+All threads of a process are executed concurrently in the sense that the
+operating system allocates small amounts of CPU time ({\em time slices})
+to threads according to their {\em priorities}. This process is called
+{\em scheduling}. Of course, on a multiprocessor system true concurrency
+is possible, so the application may execute faster.
+
+The application has no way to precisely control scheduling of its threads.
+It may, however, suspend threads, block them on semaphores, and % \ref !!!
+modify their priorities.
+
+\section{The multithread library}
+\label{threads:mtlib}
+
+Native XDS-x86 includes two implementations of the runtime library: singlethread
+and multithread:
+
+\begin{tabular}{ll}
+\tt LIBXDS.LIB   & singlethread for static linking \\
+\tt LIBXDSMT.LIB & multithread for static linking \\
+\tt XDS230I.LIB  & singlethread for dynamic linking \\ % \ref !!!
+\tt XDS230MI.LIB & mulitthread for dynamic linking
+\end{tabular}
+
+A multithread environment imposes certain restrictions on the runtime library.
+Many library procedures share data and other resources. The access to these
+resources must be {\em serialized}, i.e. not more than one thread at a time
+may use the resource, provided the resource is modified during its usage.
+
+\begin{quotation}
+{\footnotesize
+Consider a process that has two threads, $A$ and $B$ and the thread $A$
+dynamically allocates a variable using the procedure \verb'NEW'. Now, the
+operating system schedules the thread $B$ for execution before the completion
+of the procedure \verb'NEW' in the thread $A$, and the thread $B$ also
+issues a call to \verb'NEW'. Because the thread $A$ might have left the
+heap in an intermediate state, the second call of \verb'NEW' may fail or
+corrupt the heap. Heap corruption may as well happen when the thread $A$
+resumes execution.
+
+In the multithread library, processing of the second call will be suspended
+until completion of the first call, eliminating the possibility of heap
+corruption.
+} % \footnotesize
+\end{quotation}
+
+The multithread implementation of the \XDS{} runtime library uses
+{\em semaphores} to protect resources accessed by a thread from
+being corrupted by other threads. So operations involving input/output
+channels, memory allocation and deallocation, etc. are serialized
+by the runtime library.
+
+The library procedures that do not use global data and do not access
+resources are {\em reentrant}, i.e. may be safely called by more than one
+thread at a time while not blocking any of the calling threads.
+Note, however, that procedures with VAR parameters and procedures that
+accept parameters that contain pointers are not truly reentrant.
+If you access the same piece of memory from multiple threads simultaneously,
+the results are unpredictable, so you should provide your own serialization.
+
+\begin{quotation}
+{\footnotesize
+Let the thread $A$ call {\verb'Strings.Append("Word",s)'} to append \verb'"Word"'
+to the string kept in the variable \verb's'. If the thread $A$ had not yet
+put the trailing \verb'0C' when the thread $B$ was scheduled for execution,
+the call to {\verb'Strings.Length(s)'} from the thread $B$ may return
+incorrect result if the unused rest of \verb's' is not filled with zeroes.
+A semaphore must have been used to protect \verb's' from being accessed
+concurrently when the state of \verb's' is not known.
+} % \footnotesize
+\end{quotation}
+
+The configuration file and the template file included in your \XDS{}
+package allow you to select the version of the runtime library to
+be linked with your program. Turn the {\bf MULTITHREAD} option ON
+in the project file or in the command line to link with the multithread
+library. By default, this option is set OFF and the singlethread
+library is linked in.
+
+\section{Creating and destroying threads}
+\label{threads:create}
+
+In the \See{multithread library}{}{threads:mtlib}, the ISO \mt{}
+standard module \verb'Processes' is implemented over threads.
+The procedure \verb'Processes.Create' (\verb'Processes.Start') not
+just creates a thread but also performs actions required to ensure correct
+processing of runtime library calls and exception handling in that
+thread. If you use the multithread library, you {\em must}
+start all threads that use the runtime
+library and exception handling via one of these two procedures.
+
+The procedure \verb'Processes.Create' (\verb'Processes.Start')
+accepts the new thread's stack size in bytes through the \verb'extraSpace'
+parameter. The \verb'procUrg' parameter is the initial priority of
+that thread and is interpreted differently depending on the target
+operating system:
+
+{\bf Windows NT/95}
+
+\begin{tabular}{rl}
+\tt procUrg & \bf Priority value                   \\
+\hline
+         -3 & \tt THREAD\_PRIORITY\_IDLE           \\
+         -2 & \tt THREAD\_PRIORITY\_LOWEST         \\
+         -1 & \tt THREAD\_PRIORITY\_BELOW\_NORMAL  \\
+          0 & \tt THREAD\_PRIORITY\_NORMAL         \\
+          1 & \tt THREAD\_PRIORITY\_ABOVE\_NORMAL  \\
+          2 & \tt THREAD\_PRIORITY\_HIGHEST        \\
+          3 & \tt THREAD\_PRIORITY\_TIME\_CRITICAL
+\end{tabular}
+
+As can be seen, the \verb'procUrg' value of zero means regular priority
+(the priority that the main thread has after it is started)
+on all operating systems. If you do not need to alter
+thread priority, you may safely pass zero to \verb'procUrg'
+regardless of the target operating system.
+
+The \verb'Processes.StopMe' procedure effectively terminates
+the calling thread. % What about thread 1
+Another way for a thread to terminate normally is to \verb'RETURN'
+from the thread's body (the procedure passed as the \verb'procBody'
+parameter to \verb'Processes.Create' or \verb'Processes.Start').
+
+Threads that do not use the runtime library and exception handling
+may be started using the target operating system API call:
+\verb'OS2.DosCreateThread' or \verb'Windows.CreateThread'. In this
+case, the procedure comprising the body of the thread must be
+declared with the \verb'["SysCall"]' or the \verb'["StdCall"]'
+\See{direct language specifier}{}{multilang:direct} respectively.
+The \verb'Processes.StopMe' procedure should {\em not} be used
+to terminate such a thread.
+
+\ifcomment !!!
+ The process termination functions abort, exit, and _exit end all threads within the process, not just the
+ thread that calls the termination function.  In general, you should allow only thread 1 to terminate a process,
+ and only after all other threads have ended.
+
+ Note:
+
+    1. If your program exits from a signal or exception handler it may be necessary to terminate the process from
+       a thread other than thread 1.
+
+    2. A routine that resides in a DLL must not terminate the process, except in the case of a critical error.  If
+       the DLL and the executable for the process have different runtime libraries, terminating the process from
+       the DLL would bypass any onexit or atexit functions that the executable may have registered.
+\fi
+
+\section{Operating system specifics}
+
+The module \verb'Processes' provides a portable interface to the multithreading
+facilities of the target operating system. Unfortunately, this modules, as
+defined in ISO10514 is too general and restricted in comparison with the Win32
+API. The \XDS{} library module \verb'Win32Processes' implement Windows-specific 
+extensions to 
+\verb'Processes', overviewed in the following subsections. Refer
+to the respective definition modules for more information.
+
+\subsection{Thread handles}
+
+The procedure \verb'GetThreadHandle' returns the handle of the thread
+associated with the given process id. This handle may be then used in all
+thread-related API calls; the only exception is that a thread created using
+\verb'Processes.Create' or \verb'Processes.Start' {\em must} be stopped
+using \verb'Processes.StopMe'.
+
+\subsection{Event sources}
+
+The ISO \mt{} standard does not specify what is an event source, declaring
+this feature implementation dependent. The procedure \verb'MakeSource'
+can be used to create event sources from the undelaying operating system
+resources, such as semaphores. These sources may be then used in calls to
+\verb'Processes.Attach', \verb'Processes.Detach', \verb'Processes.IsAttached',
+and \verb'Processes.Handler'.
+
+See the correspondent definition module for more information.
+
+\section{Volatile variables}
+\label{threads:volatile}
+
+The optimizations performed by the Native XDS-x86 compiler may
+cause some variables to be temporarily placed on registers, and
+to receive values different from those specified in the source
+code and at different point of execution. These optimizations
+should be disabled for variables that are referenced by more
+than one thread.
+
+If the \OERef{VOLATILE} option was switched ON during compilation
+of a variable definition, the compiler assumes that references
+to that variable may have side effects or that the value of
+the variable may change in a way that can not be determined
+at compile time. The optimizer does not eliminate any
+operation involving that variable, and changes to the value of
+the variable are stored immediately.
+
+\begin{verbatim}
+    <* PUSH *>
+    <* VOLATILE+ *>
+    VAR
+      common: CARDINAL;
+    <* POP *>
+\end{verbatim}
+
+\section{Exception handling}
+
+\subsection{\mt{} exceptions}
+
+All threads share a single instance of each exception source. As a result,
+a thread will be blocked when an exception is raised in it if another thread
+is handling an exception with the same source, until it leaves the exceptional
+execution state.
+
+\subsection{System exceptions}
+
+A thread started via an API call is responsible for intercepting and handling
+system exceptions, such as arithmetic overflow or access violation.
+

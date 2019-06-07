@@ -1,0 +1,575 @@
+
+                        H2D version 1.18.6
+
+1. С and Native backend (проявляется в обоих случаях).
+   Теперь каждая константа объявляется до своего использования.
+   До этого на
+
+   /* a.h */
+   char mas[10];
+   #define size 10
+   typedef char Array[size];
+   /* end a.h */
+
+   при SearcheCompatibleType = 'On'
+   порождалось
+
+  (* a.def *)
+  . . .
+  TYPE
+    Array = ARRAY [0..size-1] OF CHAR;
+  VAR
+    mas: Array;
+  CONST
+    size = 10;
+   . . .
+  (* end a.def *)
+
+  теперь
+
+  (* a.def *)
+  . . .
+  CONST
+    size = 10;
+  TYPE
+    Array = ARRAY [0..size-1] OF CHAR;
+  VAR
+    mas: Array;
+  (* Constant 'size' was declared here in the source file *)
+  (* Type 'Array' was declared here in the source file *)
+  . . .
+  (* end a.def *)
+
+
+
+2. С backend.
+   В разных модулях для одних и тех же типов придумываются одинаковые
+   имена типов, которы объявляются в дополнительном  h-файле. Врезультате
+   если импортировать одновременно 2 h-файла, в которых использовались
+   одинаковые неименнованные типы, то в Си тексте появлялось двойное
+   объявление одного и того же типа. Теперь все типы в дополнительных
+   h-файлах все типы заключаются в директивы условной компиляции.
+   К примеру
+
+   /* a.h */
+   char * pch;
+   /* end a.h */
+
+   (* h2d_a.def *)
+   . . .
+   TYPE
+     H2D_PtrSChar = POINTER TO CHAR;
+   VAR
+     pch: H2D_PtrSChar;
+   . . .
+   (* end h2d_a.def *)
+
+   /* h2d_a.h */
+   . . .
+   #ifndef _H2D_TYPE__H2D_PtrSChar
+   #define _H2D_TYPE__H2D_PtrSChar
+   typedef signed char * H2D_PtrSChar;
+   #endif  /* _H2D_TYPE__H2D_PtrSChar */
+   . . .
+   /* end h2d_a.h */
+
+
+3. C and Native backend
+   Двойное объявление ссылки на переменную, например:
+
+   . . .
+   extern int i;
+   . . .
+   extern int i;
+   . . .
+
+   теперь не приводит к завершению трансляции и выдачи сообщения
+   об ошибке в исходном файле. Вторая ссылка просто игнорируется.
+
+
+4. C and Native backend (Егоркин)
+   Если объявлен тега и синонм к ниму, то если имя синонима использовалось
+   раньше имени тега, то появлось двойное описание типа. Т.е. описывался
+   тип соответствующий имени синонима и точно такойже тип но с именем тега,
+   они один из них необъявлялся как синоним другого.
+
+   /* a.h */
+   . . .
+   typedef struct _Class *class;
+
+   typedef struct _Part{
+     int a;
+     float b;
+     char c;
+   }Part;
+
+   typedef struct _Class{
+     Part  part;
+   }Class;
+   . . .
+   /* end a.h */
+
+   было (примерно) так
+
+   (* h2d_2.def *)
+   . . .
+   TYPE
+     Part = RECORD
+       a: SYSTEM.int;
+       b: REAL;
+       c: CHAR;
+     END;
+
+     _Class = RECORD
+       part: Part;
+     END;
+
+     class = POINTER TO _Class;
+
+     _Part = RECORD
+       a: SYSTEM.int;
+       b: REAL;
+       c: CHAR;
+     END;
+
+     (* Type 'Part' was declared here in the source file *)
+
+     Class = _Class;
+     . . .
+     (* end h2d_a.def *)
+
+
+   стало теперь
+
+   (* h2d_2.def *)
+   . . .
+   TYPE
+     _Part = RECORD
+       a: SYSTEM.int;
+       b: REAL;
+       c: CHAR;
+     END;
+
+     Part = _Part;
+
+     _Class = RECORD
+       part: Part;
+     END;
+
+     class = POINTER TO _Class;
+     (* Type '_Part' was declared here in the source file *)
+     (* Type 'Part' was declared here in the source file *)
+
+     Class = _Class;
+     . . .
+     (* end h2d_a.def *)
+
+
+5. C and Native backend
+   Был полный бардак если тег описывался в одном h-файле и объявлялся
+   в другом, и при этом h-файл с объявлением включался в h-файл с
+   описанием. Теперь там где тег объявлен пишется пустая структура с
+   комментарием указывающем в каком h-файле тег описан. Для enum'ов
+   подобного не сделано.
+
+   /* a.h */
+   #ifndef _A_H
+   #define _A_H
+
+   #include <b.h>
+
+   typedef struct _Part{
+     int a;
+     float b;
+     char c;
+   }Part;
+
+   typedef struct _Class{
+     Part  part;
+   }Class;
+
+   struct _Class cl;
+   #endif
+   /* end a.h */
+
+   /* b.h */
+   #ifndef _B_H
+   #define _B_H
+
+   typedef struct _Class *class;
+   extern class theClass;
+
+   #endif
+   /* end b.h */
+
+   транслируется в
+
+   (* h2d_a.def *)
+   . . .
+   TYPE
+     _Part = RECORD
+       a: SYSTEM.int;
+       b: REAL;
+       c: CHAR;
+     END;
+     Part = _Part;
+   _Class = RECORD
+      part: Part;
+   END;
+   Class = _Class;
+
+   VAR
+     cl: _Class;
+   . . .
+   (* end h2d_a.def *)
+
+   (* h2d_b.def *)
+   . . .
+   TYPE
+     _Class = RECORD
+       (* It is defined in header a.h *)
+     END;
+     class = POINTER TO _Class;
+
+   VAR
+     theClass: class;
+   . . .
+   (* end h2d_b.def *)
+
+
+6. С backend. (очень похож на 2)
+   Колизия имен тегов со всеми другими именами не разрешалась. Ошибка
+   при этом не выдавалась, но в def-модуле появлялось два объекта с
+   одинаковыми именами. Теперь она разрешается и на придуманные имена
+   в специальном h-файле порождается #define.
+
+   /* c.h */
+   struct pch{char  f;} e;
+   int pch;
+   /* end c.h */
+
+   транслируется в
+
+   (* h2d_c.def *)
+   TYPE
+     pch_struct = RECORD
+       f: CHAR;
+     END;
+   VAR
+     e: pch_struct;
+     pch: SYSTEM.int;
+   (* end h2d_c.def *)
+
+   /* h2d_c.h */
+   #include <c.h>
+
+   #ifndef h2d_c_H_
+   #define h2d_c_H_
+
+   #define pch_struct  pch
+
+   #endif  /* h2d_c_H_ */
+   /* end h2d_c.h */
+
+
+7. C and Native backend. Improvement.
+   Ошибка Duplicate identifier выводится теперь с указанием
+   объекта с которым возник конфликт.
+
+   /* c.h */
+   typedef char * ident;
+   /* end c.h */
+
+   /* d.h */
+   #include "c.h"
+   int ident;
+   /* end d.h */
+
+   при этом выводится ошибка в виде
+
+   Error [ d.h 2:10 ] ** Duplicate identifier ident at file c.h line 1
+
+
+8. C and Native backend. Bug.  (William Burrow <aa126@fan.nb.ca>)
+   Если не был указан DefinitionFilePrefix, то в случаях когда было бы
+   необходимо порождать дополнительный h-файл случался Invalid Location.
+   Теперь Invalid Location не случается
+
+
+9. C and Native backend.
+   Опция SearchCompatibleType совсем убрана. Теперь совместимые типы для
+   неименованных объектов ищутся всегда за исключением указателей на
+   базовые типы, для них всегда генерируется специальный тип и используется
+   его имя. В этом иесте произошла смена версии на 1.19
+ 
+   /* a.h */
+   char * pch;
+   typedef char * Str;
+   void func(char*);
+   /* end a.h */
+
+   всегда транслируется в
+
+   (* h2d_a.def *)
+   . . .
+   TYPE
+     H2D_PtrSChar = POINTER TO CHAR;
+   VAR
+     pch: H2D_PtrSChar;
+   TYPE
+     Str = H2D_PtrSChar;
+
+   PROCEURE func ( arg0: H2D_PtrSChar );
+   . . .
+   (* end h2d_a.def *)
+
+
+10. C and Native backend.  bug fixed
+   Исправлен хитрый баг проявлялся очень редко. Суть в следующем
+   генератор иногда пытался генерировать типы из других h-файлов.
+
+
+11. C and Native backend. bug fixed
+   При использовании имени константы, описанной в другом h-файле,
+   ее имя квалифицировалось именем соответствующего модуля.
+
+12. About 'header' directive. 
+
+    Old syntax:
+    #header  (<Pattern>|"Pattern") {' '(<Pattern>|"Pattern")}
+      Prologue
+    #footer
+      Epilogue
+    #end
+
+    New syntax:
+    #header  <Pattern>|"Pattern"
+      Prologue
+    #footer
+      Epilogue
+    #end
+
+    Also, it has to be noted in manual that if there are 'include' directives
+    in Prologue or Epilogue then corresponding names have to be excluded
+    from Pattern.
+
+13. In case of using convertor to C read-only variables are generated
+    instead constants.
+
+    Это можно рулить посредством опции ConstantsToVariables, а также
+    директивы #variant, которая теперь выглядит так:
+
+    #variant Designator ":" Type
+    Type = "BITSET"   | 
+           "INTEGER"  | "SHORTINT"  | "LONGINT" |
+           "CARDINAL" | "SHORTCARD" | "LONGCARD"
+    #variant Parameter  ":" ( "VAR" | "ARRAY" | "VAR ARRAY" )
+    Designator = identifier { "^" | "[ ]" | "." identifier } | Parameter
+    Parameter  = identifier "(" number ")"
+
+    Дополнителные возможности применяются только к целым константам.
+
+14. Появилась новая опция IncludingTree. В состоянии "On" генерируется фаил
+    содержащий дерево включений и слияний, соответствующее головному 
+    транслируемому хедеру. Имя файла с деревом совпадает с именем хедера,
+    а расширение - 'inc'.
+
+15. Новый синтаксис для опций:
+      -OPTION_NAME = string | ident | integer
+        или
+      -OPTION_NAME + | -
+    
+    Имена опций и иденты (как значения) кейс-инсенситив, 
+    а стринги - кейс-сенситив. ';' погибла.
+
+16. Синтаксис для С типов:
+      -ctype = C_TYPE = integer, QualIdent
+
+      integer   - размер в байтах
+      QualIdent - умолчательный вариант трансляции
+
+    Пример:
+      -ctype = signed char = 1, CHAR
+      
+17. Синтаксис для M2 типов:
+      -m2type = QualIdent = integer, Attribute
+
+      integer   - размер в байтах
+      Attribute - сорт типа, принимает значения:
+                  BOOL, CHAR, REAL, SET, SIGNED, UNSIGNED
+
+18. В проектном файле могут появляться директивы
+    header (footer, end), name, module, include.
+    Начинаются с !
+    Директивы merge & variant могут появляться только в хедере.
+
+19. Появилась новая опция StrippingDirs. В состоянии "+" генерируется фаил
+    содержащий нестандартные директивы из транслируемого хедера. 
+    Имя файла совпадает с именем хедера, а расширение - 'dir'.
+
+20. В командной строке можно указать опции =o =e.
+
+21. Опцию -prj FILE_NAME можно использовать как и в компиляторе.
+
+22. Новые имена опций
+    OutputExtension           DEFEXT
+                              HEADEXT
+                              MODEXT
+                              PRJEXT
+                              TREEEXT
+                              DIREXT
+
+    GenerateMacrosFile        GENMACRO
+
+    BackEnd                   BACKEND
+
+    DefinitionFilePrefix      DEFPFX
+
+    MacrosFilePrefix          MACPFX
+
+    MaxStrLen                 GENWIDTH
+
+    CommentPosition           COMMENTPOS
+
+    Retranslate               CHANGEDEF
+
+    Progress                  PROGRESS
+
+    CStdLib                   CSTDLIB
+
+    CPPComment                CPPCOMMENTS
+
+    HeadersMerging            MERGEALL
+
+    HeadInserting             GENSEP
+
+    LongFileName              GENLONGNAMES
+
+    EnumeratedType            GENENUM
+
+    IncludingTree             GENTREE
+
+    StrippingDirs             GENDIRS
+
+    ConstantsToVariables      GENROVARS
+
+                              ctype
+                              m2type
+
+
+23. Если генерация константы модифицирована директивой #variant, то 
+    производится проверка корректности использования типа указанного
+    в директиве для данной константы, а также соответствие размера 
+    этого типа и размера константы (т.е. влезет ли константа в этот
+    тип). Если что-либо не соответствует ожидаемому, то выдается
+    ошибка.
+
+24. Опция =e удалена. Опция -prj=PRJNAME - как в компиляторе. Установка опций
+    из командной сроки (кроме CTYPE & M2TYPE).
+
+25. Исправлена ошибка поика совместимых типов.
+
+    /* a.h */
+    typedef char String[256];
+    typedef String *PString; 
+    typedef String *Buffer;  
+    /* end a.h */
+
+    Выдавалось:
+    (* h2d_a.def *)
+    TYPE 
+     String = ARRAY [0..256-1] OF CHAR;
+     PString = POINTER TO String;
+     Buffer = POINTER TO String;
+    (* end h2d_a.def *)
+
+
+    Теперь:
+    (* h2d_a.def *)
+    TYPE 
+     String = ARRAY [0..256-1] OF CHAR;
+     PString = POINTER TO String;
+     Buffer = PString;
+    (* end h2d_a.def *)
+
+
+26. Сделано слияние условных секций с ELSE
+
+    /* a.h */
+    #define max 100
+    #define nin -100
+    /* end a.h */
+
+    % h2d.cfg %
+    -BACKEND = COMMON
+    -GENROVARS+
+    % end h2d.cfg %
+
+    Выдавалось
+    <* IF __GEN_C__ THEN *>
+    VAR 
+      max - : INTEGER;
+    <* ELSE *>
+    CONST 
+      max = 100;
+    <* END *>
+    <* IF __GEN_C__ THEN *> 
+    VAR 
+      min - : INTEGER;
+    <* ELSE *>
+    CONST 
+      min = -100;
+    <* END *>
+
+
+    Теперь выдается
+    <* IF  __GEN_C__ THEN *>
+    VAR 
+      max - : INTEGER;
+      min - : INTEGER;
+    <* ELSE *>
+    CONST 
+      max = 100;
+      min = -100;
+    <* END *>
+
+
+27. Исправлен баг 
+    BUG00657-34  Linkage keyword after asteris is not accepted in pointers to 
+                 functions for Lion, Alexs
+
+    Found 22-09-1997 by Stefan Gruendel [sgruendel@wuerzburg.netsurf.de] 
+    in v2.30 of product  H2D (source H2D)
+
+    Description
+
+        - While running IBM's OpenGL headers through h2d, I noticed two
+        problems:
+
+          "#define GLU_TESS_MAX_COORD 1.0e150" is translated to a constant
+          "1E150", correct syntax would be "1.0E150"
+
+29. Осущетвлен пропозал
+    PRO00670-33 Introduce an option for global DLS
+
+    Found 11-03-1997 by Snowman in v2.21 of product XDS (source H2D)
+    Description
+
+        An option for default direct language specifier would be useful:
+
+        DEFINITION MODULE ["SysCall"] gl;
+
+        ...
+
+    Добавлен в h2d.cfg equation
+    -DLSSTRING =  "C"      % direct language specification string
+    % кавычки не обязательны, в данном случае будет порождено
+
+      DEFINITION MODULE ["C"] gl;
+
+    -DLSSTRING =  ""       % direct language specification string
+    % кавычки обязательны, в данном случае будет порождено
+
+      DEFINITION MODULE gl;
+
+

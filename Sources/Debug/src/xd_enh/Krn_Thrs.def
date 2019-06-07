@@ -1,0 +1,21 @@
+-- Низкоуровневая работа со thread'ами
+-- Содержит определение типов и процедур
+-- Модуль является системно-зависимым
+
+DEFINITION MODULE Krn_Thrs;
+
+
+TYPE
+  THREAD_INX = CARDINAL;
+
+
+PROCEDURE GetThreadDescription (i: THREAD_INX; VAR buf: ARRAY OF CHAR);
+
+PROCEDURE SwitchToThread       (i: THREAD_INX): BOOLEAN;
+
+PROCEDURE SuspendThread        (i: THREAD_INX): BOOLEAN;
+
+PROCEDURE ResumeThread         (i: THREAD_INX): BOOLEAN;
+
+
+END Krn_Thrs.

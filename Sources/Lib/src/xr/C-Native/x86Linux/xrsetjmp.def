@@ -1,0 +1,26 @@
+(* Copyright (c) Excelsior 1999.  All Rights Reserved *)
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrsetjmp;
+
+IMPORT SYSTEM;
+
+(* Snowman 05-Nov-1999:
+
+   In XDS-C, X2C_setjmp and X2C_longjmp are directly mapped onto POSIX
+   setjmp and longjmp, which first arguments have type jmpbuf, not
+   jmpbuf*. This is most probably due to the fact that these functions
+   are likely to be macros. For the generated xrsetjmp.h to be compatible
+   with X2C.c, we have to define X2C_jmp_buf not as record, but as
+   a one element array of records. Looks stupid but works perfectly.
+*)
+
+TYPE
+  X2C_jmp_buf = ARRAY [0..0] OF RECORD
+    ebx,ecx,edx,esi,edi,ebp,eip,esp: CARDINAL;
+    es,ds,cs,fs,gs,ss: SYSTEM.CARD16;
+  END;
+
+PROCEDURE X2C_setjmp (point: X2C_jmp_buf) : SYSTEM.int;
+PROCEDURE X2C_longjmp(point: X2C_jmp_buf; n: SYSTEM.int);
+
+END xrsetjmp.

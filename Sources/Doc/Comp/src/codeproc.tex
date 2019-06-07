@@ -1,0 +1,629 @@
+\section{Code Procedures}\label{lowlevel:codeproc}
+\index{Code Procedures}
+
+Code procedures are used to implement low-level operations
+and provide access to hardware.
+\begin{verbatim}
+CodeProcedure   = PROCEDURE "-" ident
+                  [ FormalParameters] [ExpList].
+\end{verbatim}
+
+  The expression list forming the code procedure body
+is restricted as follows:
+\begin{itemize}
+\item
+this list must be non-empty and all its elements must be constant
+expressions.
+
+\item
+the first expression in the list must be a constant string expression
+(that is, constant expression of the type {\tt ARRAY [0..N] OF CHAR}).
+This string contains the code procedure calling protocol description
+(see below) in the textual form.
+
+\item
+all other expressions in the list, if any, must be numbers in the range
+$[0..255]$, representing one byte of native 80386/80486 code. The code
+procedure body is formed by concatenation of all these bytes into one
+linear sequence.  \end{itemize}
+
+The code procedure call is executed as follows:
+\begin{enumerate}
+\item
+   actual parameters are evaluated according to general language
+   semantics. Note that the order of parameter evaluation is undefined and
+   is left to the compiler;
+\item
+   compiler-produced code is executed if necessary, which guarantees all calling
+   protocol conditions to hold (i.e. all values are stored in the specified
+   registers or memory locations, all work registers are free etc.);
+\item
+   code sequence of procedure body is executed. This can be done in one
+   of two possible ways:
+   \begin{itemize}
+   \item
+     if {\bf O} flag is set in compiler options (see \ref{pragma})
+     then compiler just inserts the procedure body as an in-line
+    code sequence in the place of the call;
+   \item
+     if {\bf O} flag is not set, then the procedure body is stored in the code segment
+     only once and the compiler generates a call sequence in the place of the call.
+     This mode reduces program code size if code procedure is called
+     more than once, but the call is executed more slowly.
+   \end{itemize}
+\item
+   compiler-produced code is executed if necessary, which
+   restores the context of the call.
+\end{enumerate}
+
+\subsubsection{Calling Protocol Syntax}
+
+\begin{verbatim}
+ 1. register386 = "EAX" | "EBX" | "ECX" | "EDX"
+                | "EBP" | "ESI" | "EDI".
+ 2. register387 = "ST(" octalDigit ")".
+ 3. Register = register386 | register387.
+ 4. RegisterDiap = "ST(" octalDigit "-" octalDigit ")".
+ 5. RegisterPair = "(" register386 "," register386 ")".
+ 6. MemoryLocation = "[" integer "]".
+ 7. Location = Register | RegisterPair
+             | MemoryLocation.
+ 8. ParameterName = ident.
+ 9. ParameterSpecifier = ParameterName ":" Location.
+10. ResultSpecifier = "RETURN" ":" Register.
+11. UseElement = Register | RegisterDiap
+12. UseSpecifier = "USE" ":"
+               "(" UseElement { "," UseElement } ")".
+13. Protocol = { ParameterSpecifier } [ UseSpecifier ]
+               [ ResultSpecifier ]
+\end{verbatim}
+
+Code procedure calling protocol description consists of three parts:
+Parameter, Register and Result specification.
+
+\subsection{Parameters Specification}
+
+This part describes how a procedures parameters are passed.
+
+{\bf Note:} each parameter must be specified explicitly, no defaults are
+assumed by the compiler.
+
+In general, parameters may be passed:
+\begin{description}
+\item (a) in one of 80386 general purpose registers
+\item (b) in one of 80387 coprocessor stack elements
+\item (c) in a pair of 80386 registers
+\item (d) in memory
+\end{description}
+
+   Letters (a)-(d) will be used below to denote the corresponding parameter
+   passing method.
+
+   80386 registers are denoted by their standard names
+   (note that the ESP register can not be used).
+
+   80387 stack elements are denoted by "ST(i)", where $0\leq i\leq 7$ is
+   a stack element number (see 80387 Programming Reference).
+
+   Memory location is denoted by "[ OFFS ]", where OFFS is a positive
+   integer constant which must be greater than or equal to 8.
+   Parameter's address in memory is then ESP+OFFS.
+   Parameters can not overlap in memory - this situation is
+   detected by the compiler and reported as an error.
+
+ Parameters are passed in a way depending on their type, kind
+ and passing method chosen (See \ref{lowlevel:datarep}
+ for details about value representations).
+ `VAR' and `VAL' below specify whether a parameter is passed
+ by reference or by value respectively.
+
+\subsubsection{Scalar types with values represented by 1 byte}
+
+\begin{tabular}{|c|c|p{8cm}|} \hline
+\multicolumn{2}{|c|}{Method} & Action \\ \hline
+(a) & VAR & 32-bit address of memory location containing parameter
+            value is stored in any of seven 80386 registers.        \\
+    & VAL &  parameter value is stored in the least significant
+            byte of any of four 80386 registers: EAX, EBX, ECX, EDX.
+            Bits 8-31 of register are undefined.                    \\ \hline
+(b) && not allowed                                                  \\ \hline
+(c) && not allowed                                                  \\ \hline
+(d) & VAR & 32-bit address of memory location containing parameter
+             value is stored in specified memory location.          \\
+    & VAL & 1-byte parameter value is stored in specified memory
+            location.                                               \\ \hline
+\end{tabular}
+
+\subsubsection{Scalar types with values represented by 2 bytes}
+
+\begin{tabular}{|c|c|p{8cm}|}  \hline
+\multicolumn{2}{|c|}{Method} & Action \\ \hline
+(a) & VAR & 32-bit address of memory location containing parameter
+            value is stored in any of seven 80386 registers.        \\
+    & VAL & parameter value is stored in the least significant
+            2 bytes of any of seven 80386 registers.
+            Bits 16-31 of register are undefined.                   \\ \hline
+(b) && not allowed                                                  \\ \hline
+(c) && not allowed                                                  \\ \hline
+(d) & VAR & 32-bit address of memory location containing parameter
+            value is stored in specified memory location.           \\
+    & VAL & 2-byte parameter value is stored in specified memory
+            location.                                               \\ \hline
+\end{tabular}
+
+\subsubsection{Scalar types with values represented by 4 bytes}
+
+\begin{tabular}{|c|c|p{8cm}|} \hline
+\multicolumn{2}{|c|}{Method} & Action \\ \hline
+(a) & VAR & 32-bit address of memory location containing parameter
+            value is stored in any of seven 80386 registers.       \\
+    & VAL & parameter value is stored in 4 bytes of any
+            of seven 80386 registers.                              \\ \hline
+(b) && not allowed                                                 \\ \hline
+(c) && not allowed                                                 \\ \hline
+(d) & VAR & 32-bit address of memory location containing parameter
+         value is stored in specified memory location.             \\
+    & VAL & 4-byte parameter value is stored in specified memory
+            location.                                              \\ \hline
+\end{tabular}
+
+\subsubsection{REAL and LONGREAL}
+
+\begin{tabular}{|c|c|p{8cm}|} \hline
+\multicolumn{2}{|c|}{Method} & Action \\ \hline
+(a) & VAR & 32-bit address of memory location containing parameter
+            value is stored in any of seven 80386 registers.       \\
+    & VAL & not allowed                                            \\ \hline
+(b) & VAR &  not allowed                                           \\
+    & VAL & value is stored in the specified 80387 stack element
+            in 80-bit internal 80387 format                        \\ \hline
+(c) & & not allowed                                                \\ \hline
+(d) & VAR & 32-bit address of memory location containing parameter
+         value is stored in specified memory location.             \\
+    & VAL & 4-byte (8-byte resp.) parameter value is stored
+         in specified memory location.                             \\ \hline
+\end{tabular}
+
+   The current code generator uses coprocessor registers in stack
+ mode only. Because of this, the set of stack element numbers specified
+ for parameter passing is limited to be one of:
+\begin{verbatim}
+   {}, {0}, {0..1}, {0..2} ... {0..7}
+\end{verbatim}
+
+   i.e. parameters to be passed in coprocessor registers are
+ pushed onto the 80387 stack in the specified order.
+
+\subsubsection{Records}
+
+\begin{tabular}{|c|c|p{8cm}|} \hline
+\multicolumn{2}{|c|}{Method} & Action \\ \hline
+(a) &&
+         32-bit address of the first (least significant) byte
+         of the record is stored in any of seven 80386 registers. \\ \hline
+(b) &&   not allowed                                              \\ \hline
+(c) & VAR & allowed for Oberon-2 records only.
+    In that case:
+      32-bit address of the first (least significant) byte
+      of the record is stored in the first pair element;
+      32-bit address of Oberon-2 record type run-time descriptor
+      is stored in the second pair element.
+      Pair could consist of any two of seven 80386 registers,
+      pair elements must be different.                             \\
+    & VAL & not allowed                                            \\ \hline
+(d) &&
+         32-bit address of the first (least significant) byte
+         of the record is stored in specified memory location.     \\ \hline
+\end{tabular}
+
+\subsubsection{Static arrays}
+
+\begin{tabular}{|c|p{8.5cm}|} \hline
+Method & Action \\ \hline
+(a) &
+         32-bit address of the first (least significant) byte
+         of the array is stored in any of seven 80386 registers. \\ \hline
+(b) & not allowed                                                \\ \hline
+(c) & not allowed                                                \\ \hline
+(d) &
+         32-bit address of the first (least significant) byte
+         of the array is stored in specified memory location.    \\ \hline
+\end{tabular}
+
+\subsection{Open arrays}
+
+\begin{tabular}{|c|p{8.5cm}|} \hline
+Method & Action \\ \hline
+(a) &
+         32-bit address of the first (least significant) byte
+         of the array proper is stored in any of seven 80386 registers. \\ \hline
+(b) & not allowed                                                \\ \hline
+(c) & allowed for one-dimensional arrays only.
+    In this case:
+      32-bit address of the first (least significant) byte
+      of the array is stored in the first pair element;
+      32-bit signed integer value equal to
+      (number of array elements - 1) is stored in the second
+      pair element.
+      Pair could consist of any two of seven 80386 registers,
+      pair elements must be different.                           \\ \hline
+(d) &
+         open array descriptor (see \ref{lowlevel:opendesc})
+         is stored in the specified memory location.             \\ \hline
+\end{tabular}
+
+\subsection{Register Usage Specification}
+
+   This part defines the set of 80386/80387 registers to be used as
+ working registers in the code procedure body. The compiler uses this set
+ to correctly adjust the coprocessor stack and to save all intermediate
+ values, which are possibly stored in 80386 registers by the code preceeding
+ the call.
+
+   80386 registers used for parameter passing are considered to be working
+ registers also. They may or may not be specified in the USE part of the
+ protocol description.
+
+\subsubsection{Using 80387 stack}\label{lowlevel:stack387}
+
+   Specification "ST(i-j)" is a shorter form of "ST(i),...,ST(j)".
+ The set of stack element numbers, specified to be work stack elements,
+ is limited to be one of:
+\begin{verbatim}
+   {}, {0}, {0..1}, {0..2} ... {0..7}
+\end{verbatim}
+ and is understood as follows:
+\begin{tabbing}
+   let \= $ \{0..N_{\mbox{par}}\}$ \= be the set of stack elements  \\
+       \>                       \> used for parameters passing;  \\
+\>        $\{0..N_{\mbox{use}}\}$   \> be the set of work stack elements \\
+\end{tabbing}
+It is guaranteed by the compiler that after all parameters
+are pushed onto the coprocessor stack, there are at least $N$ free elements left
+on the stack; that is, you can push $N$ more elements onto it (making no pop's)
+without getting a STACK OVERFLOW exception, where $N$ is defined as:
+$$ N = \left \{
+        \begin{array}{ll}
+           N_{\mbox{use}} - N_{\mbox{par}} & \mbox{ if } N_{\mbox{use}}\geq N_{\mbox{par}} \\
+           0                         & \mbox{ otherwise}
+        \end{array}
+       \right .
+$$
+
+The stack must be cleared explicitly in the code procedure body.
+The compiler expects that the stack state immediately after the procedure body
+execution is that which would be formed by the stack in the state immediately
+prior to the procedure body execution had the following operations
+performed over it :
+
+\begin{itemize}
+\item   All parameters were popped off the stack
+\item   The function result (if any) was pushed onto the stack
+\end{itemize}
+
+\subsection{Result Specification}
+
+This part of the calling protocol description is necessary for code
+functions only. It describes the register in which
+the function result is returned.
+The register content is interpreted in accordance with the type of result
+(for value representations see \ref{lowlevel:datarep}).
+
+\subsubsection{Values represented by 1 byte}
+
+The result may be returned in any of four 80386 registers:
+EAX, ECX, EDX, EBX. The compiler assumes the result to be the least
+significant byte of the register.
+
+\subsubsection{Values represented by 2 bytes}
+
+      The result may be returned in any of six 80386 registers:
+    EAX, ECX, EDX, EBX, ESI, EDI. The compiler assumes the result to be the least
+    significant 2 bytes of the register.
+
+\subsubsection{Values represented by 4 bytes (except REAL)}
+
+      The result may be returned in any of six 80386 registers:
+    EAX, ECX, EDX, EBX, ESI, EDI.
+
+\subsubsection{Real values}
+
+      The result may be returned on the top of the 80387 stack only. So the result
+    specification should be "RETURN: ST(0)".
+
+ No other type is allowed to be the type of function result.
+
+   The register specified for the function result is considered to be a work
+ register as well. It may be specified in the USE part of the protocol
+ description, but this is not compulsory.
+
+   For code functions returning {\tt REAL} or
+{\tt LONGREAL} values,  (see \ref{lowlevel:stack387}),
+at least one 80387 stack element is guaranteed to be free before
+the function body execution, even if no stack elements are defined
+as being used in the USE part of the protocol description.
+
+
+\subsection{Code Procedure Examples}
+
+All examples are formed as follows:
+\begin{itemize}
+\item code procedure heading
+\item calling protocol description
+\item assembler code in the comments\footnote{ignored by the compiler}
+\item a sequence of code bytes
+\item description of the way it works, which contains:
+\begin{itemize}
+        \item pre-action, generated by the compiler
+        \item code procedure itself
+        \item post-action, generated by the compiler
+\end{itemize}
+\end{itemize}
+
+\subsubsection{Convert CHAR to BITSET}
+
+\begin{verbatim}
+PROCEDURE - MakeSet(s: CHAR): BITSET
+  "s: EAX  RETURN: EAX",
+
+(*begin
+        movzx   eax,al
+end*)
+
+00FH,0B6H,0C0H;
+\end{verbatim}
+
+\begin{description}
+\item[compiler] \mbox{}
+   \begin{itemize}
+     \item saves EAX if necessary
+     \item places value of {\tt s} into AL
+   \end{itemize}
+\item[code procedure] \mbox{}
+   \begin{itemize}
+   \item extends AL to EAX with zeros
+   \end{itemize}
+\item[compiler] \mbox{}
+   \begin{itemize}
+   \item uses EAX as procedure call result
+   \end{itemize}
+\end{description}
+
+\subsubsection{16-bit DIV/MOD}
+
+\begin{verbatim}
+PROCEDURE - Divide(val,div: SYSTEM.CARD16;
+                   VAR res: SYSTEM.CARD16;
+                   VAR rem: SYSTEM.CARD16);
+  "val: EAX div: ECX res: ESI rem: EDI USE: (EDX)",
+
+(*begin
+        xor     dx,dx
+        div     cx
+        mov     [esi],ax
+        mov     [edi],dx
+end*)
+
+066H,033H,0D2H,066H,0F7H,0F1H,
+066H,089H,006H,066H,089H,017H;
+\end{verbatim}
+
+\begin{description}
+\item[compiler] \mbox{}
+   \begin{itemize}
+     \item saves EAX, ECX, ESI, EDI, EDX if necessary
+     \item puts value of {\tt val} into AX, value of {\tt div} into CX,
+           address of {\tt res} into ESI, address of {\tt rem} into EDI
+   \end{itemize}
+\item[code procedure] \mbox{}
+   \begin{itemize}
+   \item performs the division and moves the result to {\tt res}
+         and remainder to {\tt rem}
+   \end{itemize}
+\item[compiler] \mbox{}
+   \begin{itemize}
+   \item  restores context if necessary
+   \end{itemize}
+\end{description}
+
+\subsubsection{String Copy 0}\label{StrCopy0}
+
+\begin{verbatim}
+PROCEDURE - StrCopy0(VAR d: ARRAY OF CHAR;
+                         s: ARRAY OF CHAR)
+  " d: (EDI,ECX) s: (ESI,EDX) ",
+
+(*begin
+        cmp     ecx,edx
+        jl      l0
+        mov     ecx,edx
+l0:
+        inc     ecx
+        cld
+        rep     movsb
+end*)
+
+03BH,0CAH,07CH,006H,090H,090H,090H,090H,
+08BH,0CAH,041H,0FCH,0F3H,0A4H;
+\end{verbatim}
+
+\begin{description}
+\item[compiler] \mbox{}
+   \begin{itemize}
+     \item saves ESI, EDI, ECX and EDX if necessary
+     \item places address of {\tt d} in EDI, address of {\tt s} - in ESI,
+           {\tt HIGH(d)} - in ECX, {\tt HIGH(s)} - in EDX
+   \end{itemize}
+\item[code procedure] \mbox{}
+   \begin{itemize}
+   \item moves {\tt MIN(HIGH(d),HIGH(s))+1} bytes from {\tt s} to {\tt d}
+   \end{itemize}
+\item[compiler] \mbox{}
+   \begin{itemize}
+   \item restores context if necessary
+   \end{itemize}
+\end{description}
+
+\subsubsection{String Copy 1}
+
+\begin{verbatim}
+PROCEDURE - StrCopy1(VAR d: ARRAY OF CHAR;
+                         s: ARRAY OF CHAR)
+  " d: [8] s: [16] " ...
+\end{verbatim}
+
+The compiler will detect an error: parameters overlap in memory.
+
+
+\subsubsection{String Copy 2}
+
+\begin{verbatim}
+PROCEDURE - StrCopy2(VAR d: ARRAY OF CHAR;
+                         s: ARRAY OF CHAR)
+  " d: [8] s: [20] USE: (ESI,EDI,ECX,EDX) " ,
+
+(*begin
+        mov     esi,[esp+20]
+        mov     edx,[esp+28]
+        mov     edi,[esp+8]
+        mov     ecx,[esp+16]
+        cmp     ecx,edx
+        jl      l0
+        mov     ecx,edx
+l0:
+        inc     ecx
+        cld
+        rep     movsb
+end*)
+
+08BH,074H,024H,014H,08BH,054H,
+024H,01CH,08BH,07CH,024H,008H,
+08BH,04CH,024H,010H,03BH,0CAH,
+07CH,006H,090H,090H,090H,090H,
+08BH,0CAH,041H,0FCH,0F3H,0A4H;
+\end{verbatim}
+
+\begin{description}
+\item[compiler] \mbox{}
+   \begin{itemize}
+     \item  allocates enough place on the program stack
+            and places {\tt d} and {\tt s}
+            array descriptors on it with specified offsets from ESP
+     \item saves ESI, EDI, ECX and EDX if necessary
+   \end{itemize}
+\item[code procedure] \mbox{}
+   \begin{itemize}
+   \item performs the same string copying as in example \ref{StrCopy0}
+   \end{itemize}
+\item[compiler] \mbox{}
+   \begin{itemize}
+   \item restores the program stack and registers
+   \end{itemize}
+\end{description}
+
+\subsubsection{Copy Bytes}
+
+\begin{verbatim}
+PROCEDURE - CopyBytes(from: ARRAY OF SYSTEM.BYTE;
+                    VAR to: ARRAY OF SYSTEM.BYTE;
+                       len: LONGINT);
+  " from: ESI  to: EDI  len: ECX ",
+
+(*begin
+        cld
+        rep     movsb
+end*)
+
+0FCH,0F3H,0A4H;
+\end{verbatim}
+
+\begin{description}
+\item[compiler] \mbox{}
+   \begin{itemize}
+     \item saves ESI, EDI, ECX if necessary
+     \item places address of {\tt from} in ESI,
+           address of {\tt to} in EDI,
+           value of {\tt len} in ECX
+   \end{itemize}
+\item[code procedure] \mbox{}
+   \begin{itemize}
+   \item  moves {\tt len} bytes
+   \end{itemize}
+\item[compiler] \mbox{}
+   \begin{itemize}
+   \item  restores context if necessary
+   \end{itemize}
+\end{description}
+
+\subsubsection{Using 80387 coprocessor (F1)}
+
+The following function calculates $(p_0+1)p_1\pi$.
+
+\begin{verbatim}
+PROCEDURE - F1(p0,p1: LONGREAL): LONGREAL
+  "p0: ST(0) p1: ST(1) USE: (ST(0-2)) RETURN: ST(0)",
+
+(*begin
+        fld1
+        fadd
+        fmul
+        fldpi
+        fmul
+end*)
+
+0D9H,0E8H,0DEH,0C1H,0DEH,0C9H,0D9H,0EBH,0DEH,0C9H;
+\end{verbatim}
+
+\begin{description}
+\item[compiler] \mbox{}
+   \begin{itemize}
+     \item makes sure that 3 FPP stack elements are available
+     \item pushes two operands onto FPP stack ({\tt p1}, then {\tt p0})
+   \end{itemize}
+\item[code procedure] \mbox{}
+   \begin{itemize}
+   \item performs the computations on stack, using one more stack element
+   \end{itemize}
+\item[compiler] \mbox{}
+   \begin{itemize}
+   \item  uses the top of FPP stack as function call result
+   \end{itemize}
+\end{description}
+
+\subsubsection{Using 80387 coprocessor (F2)}
+
+The following procedure calculates $r:=\sqrt{r\pi}$.
+
+\begin{verbatim}
+PROCEDURE - F2(VAR r: LONGREAL);
+  "r: EAX  USE: (ST(0),ST(1)) ",
+
+(*begin
+        fld     qword [eax]
+        fldpi
+        fmul
+        fsqrt
+        fstp    qword [eax]
+end*)
+
+0DDH,040H,008H,0D9H,0EBH,0DEH,
+0C9H,0D9H,0FAH,0DDH,058H,008H;
+\end{verbatim}
+
+\begin{description}
+\item[compiler] \mbox{}
+   \begin{itemize}
+     \item makes sure that 2 FPP stack elements are available
+     \item saves EAX if necessary
+     \item places address of {\tt res} in EAX
+   \end{itemize}
+\item[code procedure] \mbox{}
+   \begin{itemize}
+   \item performs the computations, writing result to memory
+         and cleaning FPP stack
+   \end{itemize}
+\item[compiler] \mbox{}
+   \begin{itemize}
+   \item restores context if necessary
+   \end{itemize}
+\end{description}

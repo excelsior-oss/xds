@@ -1,0 +1,129 @@
+\chapter{Inline assembler}
+\label{asm}
+
+This chapter contains a very brief description of the inline x86 assembler.
+
+\section{Implemented features}
+
+The following features are implemented in the current version:
+\begin{itemize}
+\item Base instruction set up to and including Pentium Pro (see \ref{asm:problems}).
+\item Floating point instructions up to and including Pentium Pro.
+\item Pentium MMX instructions.
+\item Labels and their usage in branch and call instructions.
+\item \mt{}/\ot{} procedure calls and variable access (see \ref{asm:hll}).
+\end{itemize}
+
+\section{Basic syntax}
+
+The assembler uses the same scanner as the \mt{}/\ot{} front-end,
+so it is possible to use \See{conditional compilation}{}{m2:pragmas:cc}
+and comments.
+
+Language extensions have to be enabled using the \OERef{M2EXTENSIONS}
+and \OERef{O2EXTENSIONS} options in order to use inline assembly facilities.
+
+The keyword \verb'ASM' denotes the beginning of inline assembly code;
+the keyword \verb'END' denotes its end.
+
+Each line in a piece of the assembly code may contain not more than
+one instruction. It is not possible to continue an instruction on the next string.
+
+Keywords and names of instructions and registers are not case sensitive.
+
+There are instructions one of which arguments is fixed (\verb'DIV', \verb'FCOMI').
+%В процессоре Pentium Pro (а также в его предшественниках) есть команды, ???
+%у которых один из аргументов всегда фиксирован (DIV, FCOMI).
+These instructions are differently denoted in different assemblers. We use
+the syntax described in Intel's documentation.
+
+If size or an operand may not be determined based on instruction semantics
+and/or size of another operand, it is necessary to explicitly specify it.
+The following size specifiers are recognized:
+
+\begin{center}
+\begin{tabular}{ll}
+\bf Specifier    & \bf Size \\
+\hline
+\verb'BYTE PTR'  & 1   \\
+\verb'WORD PTR'  & 2   \\
+\verb'DWORD PTR' & 4   \\
+\verb'FWORD PTR' & 6   \\
+\verb'QWORD PTR' & 8   \\
+\verb'TBYTE PTR' & 10
+\end{tabular}
+\end{center}
+
+{\bf Examples:}
+
+\verb'    MOV WORD PTR [EBX],1  ' here size specifier is obligatory
+
+\verb'    MOV [EBX],AX          ' here size is determined automatically
+
+\section{Labels}
+
+An instruction may be prepended with a label, delimited with a colon character:
+
+\verb'    Save: PUSH EAX'
+
+Labels may not match instruction names. It is also not recommended to use
+assembly keywords (\verb'DWORD', \verb'EAX') as labels.
+
+In the current version, labels may only be used in branch and call
+instructions.
+
+\section{Accessing Modula-2/Oberon-2 objects}
+\label{asm:hll}
+
+It is possible to reference \mt{}/\ot{} entities from within
+the inline assembly code, namely whole constants, variables,
+and procedures (in \verb'JMP' and \verb'CALL' instructions only).
+
+Example:
+
+\verb'    MOV j,10'
+
+In this example, the type of \verb'j' is used to choose between
+byte, word, and doubleword \verb'MOV' instructions.
+
+{\bf Note:} In the first pre-release versions which included inline assembler,
+it was necessary to specify the base register \verb'EBP' to access local variables:
+
+\verb'    MOV j[EBP],10'
+
+It is {\it no longer required}.
+
+In case of nested procedures, code to access a variable from an outer procedure scope
+has to be written by hand.
+
+Record field access is not supported yet. %??? what about arrays?
+There are also no operators to denote attributes of Modula-2/Oberon-2 entities.
+
+The \verb'OFFSET' operator returns the offset of its operand, which has to be a variable:
+
+\verb'    MOV EAX, OFFSET j'
+
+\section{Known problems}
+\label{asm:problems}
+
+\begin{enumerate}
+\item Instruction prefixes (\verb'REP', \verb'LOCK', etc.) are not supported yet.
+\item Segment overriding (\verb'DS:', etc.) is not supported yet.
+\item Error position precision is $+/-$ 1-2 tokens.
+\item Error 3029 incorrectly positioned.
+\item 16-bit addressing modes (e.g. \verb'[BX+SI]') are not supported and
+      unlikely to be supported in the future.
+\item \mt{}/\ot{} entities access facilities are limited.
+\item It is possible to use commands like \verb'MOVSB', \verb'MOVSW', \verb'MOVSD',
+      but not as in \verb'MOVS DWORD PTR [ESI]'.
+\item \mt{}/\ot{} variables usage is poorly checked for correctness.
+\item It is possible to use only one \verb'OFFSET' operator in a constant expression.
+\end{enumerate}
+
+\section{Potential problems}
+
+\begin{enumerate}
+\item Not all instructions were tested with all addressing modes.
+\item Error diagnostics and recovery were not tested.
+\end{enumerate}
+

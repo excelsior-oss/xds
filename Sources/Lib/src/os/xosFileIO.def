@@ -1,0 +1,22 @@
+(* Copyright (c) xTech 1992,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosFileIO; (* Hady 29.05.96 18:45 *)
+
+IMPORT  xrtsOS, SYSTEM;
+
+FROM SYSTEM  IMPORT  int, CARD32;
+FROM xrtsOS  IMPORT  X2C_OSFILE;
+
+
+PROCEDURE X2C_FileOpenRead(VAR f: X2C_OSFILE; name: ARRAY OF CHAR): int;
+PROCEDURE X2C_FileClose(f: X2C_OSFILE): int;
+PROCEDURE X2C_FileSeek(f: X2C_OSFILE; VAR ofs: SYSTEM.WORD; org: int): int;
+PROCEDURE X2C_FileOpenWrite(VAR f: X2C_OSFILE; name: ARRAY OF CHAR): int;
+PROCEDURE X2C_FileOpenRW(VAR f: X2C_OSFILE; name: ARRAY OF CHAR): int;
+PROCEDURE X2C_FileRead (f: X2C_OSFILE; buf: SYSTEM.ADDRESS; VAR len: CARD32): int;
+PROCEDURE X2C_FileWrite(f: X2C_OSFILE; buf: SYSTEM.ADDRESS; VAR len: CARD32): int;
+
+PROCEDURE X2C_StdOut(s: ARRAY OF CHAR; len: CARDINAL);
+PROCEDURE X2C_StdOutFlush;
+
+END xosFileIO.

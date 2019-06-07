@@ -1,0 +1,71 @@
+<* M2EXTENSIONS+ *>
+<* ALIGNMENT = "4" *>
+
+DEFINITION MODULE ["StdCall"] XDInterface4;
+(* 
+   This module provides interface of interacting between RT and Debugger
+*)
+
+IMPORT xjRTS, XDInterface;
+
+FROM SYSTEM IMPORT ADDRESS;
+FROM XDInterface IMPORT HandlerType, HandlerDesc;
+
+-------------------------------------------------------------------------------
+
+CONST
+  XDInterface_v4_Magic_Java   = 0234987H; -- Java XD Interface v4 magic
+  XDInterface_v4_Version_Java = 4;
+
+TYPE
+  Handlers_v4_Java = ( hj_X2C_ASSERT_FC
+                     , hj_X2C_ASSERT_F
+                     , hj_X2C_NativeExit
+                     , hj_HandleUncaughtException
+                     , hj_X2C_TRAP_F
+                     , hj_X2C_TRAP_RANGE
+                     , hj_X2C_TRAP_NIL
+                     , hj_X2C_TRAP_OVERFL
+                     , hj_X2C_TRAP_DIV
+                     , hj_X2C_TRAP_INDEX
+                     , hj_X2C_ABORT
+                     , hj_PerfectFatalError
+                     , hj_X2J_UnsatisfiedLink
+                     , hj_OutOfMemory
+                     , hj_ProgramStopPoint
+                     );
+
+  HANDLERS_v4_Java = ARRAY Handlers_v4_Java OF HandlerDesc;
+
+
+CONST
+  Handlers_v4_List_Java = HANDLERS_v4_Java {
+    HandlerDesc {htTrap,      FALSE, "ASSERT: RTS exception #%u", TRUE}
+  , HandlerDesc {htTrap,      FALSE, "ASSERT: RTS exception #%u", TRUE}
+  , HandlerDesc {htException, TRUE,  "Program has raised exception", TRUE}
+  , HandlerDesc {htException, TRUE,  "Program has raised exception that is uncaught", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "TRAP: RTS exception #%u", TRUE}
+  , HandlerDesc {htTrap,      FALSE, "RANGE EXCEPTION", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "NIL POINTER DEREFERENCE", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "OVERFLOW", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "DIVIZION BY ZERO", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "INVALID INDEX", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "ABORT", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "Redundant Method", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "Unsatisfied Link", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "Out Of Memory", FALSE}
+  , HandlerDesc {htTrap,      FALSE, "Program execution stopped", FALSE}
+  };
+
+
+
+TYPE
+  XD_Interface_v4_Java = RECORD
+                           Magic    : CARDINAL;
+                           Version  : CARDINAL;
+                           MainAdr  : ADDRESS;  -- user program entry point
+                           EERing   : xjRTS.X2C_ExecEnv;
+                           Handlers : ARRAY Handlers_v4_Java OF ADDRESS;
+                         END;
+
+END XDInterface4.

@@ -1,0 +1,146 @@
+\chapter{Analyzing your program profile}
+\label{profiler}
+
+Your XDS package contains a set of utilities that may help you
+to better understand and improve the run-time performance of your
+program. It emphasises the pieces of code which consume most of
+the CPU time, and, hence, are the first candidates for redesign.
+
+\section{Overview}
+\label{profiler:overview}
+
+The process of profiling takes two steps - execution tracing
+and visualisation. During execution tracing, your program
+is executed in debugging mode under control
+of the tracing utility. That utility interrupts the program
+at regular time intervals and records instruction pointer (EIP)
+values (snapshots), storing them in a {\it trace file}.
+A visualization utility reads that file and displays distribution
+of snapshots among your program components, modules, procedures,
+and source lines, using debug information from the program executable.
+
+\section{Execution tracing}
+\label{profiler:tracing}
+
+Execution tracing is performed by the XPROF utility. To invoke it,
+issue the following command:
+
+\verb'    XPROF { ("/" | "-") option } program [ arguments ]'
+
+where \verb'program' is a name of a profiled executable and
+\verb'arguments' are its optional command line arguments ({\it not}
+XPROF arguments).
+
+Upon termination, XPROF creates a trace file in the current directory.
+Its name is built by appending the extension \verb'.XPT' to the executable name.
+
+Available options are:
+
+\ifonline
+\begin{tabular}{ll}
+\else
+\begin{tabular}{lp{11 cm}}
+\fi
+\tt /R=nnn & Set snapshot interval to {\tt nnn} ms
+             Default is 55, minimum 32. \\
+\tt /A     & Append trace data to the existent .XPT file.
+\end{tabular}
+
+The \verb'/A' option allows you to collect more snapshots,
+improving profile accuracy.
+
+\section{Visualisation}
+
+The visualisation utilities, XPDUMP and XPVIEW, read the collected
+trace data and collate it with the debug information bound to
+the executable. The results of that analysys are then displayed.
+
+\subsection{XPDUMP}
+
+XPDUMP is a command line utility. Given a name of a trace file,
+it prints to the standard output a mutlilevel list of components,
+modules, procedures, and source lines of the traced program.
+
+XPDUMP command line syntax:
+
+\verb'XPDUMP { ( "-" | "/" ) option } tracefile'
+
+XPDUMP options:
+
+\begin{tabular}{ll}
+\bf Option       & \bf Description \\
+\hline
+\tt /O=order     &  Sort order: by ({\tt N})ame or ({\tt P})ercent \\
+\tt /L=level     &  Sensitivity level in percents               \\
+\tt /P=precision &  Precision (number of decimal positions)     \\
+\tt /R           &  Sort in reverse order                       \\
+\tt /G           &  Display graph bar                           \\
+\tt /C           &  Display components only                     \\
+\tt /M           &  Display modules only                        \\
+\tt /S           &  Display source                              \\
+\tt /F           &  Show full path for modules
+\end{tabular}
+
+The default is \verb'/O=P /L=5 /P=1'.
+
+Here is a sample XPDUMP output:
+
+\ifonline\else{\footnotesize\fi
+\begin{verbatim}
+-----------------------------------------------------------------------------
+Snapshots: 200
+-----------------------------------------------------------------------------
+ 90.4    90 ####################################.... SAMPLES\BENCH\dry.mod
+ 37.7    34 ###############.........................     Proc0
+   20    18 ########................................     Proc1
+ 13.3    12 #####...................................     Proc8
+  8.3   7.5 ###.....................................     Func2
+  7.7     7 ###.....................................     Proc7
+\end{verbatim}
+\ifonline\else}\fi % \footnotesize
+
+"Snapshots" is a total number of EIP values recorded in the trace file.
+
+\havetowrite about components !!!
+
+For each module, the first column contains ratio between the number of
+snapshots belonging to the module and the number of snapshots belonging to
+all program modules. The second column contains  ratio between the number of
+snapshots belonging to the module and the total number of snapshots.
+
+For each procedure, the first column contains ratio between the number of
+snapshots belonging to the procedure and the number of snapshots belonging to
+the module which contains that procedure. The second column contains ratio
+between the number of snapshots belonging to the procedure and the total
+number of snapshots.
+
+For each source line, the first column contains ratio between the number of
+snapshots belonging to the line and the number of snapshots belonging to
+the module which contains that line. The second column contains ratio
+between the number of snapshots belonging to the line and the total
+number of snapshots.
+
+\subsection{Profile viewer}
+
+XDS Profile Viewer is a GUI program which allows you to
+interactively browse your program profile.
+It can be invoked with the following command:
+
+\verb'    XPVIEW [ tracefile ]'
+
+where \verb'tracefile' is the name of the trace file which you want to display.
+If you did not specify it on the command line, press {\bf F3} or select
+{\bf Open} from the {\bf File} menu to load an .XPT file using a standard file dialog
+once XPVIEW is up and running.
+
+XPVIEW displays profile information in four windows.
+The first window contains a list or your program components
+(EXE and DLLs). The second window contains the list of the source
+modules which constitute the currently selected component,
+the third --- the list of procedures belonging to the currently
+selected module, and the fourth --- the source code of the
+currently selected procedure.
+
+Snapshots percentage in numeric and graphic formats is displayed
+to the left of each component, module, procedure, or source line.
+

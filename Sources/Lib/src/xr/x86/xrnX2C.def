@@ -1,0 +1,19 @@
+(* Copyright (c) xTech 1995.  All Rights Reserved *)
+(*
+ * XDS library.
+ * Implementation for "X2C.def".
+ *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrnX2C;
+
+IMPORT  SYSTEM;
+
+PROCEDURE X2C_BEGINDLL( gc_auto      :BOOLEAN;
+                        gc_threshold :CARDINAL;
+                        heap_limit   :CARDINAL) :BOOLEAN;
+
+
+PROCEDURE X2C_BEGIN(VAR argc: INTEGER; argv: SYSTEM.ADDRESS;
+                 gc_auto: BOOLEAN; gc_threshold: CARDINAL; heap_limit: CARDINAL);
+
+END xrnX2C.

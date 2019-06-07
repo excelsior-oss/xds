@@ -1,0 +1,16 @@
+DEFINITION MODULE Serv;
+
+ IMPORT stdio;
+ FROM xtsGraph IMPORT cur_clip_region;
+
+PROCEDURE lScanHLine (VAR x :CARDINAL; y :INTEGER; backColor :CARDINAL);
+PROCEDURE rScanHLine (VAR x :CARDINAL; y :INTEGER; backColor :CARDINAL);
+PROCEDURE scanHLine (VAR x1, x2 :CARDINAL; y :INTEGER; backColor :CARDINAL);
+
+PROCEDURE min (a, b :CARDINAL) :CARDINAL;
+PROCEDURE max (a, b :CARDINAL) :CARDINAL;
+
+PROCEDURE orderCoords (VAR x0, y0, x1, y1 :CARDINAL);
+PROCEDURE adjust (VAR obj :CARDINAL; min, max :CARDINAL);
+
+END Serv.

@@ -1,0 +1,96 @@
+(* Copyrigth (C) 1996,98,99 XDS Ltd *)
+
+<* +M2EXTENSIONS *>
+ 
+DEFINITION MODULE xtsWB;
+(* window buffer class  *)
+
+IMPORT ConM := xtsConM, SYSTEM;
+
+<* IF multithread THEN *>
+  FROM Threads IMPORT Mutex;
+<* END *>
+
+
+TYPE
+  CELL  = ConM.CELL;
+  ATTR  = ConM.ATTR;
+  PBUFF = POINTER TO ARRAY [0..0FFFFH] OF CELL;
+
+  WBRec = RECORD
+            curX, curY   :CARDINAL;  -- current pos
+            xd, yd       :CARDINAL;  -- win buffer size
+            inX1, inY1,              -- inner co-ord to write into (ordered)
+            inX2, inY2   :CARDINAL;  --
+            wrapMode     :BOOLEAN;   -- wrap mode?
+            <* IF multithread THEN *>
+            semBuf       :Mutex;
+            <* END *>
+            winBuff      :CELL;      -- actually, it is the beginning of the buffer followed
+          END;
+
+  PWB  = POINTER TO WBRec;
+
+--------------------------------------------------------------------------------------
+
+PROCEDURE Constr ( x, y :CARDINAL; wrapM, hasFr :BOOLEAN; VAR pwb :PWB ) :BOOLEAN;
+(* window buffer constructor *)
+
+PROCEDURE Destr ( VAR pwb :PWB );
+(* window buffer destructor *)
+
+
+PROCEDURE GainAccess ( pwb :PWB );
+
+PROCEDURE Relinquish ( pwb :PWB );
+
+
+PROCEDURE GetWinBuf ( pwb :PWB; VAR pBuff :PBUFF );
+
+
+PROCEDURE GetIndex ( pwb :PWB; xRel, yRel :CARDINAL; VAR i :CARDINAL );
+
+
+PROCEDURE clipXY ( pwb :PWB; VAR x, y :CARDINAL; frm :BOOLEAN );
+
+
+PROCEDURE Fill ( pwb :PWB; c :CHAR; attr :ATTR );
+
+
+
+PROCEDURE WrStrSlice ( pwb :PWB;
+                       str :ARRAY OF CHAR;
+		       beg, length :CARDINAL;
+		       attr: ATTR
+		     ) :BOOLEAN;
+(* writes string with scrolling & wraping, if any;
+   returns TRUE if there was scroll *)
+
+
+PROCEDURE WrChar ( pwb :PWB; c :CHAR; attr: ATTR );
+(* write a char with scrolling & wraping, if any *)
+
+
+PROCEDURE WrLn ( pwb :PWB; attr :ATTR ) :BOOLEAN;
+(* go to new line and scroll (if any);
+   returns TRUE if there was scroll *)
+
+
+PROCEDURE DrawFrame ( pwb :PWB; fs :ARRAY OF CHAR; attr :ATTR );
+
+PROCEDURE RawWrite ( pwb :PWB; relX, relY :CARDINAL;
+                     source :ARRAY OF CHAR;
+                     beg, length :CARDINAL;
+                     attr :ATTR );
+
+PROCEDURE RawWriteNChar ( pwb :PWB; relX, relY :CARDINAL;
+                          N :CARDINAL;
+                          c :CHAR; attr :ATTR );
+
+PROCEDURE LScrollUp ( pwb :PWB; line :CARDINAL; attr :ATTR );
+
+PROCEDURE LScrollDown ( pwb :PWB; line :CARDINAL; attr :ATTR );
+
+PROCEDURE SetWrap ( pwb :PWB; on, hasfr :BOOLEAN );
+
+END xtsWB.

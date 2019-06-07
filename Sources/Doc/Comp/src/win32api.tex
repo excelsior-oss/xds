@@ -1,0 +1,177 @@
+\chapter{Using the Win32 API}
+\label{win32api}
+
+This chapter contains a short description of the Win32 API usage
+in your Modula-2/Oberon-2 programs.
+
+\section{Obtaining API documentation}
+
+Your XDS package includes the Win32 API definition modules and the import
+library, but no documentation on the API. You have to use
+third-party books or the on-line documentation from the
+Microsoft Win32 SDK, which is available on Microsoft
+Developer Network CD-ROMs and along with some C compilers,
+for instance, Microsoft Visual C++ or Watcom.
+
+Unfortunately, we can not afford licensing the API
+reference from Microsoft for adapting it to Modula-2
+and distributing with XDS. We regret the inconvenience.
+
+\section{Using the Win32 API in your programs}
+
+The base Win32 API is collected in about 20 definition modules
+residing in the \verb'DEF\WIN32' subdirectory of your \XDS{} installation.
+There is also an utility which merges these modules, except the
+module \verb'CommCtrl', into the single module \verb'Windows'
+during installation. The installation program
+also invokes the compiler to build the symbol files for all Win32 API modules.
+To rebuild all these files anytime later,
+change directory to \verb'xxx\DEF\WIN32', where \verb'xxx' is your
+\XDS{} installation directory, and issue the following
+commands:
+
+\verb'    build\merge          ' to rebuild \verb'Windows.def' \\
+\verb'    '{\tt \XC{}}\verb' =p =a windef.prj  ' to rebuild Win32 API symbol files
+
+If you are just studying the Win32 API using SDK references or a
+third party book, use the \verb'Windows' module.
+Otherwise, you may wish to use separate modules.
+
+\subsection{Windows.def: merged versus reexporting}
+
+In versions prior to 2.31, you had to use either the merged
+module \verb'Windows' {\it or} the separate modules, but
+not both simultaneously, throughout all modules of your program,
+to avoid compatibility problems. Starting from version 2.31, it is possible to
+to build the \verb'Windows.def' file as a set of "reexport"
+declarations, such as:
+
+\verb'    TYPE ULONG = WinDef.ULONG;'\\
+\verb'    CONST GetFileType = WinBase.GetFileType;'
+
+This approach, proposed by Victor Sergeev, removes the restriction
+on simultaneous usage of \verb'Windows.def' and other Win32 API definition
+modules that resulted from compatibility problems.
+
+To rebuild the \verb'Windows.def' file using this method,
+issue the following command instead of \verb'build\merge':
+
+\verb'    build\reexport'
+
+{\bf Note:} As the new \verb'Windows.sym' file is about 10 percent
+      larger, you may need to increase the \OERef{COMPILERHEAP}
+      equation value in the compiler configuration file.
+
+You may switch between the old "merge" and the new "reexport"
+approaches to \verb'Windows.def' creation at any time, but note
+that the \verb'CommCtrl' module imports from separate modules.
+
+% !!! Exact list of modules with description.
+
+\subsection{Reducing the size of Windows.def}
+
+% !!! New in 2.40:
+
+If are using the module \verb'Windows', but do not need some parts of the Win32 API
+collected in it, you may build a reduced version by passing the name of the file
+containing the list of modules you need to one of the utilitites \verb'merge' or
+\verb'reexport'. One such list is in the \verb'DEF\WIN32\BUILD\MIN.LST' file that
+does not include things like OLE and mulimedia. Its usage reduces the size of
+\verb'Windows.def' file by about 30\% and considerably speeds up compilation of
+modules importing the module 'Windows'.
+
+\subsection{Building GUI applications}
+
+If your program is a GUI application, toggle
+the GUI option ON in the project file:
+
+\verb'    +GUI'
+
+\subsection{Declaring callbacks}
+
+If you have to pass a procedure as a parameter to an API call (a window
+procedure, for example), declare it as \verb'"StdCall"'
+(see \ref{multilang:direct}):
+
+\begin{verbatim}
+    PROCEDURE ["StdCall"] MainDlgProc
+    ( hwnd   : Windows.HWND
+    ; msg    : Windows.UINT
+    ; wparam : Windows.WPARAM
+    ; lparam : Windows.LPARAM
+    )        : Windows.BOOL;
+\end{verbatim}
+
+\ifcomment !!!
+\subsection{Additional macros}
+
+In order to reduce need for type casting, the following "macros" are
+provided in the definition module \verb'OS2'
+(they are implemented in the run-time library):
+
+\begin{verbatim}
+    MPFROMUSHORT    USHORT1FROMMP
+    MPFROM2USHORT   USHORT2FROMMP
+    MPFROMULONG     ULONGFROMMP
+
+    MRFROMUSHORT    USHORT1FROMMR
+    MRFROM2USHORT   USHORT2FROMMR
+    MRFROMULONG     ULONGFROMMR
+\end{verbatim}
+
+Although these "macros" are declared in the module \verb'OS2', you are
+requested to import the module \verb'OS2RTL' as well. More precisely,
+the original IBM OS/2 Toolkit header files, which are used during C compilation
+in case of XDS-C, do {\em not} contain these macros, so they are implemented in
+the \verb'OS2RTL.h' header file supplied with XDS-C.
+To have that header included into the generated C code, you need to
+import the module \verb'OS2RTL'.
+In XDS-x86, these macros are implemented as procedures which reside
+in the XDS run-time library, so they will be linked in even if you do not
+import \verb'OS2RTL', but importing it will ensure portability between
+XDS-x86 and XDS-C.
+
+\fi
+
+\section{Using resources}
+
+\subsection{Automatic resource binding}
+
+In early \XDS{} versions, resources had to be bound to an executable
+"manually", i.e. by invoking a resource compiler, each time after linking.
+Starting from version 2.20, it is possible to specify any file in
+the \See{{\tt!module} project file directive}{}{xc:project}
+and iterate files by extensions in \See{makefile templates}
+{}{xc:template}.
+
+Thus, if your application uses resources, you may specify
+binary resource files as modules in your project to have them
+been automaticlly bound to the executable, provided that
+the used \Ref{template}{}{xc:template} has adequate support:
+
+\verb'    !module myapp.res'
+
+\subsection{Header files}
+
+\XDS{} package contains a resource compiler (XRC). Its current version
+is compatible with traditional resource compilers found in C compiler
+packages. Those compiles, however, have no idea about what
+\mt{} is and work only with C header files. So does XRC.
+Therefore, constants which identify resources have to be defined in
+both C headers and \mt{} definition modules, which may
+easily go out of sync.
+
+To solve this problem, we suggest you to define resource identifiers
+in header files and then use the H2D utility to convert these % ??? \ref{}
+files to definition modules before compilation.
+
+\section{Generic GUI application}
+
+The \verb'SAMPLES\GENERIC' subdirectory of your XDS installation contains
+a generic GUI application, which you can use as
+a base for your own applications. The sample program uses the
+standard menus and dialogs that most applications would use.
+The source is designed to serve as a base for any GUI
+application and was written in such a way that it can be
+easily modified to handle any application specific commands.
+

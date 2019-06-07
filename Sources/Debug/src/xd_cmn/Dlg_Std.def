@@ -1,0 +1,318 @@
+-- Модуль для выполнения некоторых стандартных действий,
+-- содержить описания типов для организации списков,
+-- универсальный обработчик списков и обработчик для
+-- позиционирования в списках (локатор). Кроме этого,
+-- содержит набор процедур для выдачи сообщений, запроса
+-- и выполнения действий, перемещения окон. Здесь же
+-- находятся обработчик диалогов, процедура редактирования
+-- строк и ввода данных от пользователя.
+
+DEFINITION MODULE Dlg_Std;
+
+IMPORT sys := SYSTEM;
+
+
+IMPORT dt  := DI_Types;
+IMPORT crt := CRT;
+IMPORT eve := DlgEvent;
+IMPORT act := Dlg_Acts;
+IMPORT key := Keys;
+IMPORT xs  := xStr;
+
+
+PROCEDURE Min(a,b: CARDINAL): CARDINAL;
+
+
+PROCEDURE Shift(k, N, len: CARDINAL; VAR curr, frame: CARDINAL): BOOLEAN;
+
+PROCEDURE Normalize(size: crt.SZ; VAR curr, frame: CARDINAL; N: CARDINAL);
+
+
+
+(* координаты абсолютные *)
+PROCEDURE CheckFrame(size: crt.SZ; x,y: CARDINAL): BOOLEAN;
+
+
+PROCEDURE Move_Resize_kbd (hwnd: crt.HWND; minX, minY: CARDINAL);
+PROCEDURE Move_Resize_mou (hwnd: crt.HWND; minX, minY: CARDINAL; mpX, mpY: CARDINAL);
+
+PROCEDURE QueryAction(hwnd: crt.HWND; action: act.ACTION): BOOLEAN;
+PROCEDURE QueryKey(hwnd: crt.HWND; _key: key.KEY): BOOLEAN;
+PROCEDURE QueryItem(hwnd: crt.HWND; num: CARDINAL): BOOLEAN;
+
+PROCEDURE DoAction(hwnd: crt.HWND; action: act.ACTION): BOOLEAN;
+
+
+PROCEDURE PutItem (main: BOOLEAN; item: CARDINAL): CARDINAL;
+PROCEDURE GetItem (par: CARDINAL; VAR main: BOOLEAN; VAR item: CARDINAL);
+
+
+-- по параметру обработчика получить действие и кнопку
+PROCEDURE GetAction (par: CARDINAL): act.ACTION;
+PROCEDURE GetKey (par: CARDINAL): key.KEY;
+
+
+
+
+(* Ошибки *)
+
+
+VAR
+  ErrorMsg-: crt.HWND;
+
+PROCEDURE InitErrorMsg;
+
+
+TYPE
+
+(* --- Диалоги --- *)
+
+  MESSAGE = xs.String;
+  PMESSAGE = POINTER TO MESSAGE;
+
+
+  ACTION = PROC;
+
+  D_ACTION = PROCEDURE (crt.HWND): BOOLEAN;
+  D_STATE  = (d_enabled, d_disabled);
+
+
+  RADIO = RECORD
+            x,y : CARDINAL;
+            name: MESSAGE;
+            hilite: CARDINAL;
+            hotkey: key.KEY;
+          END;
+
+  PRADIO = POINTER TO ARRAY OF RADIO;
+
+  PBOOLEAN = POINTER TO BOOLEAN;
+
+  SORT =  ( msg, frame, edit_str, radio, button, check );
+
+  LINE = RECORD
+            x,y : CARDINAL;
+            CASE sort : SORT OF
+            | msg :
+              str : MESSAGE;
+
+            | frame:
+              frame_dx  : CARDINAL;
+              frame_dy  : CARDINAL;
+              frame_type: crt.FRAME;
+
+            | edit_str:
+              e_str : PMESSAGE;
+              len   : CARDINAL;
+
+            | radio :
+              rname   : MESSAGE;  -- Hазвание гpуппы
+              radio_dx: CARDINAL; -- Длина pамочки для обpамления гpуппы
+              radio_dy: CARDINAL; -- Длина pамочки для обpамления гpуппы
+              rcurr   : CARDINAL; -- Текущий селектоp в гpуппе
+              ractive : CARDINAL; -- Выбpанный селектоp
+              pradio  : PRADIO;
+              raction : ACTION;   -- Что нужно делать по нажатии пробела
+
+            | button:
+              bname  : MESSAGE;
+              baction: PROC;
+              bhilite: CARDINAL;
+              bhotkey: key.KEY;
+
+            | check:
+              cname  : MESSAGE;
+              cactive: PBOOLEAN;
+              caction: PROC;
+              chilite: CARDINAL;
+              chotkey: key.KEY;
+
+            END;
+            state : D_STATE;
+          END;
+
+  PLINES  = POINTER TO ARRAY OF LINE;
+
+  DIALOG  = RECORD
+              curr    : CARDINAL;
+              on_error: crt.HWND;
+              Lines   : PLINES;
+              action  : D_ACTION;
+            END;
+  PDIALOG = POINTER TO DIALOG;
+
+  MSG = RECORD
+          x,y     : CARDINAL;
+          message : MESSAGE;
+        END;
+
+  PMSG = POINTER TO ARRAY OF MSG;
+  MSG_REC = RECORD
+              Msg: PMSG;
+              Colors: POINTER TO crt.MSG_ATTR;
+            END;
+  PPMSG = POINTER TO MSG_REC;
+
+-- для окна с AM типа PPMSG
+PROCEDURE SetMessage (hwnd: crt.HWND; str: ARRAY OF CHAR);
+PROCEDURE InitMessage (hwnd: crt.HWND; message: CARDINAL);
+
+
+PROCEDURE MsgProc (hwnd: crt.HWND; Msg: eve.MSG);
+
+
+PROCEDURE CenterWindowV (hwnd: crt.HWND);
+
+PROCEDURE CenterWindowH (hwnd: crt.HWND);
+
+PROCEDURE CenterWindow (hwnd: crt.HWND);
+
+
+PROCEDURE CenterMessage (size: crt.SZ; msg: PMSG);
+
+
+PROCEDURE SetErrorMsg(str: ARRAY OF CHAR;  SEQ arg: sys.BYTE);
+
+PROCEDURE SetErrorMsgNo(no: CARDINAL;      SEQ arg: sys.BYTE);
+
+PROCEDURE SetWarningMsg(str: ARRAY OF CHAR);
+
+PROCEDURE SetErrorNo(no: CARDINAL);
+
+
+PROCEDURE Error (str: ARRAY OF CHAR);
+
+PROCEDURE ErrorArg (str: ARRAY OF CHAR; SEQ arg: sys.BYTE);
+
+PROCEDURE ErrorNo(no: CARDINAL; SEQ arg: sys.BYTE);
+
+
+PROCEDURE NotifyArg (str: ARRAY OF CHAR; SEQ arg: sys.BYTE);
+
+PROCEDURE NotifyNo(no: CARDINAL; SEQ arg: sys.BYTE);
+
+PROCEDURE Notify(str: ARRAY OF CHAR);
+
+
+PROCEDURE InformationArg (str: ARRAY OF CHAR; SEQ arg: sys.BYTE);
+
+PROCEDURE InformationNo (no: CARDINAL; SEQ arg: sys.BYTE);
+
+PROCEDURE Information (str: ARRAY OF CHAR);
+
+
+
+PROCEDURE OkCancel (message: ARRAY OF CHAR): BOOLEAN;
+
+CONST                            -- Button names for
+  bn_Ok     = 'Ok';              -- Ok
+  bn_Cancel = 'Cancel';          -- Cancel
+
+                                 -- Button action for
+PROCEDURE ba_Ok;                 -- Ok
+PROCEDURE ba_Cancel;             -- Cancel
+
+
+PROCEDURE DialogProc(hwnd: crt.HWND; Msg: eve.MSG);
+
+PROCEDURE LineEditor (hwnd     : crt.HWND;
+                      Msg      : eve.MSG;
+                      x, y     : CARDINAL; 
+                      edit_line: PMESSAGE; 
+                      edit_part: CARDINAL;
+                      active   : BOOLEAN);
+
+
+PROCEDURE OpenUniversalDialog(msg_no: CARDINAL; action : D_ACTION; VAR result: ARRAY OF CHAR);
+
+PROCEDURE OpenUniversalDialogByStr (header: ARRAY OF CHAR; action : D_ACTION; VAR result: ARRAY OF CHAR);
+
+VAR
+  NewValue: MESSAGE;
+
+PROCEDURE IniInputDialog(action: D_ACTION; preserve: BOOLEAN; name: ARRAY OF CHAR);
+
+
+
+TYPE
+
+(* --- Списки --- *)
+
+  LCTR_STR  = PROCEDURE (crt.HWND, CARDINAL, VAR ARRAY OF CHAR);
+
+  LIST = RECORD
+           N          : CARDINAL;    (* количество элементов в списке *)
+           frame, curr: CARDINAL;    (* начало видимого куска и положение текущего эелмента *)
+           pos        : CARDINAL;    (* позиция при левом/правом scroll'е *)
+           Frame      : crt.FRAME;   (* Какую рамку рисовать *)
+           Colors     : POINTER TO crt.LIST_ATTR;
+           locator    : LCTR_STR;
+           actions    : act.CONTEXT_LIST;
+           ext        : sys.ADDRESS;
+         END;
+
+  PLIST    = POINTER TO LIST;
+
+
+  LIST_EXT_VARIABLE = RECORD
+                        Auto   : BOOLEAN;
+                        Globals: BOOLEAN;
+                        Pos    : dt.POS;
+                      END;
+
+  PLIST_EXT_VARIABLE = POINTER TO LIST_EXT_VARIABLE;
+
+
+CONST
+  EmptyList = LIST {0, 0, 0, 0, crt.Double, NIL, NIL, act.EMPTY_CONTEXT_LIST, NIL};
+
+
+PROCEDURE DefaultProc (hwnd: crt.HWND; msg: eve.MSG);
+
+PROCEDURE ListBox (hwnd: crt.HWND; msg: eve.MSG);
+
+
+(* Переключатель опций *)
+PROCEDURE tglOption (VAR b: BOOLEAN; check: BOOLEAN): BOOLEAN;
+
+
+TYPE
+  INITER = PROCEDURE(BOOLEAN);
+
+ <* IF DEST_K26 THEN *>
+  WINDOW  = ( MainWindow, RegWindow,  BrkWindow, ModWindow, LblWindow
+            , GlobalVarWindow, ModuleVarWindow,  LocalVarWindow
+            , CallWindow, WatchWindow, ComponentsWindow
+            , StackWindow, BIOWindow);
+ <* END *>
+
+ <* IF DEST_XDS THEN *>
+  WINDOW  = ( MainWindow, RegWindow
+           <* IF TARGET_OS = "WINNT" THEN *>
+            , FloatRegWindow
+           <* END *>
+            , BrkWindow, ModWindow, LblWindow
+            , GlobalVarWindow, ModuleVarWindow,  LocalVarWindow
+            , CallWindow, WatchWindow, ComponentsWindow
+            , StackWindow, PublicsWindow, ThreadsWindow);
+ <* END *>
+
+  WND = RECORD
+          hwnd  : crt.HWND;
+          size  : crt.SZ;
+          init  : INITER;
+          visible_at_start: BOOLEAN;
+          name  : ARRAY [0..31] OF CHAR;
+        END;
+
+  W_NAMES = ARRAY WINDOW OF WND;
+
+VAR
+  Wnds: W_NAMES;
+
+
+PROCEDURE MakeSubmenuViewAs (VAR context: act.CONTEXT): BOOLEAN;
+
+
+END Dlg_Std.
+

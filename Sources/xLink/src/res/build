@@ -1,0 +1,2 @@
+gcc pack.c ../zlib/compress.c ../zlib/deflate.c ../zlib/adler32.c ../zlib/trees.c ../zlib/zutil.c -I../zlib -o pack
+rm -f *.o

@@ -1,0 +1,42 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE [2] errno;
+
+FROM SYSTEM IMPORT int;
+
+VAR
+  errno: int;
+
+  EZERO    -: int; (* Error 0                                   *)
+  EINVFNC  -: int; (* Invalid function number                   *)
+  ENOFILE  -: int; (* File not found                            *)
+  ENOPATH  -: int; (* Path not found                            *)
+  ECONTR   -: int; (* Memory blocks destroyed                   *)
+  EINVMEM  -: int; (* Invalid memory block address              *)
+  EINVENV  -: int; (* Invalid environment                       *)
+  EINVFMT  -: int; (* Invalid format                            *)
+  EINVACC  -: int; (* Invalid access code                       *)
+  EINVDAT  -: int; (* Invalid data                              *)
+  EINVDRV  -: int; (* Invalid drive specified                   *)
+  ECURDIR  -: int; (* Attempt to remove CurDir                  *)
+  ENOTSAM  -: int; (* Not same device                           *)
+  ENMFILE  -: int; (* No more files                             *)
+  ENOENT   -: int; (* No such file or directory                 *)
+  EMFILE   -: int; (* Too many open files                       *)
+  EACCES   -: int; (* Permission denied                         *)
+  EBADF    -: int; (* Bad file number                           *)
+  ENOMEM   -: int; (* Not enough memory                         *)
+  ENODEV   -: int; (* No such device                            *)
+  EINVAL   -: int; (* Invalid argument                          *)
+  E2BIG    -: int; (* Arg list too long                         *)
+  ENOEXEC  -: int; (* Exec format error                         *)
+  EXDEV    -: int; (* Cross-device link                         *)
+  EDOM     -: int; (* Math argument                             *)
+  ERANGE   -: int; (* Result too large                          *)
+  EFAULT   -: int; (* Unknown error                             *)
+  EEXIST   -: int; (* File already exists                       *)
+  EISDIR   -: int; (* File is a directory                       *)
+
+END errno.

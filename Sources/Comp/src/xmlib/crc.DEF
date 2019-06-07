@@ -1,0 +1,11 @@
+DEFINITION MODULE  crc;
+FROM SYSTEM IMPORT CARD32, CARD16, ADDRESS;
+
+VAR
+  cadr: ADDRESS;
+
+PROCEDURE cksum32 (initval: CARD32; staddr: ADDRESS; length: CARD32): CARD32;
+PROCEDURE cksum32_tab (initval: CARD32; staddr: ADDRESS; length: CARD32): CARD32;
+PROCEDURE cksum16(initval: CARD16; staddr: ADDRESS; length: CARD32): CARD16;
+PROCEDURE cksum16_tab(initval: CARD16; staddr: ADDRESS; length: CARD32): CARD16;
+END crc.

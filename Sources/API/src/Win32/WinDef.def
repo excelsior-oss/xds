@@ -1,0 +1,229 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] WinDef;
+
+IMPORT SYSTEM;
+
+CONST CALLBACK = "StdCall";
+
+CONST WINVER = 0400H;
+
+TYPE
+     ULONG  = SYSTEM.CARD32;
+     USHORT = SYSTEM.CARD16;
+     UCHAR  = CHAR;
+     PULONG = POINTER TO ULONG;
+     PUCHAR = POINTER TO UCHAR;
+     PSZ    = POINTER TO CHAR;
+
+CONST MAX_PATH = 260;
+
+TYPE
+     DWORD  = SYSTEM.CARD32;
+     BOOL   = SYSTEM.BOOL32;
+     BOOL8  = SYSTEM.BOOL8;
+     BYTE   = SYSTEM.CARD8;
+     INT8   = SYSTEM.INT8;
+     CARD8  = SYSTEM.CARD8;
+     WORD   = SYSTEM.CARD16;
+     FLOAT  = REAL;
+     PBOOL  = POINTER TO BOOL;
+     PCHAR  = POINTER TO CHAR;
+     PWORD  = POINTER TO SYSTEM.WORD;
+     PBYTE  = POINTER TO SYSTEM.BYTE;
+     PVOID  = POINTER TO SYSTEM.BYTE;
+     LPCVOID = POINTER TO SYSTEM.BYTE;
+     LPVOID = PVOID;
+     PCARD8 = POINTER TO CARD8;
+     PINT   = POINTER TO INTEGER;
+
+     UINT   = SYSTEM.unsigned;
+     PUINT  = POINTER TO UINT;
+     SHORT  = SYSTEM.INT16;
+     LONG   = SYSTEM.INT32;
+     PLONG  = POINTER TO LONG;
+     PSHORT = POINTER TO SHORT;
+
+     LONGWORD = SYSTEM.CARD32; (* should be SYSTEM.LONGWORD in fact *)
+
+     HANDLE = POINTER TO RECORD END;
+     PHANDLE = POINTER TO HANDLE;
+     PCHANDLE = PHANDLE;
+
+     WPARAM  = UINT;
+     LPARAM  = SYSTEM.INT32;
+     LRESULT = SYSTEM.INT32;
+
+     WCHAR   = SYSTEM.CARD16;
+
+     PSTR    = POINTER TO CHAR;
+     LPSTR   = POINTER TO CHAR;
+     PWSTR   = POINTER TO WCHAR;
+     PPSTR   = POINTER TO PSTR;
+     PPWSTR  = POINTER TO PWSTR;
+     PCSTR   = PSTR;
+     PPCSTR  = POINTER TO PCSTR;
+     PCWSTR  = PWSTR;
+     PPCWSTR = POINTER TO PCWSTR;
+     STRING  = PSTR;
+     WSTRING = PWSTR;
+     RESOURCESTRA = PCSTR;
+     RESOURCESTRW = PCWSTR;
+     ATOMSTR      = PCSTR;
+     ATOMWSTR     = PCWSTR;
+     STR     = POINTER TO ARRAY [0..MAX (INTEGER)-1] OF CHAR;
+     WSTR    = POINTER TO ARRAY [0..MAX (INTEGER) DIV 2] OF WCHAR;
+
+     INTARRAY = POINTER TO ARRAY [0..MAX (INTEGER) DIV 4-1] OF INTEGER;
+
+     PCBYTE  = PBYTE;
+     ATOM    = WORD;
+
+     PDWORD  = POINTER TO DWORD;
+     PCDWORD = PDWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE RESOURCESTR = RESOURCESTRW;
+<* ELSE *>
+      TYPE RESOURCESTR = RESOURCESTRA;
+<* END *>
+
+
+CONST TRUE  = VAL (BOOL, 1);
+      FALSE = VAL (BOOL, 0);
+
+(* Convention of using PSTR-like parameters:
+   [W]STRING        - pointer to a string that is used as input-output
+                      or pure output parameter and can't be NIL or converted
+                      integer value
+   PC[W]STR         - pointer to constant string (input parameter) that can be
+                      omited (NIL passed) or receive non-address values, such as
+                      resource ids.
+   P[W]STR          - same, input-output of pure output parameter
+   RESOURCE[W]STR   - resource name: either pointer to constant string, or
+                      result of MAKEINTRESOURCE call
+   ATOM[W]STR       - either pointer to constant string or result
+                      of MAKEINTATOM call
+*)
+
+PROCEDURE GetPSTR  (x : ARRAY OF CHAR)  : PSTR;
+PROCEDURE GetPWSTR (x : ARRAY OF WCHAR) : PWSTR;
+
+(* following procedures were macro in windef.h; in Modula-2 thay all
+   are run-time functions *)
+
+PROCEDURE max (a, b : INTEGER) : INTEGER;
+PROCEDURE min (a, b : INTEGER) : INTEGER;
+
+PROCEDURE MAKEWORD (lo, hi : BYTE) : WORD;
+PROCEDURE MAKELONG (lo, hi : WORD) : DWORD;
+PROCEDURE LOWORD (x : DWORD) : WORD;
+PROCEDURE HIWORD (x : DWORD) : WORD;
+PROCEDURE LOBYTE (x : WORD) : BYTE;
+PROCEDURE HIBYTE (x : WORD) : BYTE;
+
+TYPE
+     HWND         = POINTER TO RECORD END;
+     HHOOK        = POINTER TO RECORD END;
+     HGLOBAL      = POINTER TO RECORD END;
+     HLOCAL       = POINTER TO RECORD END;
+     GLOBALHANDLE = POINTER TO RECORD END;
+     LOCALHANDLE  = POINTER TO RECORD END;
+     HGDIOBJ      = POINTER TO RECORD END;
+
+     FARPROC  = PROCEDURE () : INTEGER;
+     NEARPROC = PROCEDURE () : INTEGER;
+     PROC     = PROCEDURE () : INTEGER;
+
+     HACCEL     = POINTER TO RECORD END;
+     HBITMAP    = HGDIOBJ;
+     HBRUSH     = HGDIOBJ;
+     HCOLORSPACE = POINTER TO RECORD END;
+     HDC        = POINTER TO RECORD END;
+     HGLRC      = POINTER TO RECORD END;         (*  OpenGL    *)
+     HDESK      = POINTER TO RECORD END;
+     HENHMETAFILE  = POINTER TO RECORD END;
+     HFONT      = HGDIOBJ;
+     HICON      = POINTER TO RECORD END;
+     HMENU      = POINTER TO RECORD END;
+     HMETAFILE  = POINTER TO RECORD END;
+     HINSTANCE  = POINTER TO RECORD END;
+     HMODULE    = HINSTANCE;      (* HMODULEs can be used in place of HINSTANCEs *)
+     HPALETTE   = POINTER TO RECORD END;
+     HPEN       = HGDIOBJ;
+     HRGN       = HGDIOBJ;
+     HRSRC      = POINTER TO RECORD END;
+     HSTR       = POINTER TO RECORD END;
+     HTASK      = POINTER TO RECORD END;
+     HWINSTA    = POINTER TO RECORD END;
+     HKL        = POINTER TO RECORD END;
+
+     HFILE      = INTEGER;
+     HCURSOR    = HICON; (* HICONs & HCURSORs are polymorphic *)
+
+    COLORREF    = DWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE PTSTR  = PWSTR;
+           PCTSTR = PCWSTR;
+           TCHAR  = WCHAR;
+<* ELSE *>
+      TYPE PTSTR  = PSTR;
+           PCTSTR = PCSTR;
+           TCHAR  = CHAR;
+<* END *>
+
+
+CONST HFILE_ERROR = -1;
+
+TYPE
+    RECT = RECORD
+                left   : LONG;
+                top    : LONG;
+                right  : LONG;
+                bottom : LONG;
+           END;
+    PRECT  = POINTER TO RECT;
+    PCRECT = POINTER TO RECT;    (* pointer to constant rect *)
+
+    RECTL = RECORD
+                left   : LONG;
+                top    : LONG;
+                right  : LONG;
+                bottom : LONG;
+           END;
+    PRECTL  = POINTER TO RECTL;
+    PCRECTL = POINTER TO RECTL;
+
+    POINT = RECORD
+                x : LONG;
+                y : LONG;
+            END;
+   PPOINT = POINTER TO POINT;
+
+    POINTL = RECORD
+                x : LONG;
+                y : LONG;
+             END;
+   PPOINTL = POINTER TO POINT;
+
+    POINTS = RECORD
+                x : SHORT;
+                y : SHORT;
+             END;
+   PPOINTS = POINTER TO POINTS;
+
+    SIZEL  = RECORD   (* was SIZE in windef.h; SIZE is reserved in Modula-2 *)
+                cx : LONG;
+                cy : LONG;
+             END;
+    PSIZE  = POINTER TO SIZEL;
+    PCSIZE = PSIZE;
+
+PROCEDURE MyInstance () : HINSTANCE; (* Specially designed for Modula-2 *)
+
+END WinDef.
+

@@ -1,0 +1,6 @@
+LIBRARY xd_edif
+
+EXPORTS
+  ProcessDebugInfo=DI_EDIF_ProcessDebugInfo  
+  ReadModules=DI_EDIF_ReadModules
+  BuildForMod=DI_EDIF_BuildForMod

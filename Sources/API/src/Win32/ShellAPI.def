@@ -1,0 +1,635 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] ShellAPI;
+
+(******************************************************************************
+*                                                                             *
+* ShellAPI.def -  SHELL.DLL functions, types, and definitions                 *
+*                                                                             *
+******************************************************************************)
+
+FROM WinDef IMPORT UINT, BOOL, WORD, DWORD, PVOID, WCHAR,
+                   PSTR, PWSTR, PCSTR, PCWSTR, PPWSTR, 
+                   POINT, RECT, HANDLE, HWND, HINSTANCE, HICON, LPARAM, MAX_PATH;
+FROM WinUser IMPORT SW_ENUM;
+FROM WinReg  IMPORT HKEY;
+FROM WinNT   IMPORT FILE_ATTRIBUTE_SET;
+
+<* PUSH *> <* ALIGNMENT = "1" *>
+
+TYPE HDROP = POINTER TO RECORD END;
+
+PROCEDURE DragQueryFileA (hDrop    : HDROP;
+                          iFile    : UINT;
+                          FileName : PSTR;
+                          bufsize  : UINT) : UINT;
+
+PROCEDURE DragQueryFileW (hDrop    : HDROP;
+                          iFile    : UINT;
+                          FileName : PWSTR;
+                          bufsize  : UINT) : UINT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST DragQueryFile = DragQueryFileW;
+<* ELSE *>
+      CONST DragQueryFile = DragQueryFileA;
+<* END *>
+
+PROCEDURE DragQueryPoint  (hDrop : HDROP; VAR point : POINT) : BOOL;
+PROCEDURE DragFinish      (hDrop : HDROP);
+PROCEDURE DragAcceptFiles (hWnd : HWND; fAccept : BOOL);
+
+PROCEDURE ShellExecuteA (hwnd         : HWND;
+                         lpOperation  : PCSTR;
+                         lpFile       : PCSTR;
+                         lpParameters : PCSTR;
+                         lpDirectory  : PCSTR;
+                         nShowCmd     : SW_ENUM) : HINSTANCE;
+
+PROCEDURE ShellExecuteW (hwnd         : HWND;
+                         lpOperation  : PCWSTR;
+                         lpFile       : PCWSTR;
+                         lpParameters : PCWSTR;
+                         lpDirectory  : PCWSTR;
+                         nShowCmd     : SW_ENUM) : HINSTANCE;
+
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ShellExecute = ShellExecuteW;
+<* ELSE *>
+      CONST ShellExecute = ShellExecuteA;
+<* END *>
+
+PROCEDURE FindExecutableA (lpFile : PCSTR;  lpDirector : PCSTR;  lpResult : PSTR)  : HINSTANCE;
+PROCEDURE FindExecutableW (lpFile : PCWSTR; lpDirector : PCWSTR; lpResult : PWSTR) : HINSTANCE;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST FindExecutable = FindExecutableW;
+<* ELSE *>
+      CONST FindExecutable = FindExecutableA;
+<* END *>
+
+PROCEDURE CommandLineToArgvW (lpCmdLine   : PCSTR;
+                              VAR NumArgs : INTEGER) : PPWSTR;
+
+PROCEDURE ShellAboutA (hWnd : HWND; szApp : PCSTR;  szOtherStuff : PCSTR;  hIcon : HICON) : INTEGER;
+PROCEDURE ShellAboutW (hWnd : HWND; szApp : PCWSTR; szOtherStuff : PCWSTR; hIcon : HICON) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ShellAbout = ShellAboutW;
+<* ELSE *>
+      CONST ShellAbout = ShellAboutA;
+<* END *>
+
+PROCEDURE ExtractAssociatedIconA (hInst : HINSTANCE; lpIconPath : PSTR;  VAR iIcon : WORD) : HICON;
+PROCEDURE ExtractAssociatedIconW (hInst : HINSTANCE; lpIconPath : PWSTR; VAR iIcon : WORD) : HICON;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ExtractAssociatedIcon = ExtractAssociatedIconW;
+<* ELSE *>
+      CONST ExtractAssociatedIcon = ExtractAssociatedIconA;
+<* END *>
+
+PROCEDURE ExtractIconA (hInst : HINSTANCE; lpszExeFileName : PCSTR;  nIconIndex : UINT) : HICON;
+PROCEDURE ExtractIconW (hInst : HINSTANCE; lpszExeFileName : PCWSTR; nIconIndex : UINT) : HICON;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ExtractIcon = ExtractIconW;
+<* ELSE *>
+      CONST ExtractIcon = ExtractIconA;
+<* END *>
+
+(***
+**** AppBar stuff
+***)
+
+TYPE ABM_ENUM = (ABM_NEW,               (* 0x00000000 *)
+                 ABM_REMOVE,            (* 0x00000001 *)
+                 ABM_QUERYPOS,          (* 0x00000002 *)
+                 ABM_SETPOS,            (* 0x00000003 *)
+                 ABM_GETSTATE,          (* 0x00000004 *)
+                 ABM_GETTASKBARPOS,     (* 0x00000005 *)
+                 ABM_ACTIVATE,          (* 0x00000006 *) (* lParam == TRUE/FALSE means activate/deactivate *)
+                 ABM_GETAUTOHIDEBAR,    (* 0x00000007 *)
+                 ABM_SETAUTOHIDEBAR,    (* 0x00000008 *) (* this can fail at any time.  MUST check the result *)
+                                                         (* lParam = TRUE/FALSE  Set/Unset *)
+                                                         (* uEdge = what edge *)
+                 ABM_WINDOWPOSCHANGED); (* 0x00000009 *)
+
+(* these are put in the wparam of callback messages *)
+
+TYPE ABN_ENUM = (ABN_STATECHANGE,    (* 0x00000000 *)
+                 ABN_POSCHANGED,     (* 0x00000001 *)
+                 ABN_FULLSCREENAPP,  (* 0x00000002 *)
+                 ABN_WINDOWARRANGE); (* 0x00000003 *) (* lParam == TRUE means hide *)
+
+(* flags for get state *)
+
+
+TYPE ABS_ENUM = (ABS__AUTOHIDE,     (* 0 *)
+                 ABS__ALWAYSONTOP); (* 1 *)
+
+     ABS_SET = SET OF ABS_ENUM;
+
+CONST ABS_AUTOHIDE    = ABS_SET {ABS__AUTOHIDE};    (* 0x0000001 *)
+      ABS_ALWAYSONTOP = ABS_SET {ABS__ALWAYSONTOP}; (* 0x0000002 *)
+
+TYPE ABE_ENUM = (ABE_LEFT,    (* 0 *)
+                 ABE_TOP,     (* 1 *)
+                 ABE_RIGHT,   (* 2 *)
+                 ABE_BOTTOM); (* 3 *)
+
+TYPE APPBARDATA = RECORD
+                         cbSize           : DWORD;
+                         hWnd             : HWND;
+                         uCallbackMessage : UINT;
+                         uEdge            : UINT;
+                         rc               : RECT;
+                         lParam           : LPARAM; (* message specific *)
+                  END;
+    PAPPBARDATA = POINTER TO APPBARDATA;
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE SHAppBarMessage (dwMessage : ABM_ENUM;
+                           Data      : APPBARDATA) : UINT;
+<* ELSE *>
+PROCEDURE SHAppBarMessage (dwMessage : ABM_ENUM;
+                           Data      : PAPPBARDATA) : UINT;
+<* END *>
+
+(***
+****  EndAppBar
+***)
+
+PROCEDURE ExtractIconExA (szFile         : PCSTR;
+                          nIconIndex     : INTEGER;
+                          VAR hiconLarge : ARRAY OF HICON;
+                          VAR hiconSmall : ARRAY OF HICON;
+                          nIcons         : UINT) : UINT;
+
+PROCEDURE ExtractIconExW (szFile         : PCWSTR;
+                          nIconIndex     : INTEGER;
+                          VAR hiconLarge : ARRAY OF HICON;
+                          VAR hiconSmall : ARRAY OF HICON;
+                          nIcons         : UINT) : UINT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ExtractIconEx = ExtractIconExW;
+<* ELSE *>
+      CONST ExtractIconEx = ExtractIconExA;
+<* END *>
+
+
+(***
+**** Shell File Operations
+***)
+
+TYPE FO_ENUM = (FO_0,
+                FO_MOVE,    (* 0x0001 *)
+                FO_COPY,    (* 0x0002 *)
+                FO_DELETE,  (* 0x0003 *)
+                FO_RENAME); (* 0x0004 *)
+
+TYPE FILEOP_FLAGS = WORD;
+
+(* following bits are not defined as set elements due to size (2 bytes) *)
+
+CONST FOF_MULTIDESTFILES        = 0001h;
+      FOF_CONFIRMMOUSE          = 0002h;
+      FOF_SILENT                = 0004h; (* don't create progress/report *)
+      FOF_RENAMEONCOLLISION     = 0008h;
+      FOF_NOCONFIRMATION        = 0010h; (* Don't prompt the user. *)
+      FOF_WANTMAPPINGHANDLE     = 0020h; (* Fill in SHFILEOPSTRUCT.hNameMappings *)
+                                         (* Must be freed using SHFreeNameMappings *)
+      FOF_ALLOWUNDO             = 0040h;
+      FOF_FILESONLY             = 0080h; (* on *.*, do only files *)
+      FOF_SIMPLEPROGRESS        = 0100h; (* means don't show names of files *)
+      FOF_NOCONFIRMMKDIR        = 0200h; (* don't confirm making any needed dirs *)
+      FOF_NOERRORUI             = 0400h; (* don't put up error UI *)
+
+CONST PO_DELETE      = 0013h;  (* printer is being deleted *)
+      PO_RENAME      = 0014h;  (* printer is being renamed *)
+      PO_PORTCHANGE  = 0020h;  (* port this printer connected to is being changed *)
+                               (* if this id is set, the strings received by *)
+                               (* the copyhook are a doubly-null terminated *)
+                               (* list of strings.  The first is the printer *)
+                               (* name and the second is the printer port. *)
+      PO_REN_PORT    = 0034h;  (* PO_RENAME and PO_PORTCHANGE at same time. *)
+
+(* no POF_ flags currently defined *)
+
+TYPE PRINTEROP_FLAGS = WORD;
+
+
+(* implicit parameters are: *)
+(*      if pFrom or pTo are unqualified names the current directories are *)
+(*      taken from the global current drive/directory settings managed *)
+(*      by Get/SetCurrentDrive/Directory *)
+(* *)
+(*      the global confirmation settings *)
+
+TYPE SHFILEOPSTRUCTA = RECORD
+                              hwnd                  : HWND;
+                              wFunc                 : FO_ENUM;
+                              pFrom                 : PCSTR;
+                              pTo                   : PCSTR;
+                              fFlags                : FILEOP_FLAGS;
+                              fAnyOperationsAborted : BOOL;
+                              hNameMappings         : PVOID;
+                              lpszProgressTitle     : PCSTR; (* only used if FOF_SIMPLEPROGRESS *)
+                       END;
+    PSHFILEOPSTRUCTA = POINTER TO SHFILEOPSTRUCTA;
+
+TYPE SHFILEOPSTRUCTW = RECORD
+                              hwnd                  : HWND;
+                              wFunc                 : FO_ENUM;
+                              pFrom                 : PCWSTR;
+                              pTo                   : PCWSTR;
+                              fFlags                : FILEOP_FLAGS;
+                              fAnyOperationsAborted : BOOL;
+                              hNameMappings         : PVOID;
+                              lpszProgressTitle     : PCWSTR; (* only used if FOF_SIMPLEPROGRESS *)
+                       END;
+    PSHFILEOPSTRUCTW = POINTER TO SHFILEOPSTRUCTW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  SHFILEOPSTRUCT =  SHFILEOPSTRUCTW;
+      TYPE PSHFILEOPSTRUCT = PSHFILEOPSTRUCTW;
+<* ELSE *>
+      TYPE  SHFILEOPSTRUCT =  SHFILEOPSTRUCTA;
+      TYPE PSHFILEOPSTRUCT = PSHFILEOPSTRUCTA;
+<* END *>
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE SHFileOperationA (FileOp : SHFILEOPSTRUCTA) : INTEGER;
+<* ELSE *>
+PROCEDURE SHFileOperationA (FileOp : PSHFILEOPSTRUCTA) : INTEGER;
+<* END *>
+<* IF BACKEND # "C" THEN *>
+PROCEDURE SHFileOperationW (FileOp : SHFILEOPSTRUCTW) : INTEGER;
+<* ELSE *>
+PROCEDURE SHFileOperationW (FileOp : PSHFILEOPSTRUCTW) : INTEGER;
+<* END *>
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST SHFileOperation = SHFileOperationW;
+<* ELSE *>
+      CONST SHFileOperation = SHFileOperationA;
+<* END *>
+
+PROCEDURE SHFreeNameMappings (hNameMappings : HANDLE);
+
+TYPE SHNAMEMAPPINGA = RECORD
+                             pszOldPath : PSTR;
+                             pszNewPath : PSTR;
+                             cchOldPath : INTEGER;
+                             cchNewPath : INTEGER;
+                      END;
+    PSHNAMEMAPPINGA = POINTER TO SHNAMEMAPPINGA;
+
+TYPE SHNAMEMAPPINGW = RECORD
+                             pszOldPath : PWSTR;
+                             pszNewPath : PWSTR;
+                             cchOldPath : INTEGER;
+                             cchNewPath : INTEGER;
+                      END;
+    PSHNAMEMAPPINGW = POINTER TO SHNAMEMAPPINGW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  SHNAMEMAPPING =  SHNAMEMAPPINGW;
+      TYPE PSHNAMEMAPPING = PSHNAMEMAPPINGW;
+<* ELSE *>
+      TYPE  SHNAMEMAPPING =  SHNAMEMAPPINGA;
+      TYPE PSHNAMEMAPPING = PSHNAMEMAPPINGA;
+<* END *>
+
+
+(***
+**** End Shell File Operations
+***)
+
+(***
+****  Begin ShellExecuteEx and family
+***)
+
+(* ShellExecute() and ShellExecuteEx() error codes *)
+
+(* regular WinExec() codes *)
+
+CONST SE_ERR_FNF             = 2;       (* file not found *)
+      SE_ERR_PNF             = 3;       (* path not found *)
+      SE_ERR_ACCESSDENIED    = 5;       (* access denied *)
+      SE_ERR_OOM             = 8;       (* out of memory *)
+      SE_ERR_DLLNOTFOUND     = 32;
+
+(* error values for ShellExecute() beyond the regular WinExec() codes *)
+
+CONST SE_ERR_SHARE           = 26;
+      SE_ERR_ASSOCINCOMPLETE = 27;
+      SE_ERR_DDETIMEOUT      = 28;
+      SE_ERR_DDEFAIL         = 29;
+      SE_ERR_DDEBUSY         = 30;
+      SE_ERR_NOASSOC         = 31;
+
+TYPE SEE_MASK_ENUM = (SEE_MASK__CLASSNAME,     (* 0 *)
+                      SEE_MASK__CLASSKEY,      (* 1 *)
+                      SEE_MASK__IDLIST,        (* 2 *)
+                      SEE_MASK__INVOKEIDLIST,  (* 3 *)
+                      SEE_MASK__ICON,          (* 4 *)
+                      SEE_MASK__HOTKEY,        (* 5 *)
+                      SEE_MASK__NOCLOSEPROCESS,(* 6 *)
+                      SEE_MASK__CONNECTNETDRV, (* 7 *)
+                      SEE_MASK__FLAG_DDEWAIT,  (* 8 *)
+                      SEE_MASK__DOENVSUBST,    (* 9 *)
+                      SEE_MASK__FLAG_NO_UI,    (* 10 *)
+                      SEE_MASK__11,
+                      SEE_MASK__12,
+                      SEE_MASK__13,
+                      SEE_MASK__UNICODE,       (* 14 *)
+                      SEE_MASK__NO_CONSOLE,    (* 15 *)
+                      SEE_MASK__16,
+                      SEE_MASK__17,
+                      SEE_MASK__18,
+                      SEE_MASK__19,
+                      SEE_MASK__ASYNCOK);      (* 20 *)
+
+      SEE_MASK_SET = SET OF SEE_MASK_ENUM;
+
+(* Note CLASSKEY overrides CLASSNAME *)
+
+CONST SEE_MASK_CLASSNAME     = SEE_MASK_SET {SEE_MASK__CLASSNAME     }; (* 0x00000001 *)
+      SEE_MASK_CLASSKEY      = SEE_MASK_SET {SEE_MASK__CLASSNAME,
+                                             SEE_MASK__CLASSKEY      }; (* 0x00000003 *)
+
+(* Note INVOKEIDLIST overrides IDLIST *)
+      SEE_MASK_IDLIST        = SEE_MASK_SET {SEE_MASK__IDLIST        }; (* 0x00000004 *)
+      SEE_MASK_INVOKEIDLIST  = SEE_MASK_SET {SEE_MASK__IDLIST,
+                                             SEE_MASK__INVOKEIDLIST  }; (* 0x0000000c *)
+      SEE_MASK_ICON          = SEE_MASK_SET {SEE_MASK__ICON          }; (* 0x00000010 *)
+      SEE_MASK_HOTKEY        = SEE_MASK_SET {SEE_MASK__HOTKEY        }; (* 0x00000020 *)
+      SEE_MASK_NOCLOSEPROCESS= SEE_MASK_SET {SEE_MASK__NOCLOSEPROCESS}; (* 0x00000040 *)
+      SEE_MASK_CONNECTNETDRV = SEE_MASK_SET {SEE_MASK__CONNECTNETDRV }; (* 0x00000080 *)
+      SEE_MASK_FLAG_DDEWAIT  = SEE_MASK_SET {SEE_MASK__FLAG_DDEWAIT  }; (* 0x00000100 *)
+      SEE_MASK_DOENVSUBST    = SEE_MASK_SET {SEE_MASK__DOENVSUBST    }; (* 0x00000200 *)
+      SEE_MASK_FLAG_NO_UI    = SEE_MASK_SET {SEE_MASK__FLAG_NO_UI    }; (* 0x00000400 *)
+      SEE_MASK_UNICODE       = SEE_MASK_SET {SEE_MASK__UNICODE       }; (* 0x00004000 *)
+      SEE_MASK_NO_CONSOLE    = SEE_MASK_SET {SEE_MASK__NO_CONSOLE    }; (* 0x00008000 *)
+      SEE_MASK_ASYNCOK       = SEE_MASK_SET {SEE_MASK__ASYNCOK       }; (* 0x00100000 *)
+
+
+TYPE SHELLEXECUTEINFOA = RECORD
+                                cbSize       : DWORD;
+                                fMask        : SEE_MASK_SET;
+                                hwnd         : HWND;
+                                lpVerb       : PCSTR;
+                                lpFile       : PCSTR;
+                                lpParameters : PCSTR;
+                                lpDirectory  : PCSTR;
+                                nShow        : SW_ENUM;
+                                hInstApp     : HINSTANCE;
+                         (* Optional fields *)
+                                lpIDList     : PVOID;
+                                lpClass      : PCSTR;
+                                hkeyClass    : HKEY;
+                                dwHotKey     : DWORD;
+                                hIcon        : HANDLE;
+                                hProcess     : HANDLE;
+                         END;
+    PSHELLEXECUTEINFOA = POINTER TO SHELLEXECUTEINFOA;
+
+TYPE SHELLEXECUTEINFOW = RECORD
+                                cbSize       : DWORD;
+                                fMask        : SEE_MASK_SET;
+                                hwnd         : HWND;
+                                lpVerb       : PCWSTR;
+                                lpFile       : PCWSTR;
+                                lpParameters : PCWSTR;
+                                lpDirectory  : PCWSTR;
+                                nShow        : SW_ENUM;
+                                hInstApp     : HINSTANCE;
+                         (* Optional fields *)
+                                lpIDList     : PVOID;
+                                lpClass      : PCWSTR;
+                                hkeyClass    : HKEY;
+                                dwHotKey     : DWORD;
+                                hIcon        : HANDLE;
+                                hProcess     : HANDLE;
+                         END;
+    PSHELLEXECUTEINFOW = POINTER TO SHELLEXECUTEINFOW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  SHELLEXECUTEINFO =  SHELLEXECUTEINFOW;
+      TYPE PSHELLEXECUTEINFO = PSHELLEXECUTEINFOW;
+<* ELSE *>
+      TYPE  SHELLEXECUTEINFO =  SHELLEXECUTEINFOA;
+      TYPE PSHELLEXECUTEINFO = PSHELLEXECUTEINFOA;
+<* END *>
+
+PROCEDURE ShellExecuteExA (VAR ExecInfo : SHELLEXECUTEINFOA) : BOOL;
+PROCEDURE ShellExecuteExW (VAR ExecInfo : SHELLEXECUTEINFOW) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ShellExecuteEx = ShellExecuteExW;
+<* ELSE *>
+      CONST ShellExecuteEx = ShellExecuteExA;
+<* END *>
+
+(***
+****  End ShellExecuteEx and family
+***)
+
+
+(***
+**** Tray notification definitions
+***)
+
+
+TYPE NIF_ENUM = (NIF__MESSAGE, (* 0 *)
+                 NIF__ICON,    (* 1 *)
+                 NIF__TIP);    (* 2 *)
+
+     NIF_SET = SET OF NIF_ENUM;
+
+CONST NIF_MESSAGE = NIF_SET {NIF__MESSAGE}; (* 0x00000001 *)
+      NIF_ICON    = NIF_SET {NIF__ICON};    (* 0x00000002 *)
+      NIF_TIP     = NIF_SET {NIF__TIP};     (* 0x00000004 *)
+
+TYPE NOTIFYICONDATAA  = RECORD
+                               cbSize           : DWORD;
+                               hWnd             : HWND;
+                               uID              : UINT;
+                               uFlags           : NIF_SET;
+                               uCallbackMessage : UINT;
+                               hIcon            : HICON;
+                               szTip            : ARRAY [0..63] OF CHAR;
+                        END;
+     PNOTIFYICONDATAA = POINTER TO NOTIFYICONDATAA;
+
+TYPE NOTIFYICONDATAW  = RECORD
+                               cbSize           : DWORD;
+                               hWnd             : HWND;
+                               uID              : UINT;
+                               uFlags           : NIF_SET;
+                               uCallbackMessage : UINT;
+                               hIcon            : HICON;
+                               szTip            : ARRAY [0..63] OF WCHAR;
+                        END;
+     PNOTIFYICONDATAW = POINTER TO NOTIFYICONDATAW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  NOTIFYICONDATA =  NOTIFYICONDATAW;
+      TYPE PNOTIFYICONDATA = PNOTIFYICONDATAW;
+<* ELSE *>
+      TYPE  NOTIFYICONDATA =  NOTIFYICONDATAA;
+      TYPE PNOTIFYICONDATA = PNOTIFYICONDATAA;
+<* END *>
+
+TYPE NIM_ENUM = (NIM_ADD,     (* 0x00000000 *)
+                 NIM_MODIFY,  (* 0x00000001 *)
+                 NIM_DELETE); (* 0x00000002 *)
+
+PROCEDURE Shell_NotifyIconA (dwMessage : NIM_ENUM; VAR Data : NOTIFYICONDATAA) : BOOL;
+PROCEDURE Shell_NotifyIconW (dwMessage : NIM_ENUM; VAR Data : NOTIFYICONDATAW) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST Shell_NotifyIcon = Shell_NotifyIconW;
+<* ELSE *>
+      CONST Shell_NotifyIcon = Shell_NotifyIconA;
+<* END *>
+
+(***
+**** End Tray Notification Icons
+***)
+
+
+(***
+**** Begin SHGetFileInfo
+***)
+
+(*
+ * The SHGetFileInfo API provides an easy way to get attributes
+ * for a file given a pathname.
+ *
+ *   PARAMETERS
+ *
+ *     pszPath              file name to get info about
+ *     dwFileAttributes     file attribs, only used with SHGFI_USEFILEATTRIBUTES
+ *     psfi                 place to return file info
+ *     cbFileInfo           size of structure
+ *     uFlags               flags
+ *
+ *   RETURN
+ *     TRUE if things worked
+ *)
+
+TYPE SHFILEINFOA = RECORD
+                          hIcon         : HICON;                         (* out: icon *)
+                          iIcon         : INTEGER;                       (* out: icon index *)
+                          dwAttributes  : DWORD;                         (* out: SFGAO_ flags *)
+                          szDisplayName : ARRAY [0..MAX_PATH-1] OF CHAR; (* out: display name (or path) *)
+                          szTypeName    : ARRAY [0..79] OF CHAR;         (* out: type name *)
+                   END;
+
+TYPE SHFILEINFOW = RECORD
+                          hIcon         : HICON;                          (* out: icon *)
+                          iIcon         : INTEGER;                        (* out: icon index *)
+                          dwAttributes  : DWORD;                          (* out: SFGAO_ flags *)
+                          szDisplayName : ARRAY [0..MAX_PATH-1] OF WCHAR; (* out: display name (or path) *)
+                          szTypeName    : ARRAY [0..79] OF WCHAR;         (* out: type name *)
+                   END;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE SHFILEINFO = SHFILEINFOW;
+<* ELSE *>
+      TYPE SHFILEINFO = SHFILEINFOA;
+<* END *>
+
+TYPE SHGFI_ENUM = (SHGFI__SMALLICON,         (*  0 - get small icon *)
+                   SHGFI__OPENICON,          (*  1 - get open icon *)
+                   SHGFI__SHELLICONSIZE,     (*  2 - get shell size icon *)
+                   SHGFI__PIDL,              (*  3 - pszPath is a pidl *)
+                   SHGFI__USEFILEATTRIBUTES, (*  4 - use passed dwFileAttribute *)
+                   SHGFI__5,
+                   SHGFI__6,
+                   SHGFI__7,
+                   SHGFI__ICON,              (*  8 - get icon *)
+                   SHGFI__DISPLAYNAME,       (*  9 - get display name *)
+                   SHGFI__TYPENAME,          (* 10 - get type name *)
+                   SHGFI__ATTRIBUTES,        (* 11 - get attributes *)
+                   SHGFI__ICONLOCATION,      (* 12 - get icon location *)
+                   SHGFI__EXETYPE,           (* 13 - return exe type *)
+                   SHGFI__SYSICONINDEX,      (* 14 - get system icon index *)
+                   SHGFI__LINKOVERLAY,       (* 15 - put a link overlay on icon *)
+                   SHGFI__SELECTED );        (* 16 - show icon in selected state *)
+      SHGFI_SET = SET OF SHGFI_ENUM;
+
+CONST SHGFI_ICON             = SHGFI_SET {SHGFI__ICON             }; (* 0x000000100 *)
+      SHGFI_DISPLAYNAME      = SHGFI_SET {SHGFI__DISPLAYNAME      }; (* 0x000000200 *)
+      SHGFI_TYPENAME         = SHGFI_SET {SHGFI__TYPENAME         }; (* 0x000000400 *)
+      SHGFI_ATTRIBUTES       = SHGFI_SET {SHGFI__ATTRIBUTES       }; (* 0x000000800 *)
+      SHGFI_ICONLOCATION     = SHGFI_SET {SHGFI__ICONLOCATION     }; (* 0x000001000 *)
+      SHGFI_EXETYPE          = SHGFI_SET {SHGFI__EXETYPE          }; (* 0x000002000 *)
+      SHGFI_SYSICONINDEX     = SHGFI_SET {SHGFI__SYSICONINDEX     }; (* 0x000004000 *)
+      SHGFI_LINKOVERLAY      = SHGFI_SET {SHGFI__LINKOVERLAY      }; (* 0x000008000 *)
+      SHGFI_SELECTED         = SHGFI_SET {SHGFI__SELECTED         }; (* 0x000010000 *)
+      SHGFI_LARGEICON        = SHGFI_SET {};                      (* 0x000000000 *)
+      SHGFI_SMALLICON        = SHGFI_SET {SHGFI__SMALLICON        }; (* 0x000000001 *)
+      SHGFI_OPENICON         = SHGFI_SET {SHGFI__OPENICON         }; (* 0x000000002 *)
+      SHGFI_SHELLICONSIZE    = SHGFI_SET {SHGFI__SHELLICONSIZE    }; (* 0x000000004 *)
+      SHGFI_PIDL             = SHGFI_SET {SHGFI__PIDL             }; (* 0x000000008 *)
+      SHGFI_USEFILEATTRIBUTES= SHGFI_SET {SHGFI__USEFILEATTRIBUTES}; (* 0x000000010 *)
+
+PROCEDURE SHGetFileInfoA (pszPath          : PCSTR;
+                          dwFileAttributes : FILE_ATTRIBUTE_SET;
+                          VAR fi           : SHFILEINFO;
+                          cbFileInfo       : UINT;
+                          uFlags           : SHGFI_SET) : DWORD;
+
+PROCEDURE SHGetFileInfoW (pszPath          : PCWSTR;
+                          dwFileAttributes : FILE_ATTRIBUTE_SET;
+                          VAR fi           : SHFILEINFO;
+                          cbFileInfo       : UINT;
+                          uFlags           : SHGFI_SET) : DWORD;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST SHGetFileInfo = SHGetFileInfoW;
+<* ELSE *>
+      CONST SHGetFileInfo = SHGetFileInfoA;
+<* END *>
+
+TYPE SHGNLI_ENUM = (SHGNLI__PIDL,        (* 0 - pszLinkTo is a pidl *)
+                    SHGNLI__PREFIXNAME); (* 1 - Make name "Shortcut to xxx" *)
+
+     SHGNLI_SET = SET OF SHGNLI_ENUM;
+
+CONST SHGNLI_PIDL       = SHGNLI_SET {SHGNLI__PIDL};       (* 0x000000001 *)
+      SHGNLI_PREFIXNAME = SHGNLI_SET {SHGNLI__PREFIXNAME}; (* 0x000000002 *)
+
+PROCEDURE SHGetNewLinkInfoA (pszLinkTo    : PCSTR;
+                             pszDir       : PCSTR;
+                             pszName      : PSTR;
+                             VAR MustCopy : BOOL;
+                             uFlags       : SHGNLI_SET) : BOOL;
+
+PROCEDURE SHGetNewLinkInfoW (pszLinkTo    : PCWSTR;
+                             pszDir       : PCWSTR;
+                             pszName      : PWSTR;
+                             VAR MustCopy : BOOL;
+                             uFlags       : SHGNLI_SET) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST SHGetNewLinkInfo = SHGetNewLinkInfoW;
+<* ELSE *>
+      CONST SHGetNewLinkInfo = SHGetNewLinkInfoA;
+<* END *>
+
+(***
+**** End SHGetFileInfo
+***)
+
+<* POP *> (* back to alignment = 8 *)
+
+END ShellAPI.

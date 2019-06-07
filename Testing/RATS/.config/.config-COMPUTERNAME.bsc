@@ -1,0 +1,6 @@
+# RAM-directory for RATS-tests temporary folders
+#RATS_RAM_DIR=B:\TEMP_RATS\K26-XDS
+
+# Folder to run RATS-test in remote mode 
+RATS_REMOTE_DIR=%~dp0\..\..\..\..\..\xds-rats
+

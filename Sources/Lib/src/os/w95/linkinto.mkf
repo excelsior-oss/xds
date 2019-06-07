@@ -1,0 +1,39 @@
+# This makefile is used to create a small library containing DLL stub and
+# RTS modules which has to be linked into any executable regardless of
+# USEDLL setting. This library is then bound to import liraries for
+# XDS run-time DLLs.
+
+ASMCOMP = nasm
+ASMFLAGS= -dWIN32 -f obj
+
+OBJDIR  = ..\..\..\ch\x86
+SYMDIR  = ..\..\..\sym\x86
+LILIB   = ..\..\..\lib\x86\li.lib
+
+all: $(LILIB)
+
+$(OBJDIR)\xrnincls.obj:  ..\..\xr\x86\xrnincls.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $@ $**
+
+$(OBJDIR)\xrnexcls.obj:  ..\..\xr\x86\xrnexcls.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $@ $**
+
+$(OBJDIR)\xrnloset.obj:  ..\..\xr\x86\xrnloset.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $@ $**
+
+$(OBJDIR)\xrnhiset.obj:  ..\..\xr\x86\xrnhiset.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $@ $**
+
+$(OBJDIR)\xrnrem.obj:  ..\..\xr\x86\xrnrem.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $@ $**
+
+$(OBJDIR)\xDllstub.obj:  xdllstub.asm
+  $(ASMCOMP) $(ASMFLAGS) -o $@ $**
+
+$(OBJDIR)\dllrts.obj:    ..\..\ulib\dllrts.def ..\..\ulib\dllrts.mod
+  xc =m =a ..\..\ulib\dllrts.mod -lookup=*.def=..\..\ulib -lookup=*.obj=$(OBJDIR) -lookup=*.sym=$(SYMDIR) -gendebug -lineno -genhistory $(XC_OPTIONS)
+
+$(LILIB): $(OBJDIR)\xrnincls.obj $(OBJDIR)\xrnexcls.obj $(OBJDIR)\xrnloset.obj \
+          $(OBJDIR)\xrnhiset.obj $(OBJDIR)\xDllstub.obj $(OBJDIR)\dllrts.obj   \
+          $(OBJDIR)\xrnrem.obj
+  xlib /new /nobak $(LILIB) $**

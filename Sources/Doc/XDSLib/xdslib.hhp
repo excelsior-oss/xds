@@ -1,0 +1,25 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=xdslib.chm
+Contents file=xdslib.hhc
+Default Window=Main
+Default topic=xdslib.html
+Display compile progress=No
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=XDS Library Guide and Reference
+
+[WINDOWS]
+Main="XDS Library Guide and Reference","xdslib.hhc",,"xdslib000.html",,,,,,0x2520,,0x300e,[30,30,994,708],,,,,,,0
+
+[ALIAS]
+#include "xdslib.hha"
+
+[MAP]
+
+[FILES]
+xdslib.html
+..\default.css
+
+[INFOTYPES]
+

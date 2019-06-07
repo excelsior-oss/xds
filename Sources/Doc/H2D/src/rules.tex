@@ -1,0 +1,564 @@
+\chapter{Translation Rules}
+\label{rules}
+
+\section{Comments}
+\label{rules:comments}
+
+All comments from the original C text are copied to generated definition
+modules. Their placement, however, is not preserved in some cases.
+The \OERef{COMMENTPOS} option may be used to align comments
+which are placed next to declarations.
+
+C++ compilers are usually able to recognize C++-style comments (beginning with
+'{\tt //}') even while operating in C mode. The \OERef{CPPCOMMENTS}
+option controls whether H2D recognizes such comments as well.
+
+\section{Identifiers}
+\label{rules:ids}
+
+In most cases, H2D preserves original C identifiers. Exceptions are
+structure, union, and enumeration tags, which constitute a separate name
+space in C. If there is a constant, type, variable, or function identifier
+which coincides with a tag, H2D appends "\verb'_struct'", "\verb'_union'"
+or "\verb'_enum'" to that tag.
+
+In some situations, H2D itself generates additional identifiers, e.g. for
+\See{unnamed function arguments}{}{rules:functions},
+\See{derived types}{}{rules:types:derived}, and
+\See{formal types}{}{rules:functions}.
+
+H2D may append digits to generated identifiers to avoid conflicts with
+existent ones.
+
+Identifiers matching Modula-2 {\em keywords} are not allowed in source files.
+However, Modula-2 {\em pervasive identifiers} (e.g. \verb'INTEGER' or
+\verb'HALT') are permitted.
+
+\subsection*{Example}
+
+{\samepage
+The following C declarations were taken from the \verb'sys/stat.h' file:
+
+{\ifonline\else\small\fi
+\begin{verbatim}
+struct stat { ... };
+int stat( const char *, struct stat * );
+
+TYPE stat_struct = RECORD ... END;
+     PtrChar = POINTER TO CHAR;
+PROCEDURE stat(arg0: PtrChar; arg1: stat_struct): SYSTEM.int;
+\end{verbatim}
+} % \small
+} % \samepage
+
+\section{Types}
+\label{rules:types}
+
+C types are translated to Modula-2 types according to the following table:
+
+\begin{center}
+\begin{tabular}{ll}
+\bf C type          & \bf Modula-2 type \\
+\hline
+base ({\tt int}, {\tt char}, etc.)  & (see \ref{using:modrules:mapping}) \\
+\tt void*           & \tt SYSTEM.ADDRESS \\
+pointer             & pointer        \\
+array               & array          \\
+enumeration         & (see \ref{rules:types:enum}) \\
+structure           & record         \\
+union               & variant record \\
+pointer to function & procedure type
+\end{tabular}
+\end{center}
+
+{\bf Notes:}
+
+\begin{itemize}
+\item Structure, union, and enumeration {\em tags} are not preserved in cases of
+      collision. It may cause problems with Modula-2 to C convertors (e.g. XDS-C).
+      See \ref{rules:ids}.
+\end{itemize}
+
+\subsection*{Examples}
+{\samepage
+{\ifonline\else\small\fi
+
+%!!! More examples needed
+\begin{verbatim}
+struct STRUCTURE{       TYPE STRUCTURE = RECORD
+  int    field1;            field1: SYSTEM.int;
+  char   field2;            field2: CHAR;
+  double field3;            field3: LONGREAL;
+};                        END;
+
+union  UNION {          TYPE UNION = RECORD
+  int    field1;            CASE : INTEGER OF
+  char   field2;             0: field1: SYSTEM.int;
+  double field3;            |1: field2: CHAR;
+};                          |2: field3: LONGREAL;
+                            END;
+                          END;
+
+\end{verbatim}
+} % \small
+} % \samepage
+
+\subsection{Derived types}
+\label{rules:types:derived}
+
+For objects declared as having derived types (pointer or array)
+either a new \mt{} type is introduced or a previously declared type synonym
+is used to improve readability. For pointers to base types,
+a new type is always declared.
+
+In particular, a C structure may contain fields which type
+is defined as pointer to that structure. In this case H2D
+also automatically inserts a necessary forward pointer type
+declaration.
+
+This may cause type compatibility problems.
+Fortunately, in \See{XDS}{Appendix }{XDS}, compatibility
+rules for foreign objects are relaxed, e.g. two "C" pointer types
+are compatible if their {\em base types} are the same.
+Additional setup or postprocessing may be required when H2D
+is used with third-party Modula-2 compilers.
+
+{\ifonline\else\small\fi
+{\samepage
+\begin{verbatim}
+char *str1;             TYPE
+char *str1;               H2D_PtrSChar = POINTER TO CHAR;
+
+                        VAR
+                          str1: H2D_PtrSChar;
+                          str2: H2D_PtrSChar;
+\end{verbatim}
+} % \samepage
+\pagebreak[1]
+{\samepage
+\begin{verbatim}
+struct s {              TYPE
+  int i;                  s = RECORD
+};                          i: SYSTEM.int;
+                          END;
+struct s *p;              H2D_Ptrs = POINTER TO s;
+
+                        VAR
+                          p: H2D_Ptrs;
+\end{verbatim}
+} % \samepage
+\pagebreak[1]
+{\samepage
+\begin{verbatim}
+struct s {              TYPE
+  int i;                  s = RECORD
+};                          i: SYSTEM.int;
+                          END;
+
+typedef struct s *ps;     ps = POINTER TO s;
+
+struct s *p;            VAR
+                          p: ps;
+\end{verbatim}
+} % \samepage
+\pagebreak[1]
+{\samepage
+\begin{verbatim}
+struct Node {           TYPE
+   int i;                 PtrNode = POINTER TO Node;
+   struct Node *next;     Node = RECORD
+};                          i: SYSTEM.int;
+                            next: PtrNode;
+                          END;
+\end{verbatim}
+} % \samepage
+} % \small
+\pagebreak[1]
+
+\subsection{Enumeration}
+\label{rules:types:enum}
+
+An enumeration (\verb'enum') is not actually a distinct type in C ---
+it is just a convenient way to declare integer constants (but in
+C++ enumeration {\em is} a distinct type). Moreover, since it is
+possible in C to explicitly specify enumeration constant value,
+translation to Modula-2 enumeration type may be incorrect.
+H2D may translate C enumerations into either Modula-2
+enumeration types or Modula-2 constant declarations, depending
+on the \OERef{GENENUM} option setting.
+For instance, if \OERef{GENENUM} is set to \verb'"Const"' or
+\verb'"Mixed"', the following C type synonym declaration:
+
+\verb'    typedef enum{ one=1, two } Number;'
+
+will be translated to
+
+{\samepage
+\begin{verbatim}
+    (* H2D: enumerated type: Number *)
+    CONST
+      one = 1;
+      two = 2;
+    TYPE
+      Number = SYSTEM.int;
+    (* H2D: End of enumerated type: Number *)
+\end{verbatim}
+} % \samepage
+
+If \OERef{GENENUM} is set to \verb'"Enum"', the same
+declaration will be translated unsafely (a warning comment will be added):
+
+\begin{verbatim}
+    TYPE
+      Number = (
+        one, (* H2D: integer value was 1 *)
+        two
+      );
+\end{verbatim}
+
+\section{Type synonyms}
+\label{rules:typedef}
+
+C declarations of type synonyms ({\tt typedef}) are translated to Modula-2 type
+declarations. If there are multiple synonyms declared for a type, their
+equivalence is preserved:
+
+\begin{verbatim}
+typedef char String[256];  TYPE String = ARRAY [0..255] OF CHAR;
+typedef String *PString;        PString = POINTER TO String;
+typedef String *Buffer;         Buffer = PString;
+\end{verbatim}
+
+{\bf Note:} In C, function type synonyms may be used in function
+declarations. These synonyms are processed in a way they are
+processed by a C compiler and do not appear in output files
+(see \ref{rules:functions}).
+
+\section{Variables}
+\label{rules:variables}
+
+Variables are translated to variables. Variables declared with the
+{\tt const} qualifier are translated to read-only variables (XDS extension).
+The {\tt volatile} qualifier is currently ignored.  % !!! <* +VOLATILE *>
+
+\begin{verbatim}
+extern int i;              VAR i  : SYSTEM.int;
+extern const int j;        VAR j- : SYSTEM.int;
+\end{verbatim}
+
+% !!! Variables with initialization go to C-part only.
+
+\section{Function prototypes}
+\label{rules:functions}
+
+C function prototypes declared as {\tt void} are translated to proper procedure
+declarations; other are translated to function procedure declarations.
+If there is no name specified for a function parameter, {\tt arg}{\it x}
+is substituted, where {\it x} is a number unique for each unnamed parameter.
+
+In C, a derived type (more precisely, pointer or array) may be specified for a
+function parameter. In Modula-2, the {\em formal type} of a procedure parameter
+have to be either type name or open array type. H2D translates parameters of
+array type to open array value parameters.
+
+The translation procedure for pointers is more complicated. By default,
+H2D searches for a type synonym, previously declared via \verb'typedef'.
+The synonym, if found, is used as formal type; otherwise H2D automatically
+declares one. If automatic declaration is undesirable, required synonyms
+may be declared in the \ProjectFile{}. Other variants of
+translation may be explicitly specified by means of the \PPDir{variant}.
+
+See also \ref{rules:qualifiers}.
+
+\subsection*{Examples}
+
+{\ifonline\else\small\fi
+\begin{verbatim}
+void p(int,int);              PROCEDURE p ( arg0 : SYSTEM.int;
+                                            arg1 : SYSTEM.int );
+
+int f(char c);                PROCEDURE f ( c : CHAR ): SYSTEM.int;
+
+void P(T *t);                 TYPE PtrT = POINTER TO T;
+                              PROCEDURE P ( t : PtrT );
+
+void Q(T t[])                 PROCEDURE Q ( t : ARRAY OF T );
+
+int strlen(char *);           PROCEDURE strlen ( arg0 : ARRAY OF CHAR )
+#variant strlen(0) : ARRAY                     : SYSTEM.int;
+
+\end{verbatim}
+} % end \small
+
+\section{Non-standard qualifiers}
+\label{rules:qualifiers}
+
+In practice, header files are not "pure" ANSI C. The most common
+extension is a set of additional keywords (qualifiers) which may be used to
+specify calling/naming conventions used in a particular library or API.
+
+Since XDS provides the similar mechanism called {\em direct language
+specification (DLS)}, H2D recognizes a number of such keywords, which are
+translated to the following DLS strings:
+
+\begin{center}
+\begin{tabular}{ll}
+\bf C keyword & \bf DLS String \\
+\hline
+\tt cdecl     & none \\
+\tt fortran   & none \\      % !!! warning
+\tt interrupt & none \\      % !!! warning
+\tt pascal    & {\tt "Pascal"} for types and variables \\
+              & {\tt "StdCall"} for functions \\ % ???
+\tt syscall   & \tt "Syscall" \\
+\end{tabular}
+\end{center}
+
+{\tt near}, {\tt far}, and {\tt huge} qualifiers are recognized but
+ignored.
+
+\section{Preprocessor directives}
+\label{rules:pp}
+
+\subsection{Macro definitions}
+\label{rules:pp:define}
+
+A {\tt \#define} C preprocessor directive may contain an {\em object-like}
+definition or a {\em function-like} definition which are translated
+differently.
+
+\verb'#define identifier Text'
+
+If {\tt Text} is a constant expression, the directive is translated to
+a constant declaration or a read-only variable declararion
+(see \ref{using:modrules:constants}).
+If {\tt Text} is a type identifier, the directive is translated to
+a type declaration. If {\tt Text} is an identifier of a function, a macro
+definition, or a constant, the directive is translated to a constant declaration.
+In all other cases, it is interpreted in a C preprocessor manner.
+
+\verb'#define identifier"(" idenifier, { identifier } ")" Text'
+
+Translated to a proper procedure declaration with all parameters having
+type {\tt ARRAY OF SYSTEM.BYTE}. These declarations are marked with a special
+comment and may be corrected after translation to reflect the actual semantics
+of a macro by changing parameter types and/or adding return types.
+See also \ref{using:fit:native} for information about macro prototype modules.
+
+\verb'#undef identifier'
+
+Undefines {\tt identifier} as it is done by a C preprocessor.
+
+\subsubsection*{Example}
+
+{\ifonline\else\small\fi
+\begin{verbatim}
+#define str_constant "Hello World!\n"
+
+#define constant 0x10
+#define constant_synonym constant
+
+#define macro_with_params(p1,p2,p3) p1+p2+p3
+#define macro_with_params_synonym macro_with_params
+
+int function(int);
+#define function_synonym function
+
+typedef int INT;
+#define INTEGER INT
+\end{verbatim}
+
+\Sep %------------------------------------------------------
+
+\begin{verbatim}
+CONST
+  str_constant = 'Hello World!' + 12C;
+  constant = 10H;
+  constant_synonym = constant;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure was generated from Macro. *)
+PROCEDURE macro_with_params ( p1, p2, p3: ARRAY OF SYSTEM.BYTE );
+
+<* ELSE *>
+
+PROCEDURE  / macro_with_params ( p1, p2, p3: ARRAY OF SYSTEM.BYTE );
+
+<* END *>
+
+<* IF __GEN_C__ THEN *>
+
+CONST
+  macro_with_params_synonym = macro_with_params;
+
+<* END *>
+
+PROCEDURE function ( arg0: SYSTEM.int ): SYSTEM.int;
+
+CONST
+  function_synonym = function;
+
+TYPE
+  INT = SYSTEM.int;
+
+  INTEGER = SYSTEM.int;
+\end{verbatim}
+} % end \small
+
+\subsection{File inclusion}
+\label{rules:pp:include}
+
+\begin{verbatim}
+#include <file_name>
+#include "file_name"
+\end{verbatim}
+
+If the file specified by {\tt file\_name} has to be merged with the current file
+(see \ref{using:merge}), H2D treats this directive exactly as a C preprocessor,
+i.e. replaces it with contents of a specified file. Otherwise,
+{\tt file\_name} is added to the import list and the file specified by it is
+translated into a separate definition module. If \verb'file_name' contains
+directories, the output files are placed to the same subdirectory.
+
+The \OERef{GENLONGNAMES} option controls conversion of included header
+file names which contain path:
+
+\verb'    #include <sys/stat.h>'
+
+is translated to
+
+\verb'    IMPORT stat;    '
+
+if \OERef{GENLONGNAMES} is OFF and to
+
+\verb'    IMPORT sys_stat;'
+
+if \OERef{GENLONGNAMES} is ON.
+
+See also \ref{rules:modulenames}.
+
+\subsection{Conditional compilation}
+\label{rules:pp:conditional}
+
+H2D handles conditional compilation directives {\tt \#if}, {\tt \#ifdef},
+{\tt \#ifndef}, {\tt \#else}, and {\tt \#endif} the same way as a C preprocessor
+does. A \ProjectFile{} may be used to define constants which are used
+in arguments of these directives.
+
+\subsection{Other directives}
+\label{rules:pp:other}
+
+H2D recognizes and ignores {\tt \#line}, {\tt \#error}, and {\tt \#pragma}
+C preprocessor directives.
+
+\section{Non-standard preprocessor directives}
+\label{rules:nonstandard}
+
+H2D recognizes two non-standard preprocessor
+directives: {\tt \#merge} and {\tt \#variant}.
+These directives are related to definiton module
+generation only and do not affect the C text, so they may be placed
+arbitrarily in a header file. Typically they are collected
+in project files inside a corresponding \ProjDir{header}.
+
+The advanced technique is to put these directives right into working
+copies of header files, next to the corresponding declarations.
+Then, after successful translation of all headers, these
+directives may be extracted with the help of \OERef{GENDIRS}
+option and moved to the project file. Now original headers
+may be used for translation.
+
+\subsection{\#merge}
+\label{rules:nonstandard:merge}
+
+\begin{verbatim}
+#merge ( <file_name> | "file_name" )
+\end{verbatim}
+
+This directive lists included header files which should be merged even
+if the \OERef{MERGEALL} option is OFF. This feature may be
+useful in some cases (see \ref{using:merge}).
+
+When placed in a header file, this directive has effect only in this file.
+When placed in a \ProjectFile{}, it has effect in all headers matching
+the surrounding \ProjDir{header}.
+
+\subsection{\#variant}
+\label{rules:nonstandard:variant}
+
+\begin{verbatim}
+#variant Designator ":" Type
+Designator = identifier { "^" | "[ ]" | "." identifier } |
+             Parameter
+Parameter  = identifier "(" number ")"
+Type       = qualident
+\end{verbatim}
+
+This form of the \verb'#variant' directive allows to explicitly
+specify a \mt{} \verb'Type' for an object denoted by \verb'Designator'.
+See \ref{using:modrules:mapping} for more information.
+
+{\tt Designator} specifies a named object or its element
+which is subject to the \verb'#variant' directive:
+
+\begin{flushleft}
+\begin{tabular}{ll}
+\tt "\^{}"         & pointer dereference \\
+\tt "[ ]"          & array indexing \\
+\tt "." identifier & structure or union field selection
+\end{tabular}
+\end{flushleft}
+
+{\tt Parameter} specifies a function \verb'identifier' and its
+parameter \verb'number' (zero-based).
+
+
+\begin{verbatim}
+#variant Parameter  ":" ( "VAR" | "ARRAY" | "VAR ARRAY" )
+\end{verbatim}
+
+This form is used to control translation of a
+function \verb'Parameter', which has a pointer type.
+
+By default, pointer type function parameters are translated to
+pointer type procedure parameters (see \ref{rules:functions}).
+The \verb'#variant' directive allows to specify one of the
+following alternative rules for a particular parameter:
+
+\begin{center}
+\begin{tabular}{ll}
+\tt Modifier  & {\tt T *p} is translated to \\
+\hline
+\tt VAR       & \tt VAR p: T           \\
+\tt ARRAY     & \tt p: ARRAY OF T      \\
+\tt VAR ARRAY & \tt VAR p: ARRAY OF T
+\end{tabular}
+\end{center}
+
+See also \ref{using:modrules:parameters}.
+
+\begin{verbatim}
+#variant f(0) : VAR ARRAY
+void f(char*);
+\end{verbatim}
+
+\begin{verbatim}
+PROCEDURE f ( VAR arg0: ARRAY OF CHAR );
+\end{verbatim}
+
+A {\tt \#variant} directive has effect only in the file where it
+is located, or, if specified in a project file, in all files matching
+the surrounding {\tt !header} directive. Therefore, {\tt Designator}
+should specify an object declared in this file or in one of the files
+which it includes. If an object specified by {\tt Designator} is not present,
+an error message is displayed.
+
+\section{Module names}
+\label{rules:modulenames}
+By default, H2D uses a header file name without "\verb'.h'" extension as
+a definition module name. If a file name contains characters which are
+not allowed in identifiers, the \ProjDir{name} must be used
+in a \ProjectFile{} to specify a proper identifier.
+
+% !!! Have to write about all XDS extensions used.

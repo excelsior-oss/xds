@@ -1,0 +1,41 @@
+(* Copyright (c) xTech 1995.  All Rights Reserved *)
+(*
+ * XDS runtime library.
+ * Implementation of COROUTINES.
+ *)
+
+<* +M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] xrnCoroutines;
+
+IMPORT
+   SYSTEM
+  ,xmRTS
+  ;
+
+PROCEDURE X2C_SYNC_STATE();
+PROCEDURE X2C_TRANSFER(VAR from: xmRTS.X2C_Coroutine; to: xmRTS.X2C_Coroutine);
+PROCEDURE X2C_IOTRANSFER(VAR from: xmRTS.X2C_Coroutine; to: xmRTS.X2C_Coroutine);
+PROCEDURE X2C_PROTECT(VAR o: PROTECTION; n: PROTECTION);
+PROCEDURE X2C_NEWPROCESS(proc: PROC;
+                       lspace: SYSTEM.ADDRESS;
+                        lsize: CARDINAL;
+                         prot: PROTECTION;
+                VAR _this_prs: xmRTS.X2C_Coroutine);
+
+PROCEDURE X2C_InitCoroutine(c: xmRTS.X2C_Coroutine; stk_start: SYSTEM.ADDRESS);
+PROCEDURE X2C_RegisterCoroutine(c: xmRTS.X2C_Coroutine);
+PROCEDURE X2C_UnregisterCoroutine(c: xmRTS.X2C_Coroutine);
+PROCEDURE X2C_CopyJmpBuf(c: xmRTS.X2C_Coroutine);
+
+PROCEDURE X2C_ini_coroutines(stk :SYSTEM.ADDRESS);
+PROCEDURE X2C_reg_stackbotm(stk :SYSTEM.ADDRESS);
+(* because of the system behavior (NT) there's a need to register
+   the stack bottom in every DLL (EXE) initialization *)
+
+<* IF multithread THEN *>
+PROCEDURE X2C_LockCoroutines();
+PROCEDURE X2C_UnlockCoroutines();
+<* END *>
+
+END xrnCoroutines.

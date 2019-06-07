@@ -1,0 +1,58 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] CDErr;
+
+(*****************************************************************************
+*                                                                            *
+* cderr.def -     Common dialog error return codes                           *
+*                                                                            *
+*****************************************************************************)
+
+CONST CDERR_DIALOGFAILURE    = 0FFFFh;
+
+      CDERR_GENERALCODES     = 0000h;
+      CDERR_STRUCTSIZE       = 0001h;
+      CDERR_INITIALIZATION   = 0002h;
+      CDERR_NOTEMPLATE       = 0003h;
+      CDERR_NOHINSTANCE      = 0004h;
+      CDERR_LOADSTRFAILURE   = 0005h;
+      CDERR_FINDRESFAILURE   = 0006h;
+      CDERR_LOADRESFAILURE   = 0007h;
+      CDERR_LOCKRESFAILURE   = 0008h;
+      CDERR_MEMALLOCFAILURE  = 0009h;
+      CDERR_MEMLOCKFAILURE   = 000Ah;
+      CDERR_NOHOOK           = 000Bh;
+      CDERR_REGISTERMSGFAIL  = 000Ch;
+
+      PDERR_PRINTERCODES     = 1000h;
+      PDERR_SETUPFAILURE     = 1001h;
+      PDERR_PARSEFAILURE     = 1002h;
+      PDERR_RETDEFFAILURE    = 1003h;
+      PDERR_LOADDRVFAILURE   = 1004h;
+      PDERR_GETDEVMODEFAIL   = 1005h;
+      PDERR_INITFAILURE      = 1006h;
+      PDERR_NODEVICES        = 1007h;
+      PDERR_NODEFAULTPRN     = 1008h;
+      PDERR_DNDMMISMATCH     = 1009h;
+      PDERR_CREATEICFAILURE  = 100Ah;
+      PDERR_PRINTERNOTFOUND  = 100Bh;
+      PDERR_DEFAULTDIFFERENT = 100Ch;
+
+      CFERR_CHOOSEFONTCODES  = 2000h;
+      CFERR_NOFONTS          = 2001h;
+      CFERR_MAXLESSTHANMIN   = 2002h;
+
+      FNERR_FILENAMECODES    = 3000h;
+      FNERR_SUBCLASSFAILURE  = 3001h;
+      FNERR_INVALIDFILENAME  = 3002h;
+      FNERR_BUFFERTOOSMALL   = 3003h;
+
+      FRERR_FINDREPLACECODES = 4000h;
+      FRERR_BUFFERLENGTHZERO = 4001h;
+
+      CCERR_CHOOSECOLORCODES = 5000h;
+
+END CDErr.

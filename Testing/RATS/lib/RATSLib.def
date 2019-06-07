@@ -1,0 +1,16 @@
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE RATSLib;
+
+IMPORT SYSTEM, Printf;
+
+CONST print = Printf.printf;
+
+PROCEDURE Success;
+
+PROCEDURE Failure;
+
+PROCEDURE Assert(v: BOOLEAN);
+
+PROCEDURE OkIf(v: BOOLEAN);
+
+END RATSLib.

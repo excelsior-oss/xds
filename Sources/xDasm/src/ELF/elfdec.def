@@ -1,0 +1,152 @@
+DEFINITION MODULE ElfDec;
+
+IMPORT sys := SYSTEM;
+
+(* 
+ *********************************************
+ *         General ELF description           *
+ *********************************************
+*)
+
+  TYPE INT32  = sys.INT32;
+       CARD32 = sys.CARD32;
+       CARD16 = sys.CARD16;
+       CARD8  = sys.CARD8;
+       UCHAR  = CARD8;
+
+(*
+    ELF HEADER descritption
+    -----------------------
+*)
+    CONST
+      EI_CLASS        = 4;
+      EI_DATA         = 5;
+      EI_VERSION      = 6;
+      EI_NIDENT       = 16;            -- Size of e_ident
+
+      ELFCLASS32      = 1;             -- 32bit architecture
+      ELFDATA2LSB     = 1;             -- little-endian byte order
+      ELFDATA2MSB     = 2;             -- big-endian byte order
+      EV_CURRENT      = 1;             -- Current ELF version
+      ET_REL          = 1;             -- Relocatable object file
+      EM_386          = 3;             -- Intel 386 machine
+      EM_PPC          = 20;            -- PPC machine
+      ELF_HEADER_SIZE = 034H;
+
+(*    TYPE ELF_HEADER = RECORD
+           e_ident     : ARRAY EI_NIDENT OF CHAR;
+           e_type      : CARD16;
+           e_machine   : CARD16;
+           e_version   : CARD32;
+           e_entry     : CARD32;
+           e_phoff     : CARD32;
+           e_shoff     : CARD32;
+           e_flags     : CARD32;
+           e_ehsize    : CARD16;
+           e_phentsize : CARD16;
+           e_phnum     : CARD16;
+           e_shentsize : CARD16;
+           e_shnum     : CARD16;
+           e_shstrndx  : CARD16;
+         END; *)
+
+    CONST
+      ALIGN_PARA = 16;
+
+(*
+    ELF SECTIONs descritption
+    -------------------------
+*)
+    CONST
+      SECTION_HEADER_SIZE = 028H;
+
+    CONST                    -- Section Header Table Indexes
+      SHN_UNDEF      = 0;
+      SHN_LORESERVE  = 0FF00H;
+      SHN_ABS        = 0FFF1H;
+      SHN_COMMON     = 0FFF2H;
+      SHN_HIRESERVE  = 0FFFFH;
+
+    CONST               -- Setion Header types
+      SHT_NULL     = 0;
+      SHT_PROGBITS = 1;
+      SHT_SYMTAB   = 2;
+      SHT_STRTAB   = 3;
+      SHT_RELA     = 4;
+      SHT_NOTE     = 7;
+      SHT_NOBITS   = 8;
+      SHT_REL      = 9;
+
+    CONST                -- Section Attribute flags
+      SHF_WRITE     = 1;
+      SHF_ALLOC     = 2;
+      SHF_EXECINSTR = 4;
+
+    TYPE SECTION_HEADER = RECORD
+           sh_name      : CARD32;
+           sh_type      : CARD32;
+           sh_flags     : CARD32;
+           sh_addr      : CARD32;
+           sh_offset    : CARD32;
+           sh_size      : INT32;
+           sh_link      : CARD32;
+           sh_info      : CARD32;
+           sh_addralign : CARD32;
+           sh_entsize   : CARD32;
+         END;
+
+
+(*
+    SYMBOL TABLE descritption
+    -------------------------
+*)
+    CONST
+      SYMBOL_SIZE = 010H;
+
+    CONST             -- Symbol's binding
+      STB_LOCAL  = 0;
+      STB_GLOBAL = 1;
+      STB_WEAK   = 2;
+
+    CONST              -- Symbol's type
+      STT_NOTYPE  = 0;
+      STT_OBJECT  = 1;
+      STT_FUNC    = 2;
+      STT_SECTION = 3;
+      STT_FILE    = 4;
+
+    TYPE SYMBOL = RECORD
+           st_name  : CARD32;
+           st_value : CARD32;
+           st_size  : CARD32;
+           st_info  : UCHAR;
+           st_other : UCHAR;
+           st_shndx : CARD16;
+         END;
+
+
+(*
+    RELOCATION ENTRIES (Fixups) descritption
+    ----------------------------------------
+*)
+    CONST             -- Relocation types
+
+    CONST
+      REL_SIZE  = 8;
+      RELA_SIZE = 12;
+
+    TYPE REL = RECORD
+           r_offset : CARD32;
+           r_info   : CARD32;
+         END;
+
+    TYPE RELA = RECORD
+           r_offset : CARD32;
+           r_info   : CARD32;
+           r_addend : INT32;
+         END;
+
+    --** These depends on type of relocation, currently used :
+
+
+END ElfDec.

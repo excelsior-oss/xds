@@ -1,0 +1,25 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=xd.chm
+Contents file=xd.hhc
+Default Window=Main
+Default topic=xd.html
+Display compile progress=No
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=XDS Debugger User's Guide
+
+[WINDOWS]
+Main="XDS Debugger User's Guide","xd.hhc",,"xd000.html",,,,,,0x2520,,0x300e,[30,30,994,708],,,,,,,0
+
+[ALIAS]
+#include "xd.hha"
+
+[MAP]
+
+[FILES]
+xd.html
+..\default.css
+
+[INFOTYPES]
+

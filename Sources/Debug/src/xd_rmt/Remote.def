@@ -1,0 +1,58 @@
+-- Содержит полный набор фукнций, необходимых
+-- для функционирования отладчика при удаленной отладке
+
+DEFINITION MODULE Remote;
+
+IMPORT sys := SYSTEM;
+IMPORT kt  := KrnTypes;
+IMPORT kpr := Krn_Prog;
+IMPORT thr := Krn_Thrs;
+
+FROM Events IMPORT ACCESS_TYPE;
+
+PROCEDURE StartProgram (name, args: ARRAY OF CHAR): CARDINAL;
+
+PROCEDURE UnloadProgram;
+
+PROCEDURE Quit;
+
+PROCEDURE RestartProgram (): BOOLEAN;
+
+PROCEDURE Execute (go_mode: kpr.GO_MODE);
+
+PROCEDURE GetProgramInfo (VAR info: kt.EXEC_INFO): BOOLEAN;
+
+PROCEDURE GetDebugInfo (exec_info: kt.EXEC_INFO; info_addr: sys.ADDRESS): BOOLEAN;
+
+PROCEDURE GetRegisterCache(VAR Cache: kt.REGISTER_CACHE): BOOLEAN;
+
+PROCEDURE PutRegisterCache(Cache: kt.REGISTER_CACHE): BOOLEAN;
+
+PROCEDURE Get(source: kt.ADDRESS; dest: sys.ADDRESS; len: CARDINAL): BOOLEAN;
+
+PROCEDURE Put(dest: kt.ADDRESS; source: sys.ADDRESS; len: CARDINAL): BOOLEAN;
+
+PROCEDURE SetTrace (Access: ACCESS_TYPE; addr: kt.ADDRESS; len: CARDINAL; VAR Index: CARDINAL): BOOLEAN;
+
+PROCEDURE RemoveTrace (VAR Index: CARDINAL): BOOLEAN;
+
+PROCEDURE GetSegmentInfo (    addr  : kt.ADDRESS;
+                          VAR begin : kt.ADDRESS;
+                          VAR len   : CARDINAL;
+                          VAR access: kt.ATTRIBS): BOOLEAN;
+
+PROCEDURE IsAddrFromExecutableSeg(addr: kt.ADDRESS): BOOLEAN;
+
+PROCEDURE ReadExport (full_name: ARRAY OF CHAR; VAR exp: kt.EXPORTS): BOOLEAN;
+
+PROCEDURE NThreads (): CARDINAL;
+
+PROCEDURE GetThreadDescription (i: CARDINAL; VAR buf: ARRAY OF CHAR);
+
+PROCEDURE SwitchToThread (i: CARDINAL): BOOLEAN;
+                         
+PROCEDURE SuspendThread (i: CARDINAL): BOOLEAN;
+
+PROCEDURE ResumeThread (i: CARDINAL): BOOLEAN;
+
+END Remote.

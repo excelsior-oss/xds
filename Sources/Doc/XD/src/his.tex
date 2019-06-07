@@ -1,0 +1,103 @@
+\chapter{The HIS utility}
+\label{his}
+
+\XDS{} runtime support contains routines that in case of abnormal program
+termination may trace back the stack of the thread that is in error and
+output the call chain into a file called \verb'errinfo.$$$'. To enable this,
+the option {\bf GENHISTORY} has to be turned ON during compilation of the main
+module of the program. % !!! extref to XC User's Guide.
+
+The HIS utility takes the stack trace file as input and prints execution history
+of the crashed thread in terms of line numbers and procedure names (provided that
+the respective executable components contain debug information):
+
+{\footnotesize
+\begin{verbatim}
+    XDS History formatter, Version 2.0
+    (c) 1996-2000 Excelsior
+    
+    F:\xds\samples\modula\hisdemo.exe
+    -------------------------------------------------------------------------------
+    #RTS: unhandled exception #6: zero or negative divisor
+    -------------------------------------------------------------------------------
+    Source file                     LINE  OFFSET  PROCEDURE        COMPONENT
+    -------------------------------------------------------------------------------
+    hisdemo.mod                        5  00000F  Div              hisdemo.exe
+    hisdemo.mod                       11  000037  Try              hisdemo.exe
+    hisdemo.mod                       15  000061  main             hisdemo.exe
+\end{verbatim}
+} % \footnotesize
+
+In the above example, division by zero has been detected at line 5 in the
+procedure \verb'Div' that was called by the procedure \verb'Try' at line 11, and the
+procedure \verb'Try', in turn, was called from the main module body at line 15.
+All these procedures are defined in file \verb'hisdemo.mod' and their code reside
+in the executable file \verb'hisdemo.exe'.
+
+By default, HIS prints to the standard output. Use \verb'-l=file' 
+option to redirect it to \verb'file'.
+
+The \verb'-f' option tells HIS to output full names of source files.
+
+\pagebreak
+HIS is also able to facilitate quick reproduction of the erroneous situation in XD.
+Launching HIS with the \verb'-b=file' option creates a
+\See{debugger control file}{Chapter }{batch}
+that would stop the program immediately before execution of the instruction that
+causes crash:
+
+{\footnotesize
+\begin{verbatim}
+    ; 
+    ; XDS History formatter, Version 2.0
+    ; (c) 1996-2000 Excelsior
+    ; 
+    ; XDS Debugger control file
+    
+    ; 1. Load the program
+    
+      LOAD F:\xds\samples\modula\hisdemo.exe  
+    
+    ; 2. Establish breakpoint-counter
+    
+      MODULE hisdemo$
+      BREAK Counter, LINE, hisdemo, 5, .
+    
+    ; 3. Initiate program execution at the first time
+    
+      START
+    
+    ; 4. When program has finished, establish delayed sticky breakpoint
+    
+      MODULE hisdemo$
+      BREAK Break, LINE, hisdemo, 5, Switch_To_Dialog, @PASS(Counter)-1
+    
+    ; 5. Delete auxiliary breakpoint
+    
+      DEL Counter
+    
+    ; 6. Initiate program execution for the second time
+    
+      RESTART
+      START
+    
+      QUIT
+    
+    ; 7. Upon the breakpoint hit, switch to the dialog mode
+    
+    Switch_To_Dialog
+      DIALOG #RTS: unhandled exception #6: zero or negative divisor
+      STOP
+\end{verbatim}
+} % \footnotesize
+
+You may use the \verb'-c' option if you do not want comments to appear in the 
+control file.
+
+The \verb'-d' option forces HIS to immediately launch the debugger with the created
+control file. If the \verb'-b' option was not specified, a temporary control file 
+is created.
+
+The \verb'-s' option disables trace of the control file execution in the debugger.
+
+

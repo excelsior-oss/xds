@@ -1,0 +1,153 @@
+XPROF.TXT                           Copyright (c) 1997 xTech Ltd
+----------------------------------------------------------------
+
+                             XDS Profiler
+                             ------------
+
+XDS Profiler is a set of utilities which allow you to analyze
+the run-time performance of your program. It helps you to reveal
+the pieces of code which consume most of the CPU time, and, hence,
+are the first candidates for redesign.
+
+
+1. Overview
+-----------
+
+The process of profiling takes two steps - execution tracing
+and visualisation. During execution tracing, a program which
+has to be profiled is executed in debugging mode. being
+interrupted at regular time intervals. The collected list of
+EIP values is written to a trace file. A visualization utility
+reads this file and loads debug information from a program's
+executable. It then counts the number of EIP values
+correspondent to each module, procedure, and source line,
+and displays their distribution in percents.
+
+
+2. Execution Tracing
+--------------------
+
+This step is performed by the XPROF utility. To invoke it,
+type
+
+    XPROF { ("/" | "-") <option> } <program> [<arguments>]
+
+at the OS/2 or Windows 95/NT command prompt and press Enter.
+<program> is a name of a profiled program's executable.
+Note: <arguments> are passed to <program>, rather than to XPROF.
+
+Upon termination, XPROF creates a trace file, which name
+is built by appending extension .XPT to the executable name.
+
+Available options are:
+
+-R=nnn   Set interval between snapshots to nnn ms
+         Default is 55, minimum 32.
+-A       Append trace data to existent .XPT file.
+         Allows to collect more snapshots, improving
+         profile accuracy.
+
+
+3. Visualisation
+----------------
+
+Visualisation utilities, XPDUMP and XPVIEW, read the collected
+trace data and collate it with the debug information bound to
+the executable. The results of this analysys are then displayed.
+
+
+3.1. XPDUMP
+-----------
+
+XPDUMP is a command line utility. Given a name of a trace file,
+it prints to the standard output a three level list of modules,
+procedures, and source lines, sorted by the number of hits or
+names in either ascending or descending order. Here is a sample 
+XPDUMP output:
+
+-----------------------------------------------------------------------------
+Snapshots: 200
+-----------------------------------------------------------------------------
+ 90.4    90 ####################################.... SAMPLES\BENCH\dry.mod
+ 37.7    34 ###############.........................     Proc0
+   20    18 ########................................     Proc1
+ 13.3    12 #####...................................     Proc8
+  8.3   7.5 ###.....................................     Func2
+  7.7     7 ###.....................................     Proc7
+
+
+"Snapshots" is a total number of EIP values collected during execution trace.
+
+For each module, the first column contains ratio between the number of  
+snapshots belonging to the module and the number of snapshots belonging to
+all program modules. The second column contains  ratio between the number of  
+snapshots belonging to the module and the total number of snapshots.
+
+For each procedure, the first column contains ratio between the number of  
+snapshots belonging to the procedure and the number of snapshots belonging to
+the module which contains that procedure. The second column contains ratio
+between the number of snapshots belonging to the procedure and the total
+number of snapshots.
+
+For each source line, the first column contains ratio between the number of  
+snapshots belonging to the line and the number of snapshots belonging to
+the module which contains that line. The second column contains ratio
+between the number of snapshots belonging to the line and the total
+number of snapshots.
+
+
+XPDUMP command line syntax:
+
+xpdump [ ('-'|'/') options ] profiler_data
+
+
+XPDUMP options:
+
+         O=<order>       sort order
+         L=<level>       percent level sensitive
+         P=<precision>   set precision
+         R               reverse sort
+         G               graph bar
+         M               display modules only
+         S               display source
+         F               show full path for module
+
+        <order> is a sort order: by 'n'ame or 'p'ercent
+        <level> is percent level
+        <precision> is precision, 0..3
+
+Default: sort order - by percent
+         percent level sensitive - 5%
+         precision - 1
+         other options - off
+
+
+
+
+3.2. XPVIEW
+-----------
+
+XPVIEW is a GUI program which allows you to browse through
+the profile information. To start it, type
+
+    xpview
+
+at the OS/2 command prompt and press Enter.
+
+Once XPVIEW is up and running, press F3 or select Open from
+the File manu to load an .XPT file using a standard file dialog.
+
+The client area of the XPVIEW window is divided into three
+frames. The first frame contains the list of your program source
+modules. After you select a module from this list, the list
+of procedures belonging to this module is displayed in the
+second frame. Similarly, if you select a procedure, its source
+lines will be displayed in the third frame.
+
+A relative number of hits in percents and a bar of corresponding
+length is displayed to the left of each module name, procedure
+name, and source line.
+
+You can move frame borders by dragging them with mouse button 1.
+
+XPVIEW for Windows NT/95 is a preliminary version.

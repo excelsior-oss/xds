@@ -1,0 +1,34 @@
+(* Copyright (c) Excelsior, 1999-2005.  All Rights Reserved *)
+
+<* +M2EXTENSIONS *>
+
+DEFINITION MODULE xrBlockManager; (* VitVit, AlexM *)
+
+IMPORT SYSTEM;
+
+PROCEDURE init (blockSize :CARDINAL) :BOOLEAN;
+
+PROCEDURE alloc() :SYSTEM.ADDRESS;
+ 
+PROCEDURE free (adr :SYSTEM.ADDRESS);
+
+PROCEDURE exit ();
+
+<* IF TARGET_FAMILY="OS2" THEN *>
+CONST
+  heapLimit = 8000000H; (* 128 Mb *)
+
+<* ELSIF (env_target = "x86nt") OR (env_target = "x86linux") THEN *>
+
+  VAR
+    heapLimit :CARDINAL;
+
+  CONST
+    heapLimitDelta = 8000000H; (* 128 Mb *)
+
+<* ELSE *>
+  CONST
+    heapLimit = 40000000H; (* 1 Gb *)
+<* END *>
+
+END xrBlockManager.

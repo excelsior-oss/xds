@@ -1,0 +1,23 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE [2] ctype;
+
+FROM SYSTEM IMPORT int;
+
+PROCEDURE isalnum (c: int): int;
+PROCEDURE isalpha (c: int): int;
+PROCEDURE iscntrl (c: int): int;
+PROCEDURE isdigit (c: int): int;
+PROCEDURE isgraph (c: int): int;
+PROCEDURE islower (c: int): int;
+PROCEDURE isprint (c: int): int;
+PROCEDURE ispunct (c: int): int;
+PROCEDURE isspace (c: int): int;
+PROCEDURE isupper (c: int): int;
+PROCEDURE isxdigit(c: int): int;
+PROCEDURE tolower (c: int): int;
+PROCEDURE toupper (c: int): int;
+
+END ctype.

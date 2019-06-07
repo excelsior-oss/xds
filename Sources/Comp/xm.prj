@@ -1,0 +1,296 @@
+% Project file for XDS-C compiler
+% modes are: release, work
+
+!if backend="C" then
+  -copyright=XDS v2.51: Copyright (c) 1999-2015 Excelsior, LLC. All Rights Reserved.
+!end
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if not defined ts_compatible then
+  -ts_compatible:-
+!end
+!if not defined interview then
+  -interview:-
+!end
+!if not defined component_testcoverage then
+  -component_testcoverage:-
+!end
+
+!if (mode="work") then
+  !if not defined checks then
+    -checks := full
+  !end
+!end
+
+!if (env_target="x86os2") or (env_target="x86nt") or (env_target="x86linux") then
+  % use standard template
+!else
+  -template = $!/xds.tem
+!end
+
+% Select back-end
+-target_vax:-
+-target_mips:-
+-target_sparc:-
+-target_ppc:-
+
+-target_386:-
+-target_c:+
+
+-target_megos:-
+
+-target_86:-
+-target_o2:-
+-target_68k:-
+-target_null:-
+
+
+!if interview then
+  -target_idb:+
+!else
+  -target_idb:-
+!end
+
+% ======================================================
+% Files lookup settings
+% ======================================================
+-m2cmpsym+
+-changesym+
+-makefile+
+-longname+
+
+-mkfname = xm
+-exename = xm
+
+% Output lookup settings
++makedirs
+
+-lookup = *.mkf  = $!/ch
+-lookup = *.lnk  = $!/ch
+-lookup = *.obj  = $!/ch
+-lookup = *.o    = $!/ch
+-lookup = *.c    = $!/ch
+-lookup = *.h    = $!/ch
+-lookup = *.sym  = $!/sym
+-lookup = *.exe  = $!/workplace
+
+
+% Source lookup settings
+-lookup = *.def  = $!/src/xmlib; $!/src/fe; $!/src/vs
+-lookup = *.mod  = $!/src/xmlib; $!/src/fe
+-lookup = *.ob2  = $!/src/fe; $!/src/u; $!/src/vs; $!/src/be_null; $!/src/xmlib
+-lookup = *.res  = $!/src/u
+
+!if target_c then
+  -lookup = *.ob2  = $!/src/be_c
+!end
+!if target_vax then
+  -lookup = *.ob2  = $!/src/be_vax;   $!/src/be_krnl
+  -lookup = *.def  = $!/src/be_vax;   $!/src/be_krnl; $!/src/be_krnl/RTS
+  -lookup = *.mod  = $!/src/be_vax;   $!/src/be_krnl
+!elsif target_68k then
+  -lookup = *.ob2  = $!/src/be_68k;   $!/src/be_krnl
+  -lookup = *.def  = $!/src/be_68k;   $!/src/be_krnl; $!/src/be_krnl/RTS
+  -lookup = *.mod  = $!/src/be_68k;   $!/src/be_krnl
+  -lookup = xrTCSppc.def = $!/../Lib/src/xr/PPC
+!elsif target_ppc then
+  -lookup = *.ob2  = $!/src/be_ppc;  $!/src/be_krnl
+  -lookup = *.def  = $!/src/be_ppc;  $!/src/be_krnl; $!/src/be_krnl/RTS
+  -lookup = *.mod  = $!/src/be_ppc;  $!/src/be_krnl
+  -lookup = xrTCSppc.def = $!/../Lib/src/xr/PPC
+!elsif target_sparc then
+  -lookup = *.ob2  = $!/src/be_sparc; $!/src/be_krnl
+  -lookup = *.def  = $!/src/be_sparc; $!/src/be_krnl; $!/src/be_krnl/RTS
+  -lookup = *.mod  = $!/src/be_sparc; $!/src/be_krnl
+  -lookup = xrTCSsparc.def = $!/../Lib/src/xr/SPARC
+!elsif target_386 then
+  -lookup = *.ob2  = $!/src/be_x86;   $!/src/be_krnl
+  -lookup = *.def  = $!/src/be_x86;   $!/src/be_krnl; $!/src/be_krnl/RTS
+  -lookup = *.mod  = $!/src/be_x86;   $!/src/be_krnl
+  -lookup = xrTCSx86.def = $!/../Lib/src/xr/x86
+!end
+
+!if target_idb then
+  -lookup = *.ob2 = $!/src/be_idb
+!end
+
+!if component_testcoverage then
+  -lookup = *.ob2 = $!/src/tcs
+  -lookup = *.def = $!/src/tcs
+  -lookup = *.mod = $!/src/tcs
+  !if mode # "release" then
+    -dbg_tcs:+
+  !end
+!end
+
+
+-woff354+
+-compile=
+
+!if mode="port" then
+  -link =
+!elsif (env_host="winnt") or (env_host="winntpp") or (env_host="winntpl") then
+  -link = "nmake /nologo /f %s",mkfname#mkfext
+!elsif env_host="os2icc" then
+  -link = "nmake /f %s",mkfname#mkfext
+!elsif (env_host="watcom") or (env_host="watcomnt") or \
+       (env_host="x86dos") or (env_target="os2watcom") then
+  -link = "wmake -f %s",mkfname#mkfext
+!elsif (env_host="x86nt") or (env_host="x86linux") then
+  -link = "xlink @%s",mkfname#mkfext
+!else
+  -link = "make -f %s",mkfname#mkfext
+!end
+
+% Runtime checks and debug settings
+!if mode = "release" then
+  -gendebug-
+  -lineno-
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+!elsif (mode="work") or (mode="port") then
+  -gendebug+
+  -lineno+
+  -assert+
+
+  !if checks="full" then
+    -checkindex+
+    -checkdindex+
+    -checkrange-
+    -checkset-
+    -checknil+
+    -checkproc+
+  !else
+    -checkindex-
+    -checkdindex-
+    -checkrange-
+    -checkset-
+    -checknil-
+    -checkproc-
+  !end 
+
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+!else
+  -gendebug-
+  -lineno-
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+  !if (env_target="x86") or (env_target="x86nt") or \
+      (env_target="x86dos") then
+    % disable some checks for x86
+    -checkrange-
+    -checkproc-
+    -checkset-
+    -gendebug-
+    -foverflow-
+    -foverflow-
+    -ioverflow-
+    % end of disable some checks for x86
+  !end
+!end
+
+!if backend="X86" then
+  !if gendebug then
+    -genhistory+
+  !else
+    -genhistory-
+  !end
+!end
+
+-compilerheap=128000000
+
+-m2extensions+
+-o2extensions+
+-o2isopragma+
+
+-gcauto+
+-def:+
+
+!if mode="work" then
+  -pcvis:+
+!else
+  -pcvis:-
+!end
+
+-value96:+
+-rta:-
+-nofloat:-
+-extvalue:-
+
+% obsolete condition for powermac version
+-sequoia:-
+
+!if (env_target="msdos") then
+  -gencpp-
+!end
+
+% x86 back-end options
+!if (env_target="x86nt") or (env_target="x86os2") or \
+    (env_target="x86dos") then
+  -use_clibs:-
+  -xdside:+
+!elsif (env_target="winnt") or (env_target="winntpp") or (env_target="winntpl") or \
+       (env_target="winntsc") or (env_target="watcomnt") then
+  -xdside:+
+  -use_clibs:+    % use C libraries for file I/O
+!else
+  -xdside:-
+  -use_clibs:+    % use C libraries for file I/O
+!end
+!if defined genasm then
+  -genasm-
+!end
+
+!if mode="work" then
+  -gen_qfile:+  % include debug output module into compiler
+  -nodebug:-
+  -dbgnestedproc+
+!else
+  -gen_qfile:-  % do not include debug output module into compiler
+  -nodebug:+
+!end
+
+% ------------- tracing front/back-end interface
+-db_attrs:-
+-db_procs:-
+-db_def:-
+-db_e:-
+-db_code:-
+
+% ------------- tracing code generation
+-trace:-
+-db_trace:-
+
+% ------------- tracing OBJ-file generation
+-testobj:-
+% end x86 options
+
+-use_derived_types:+
+
+
+!module xm
+
+!if env_target="winnt" then
+  !module xds_xm.res
+!end

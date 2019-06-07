@@ -1,0 +1,55 @@
+-- Диалоги указания адреса дампа памяти, изменения значения памяти
+-- Обработчики окон дампа памяти, стека и регистров.
+
+DEFINITION MODULE Dlg_Mem;
+
+IMPORT eve := Events;
+IMPORT win := Dlg_Win;
+IMPORT crt := CRT;
+IMPORT kt  := KrnTypes;
+IMPORT dt  := DI_Types;
+
+TYPE
+  REG_STATE = eve.ACCESS_TYPE;
+
+  DUMP = RECORD
+           seg_info  : BOOLEAN;
+           addr_first: kt.ADDRESS;
+           addr      : kt.ADDRESS;
+           min       : CARDINAL;
+           max       : CARDINAL;
+           curr      : CARDINAL;
+           Mode      : dt.SYM_TYPE_ID;
+           write     : BOOLEAN;
+         END;
+
+
+PROCEDURE ResetStack;
+
+PROCEDURE GetRegOldValue(no: CARDINAL): CARDINAL;
+
+PROCEDURE ChangeReg(no: CARDINAL; st: REG_STATE);
+
+(* Поиск регистра по собственному индексу диалога *)
+PROCEDURE FindRegisterByIndex (Index: CARDINAL; VAR RegNo: CARDINAL): BOOLEAN;
+
+(* Отображает изменения регистров во внутренней структуре *)
+PROCEDURE RefreshRegs;
+
+(* Очищает состояния регистров во внутренней структуре    *)
+PROCEDURE ClearRegsState;
+
+PROCEDURE ClearRegisters;
+
+PROCEDURE IniRegisters;
+
+
+(* Для записи окон дампа в конфигурационный файл *)
+
+PROCEDURE FindOpenedDumpWindow (hwnd: win.HWND): win.HWND;
+
+PROCEDURE OpenNewDumpWindow (dump: DUMP; size: crt.SZ);
+
+PROCEDURE GetDumpAttr (hwnd: win.HWND; VAR dump: DUMP);
+
+END Dlg_Mem.

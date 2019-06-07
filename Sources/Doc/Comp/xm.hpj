@@ -1,0 +1,26 @@
+; This file is maintained by HCW. Do not modify this file directly.
+
+[OPTIONS]
+HCW=0
+COMPRESS=12 Hall Zeck
+ERRORLOG=.\xm.hlg
+LCID=0x409 0x0 0x0 ;U.S. English
+REPORT=Yes
+CONTENTS=contents
+TITLE=XDS-C User's Guide
+COPYRIGHT=XDS on-line help is copyright © 1999-2019 Excelsior, LLC.
+CITATION=Copyright © 1999-2016 Excelsior, LLC.
+CNT=.\xm.cnt
+HLP=.\xm.hlp
+
+[FILES]
+xm.rtf
+
+[MAP]
+#include .\src\messages.h
+
+[WINDOWS]
+main="",(256,0,767,1023),0,,(r12632256)
+
+[CONFIG]
+BrowseButtons()

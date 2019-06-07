@@ -1,0 +1,511 @@
+\chapter{ISO Modula-2 standard libraries}\label{lib:ISO}
+\index{ISO libraries}\index{libraries!ISO}
+
+It is our aim to provide the full set of ISO Modula-2 libraries.
+However, some modules are unimplemented on a particular
+hardware/sortware platform. % !!! (See Chapter \ref{limits}).
+System libraries are described in the {\em XDS Modula-2} Chapter of the
+{\em XDS User's Guide}.
+
+This chapter does not contain a complete reference. A brief
+description and some samples are provided for each group of
+modules. For more information, refer to the {\em ISO Modula-2
+Library Reference}.
+
+\section{Input/output library}\label{lib:ISO:IO}
+
+The IO library allows one to read and write the data streams
+over one or more channels. Channels are connected to the source
+of input data, or to destination of output data, known as
+devices. A set of devices can be extended.
+
+A group of modules is provided to operate on the default input and
+output channel (\ref{lib:ISO:stdio}). Another group of modules provide
+facilities to operate on channels specified explicitly by a parameter
+(\ref{lib:ISO:chanio}). The device modules provide facilities to get a
+channel connected to a source (\ref{lib:ISO:device}). The primitive
+device-independent operations are provided by the module {\bf IOChan};
+the module {\bf IOLink} allows specialized device module
+to be implemented (See \ref{lib:ISO:lowio}).
+
+\subsection{Reading and writing via default channels}
+\label{lib:ISO:stdio}
+
+The following modules provide procedures that operate via default
+input and output channels and do not take a parameter which identifies
+a channel:
+\begin{flushleft}
+\begin{tabular}{ll}
+\bf IOConsts  & Types and constants for IO modules                     \\
+\bf SLongIO   & LONGREAL numbers IO operations                         \\
+\bf SRawIO    & Raw IO operations (no conversion or interpretation)    \\
+\bf SRealIO   & REAL numbers IO operations                             \\
+\bf SResultIO & Read results for the default input channel             \\
+\bf STextIO   & Character and string types IO operations               \\
+\bf SWholeIO  & Whole numbers IO operations                            \\
+\end{tabular}
+\end{flushleft}
+\lindex{IOConsts}
+\lindex{SLongIO}
+\lindex{SRawIO}
+\lindex{SRealIO}
+\lindex{SResultIO}
+\lindex{STextIO}
+\lindex{SWholeIO}
+
+\noindent
+The module {\bf STextIO} resembles the well-known {\bf InOut} library.
+The {\em Hello, World} program is implemented in the following example:
+\begin{verbatim}
+MODULE Hello;
+
+IMPORT  STextIO;
+
+BEGIN
+  STextIO.WriteString('Hello, World!');
+  STextIO.WriteLn;
+END Hello.
+\end{verbatim}
+
+The modules {\bf SWholeIO}, {\bf SRealIO}, {\bf SLongIO} provides
+facilities for the input and output of whole and real numbers in
+a decimal form using text operations on a channel.
+
+\begin{verbatim}
+PROCEDURE Print(stage: CARDINAL; val: REAL);
+BEGIN
+  STextIO.WriteString("On stage");
+  SWholeIO.WriteCard(stage,0);
+  STextIO.WriteString(" the value is equal to ");
+  SRealIO.WriteReal(val,15);
+  STextIO.WriteLn;
+END Print;
+\end{verbatim}
+
+The module {\bf SIOResult} allows one to determine whether the last
+input operation from a default input channel succeed. Text
+operations produce or consume data streams as a sequence of
+characters and line marks. The text input procedures (such as
+{\tt ReadString} never remove a line mark from the input stream.
+The procedure {\tt SkipLine} should be used to pass a line mark.
+
+The {\tt Copy} procedure reads strings from the input channel and
+copies them to the output channel.
+\begin{verbatim}
+PROCEDURE Copy;
+  VAR s: ARRAY [0..63] OF CHAR;
+BEGIN
+  LOOP
+    STextIO.ReadString(s);
+    CASE SIOResult.ReadResult() OF
+     |SIOResult.allRight:
+        STextIO.WriteString(s);
+     |SIOResult.endOfLine:
+        STextIO.SkipLine;
+        STextIO.WriteLn;
+     |SIOResult.endOfInput:
+        EXIT
+    END;
+  END;
+END Copy;
+\end{verbatim}
+
+\noindent
+No procedure is provided to get the result of a `write'
+operation. Device errors are reported by raising an exception
+(See module {\bf IOChan}).
+
+\subsection{Reading and writing data}\label{lib:ISO:chanio}
+
+For all modules in this group a channel is specified by an actual
+parameter of the type {\bf IOChan.ChanId}.
+\begin{flushleft}
+\begin{tabular}{ll}
+\bf IOResult &   Read results for specified channels                     \\
+\bf LongIO &     LONGREAL numbers IO operations                         \\
+\bf RawIO &      Raw IO operations (no conversion or interpretation)     \\
+\bf RealIO &     REAL numbers IO operations                             \\
+\bf TextIO &     Character and string types IO operations                \\
+\bf WholeIO &    Whole numbers IO operations                            \\
+\end{tabular}
+\end{flushleft}
+\lindex{IOResult}
+\lindex{LongIO}
+\lindex{RawIO}
+\lindex{RealIO}
+\lindex{TextIO}
+\lindex{WholeIO}
+
+\noindent
+The following procedure copies an input channel to an output channel
+byte by byte:
+\begin{verbatim}
+PROCEDURE CopyChars(in,out: IOChan.ChanId);
+  VAR ch: CHAR;
+BEGIN
+  LOOP
+    TextIO.ReadChar(in,ch);
+    CASE IOResult.ReadResult(in) OF
+     |IOResult.allRight:
+        TextIO.WriteChar(out,ch);
+     |IOResult.endOfLine:
+        TextIO.SkipLine(in);
+        TextIO.WriteLn(out);
+     |IOResult.endOfInput:
+        EXIT
+    END;
+  END;
+END CopyChars;
+\end{verbatim}
+
+\subsection{Device modules}\label{lib:ISO:device}
+
+The device modules allows to get a channel connected to a stream,
+a file, program arguments and to default channels.
+
+\begin{flushleft}
+\begin{tabular}{ll}
+\bf ChanConsts  & Common types and values for channel open \\
+                & requests and results                                   \\
+\bf ProgramArgs & Access to program arguments                            \\
+\bf RndFile     & Random access files                                    \\
+\bf SeqFile     & Rewindable sequential files                            \\
+\bf StdChans    & Access to standard and default channels                \\
+\bf StreamFile  & Independent sequential data streams                    \\
+\end{tabular}
+\end{flushleft}
+\lindex{ChanConsts}
+\lindex{ProgramArgs}
+\lindex{RndFile}
+\lindex{SeqFile}
+\lindex{StdChans}
+\lindex{StreamFile}
+
+\noindent
+In the following example a channel connected to a rewindable
+file is opened:
+\begin{verbatim}
+MODULE Example;
+
+IMPORT  SeqFile, STextIO, TextIO;
+
+CONST flags = SeqFile.text + SeqFile.old;
+
+VAR
+  cid: SeqFile.ChanId;
+  res: SeqFile.OpenResults;
+  i  : CARDINAL;
+
+BEGIN
+  SeqFile.OpenWrite(cid,"example.dat",flags,res);
+  IF res = SeqFile.opened THEN
+    FOR i:=0 TO 9 DO
+      TextIO.WriteString(cid,"Hello");
+      TextIO.WriteLn(cid);
+    END;
+    SeqFile.Close(cid);
+  ELSE
+    STextIO.WriteString("Open error");
+    STextIO.WriteLn;
+  END;
+END Example.
+\end{verbatim}
+
+The module {\bf StdChans} allows one to get channels already open to
+sources and destinations of standard input, standard output and
+standard error output. Default channels initially corresponds to
+the standard channels, but their values may be changed to
+redirect input or output.
+
+\begin{verbatim}
+PROCEDURE RedirectOutput(cid: StdChans.ChanId);
+BEGIN
+(* writing to the current default channel: *)
+  STextIO.WriteString("Redirecting output...");
+  STextIO.WriteLn;
+(* redirecting output: *)
+  StdChans.SetOutChan(cid);
+END RedirectOutput;
+\end{verbatim}
+
+After the call of {\tt RedirectOutput(cid)} all subsequent output
+via modules {\bf STextIO}, {\bf SWholeIO}, etc will be written to
+the channel {\tt cid}. To restore output call
+\begin{verbatim}
+  StdChans.SetOutChan(StdChans.StdOutChan());
+\end{verbatim}
+
+The module {\bf ProgramArgs} provides a channel to access
+program's arguments. The following program prints all its arguments.
+\begin{verbatim}
+MODULE Args;
+
+IMPORT ProgramArgs, TextIO, STextIO;
+
+VAR
+  str: ARRAY [0..255] OF CHAR;
+  cid: ProgramArgs.ChanId;
+
+BEGIN
+  cid:=ProgramArgs.ArgChan();
+  WHILE ProgramArgs.IsArgPresent() DO
+    TextIO.ReadToken(cid,str);
+    (* Note: read result test is omitted *)
+    STextIO.WriteString(str); STextIO.WriteLn;
+  END;
+END Args.
+\end{verbatim}
+
+\subsection{Low-level IO modules}\label{lib:ISO:lowio}
+
+Two low-level modules are described in this section. The module
+{\bf IOChan} defines the type {\tt ChanId} that is used to
+identify channels and provides a set of procedures forming the
+channel's interface in a device-independent manner.
+\lindex{IOChan}
+
+The module {\bf IOLink} provides facilities that allow one to define
+new device modules. Let us implement an encryption channel, i.e.
+a channel that encrypts all information that is written to it. To
+make the encryption device-independent we need a channel for input/output
+operations.
+\lindex{IOLink}
+
+In the following example a sketch of the encryption device module
+is shown.
+\begin{verbatim}
+DEFINITION MODULE EncryptChan;
+
+IMPORT IOChan, ChanConsts;
+
+TYPE
+  ChanId = IOChan.ChanId;
+  OpenResults = ChanConsts.OpenResults;
+
+PROCEDURE Connect(VAR cid: ChanId;
+                       io: ChanId;
+                  VAR res: OpenResults);
+(* Attempts to open an encryption channel. All I/O
+   operations will be made through "io" channel.
+*)
+
+PROCEDURE Close(VAR cid: ChanId);
+(* Closes the channel. *)
+
+END EncryptChan.
+\end{verbatim}
+
+Values of the type {\tt DeviceId} are used to identify device
+modules. By calling the procedure {\tt DeviceTablePtrValue}, a
+device module can obtain a pointer to a device table for the
+channel. Each channel has it own copy of a device table. A
+device table contains a field in which the device module can
+store private data. In our example, the {\tt io} channel will be
+stored in this field. The device table also serves as a method
+table (or virtual function table) in object-oriented languages.
+It contains the procedure variables for each device procedure. All
+fields are initialized by the call of {\tt MakeChan} procedure. A
+device module has to assign its own device procedures to the
+fields of a device table. See the {\tt Connect} procedure below.
+
+\begin{verbatim}
+IMPLEMENTATION MODULE EncryptChan;
+
+IMPORT IOChan, IOLink, ChanConsts, SYSTEM;
+
+(* "did" is used to identify the channel's kind: *)
+VAR did: IOLink.DeviceId;
+
+PROCEDURE EncryptChar(from: SYSTEM.ADDRESS;
+                         i: CARDINAL;
+                    VAR ch: CHAR);
+BEGIN
+  ch:='a'; (* very simple encryption :-) *)
+END EncryptChar;
+
+PROCEDURE TextWrite(x: IOLink.DeviceTablePtr;
+                 from: SYSTEM.ADDRESS;
+                  len: CARDINAL);
+  VAR i: CARDINAL;
+     ch: CHAR;
+    cid: IOChan.ChanId;
+BEGIN
+  (* get the channel id *)
+  cid:=SYSTEM.CAST(IOChan.ChanId,x^.cd);
+  FOR i:=0 TO len-1 DO
+    (* encrypt i-th character *)
+    EncryptChar(from,i,ch);
+    (* write an encrypted character *)
+    IOChan.TextWrite(cid,SYSTEM.ADR(ch),1);
+  END;
+END TextWrite;
+
+PROCEDURE Connect(VAR cid: ChanId;
+                       io: ChanId;
+                  VAR res: OpenResults);
+  VAR x: IOLink.DeviceTablePtr;
+BEGIN
+  IOLink.MakeChan(did,cid);
+  IF cid = IOChan.InvalidChan() THEN
+    res:=ChanConsts.outOfChans
+  ELSE
+    (* get a pointer to the device table *)
+    x:=IOLink.DeviceTablePtrValue(cid,did,
+                       IOChan.notAvailable,"");
+    (* store the channel id *)
+    x^.cd:=SYSTEM.CAST(SYSTEM.ADDRESS,io);
+    x^.doTextWrite:=TextWrite;
+    (* ... *)
+  END;
+END Connect;
+
+PROCEDURE Close(VAR cid: ChanId);
+BEGIN
+  IOLink.UnMakeChan(did,cid);
+END Close;
+
+BEGIN
+  IOLink.AllocateDeviceId(did);
+END EncryptChan.
+\end{verbatim}
+
+The module {\bf EncryptChan} can be used as any standard
+device module.
+
+\section{String conversions}\label{lib:ISO:conv}
+
+The string conversion library admits the conversion of the values
+of numeric data types to and from the character string
+representation. It contains the following modules:
+\begin{flushleft}
+\begin{tabular}{ll}
+\bf ConvTypes &    Common types used in the string conversion modules\\
+\bf LongConv &     Low-level LONGREAL/string conversions         \\
+\bf LongStr &      LONGREAL/string conversions                   \\
+\bf RealConv &     Low-level REAL/string conversions         \\
+\bf RealStr &      REAL/string conversions                   \\
+\bf WholeConv &    Low-level whole number/string conversions         \\
+\bf WholeStr &     Whole number/string conversions                   \\
+\end{tabular}
+\end{flushleft}
+\lindex{ConvTypes}
+\lindex{LongConv}
+\lindex{LongStr}
+\lindex{RealConv}
+\lindex{RealStr}
+\lindex{WholeConv}
+\lindex{WholeStr}
+
+\noindent
+The module {\bf ConvTypes} defines the enumeration type {\tt
+ConvResults}. It also defines the types {\tt ScanClass} and {\tt
+ScanState} to use in the low-level conversion modules.
+
+The low-level conversion modules allow to control lexical
+scanning of character sequences. For example, the {\bf WholeConv}
+module implements procedures {\tt ScanInt} and {\tt ScanCard}
+representing the start state for a finite state scanner for
+signed and unsigned whole numbers. In the following example the procedure
+{\tt ScanInt} is used to locate a
+position of the first character in a string which is not
+a part of an integer.
+\begin{verbatim}
+PROCEDURE SkipInt(str: ARRAY OF CHAR;
+              VAR pos: CARDINAL);
+  VAR len: CARDINAL;
+    state: ConvTypes.ConvState;
+    class: ConvTypes.ConvClass;
+BEGIN
+  pos:=0; len:=LENGTH(str);
+  state:=WholeConv.ScanInt;
+  WHILE pos < len DO
+    state(str[pos],class,state);
+    IF   (class = WholeConv.invalid)
+      OR (class = WholeConv.terminator)
+    THEN
+      RETURN
+    END;
+    INC(pos);
+  END;
+END SkipInt;
+\end{verbatim}
+
+\section{Mathematical libraries}
+
+The following modules constitute a mathematical library:
+\begin{flushleft}
+\begin{tabular}{ll}
+\bf ComplexMath     & \verb'COMPLEX' mathematical functions      \\
+\bf LongComplexMath & \verb'LONGCOMPLEX' mathematical functions  \\
+\bf LongMath        & \verb'LONGREAL' mathematical functions     \\
+\bf RealMath        & \verb'REAL' mathematical functions         \\
+\end{tabular}
+\end{flushleft}
+\lindex{ComplexMath}
+\lindex{LongComplexMath}
+\lindex{LongMath}
+\lindex{RealMath}
+
+\section{Processes and Semaphores}
+
+The following modules allows concurrent algorithms to be expressed using processes:
+\begin{flushleft}
+\begin{tabular}{ll}
+\bf Processes  & Provides process creation and manipulation facilities. \\
+\bf Semaphores & Provides mutual exclusion facilities for use by processes. \\
+\end{tabular}
+\end{flushleft}
+\lindex{Processes}
+\lindex{Semaphores}
+
+\Example
+\begin{verbatim}
+MODULE Test;
+
+IMPORT Processes, Semaphores, STextIO;
+
+VAR
+  sig : Semaphores.SEMAPHORE;
+  prs : Processes.ProcessId;
+  main: Processes.ProcessId;
+
+PROCEDURE Proc;
+BEGIN
+  STextIO.WriteString('Proc 1'); STextIO.WriteLn;
+  Semaphores.Claim(sig); (* suspend until released *)
+  STextIO.WriteString('Proc 2'); STextIO.WriteLn;
+  Processes.StopMe;
+END Proc;
+
+BEGIN
+  STextIO.WriteString('Main 1'); STextIO.WriteLn;
+  Semaphores.Create(sig,0);
+  main:=Processes.Me();
+  Processes.Start(Proc,40000,Processes.UrgencyOf(main)+1,NIL,prs);
+  STextIO.WriteString('Main 2'); STextIO.WriteLn;
+  Semaphores.Release(sig);
+  STextIO.WriteString('Main 3'); STextIO.WriteLn;
+  Processes.StopMe;
+END Test.
+\end{verbatim}
+
+\section{Other libraries}
+
+In this section we list the ISO modules that do not belong
+to any of the above groups:
+\begin{flushleft}
+\begin{tabular}{ll}
+\bf CharClass &  provides predicates to test a value
+                 of a character type                             \\
+\bf Storage &    Facilities for allocating
+                 and deallocating storage                          \\
+\bf Strings &    Facilities for string manipulation               \\
+\bf SysClock &   Access to a system clock
+\end{tabular}
+\end{flushleft}
+\lindex{CharClass}
+\lindex{Storage}
+\lindex{Strings}
+\lindex{SysClock}
+
+

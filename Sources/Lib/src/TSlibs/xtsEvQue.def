@@ -1,0 +1,33 @@
+(* Copyright (C) 1999-2000 Excelsior *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE xtsEvQue;
+
+IMPORT SYSTEM;
+
+TYPE
+  KBFlagSet = SET OF ( RShift, LShift, Ctrl, Alt, Scroll, Num, Cap, Ins ) ; -- == BiosIO.KBFlagSet !!
+  FLSET     = SET OF ( L_PRESSED, R_PRESSED, M_PRESSED );
+
+  MOUSE_EVT = RECORD
+    x  : LONGINT;
+    y  : LONGINT;
+    fl : FLSET;
+  END;
+
+  MOUHNDLFUNC = PROCEDURE (MOUSE_EVT) : BOOLEAN; (* return TRUE if processed *)
+
+PROCEDURE peekKey(VAR char, scan : SYSTEM.CARD8) : BOOLEAN;
+
+PROCEDURE getKey(VAR char, scan : SYSTEM.CARD8;
+                     fWait      : BOOLEAN ) : BOOLEAN;
+
+PROCEDURE getKbf() : KBFlagSet;
+
+PROCEDURE AddMouseHandler(f : MOUHNDLFUNC); (* Not used in OS/2 *)
+
+PROCEDURE RestartPipe(name: ARRAY OF CHAR); (* OS/2 *)
+
+END xtsEvQue.

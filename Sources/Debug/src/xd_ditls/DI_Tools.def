@@ -1,0 +1,522 @@
+-- Функции для доступа к универсальному внутреннему представлению.
+-- Содержит процедуры для поиска разнообразных обьектов, получения
+-- их атрибутов. Работа с компонентами, модулями, процедурами,
+-- переменными (глобальными и локальными), типами, обьектами,
+-- получение исходных текстов модулей, поиск соответствия между
+-- разнообразными структурами (строками и кодом, адресами и обьетами).
+
+DEFINITION MODULE DI_Tools;
+
+IMPORT sys := SYSTEM;
+
+IMPORT dt := DI_Types;
+IMPORT kt := KrnTypes;
+IMPORT Ud := Unidata;
+IMPORT xs := xStr;
+
+(* Проверить, если отладочная информация для модуля. Для некоторых
+форматов в случае необходимости отладочная информация будет загружена *)
+PROCEDURE CheckDebugInfoForModule (com: dt.ComNo; mod: dt.ModNo): BOOLEAN;
+
+
+(* Получить имя из таблицы имен модуля *)
+PROCEDURE GetName ( rname: CARDINAL): xs.txt_ptr;
+
+
+PROCEDURE AddAdr (addr: kt.ADDRESS; offs: CARDINAL): kt.ADDRESS;
+
+PROCEDURE SubAdr (addr: kt.ADDRESS; offs: CARDINAL): kt.ADDRESS;
+
+PROCEDURE DifAdr (addr1, addr2: kt.ADDRESS): sys.INT32;
+
+
+-------------------------- Components --------------------------
+----------------------------------------------------------------
+
+
+
+PROCEDURE RemoveComponent (Handle: CARDINAL): BOOLEAN;
+
+PROCEDURE ClearComponents (all: BOOLEAN);
+
+PROCEDURE ComName (com: dt.ComNo; VAR name: xs.txt_ptr): BOOLEAN;
+
+PROCEDURE ComFullName (com: dt.ComNo; VAR fname: xs.txt_ptr): BOOLEAN;
+
+PROCEDURE FindComponentByAddr (addr: kt.ADDRESS; VAR com: dt.ComNo): BOOLEAN;
+
+PROCEDURE FindComponentByName (name: ARRAY OF CHAR; VAR com: dt.ComNo): BOOLEAN;
+
+PROCEDURE FindComponentByHandle (Handle: CARDINAL; VAR com: dt.ComNo): BOOLEAN;
+
+PROCEDURE FindComObjByAddrInCom (com: dt.ComNo; addr: kt.ADDRESS; VAR obj: CARDINAL): BOOLEAN;
+
+PROCEDURE FindComObjByAddr (addr: kt.ADDRESS; VAR com: dt.ComNo; VAR obj: CARDINAL): BOOLEAN;
+
+PROCEDURE GetIndex (com: dt.ComNo; VAR index: dt.INDEX): BOOLEAN;
+
+PROCEDURE GetComNo (VAR com: dt.ComNo; index: CARDINAL): BOOLEAN;
+
+PROCEDURE IsComValid (com: dt.ComNo): BOOLEAN;
+
+
+-------------------------------------------------------------------------
+--------------------- Работа с модулями программы -----------------------
+                     -----------------------------
+
+(* Проверяет, можно ли использовать заданные компоненту и модуль *)
+PROCEDURE IsDataValid (com: dt.ComNo; mod: dt.ModNo): BOOLEAN;
+
+(* Проверяет, можно ли использовать заданную позицию *)
+PROCEDURE IsPosValid (pos: dt.POS): BOOLEAN;
+
+(* В случае корректого номера модуля возвращает его имя                      *)
+PROCEDURE ModName (com: dt.ComNo; mod: dt.ModNo; VAR name: xs.txt_ptr): BOOLEAN;
+
+(* В случае корректого номера модуля возвращает имя файла с исходным текстом *)
+PROCEDURE SourceName (com: dt.ComNo; mod: dt.ModNo; VAR name: ARRAY OF CHAR): BOOLEAN;
+
+(* Поиск модуля по имени. В случае, когда в целевом формате отладочной информации *)
+(* отсутсвует запись о полном имени модуля, оно обычно получается путем выделения *)
+(* из имени файла с исходным текстом. При выделении может произойти укорачивание  *)
+(* имени модуля. Поэтому при неудачном поиске иногда полезно поискать укороченное *)
+(* имя. Поиск модуля по имени не чуствителен к регистру.                          *)
+PROCEDURE FindModInComp (com: dt.ComNo; name: ARRAY OF CHAR; VAR mod: dt.ModNo): BOOLEAN;
+PROCEDURE FindMod (name: ARRAY OF CHAR; VAR com: dt.ComNo; VAR mod: dt.ModNo): BOOLEAN;
+
+
+(* Ищет модуль, которму принадледит указанный адрес. *)
+(* В случае неудаси возвращает Invalid_Module.       *)
+PROCEDURE FindModByAddr (addr: kt.ADDRESS; VAR com: dt.ComNo; VAR mod: dt.ModNo): BOOLEAN;
+PROCEDURE FindModInCompByAddr (com: dt.ComNo; addr: kt.ADDRESS; VAR mod: dt.ModNo): BOOLEAN;
+
+(* Если тип модуля неизвестен из внешнего представления отладочной *)
+(* информации, можно попытаться выяснить тип по расширению имени   *)
+(* файла, содержащего текст исходого модуля.                       *)
+PROCEDURE TryDetectModLang (src_fname: ARRAY OF CHAR): dt.LANGUAGE;
+
+(* Выдает идентификатор языка компонеты *)
+PROCEDURE ComLanguage (com: dt.ComNo): dt.LANGUAGE;
+
+(* Выдает идентификатор модуля *)
+PROCEDURE ModLanguage (com: dt.ComNo; mod: dt.ModNo): dt.LANGUAGE;
+
+(* Определяет участвует ли в данный момент указанный модуль в процессе отладки *)
+PROCEDURE IsModActive (com: dt.ComNo; mod: dt.ModNo): BOOLEAN;
+
+(* Включение/исключение модуля в процесс отладки                  *)
+(* Для некорректого номера модуля не происходит никакого действия *)
+PROCEDURE ActivateMod (com: dt.ComNo; mod: dt.ModNo);
+PROCEDURE DeactivateMod (com: dt.ComNo; mod: dt.ModNo);
+
+(* Признак наличия отладочной информации для указанного модуля    *)
+PROCEDURE ModHaveDebugInfo (com: dt.ComNo; mod: dt.ModNo): BOOLEAN;
+
+(* Сбросить флаг попытки чтения исходного текста модуля *)
+PROCEDURE ResetModTryRead (com: dt.ComNo; mod: dt.ModNo);
+
+(* найден исходный текст*)
+PROCEDURE ModHaveSource(com: dt.ComNo; mod: dt.ModNo): BOOLEAN;
+
+
+----------------------------------------------------------------------------------
+------------------- Работа с логическими сегментами программы --------------------
+                   -------------------------------------------
+
+(* количестов логических сегментов модуля.                *)
+(* Для некорректного номера модуля возвращает 0 сегментов *)
+PROCEDURE SegmentsNo (com: dt.ComNo; mod: dt.ModNo): CARDINAL;
+
+(* В случае, когда сегменты в отладочной информации именуются, *)
+(* возвращает имя сегмента                                     *)
+PROCEDURE SegmentName (com: dt.ComNo; mod: dt.ModNo; seg:CARDINAL; VAR name: ARRAY OF CHAR): BOOLEAN;
+
+(* Ищет номер модуля и логический сегмент, которому принадлежит указанный адрес *)
+PROCEDURE FindSegmentInMod (com    : dt.ComNo;
+                            mod    : dt.ModNo;
+                            addr   : kt.ADDRESS;
+                            VAR seg: CARDINAL): BOOLEAN;
+
+PROCEDURE FindSegmentInCom (com    : dt.ComNo;
+                            addr   : kt.ADDRESS;
+                            VAR mod: dt.ModNo;
+                            VAR seg: CARDINAL): BOOLEAN;
+
+PROCEDURE FindSegment (addr   : kt.ADDRESS;
+                       VAR com: dt.ComNo;
+                       VAR mod: dt.ModNo;
+                       VAR seg: CARDINAL): BOOLEAN;
+
+
+(* Информация о логическом сегменте *)
+PROCEDURE GetSegmentInfo(com      : dt.ComNo;
+                         mod      : dt.ModNo;
+                         seg      : CARDINAL;
+                         VAR start: kt.ADDRESS;
+                         VAR size : CARDINAL): BOOLEAN;
+
+
+----------------------------------------------------------------------------------
+------------------------ Работа с языковыми объектами ----------------------------
+
+                        -------------------------------
+                        --        Объекты языка       -
+                        -------------------------------
+
+(* Сделать ссылку на обьекты *)
+PROCEDURE MakePObjects (com: dt.ComNo; mod: dt.ModNo): dt.POBJECTS;
+
+(* Проверка объекта на корректность *)
+PROCEDURE IsObjectValid (p: dt.OBJECT): BOOLEAN;
+
+(* Создать обьект *)
+PROCEDURE MakeObject (Com: dt.ComNo; Mod: dt.ModNo; Rec: CARDINAL): dt.OBJECT;
+
+(* Сравнение обьектов, если совпадают - TRUE *)
+PROCEDURE EqualObjects (object1, object2: dt.OBJECT): BOOLEAN;
+
+(* Выдать имя объекта *)
+PROCEDURE ObjectName (object: dt.OBJECT; VAR name: ARRAY OF CHAR);
+
+(* Выдать имя объекта *)
+PROCEDURE Object_pName (object: dt.OBJECT; VAR name: xs.txt_ptr);
+
+(* Выдать идентификатор модуля, в котором определен объект *)
+PROCEDURE ObjectLanguage (object: dt.OBJECT): dt.LANGUAGE;
+
+(* Выдает адрес оъекта, на корректность не проверяется  *)
+PROCEDURE ObjectAddr (object: dt.OBJECT; VAR addr: kt.ADDRESS): BOOLEAN;
+
+(* Выдает размер объекта в байтах                       *)
+PROCEDURE ObjectSize (object: dt.OBJECT; VAR size: CARDINAL): BOOLEAN;
+
+(* Выдает тип объекта: только для переменных и процедур *)
+PROCEDURE ObjectType (object: dt.OBJECT; VAR type: dt.PTYPE): BOOLEAN;
+
+(* Выдает тип обьекта *)
+PROCEDURE ObjectTag (object: dt.OBJECT; VAR tag: dt.SYM_TAG): BOOLEAN;
+
+(* Выдает компоненту объекта *)
+PROCEDURE ObjectCom (object: dt.OBJECT): dt.ComNo;
+
+(* Выдает модуль объекта *)
+PROCEDURE ObjectMod (object: dt.OBJECT): dt.ModNo;
+
+(* Выдает номер записи объекта *)
+PROCEDURE ObjectRec (object: dt.OBJECT): CARDINAL;
+
+(* Выдает тип вывода объекта *)
+PROCEDURE ObjectSymTypeID (object: dt.OBJECT; VAR st_id: dt.SYM_TYPE_ID): BOOLEAN;
+
+(* Выдает атрибуты обьекта *)
+PROCEDURE ObjectAttr (object: dt.OBJECT; VAR attr: dt.SYM_ATTRIB): BOOLEAN;
+
+(* Устанавливает тип вывода объекта *)
+PROCEDURE SetObjectSymTypeID (object: dt.OBJECT; st_id: dt.SYM_TYPE_ID): BOOLEAN;
+
+(* По обьекту (локальному) выдает смещение/регистр *)
+PROCEDURE GetLocalObject_Addr (object: dt.OBJECT; rel_reg_value: kt.ADDRESS; VAR addr: kt.ADDRESS): BOOLEAN;
+
+(* По обьекту (локальному) выдает регистр *)
+PROCEDURE GetLocalObject_Reg (object: dt.OBJECT; VAR reg_no: CARDINAL; VAR ref: BOOLEAN): BOOLEAN;
+
+(* Выдает по заданному контексту локальный обьект и его контекст *)
+(* для i из диапазона [0..P+L-1], где P - количетво параметров,  *)
+(* L - количество локалов, иначе выдает ошибку                   *)
+PROCEDURE GetLocalObj (parent: dt.OBJECT; i: CARDINAL; VAR child, obj: dt.OBJECT);
+
+(* Уровень вложенности обьекта относительно другого             *)
+(* parent=dt.Invalid_Object, child=dt.Invalid_Object -> level=0 *)
+(* parent=dt.Invalid_Object, child#dt.Invalid_Object -> level=N *)
+(* parent#dt.Invalid_Object, child=dt.Invalid_Object -> FALSE   *)
+(* parent#dt.Invalid_Object, child#dt.Invalid_Object -> level=N *)
+PROCEDURE ObjectLevel (parent, child: dt.OBJECT; VAR level: CARDINAL): BOOLEAN;
+
+(* По обьекту выдает обьемлющий блок *)
+PROCEDURE ObjectParentScope (object: dt.OBJECT): dt.OBJECT;
+
+(* По обьекту типа процедура выдает адрес начала пролога и эпилога *)
+PROCEDURE ProcAttr (proc: dt.OBJECT; VAR start, end: kt.ADDRESS);
+
+(* Для процедуры проверяет, принадлежит ли адрес ее телу *)
+PROCEDURE AddrInProcBody (proc: dt.OBJECT; addr: kt.ADDRESS): BOOLEAN;
+
+(* По обьекту типа процедура проверяет, сохраняется ли кадр при вызове  *)
+PROCEDURE ProcHasFrame (proc: dt.OBJECT): BOOLEAN;
+
+(* По обьекту типа процедура выдает размер начального кадр *)
+PROCEDURE ProcFrameSize (proc: dt.OBJECT): CARDINAL;
+
+
+
+                        ------------------------------
+                        --        Типы языка         -
+                        ------------------------------
+
+(* Проверка типа на корректность *)
+PROCEDURE IsTypeValid (p: dt.PTYPE) : BOOLEAN;
+
+PROCEDURE Get_Next_Type(VAR type : dt.PTYPE);
+
+(*  первый тип в таблице типов*)
+PROCEDURE FirstType(): Ud.IMAGE_REF;
+
+
+(* Количество типов *)
+PROCEDURE TypesNo (Com: dt.ComNo; Mod: dt.ModNo): CARDINAL;
+
+(* Возвращает i-ый тип для именнованных типов *)
+PROCEDURE GetType (Com: dt.ComNo; Mod: dt.ModNo; i: CARDINAL): dt.PTYPE;
+
+(* Адрес образа не примитивного типа *)
+PROCEDURE TypeImage (type: dt.PTYPE): sys.ADDRESS;
+
+(* Базовый примитивный тип *)
+PROCEDURE IsTypeBasePrimitive (type: dt.PTYPE): BOOLEAN;
+
+(* Указатель на базовый примитивный тип *)
+PROCEDURE IsTypePointerPrimitive (type: dt.PTYPE): BOOLEAN;
+
+(* Примитивный тип *)
+PROCEDURE IsTypePrimitive (type: dt.PTYPE): BOOLEAN;
+
+(* Выдать тип типа *)
+PROCEDURE TypeTag (type: dt.PTYPE; VAR tag: dt.TYPE_TAG): BOOLEAN;
+
+(* Идентификатор типа типа *)
+PROCEDURE TypeTagName (tag: dt.TYPE_TAG; VAR name: ARRAY OF CHAR);
+
+(* Получить имя типа *)
+PROCEDURE TypeName (type: dt.PTYPE; VAR name: xs.txt_ptr): BOOLEAN;
+
+(* Переименовать тип *)
+PROCEDURE RenameType (type: dt.PTYPE; name: ARRAY OF CHAR): BOOLEAN;
+
+(* Ищет тип по имени *)
+PROCEDURE FindType (com: dt.ComNo; mod: dt.ModNo; name: ARRAY OF CHAR; VAR type: dt.PTYPE): BOOLEAN;
+
+(* Ищет стандартный тип по имени *)
+PROCEDURE FindStdType (name: ARRAY OF CHAR; VAR type: dt.PTYPE): BOOLEAN;
+
+(* размер типа в байтах                                   *)
+PROCEDURE TypeSize (type: dt.PTYPE): CARDINAL;
+
+(* длина типа - для атомарных типов: размер в байтах      *)
+(*              для структурных:     количество элементов *)
+PROCEDURE TypeLen (type: dt.PTYPE): CARDINAL;
+
+PROCEDURE TypeMod(type : dt.PTYPE) : dt.ModNo;
+PROCEDURE TypeCom(type : dt.PTYPE) : dt.ComNo;
+
+
+(* Выдает базовый тип. Базовый тип имеется у следующих: *)
+(* ARRAY OF BaseType       - открытый массив            *)
+(* ARRAY Index OF BaseType - массив                     *)
+(* POINTER TO BaseType     - указатель                  *)
+(* REFERENCE TO BaseType   - ссылка                     *)
+(* SET OF BaseType         - множество                  *)
+(* [ BaseType ]            - диапазон                   *)
+(* Enumeration on BaseType - перечислимый на базовом    *)
+(* PROCEDURE: BaseType     - тип результата процедуры   *)
+(* CLASS ( BaseType )      - базовый класс              *)
+PROCEDURE SubType (type: dt.PTYPE; VAR subtype: dt.PTYPE);
+
+(* Сравнение типов *)
+PROCEDURE TypesCompatible (type1, type2: dt.PTYPE): BOOLEAN;
+
+(* Для типа RECORD или CLASS по номеру поля в записи       *)
+(* из диапазона 1..TypeLen(type) выдает информацию о поле  *)
+PROCEDURE Field (type: dt.PTYPE; no: CARDINAL; VAR field: dt.TYPE_RECORD_FIELD);
+
+(* Устанавливает для поля типа нужный формат отображения *)
+PROCEDURE SetFieldSTID (type: dt.PTYPE; no: CARDINAL; st_id: dt.SYM_TYPE_ID);
+
+<* IF DEFINED(SCHERN_K26) AND SCHERN_K26 THEN *>
+(* Для типа RECORD или CLASS по имени поля в записи выдает    *)
+(* его номер из диапазона 1..TypeLen(type) и информацию о нем *)
+PROCEDURE Field_no (    type  : dt.PTYPE; name: xs.txt_ptr;
+                    VAR no    : CARDINAL;
+                    VAR field : dt.TYPE_RECORD_FIELD);
+<* END *>
+
+
+(* Выдает тип индекса массива  *)
+(* ARRAY Index OF ...          *)
+PROCEDURE ArrayIndexType (type: dt.PTYPE; VAR index: dt.PTYPE);
+
+(* Dimention of {array of ...} *)
+PROCEDURE ArrayDim (type: dt.PTYPE): CARDINAL;
+
+(* OpenArray type description *)
+PROCEDURE OpenArrayTypeDescription (type: dt.PTYPE; VAR desc: dt.TYPE_OPEN_ARRAY): BOOLEAN;
+
+
+(* Для типа выдает минимальное и максимальное значение,       *)
+(* допустимые для переменых этого типа, приведеные к LONGCARD *)
+PROCEDURE Index (type: dt.PTYPE; VAR min, max: LONGCARD);
+
+
+(* Для перечислимого типа по значению элемента выдает имя элемента *)
+PROCEDURE EnumName (type     : dt.PTYPE;
+                    value    : CARDINAL;
+                    VAR name : ARRAY OF CHAR);
+
+
+PROCEDURE FindValueByEnumeration (com      : dt.ComNo;
+                                  mod      : dt.ModNo;
+                                  name     : ARRAY OF CHAR;
+                                  VAR value: CARDINAL): BOOLEAN;
+
+
+PROCEDURE FindTypeLikeThis (com: dt.ComNo; type_image: ARRAY OF sys.LOC; casesensitive: BOOLEAN; VAR type: dt.PTYPE): BOOLEAN;
+
+
+                        -------------------------------
+                        --      Процедуры языка       -
+                        -------------------------------
+
+PROCEDURE FindLabelByAddr (com: dt.ComNo; mod: dt.ModNo; addr: kt.ADDRESS): dt.OBJECT;
+(* По адресу возвращает, если есть, метку *)
+
+PROCEDURE FindProcByAddr (com: dt.ComNo; mod: dt.ModNo; addr: kt.ADDRESS): dt.OBJECT;
+(* По адресу возвращает, объемлющую процедуру *)
+
+PROCEDURE IsLabelOnAddr (com: dt.ComNo; mod: dt.ModNo; addr: kt.ADDRESS): BOOLEAN;
+(* Определяет, есть ли метка на указаном адресе               *)
+
+PROCEDURE LabelsNo (com: dt.ComNo; mod: dt.ModNo) : CARDINAL;
+(* Количество меток в модуле. Для некорректного номера модуля возвращает 0 *)
+
+PROCEDURE GetLabel (com: dt.ComNo; mod: dt.ModNo; i: CARDINAL): dt.OBJECT;
+(* Возвращает i метку в лексикографическом порядке их имен *)
+
+PROCEDURE PrevBasePoint (com: dt.ComNo; mod: dt.ModNo; addr: kt.ADDRESS; VAR prev: kt.ADDRESS): BOOLEAN;
+(* По адресу выдает адрес, меньший и ближайший к заданому *)
+
+
+(* Количество пабликов *)
+PROCEDURE PublicsNo (com: dt.ComNo): CARDINAL;
+
+(* Получить паблик по номеру (отсортированы по именам) *)
+PROCEDURE GetPublic     (com: dt.ComNo; i: CARDINAL): dt.PUBLIC;
+
+PROCEDURE GetPublicName (com: dt.ComNo; i: CARDINAL): xs.txt_ptr;
+
+PROCEDURE GetPublicAddr (com: dt.ComNo; i: CARDINAL): kt.ADDRESS;
+
+PROCEDURE GetPublicLen  (com: dt.ComNo; i: CARDINAL): CARDINAL;
+
+
+(* По адресу пытается найти паблик *)
+PROCEDURE FindPublicByAddr (addr     : kt.ADDRESS;
+                            exactly  : BOOLEAN;
+                            VAR com  : dt.ComNo;
+                            VAR name : xs.txt_ptr): BOOLEAN;
+
+PROCEDURE FindPublicByAddrInCom (com : dt.ComNo;
+                                 addr: kt.ADDRESS; exactly: BOOLEAN;
+                                 VAR name: xs.txt_ptr): BOOLEAN;
+
+PROCEDURE FindPublicByName (name: ARRAY OF CHAR;
+                            VAR com : dt.ComNo;
+                            VAR addr: kt.ADDRESS): BOOLEAN;
+
+PROCEDURE FindPublicByNameInCom (com     : dt.ComNo;
+                                 name    : ARRAY OF CHAR;
+                                 VAR addr: kt.ADDRESS): BOOLEAN;
+
+PROCEDURE GetPrevPublicByAddrInCom (com     : dt.ComNo;
+                                    addr    : kt.ADDRESS;
+                                    VAR prev: kt.ADDRESS): BOOLEAN;
+
+
+
+
+                        -------------------------------
+                        --      Переменные языка      -
+                        -------------------------------
+
+PROCEDURE FindVarByAddrInMod (com: dt.ComNo; mod: dt.ModNo; addr: kt.ADDRESS; exactly: BOOLEAN): dt.OBJECT;
+PROCEDURE FindVarByAddr (com: dt.ComNo; addr: kt.ADDRESS; exactly: BOOLEAN): dt.OBJECT;
+(* Находит переменную, соответсвующую указанному адресу         *)
+(* Если exactly, то addr должен совпадать с началом переменной, *)
+(* иначе - может попасть внутрь промежутка адресов, по которым  *)
+(* расположена переменная                                       *)
+
+PROCEDURE VarsNo (com: dt.ComNo; mod: dt.ModNo): CARDINAL;
+(* Количество переменных в модуле. Для некорректного номера модуля возвращает 0 *)
+
+PROCEDURE LocalVarsNo (proc_obj: dt.OBJECT): CARDINAL;
+(* Количество локальных переменных для обьекта типа процедура *)
+
+PROCEDURE ParamVarsNo (proc_obj: dt.OBJECT) : CARDINAL;
+(* Количество параметров для обьекта типа процедура *)
+
+PROCEDURE LocalProcsNo (proc_obj: dt.OBJECT) : CARDINAL;
+(* Количество процедур для обьекта типа процедура *)
+
+PROCEDURE GetVar (com: dt.ComNo; mod: dt.ModNo; i: CARDINAL): dt.OBJECT;
+(* Возвращает i [0..N-1] переменную в лексикографическом порядке их имен *)
+
+PROCEDURE GetLocalVar (proc_obj: dt.OBJECT; i: CARDINAL): dt.OBJECT;
+(* Возвращает i [0..N-1] переменную для процедуры *)
+
+PROCEDURE GetLocalProc (proc_obj: dt.OBJECT; i: CARDINAL): dt.OBJECT;
+(* Возвращает i [0..N-1] процедуру для процедуры *)
+
+PROCEDURE GetParamVar (proc_obj: dt.OBJECT; i: CARDINAL): dt.OBJECT;
+(* Возвращает i [0..N-1] параметр для процедуры *)
+
+PROCEDURE FindLocalVar (proc: dt.OBJECT; name: ARRAY OF CHAR): dt.OBJECT;
+(* Ищет переменную с данным именем в указанной процедуре *)
+(* При неудаче возвращает Invalid_Object                 *)
+
+PROCEDURE IsParameter (object: dt.OBJECT): BOOLEAN;
+
+(* Ищет обьект с данным именем в указанном модуле *)
+(* При неудаче возвращает Invalid_Object          *)
+PROCEDURE FindObjectByName (com: dt.ComNo; mod: dt.ModNo; name: ARRAY OF CHAR): dt.OBJECT;
+
+
+-------------------------------------------------------------------------
+------------------ Работа с исходным текстом программы ------------------
+                  -------------------------------------
+
+PROCEDURE AddrBySource (com: dt.ComNo; mod: dt.ModNo; line: CARDINAL; VAR addr: kt.ADDRESS): BOOLEAN;
+(* По данному модулю и номеру строки выдает адрес в коде отлаживаемой программы. *)
+(* Нумерация строк - с 1..N                                                      *)
+
+PROCEDURE SourceByAddrInMod (com: dt.ComNo; mod: dt.ModNo; addr: kt.ADDRESS; VAR line: CARDINAL): BOOLEAN;
+(* По модулю и позиции в исполняемой программе определяет номер *)
+(* строки в его исходном тексте.                                *)
+
+PROCEDURE SourceByAddr (addr: kt.ADDRESS; VAR com: dt.ComNo; VAR mod: dt.ModNo; VAR line: CARDINAL): BOOLEAN;
+(* По позиции в исполняемой программе определяет модуль и номер  *)
+(* строки в его исходном тексте.                                 *)
+
+PROCEDURE CodeNum (com: dt.ComNo; mod: dt.ModNo; line: CARDINAL) : CARDINAL;
+(* По строке модуля возвращает кол-во элементов в таблице "строка-код"  *)
+(* соответствующих данной строке                                        *)
+
+PROCEDURE GetNCode (com: dt.ComNo; mod: dt.ModNo; line, i: CARDINAL): kt.ADDRESS;
+(* Возвращает начало i элемента из таблицы, соответсвующего строке      *)
+
+PROCEDURE LastLineHasCode (com: dt.ComNo; mod: dt.ModNo): CARDINAL;
+(* Количество строк исходного текста, до последней,для которой генерируется код *)
+
+PROCEDURE LastSourceLine (com: dt.ComNo; mod: dt.ModNo): CARDINAL;
+(* Количество строк исходного текста *)
+
+PROCEDURE GetSourceLine (com: dt.ComNo; mod: dt.ModNo; line: CARDINAL): xs.txt_ptr;
+(* получить указатель на заданную строку исходного текста модуля         *)
+
+
+------ Clear debug processed flag ---------
+PROCEDURE ClearDebugProcessed (com: dt.ComNo);
+
+------ Clear debug information ---------
+PROCEDURE ClearDebugInfo (com: dt.ComNo);
+
+
+END DI_Tools.
+

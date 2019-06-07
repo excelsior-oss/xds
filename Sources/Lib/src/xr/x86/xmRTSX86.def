@@ -1,0 +1,22 @@
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xmRTSX86;
+
+PROCEDURE / X2C_EXPRR(base: LONGREAL;    ex: LONGREAL): LONGREAL;
+
+PROCEDURE / X2C__EXPCI(base: COMPLEX;     ex: INT32):    COMPLEX;
+(* ??? X86 only *)
+PROCEDURE / X2C__EXPLI(base: LONGCOMPLEX; ex: INT32):    LONGCOMPLEX;
+(* ??? X86 only *)
+PROCEDURE / X2C__EXPCR(base: COMPLEX;     ex: LONGREAL): COMPLEX;
+(* ??? X86 only *)
+PROCEDURE / X2C__EXPLR(base: LONGCOMPLEX; ex: LONGREAL): LONGCOMPLEX;
+(* ??? X86 only *)
+
+PROCEDURE X2C_INIT_RTS;
+(* Additional start of runtime. X86 only *)
+
+PROCEDURE / X2C_InitFPP;
+(* is called from initialization of all modules using 
+  floating point operations *)
+
+END xmRTSX86.

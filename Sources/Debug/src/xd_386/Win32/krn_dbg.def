@@ -1,0 +1,28 @@
+-- Системно-зависимый модуль для работы с отлаживаемой программой
+-- Процедуры для переключения/возврата к отлаживаемой программе
+-- инициализации SSS (start session smart selector)
+
+DEFINITION MODULE Krn_Dbg;
+
+IMPORT Windows;
+IMPORT xStr;
+
+PROCEDURE Find_Debuggee_HWND();
+
+PROCEDURE StartSmartSelector;
+
+PROCEDURE StopSmartSelector;
+
+PROCEDURE SwitchToDebuggee;
+
+PROCEDURE SwitchToDebugger;
+
+PROCEDURE SetTitle (title: ARRAY OF CHAR);
+
+VAR
+  H_Process, H_Thread : Windows.HANDLE;
+  Id_Process, Id_Thread: Windows.DWORD;
+
+  My_HWND, Debuggee_HWND: Windows.HWND;
+
+END Krn_Dbg.

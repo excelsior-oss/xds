@@ -1,0 +1,29 @@
+-- Системно-зависимый модуль для работы с отлаживаемой программой
+-- Процедуры для переключения/возврата к отлаживаемой программе
+-- инициализации SSS (start session smart selector)
+
+DEFINITION MODULE Krn_Dbg;
+
+IMPORT
+  lnx := Linux,
+  xStr;
+
+PROCEDURE Find_Debuggee_HWND();
+
+PROCEDURE StartSmartSelector;
+
+PROCEDURE StopSmartSelector;
+
+PROCEDURE SwitchToDebuggee;
+
+PROCEDURE SwitchToDebugger;
+
+PROCEDURE SetTitle (title: ARRAY OF CHAR);
+
+VAR
+--  H_Process: lnx.PHANDLE;
+  H_Thread : lnx.THANDLE;
+--  Id_Process: lnx.PID;
+--  Id_Thread: lnx.TID;
+
+END Krn_Dbg.

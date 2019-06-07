@@ -1,0 +1,84 @@
+-- Системно-зависимый модуль, скрывающий детали
+-- конкретного устройства вывода
+-- Содержит описания событий консоли, процедуры для отображения
+-- логического буфера в физическую консоль,
+-- функции управления звуком и курсором
+
+DEFINITION MODULE Console;
+
+FROM SYSTEM IMPORT CARD8;
+
+TYPE
+  RESULT = ( Ok, WrongParams, Error );
+
+  ATTR = CARD8;
+
+  CELL = RECORD
+           ch  : CHAR;
+           attr: ATTR;
+         END;
+
+  LOGICAL_SCREEN = POINTER TO ARRAY OF CELL;
+
+
+PROCEDURE IniConsole(VAR X, Y: CARDINAL): RESULT;
+PROCEDURE CloseConsole();
+
+PROCEDURE ToggleConsoles(screen: LOGICAL_SCREEN);
+
+(* Отображение логического буфера в физическую консоль *)
+
+
+PROCEDURE OutSymbol(x,y: CARDINAL; ch: CHAR; attr: ATTR);
+
+PROCEDURE OutRect(screen: LOGICAL_SCREEN; x1, y1, x2, y2: CARDINAL);
+
+PROCEDURE Flush();
+
+(* События консоли *)
+
+TYPE
+  EVENT_KIND = ( None, KeyEvent, MouseEvent);
+  MOU_ACTION = ( Mou_L_Pressed, Mou_L_Released, Mou_L_DoubleClick,
+                 Mou_R_Pressed, Mou_R_Released,
+                 Mou_Moved
+               );
+
+  EVENT = RECORD
+            CASE kind: EVENT_KIND OF
+            | KeyEvent: key_code: CARDINAL;
+            | MouseEvent:
+              action: MOU_ACTION;
+              x, y: CARDINAL;
+            END;
+          END;
+
+PROCEDURE GetEvent(VAR event: EVENT);
+
+PROCEDURE QueryEvent(kind: EVENT_KIND): BOOLEAN;
+
+
+(* Звук *)
+PROCEDURE Beep;
+
+(* Delay d fraction second (1 fraction = 1/100 second) *)
+PROCEDURE Delay (d: CARDINAL);
+
+(* Управление курсором *)
+
+PROCEDURE CursorOn;
+PROCEDURE CursorOff;
+
+PROCEDURE CursorState(): BOOLEAN;
+
+PROCEDURE SetCurPos(x,y: CARDINAL);
+
+
+<* IF (TARGET_OS = "OS2") AND PM THEN *>
+
+PROCEDURE Start_PM_Hack(): BOOLEAN;
+
+<* END *>
+
+
+END Console.

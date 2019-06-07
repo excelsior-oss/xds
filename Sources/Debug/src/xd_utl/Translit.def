@@ -1,0 +1,31 @@
+-- Transliterate text from one encoding to another, and backward
+DEFINITION MODULE Translit;
+
+IMPORT SYSTEM;
+
+
+TYPE
+  TRANSLITERATE_FROM_TO = ( nn -- None 
+                          , ai -- from Alternative to ISO
+                          , ak -- from Alternative to Koi8
+                          , aw -- from Alternative to Windows
+                          , ia -- from ISO to Alternative
+                          , ik -- from ISO to Koi8
+                          , iw -- from ISO to Windows
+                          , ka -- from Koi8 to Alternative
+                          , ki -- from Koi8 to ISO
+                          , kw -- from Koi8 to Windows
+                          , wa -- from Windows to Alternative
+                          , wi -- from Windows to ISO
+                          , wk -- from Windows to Koi8
+                          );
+
+
+-- Transliterate a string from one encoding to another
+PROCEDURE TransliterateStr (from_to: TRANSLITERATE_FROM_TO; VAR str: ARRAY OF CHAR);
+
+-- Transliterate a buffer (of 'size' char) from one encoding to another
+PROCEDURE TransliterateBuffer (from_to: TRANSLITERATE_FROM_TO; buffer: SYSTEM.ADDRESS; size: CARDINAL);
+
+
+END Translit.

@@ -1,0 +1,211 @@
+-- Поддержка обработки клавиатуры. Содержит константы с кодами различных
+-- использующихся клавиш. Присутствуют функции проверки буфера клавиатуры,
+-- чтения символа, перевода кода клавиши в строку и обратно.
+--
+-- Перед использованием необходимо вызвать процедуру Ini, по окончании Exi;
+
+DEFINITION MODULE Keys;
+
+TYPE
+  KEY     = CARDINAL;
+  CHARSET = SET OF CHAR;
+
+CONST
+  LegalChar = CHARSET{' '..'~', 'А' .. 'п', 'р'..'я' };
+
+(* Return TRUE if key pressed, otherwise return FALSE *)
+PROCEDURE KeyPressed(): BOOLEAN;
+
+(* Return key code *)
+PROCEDURE GetKey(): KEY;
+
+(* Delay d fraction second (1 fraction = 1/100 second) *)
+PROCEDURE Delay (d:CARDINAL);
+
+(* Delay until key pressed *)
+PROCEDURE DelayKeyPressed;
+
+(* Delay d fraction or until key pressed *)
+PROCEDURE DelayUntilKeyPressed (d:CARDINAL);
+
+CONST
+  None = MAX(KEY); 
+
+  CtrlSpace = 0F000H;
+  Space     = 20H;
+
+  Plus  = 2BH;
+  Minus = 2DH;
+
+  Right = 4D00H;
+  Left  = 75*256;
+  Up    = 72*256;
+  Down  = 80*256;
+  Del   = 83*256;
+  Ins   = 82*256;
+
+  PgUp  = 73*256;
+  PgDn  = 81*256;
+
+  Home  = 71*256;
+  End   = 79*256;
+
+  AltRight = 09D00H;
+  AltLeft  = 09B00H;
+  AltUp    = 09800H;
+  AltDown  = 0A000H;
+  AltDel   = 0A300H;
+  AltHome  = 09700H;
+  AltIns   = 0A200H;
+  AltPgUp  = 09900H;
+  AltPgDn  = 0A100H;
+  AltEnd   = 09F00H;
+
+  CtrlRight = 7400H;
+  CtrlLeft  = 7300H;
+  CtrlUp    = 8D00H;
+  CtrlDown  = 9100H;
+  CtrlPgUp  = 8400H;
+  CtrlPgDn  = 7600H;
+  CtrlHome  = 7700H;
+  CtrlEnd   = 7500H;
+  CtrlIns   = 9200H;
+  CtrlDel   = 9300H;
+
+  CtrlTab   = 148*256;
+  CtrlAsterix = 150*256;
+
+  AltA  = 30*256;
+  AltB  = 48*256;
+  AltC  = 46*256;
+  AltD  = 32*256;
+  AltE  = 05*256;
+  AltF  = 33*256;
+  AltG  = 34*256;
+  AltH  = 35*256;
+  AltI  = 23*256;
+  AltJ  = 36*256;
+  AltK  = 37*256;
+  AltL  = 38*256;
+  AltM  = 50*256;
+  AltN  = 49*256;
+  AltO  = 24*256;
+  AltP  = 25*256;
+  AltQ  = 16*256;
+  AltR  = 19*256;
+  AltS  = 31*256;
+  AltT  = 20*256;
+  AltU  = 1600H;
+  AltV  = 47*256;
+  AltW  = 17*256;
+  AltX  = 45*256;
+  AltY  = 21*256;
+  AltZ  = 44*256;
+
+  CtrlA = 1;
+  CtrlB = 2;
+  CtrlC = 3;
+  CtrlD = 4;
+  CtrlE = 5;
+  CtrlF = 6;
+  CtrlG = 7;
+  CtrlH = 8;
+  CtrlI = 9;
+  CtrlJ = 10;
+  CtrlK = 11;
+  CtrlL = 12;
+  CtrlM = 13;
+  CtrlN = 14;
+  CtrlO = 15;
+  CtrlP = 16;
+  CtrlQ = 17;
+  CtrlR = 18;
+  CtrlT = 20;
+  CtrlU = 21;
+  CtrlV = 22;
+  CtrlW = 23;
+  CtrlX = 24;
+  CtrlY = 25;
+  CtrlZ = 26;
+
+  F1    = 59*256;
+  F2    = 60*256;
+  F3    = 61*256;
+  F4    = 62*256;
+  F5    = 63*256;
+  F6    = 64*256;
+  F7    = 65*256;
+  F8    = 66*256;
+  F9    = 67*256;
+  F10   = 68*256;
+  F11   = 133*256;
+  F12   = 8600H;
+
+  AltF1  = 6800H;
+  AltF2  = 6900H;
+  AltF3  = 6A00H;
+  AltF4  = 6B00H;
+  AltF5  = 6C00H;
+  AltF6  = 6D00H;
+  AltF7  = 6E00H;
+  AltF8  = 6F00H;
+  AltF9  = 7000H;
+  AltF10 = 7100H;
+  AltF11 = 8B00H;
+  AltF12 = 8C00H;
+
+  CtrlF1   = 5E00H;
+  CtrlF2   = 5F00H;
+  CtrlF3   = 6000H;
+  CtrlF4   = 6100H;
+  CtrlF5   = 6200H;
+  CtrlF6   = 6300H;
+  CtrlF7   = 6400H;
+  CtrlF8   = 6500H;
+  CtrlF9   = 6600H;
+  CtrlF10  = 6700H;
+  CtrlF11  = 8900H;
+  CtrlF12  = 8A00H;
+
+  Tab   = 9;
+  Esc   = 27;
+
+  BackSpace = 0FC00H;
+  CtrlEnter = 0FD00H;
+  Enter     = 0FE00H;
+  AltEnter  = 28*256;
+
+  Alt1 = 7800H;
+  Alt2 = 7900H;
+  Alt3 = 7A00H;
+  Alt4 = 7B00H;
+  Alt5 = 7C00H;
+  Alt6 = 7D00H;
+  Alt7 = 7E00H;
+  Alt8 = 7F00H;
+  Alt9 = 8000H;
+  Alt0 = 8100H;
+  
+  AltBSlash  = 2B00H;
+  CtrlBSlash = 001CH;
+
+  Ctrl1 = 0200H;
+--  Ctrl2 = 0300H;
+--  Ctrl3 = 0400H;
+--  Ctrl4 = 0500H;
+--  Ctrl5 = 0600H;
+  Ctrl6 = 0700H;
+--  Ctrl7 = 0800H;
+--  Ctrl8 = 0900H;
+--  Ctrl9 = 0A00H;
+--  Ctrl0 = 0B00H;
+
+
+(* По клавише выдает ее имя *)
+PROCEDURE GetKeyName (key: KEY; VAR key_name: ARRAY OF CHAR): BOOLEAN;
+
+(* По имени клавиши выдает ее код *)
+PROCEDURE GetKeyByName (key_name: ARRAY OF CHAR; VAR key: KEY): BOOLEAN;
+
+END Keys.
+

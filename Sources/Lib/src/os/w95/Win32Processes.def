@@ -1,0 +1,38 @@
+(* Copyright (c) 1996 xTech Ltd, Russia. All Rights Reserved. *)
+DEFINITION MODULE Win32Processes;
+
+(* This module contains Win32-specific extended thread
+   controll in addition to basic functionality of ISO10514
+   standard module Processes
+*)
+
+IMPORT  Windows, Processes, Semaphores;
+
+TYPE
+  HANDLE = Windows.HANDLE;
+  ProcessId = Processes.ProcessId;
+  Sources = Processes.Sources;
+  SEMAPHORE = Semaphores.SEMAPHORE;
+  DWORD = Windows.DWORD;
+
+PROCEDURE GetThreadHandle(p: ProcessId): HANDLE;
+  (* returns handle of Win32 thread corresponding to the given process *)
+
+PROCEDURE GetThreadId(p: ProcessId): DWORD;
+
+PROCEDURE GetSemaphoreHandle(s: SEMAPHORE): HANDLE;
+  (* returns handle of Win32 semaphore corresponding to the given one *)
+
+PROCEDURE MakeSource(h: HANDLE): Sources;
+  (* makes event source from given Win32 handle.
+     Returned source may be used in calls to Processes.Attach,
+     Processes.Detach, Processes.IsAttached, Processes.Handler.
+     Note that Win32 implementation does not need any finalisation
+     for created event source. Other platforms may require
+     some finalisation.
+     Note also that input handle "h" may be any
+     handle suitable for Win32 API calls WaitForSingeObject and
+     WaitForMultipleObject.
+  *)
+
+END Win32Processes.

@@ -1,0 +1,364 @@
+       Строение объектов (запись типа OBJECT).
+        ---------------------------------------
+
+0) Объект (в общем)
+        mode    ob_*
+        next    -> следующий
+        name    имя
+        host    -> область видимости
+        type    -> тип
+        mno     номер модуля, в котором описан
+        lev     лексический уровень вложенности
+        tags    теги
+        marks   пометки
+
+1) Константа.
+        mode    ob_var
+        name    имя
+        val     -> значение в виде исходного выражения
+        type    -> тип
+
+2) Переменная.
+        mode    ob_var
+        name    имя
+        val     -> абсолютный адрес (если отсутствует - NIL)
+        type    -> тип
+
+3) Процедура.                  <-------------------+---------------------------|
+        mode    ob_?proc                           |                           |
+        type    -> на STRUCT                       |          <--------------| |
+                        mode    ty_proctype        |                         | |
+                        obj     -------------------|                         | |
+                        len     если метод, то его номер                     | |
+                        base    -> тип возвращаемого значения                | |
+                        prof    -> список параметров (см. Процедурный тип),  | |
+                                   для метода первый параметр - this         | |
+                        mem     -> локалы                                    | |
+                        inx     -> для метода ссылается на такой же STRUCT   | |
+                                   от перекрытого метода                     | |
+                                                                             | |
+        val     -> на NODE                                                   | |   
+                        mode    nd_proc                                      | |   
+                        type    ---------------------------------------------| |
+                        obj     -----------------------------------------------|
+                        l       -> список локальных процедур 
+                                   (точно таких же NODE)
+                        r       -> тело - разного вида блоки (Блок операторов,
+                                   EXCEPT блок, PROTECT блок) провязаные по next,
+                                   причем в конце списка висит NODE
+                                        mode    nd_reraise
+                                        r       -> указвает на EXCEPT блок, если
+                                                   же его нет, то = NIL
+
+          Блоки.
+        ----------
+
+0) Блок операторов (представляет BEGIN или FINALLY части).
+   a) если в списке операторов есть RETURN, ASSERT или HALT
+        mode    nd_block
+        type    -> void
+        next    -> следующий
+        r       -> список операторов
+   b) если их нет, то это просто список операторов (тот, что висит на ссылке r)
+
+1) EXCEPT блок.
+        mode    nd_except
+        type    -> void
+        next    -> следующий
+        obj     -> OBJECT
+                        mode    ob_var
+                        name    "trap"
+                        type    -> pcO.process
+        r       -> список операторов EXCEPT части
+        l       -> операторы BEGIN или FINALLY части (см. Блок операторов)
+
+2) PROTECT блок.
+        mode    nd_protect
+        type    -> void
+        next    -> следующий
+        l       -> на ЕХCEPT блок или блок операторов
+        r       -> NODE
+                        mode    nd_value
+                        type    -> pcO.protection
+                        val     -> protection number
+        obj     -> OBJECT
+                        mode    ob_var
+                        type    -> pcO.protection
+
+
+        Строение типов (запись типа STRUCT).
+        ------------------------------------
+
+0) Именованный тип.            <---------|
+        mode    ob_type                  |
+        type    -> тип                   |
+                        mode    ty_*     |
+                        obj     ---------|
+
+1) Тип диапазон.
+        mode    ty_range
+        min     -> минимальное значение
+        max     -> максимальное значение
+        base    -> базовый тип
+
+2) Тип неречисление.                             <-----------|
+        mode    ty_enum                                      |
+        len     количество констант перечисления             |
+        max     -> максимальное значение констант (= len-1)  |
+        base    -> базовый тип                               |
+        prof    -> список констант                           |
+                        mode    ob_cons                      |
+                        next    -> следующий                 |
+                        type    -|___________________________|
+                        host    -|                           |
+                        val     -> узел (типа NODE)          |
+                                        mode    nd_value     |
+                                        type    -------------|
+                                        val     -> порядковый номер
+
+3) Открытый массив.
+        mode    ty_array_of
+        base    -> базовый тип
+        len     размерность базового типа (начинается с 1)
+                        
+
+4) Массив.
+        mode    ty_array
+        min     -> минимальное значение индекса  <----|
+        max     -> максимальное значение индекса <--| |
+        base    -> базовый тип                      | |
+        inx     -> тип индекса                      | |
+                        max     --------------------| |
+                        min     ----------------------|
+
+5) Множество.
+        mode    ty_set
+        len     = max - min + 1
+        base    -> базовый тип
+                        max     ----------------|
+                        min     -------------|  |
+        min     -> минимальное значение   <--|  |
+        max     -> максимальное значение  <-----|
+        inx     -> один из cardinal'ов (зависит от размера множества)
+
+6) Тип указатель.
+        mode    ty_pointer
+        base    -> базовый тип
+
+7) Скрытый тип.
+
+        ??????????????????
+
+8) Тип запись.
+        mode    ty_record
+        len     уровень наследования
+        num     количество методов
+        base    -> базовый тип
+        mem     -> список методов (см. устройство процедуры)
+        prof    -> список полей (объекты, повязанные через next)
+                Простое поле.
+                        mode    ob_field
+                        name    имя
+                        type    -> тип
+                Вариант.
+                        mode    ob_header
+                        type    -> тип селектора
+                        val     -> узел (NODE) типа nd_case
+                                mode    nd_case
+                                obj     -> тег (если есть)
+                                        mode    ob_field
+                                        type    -> тип селектора
+                                type    -> тип селектора
+                                l       -> список вариантов (узлы (NODE), провязанные через next)
+                                        mode    nd_node
+                                        type    -> тип селектора
+                                        obj     -> список полей (как в записи)
+                                        l       -> список меток (узлы (NODE))
+						Так было до 3.0
+                                                	Одиночная метка.
+                                                        	mode    nd_value
+                                                        	val     -> выражение
+                                                	Диапазон.
+                                                        	mode    nd_pair
+                                                       		l       -> максимум (NODE)
+                                                                	mode    nd_value
+                                                                	val     -> выражение
+                                                        	val     -> минимум (выражение)
+						В 3.0 стало так
+                                                	Одиночная метка.
+								выражение.
+                                                	Диапазон.
+                                                        	mode    nd_pair
+                                                       		l       -> минимум (выражение)
+								r	-> максимум (выражение)
+
+
+
+9) Процедурный тип.
+        mode    ty_proctype
+        base    -> тип возвращаемого значения
+        prof    -> список параметров
+                По значению.
+                        mode    ob_var
+                        type    -> тип
+                        tags    включает {otag_valpar}
+                        val     -> умолчательное значение
+                По ссылке.
+                        mode    ob_varpar
+                        type    -> тип
+                SEQ.
+                        mode    ob_seq
+                        type    -> LOC или ARRAY OF LOC
+                Специальный по ссылке.
+                        mode    ob_varpar
+                        tags    включает {otag_valpar, otag_varpar_nil}
+                        type    ->
+                                mode    ty_pointer
+                                base    -> указанный в объявлении тип
+
+
+        Строение стандартных типов.
+        ---------------------------
+
+
+10)
+
+
+        Строение операторов.
+        --------------------
+
+0) Присваивание.
+        mode    nd_assign
+        obj     -> если левая часть - именованная переменная, то ссылка на нее
+        l       -> ссылка на lvalue, если obj = NIL
+        r       -> rvalue
+
+1) IF
+        mode    nf_if
+        l       -> условное выражение
+        r       -> NODE
+                        mode    nd_node
+                        l       -> TRUE-часть
+                        r       -> ELSE-часть
+   В случае ELSIF ELSE-часть явялется такой же конструкцией.
+
+2) WHILE
+        mode    nd_while
+        l       -> условное выражение
+        r       -> тело
+
+3) REPEAT
+        mode    nd_repeat
+        r       -> условное выражение
+        l       -> тело
+
+4) LOOP
+        mode    nd_loop
+        r       -> тело
+
+5) EXIT
+        mode    nd_exit
+        r       -> NODE (LOOP для выхода)
+        
+6) RETURN
+        mode    nd_return
+        l       -> возвращаемое выражение (если есть)
+        r       -> ссылка на блок для выхода
+
+7) FOR
+        mode    nd_for
+        obj     -> переменная цикла
+        l       -> NODE
+                        mode    nd_node
+                        l       -> 'from' expression
+                        r       -> 'to'   expression
+                        val     -> 'by'   value
+        r       -> тело
+
+8) RETRY
+        mode    nd_retry
+        r       -> EXCEPT блок
+
+9) CASE
+        mode    nd_case
+        l       -> выражение-селектор
+        r       -> NODE
+                        mode    nd_casedo (nd_caselse, если есть ELSE-часть)
+                        r       -> ELSE-часть (если есть)
+                        next    -> NODE
+				До 3.0 было так
+                                        mode    nd_pair
+                                        val     -> minimum
+                                        l       -> NODE
+                                                        mode    nd_value
+                                                        val     -> maximum
+				В 3.0 стало так
+                                        mode    nd_pair
+                                        l       -> NODE
+                                                        mode    nd_value
+                                                        val     -> minimum
+                                        r       -> NODE
+                                                        mode    nd_value
+                                                        val     -> maximum
+                        l       -> список вариантов
+                                Узел списка.
+                                        mode    nd_node
+                                        next    -> следующий
+                                        r       -> тело
+                                        l       -> список диапазонов
+                                                Узел списка.    
+                                                        mode    nd_pair
+                                                        type    -> тип селектора
+							До 3.0 было так
+                                                        val     -> minimum
+                                                        l       -> NODE
+                                                                        mode    nd_value
+                                                                        val     -> maximum
+                                                                        type    -> тип селектора
+							В 3.0 стало так
+                                                        l       -> minimum (выражение)
+                                                        r       -> maximum (выражение)
+
+
+
+10) M2 WITH
+        mode    nd_with
+        l       -> lvalue
+                        type    -> тип          <-----------|
+        obj     -> OBJECT                                   |
+                        mode    ob_var                      |
+                        type    -> STRUCT                   |
+                                        mode    ty_pointer  |
+                                        base    ------------|
+        r       -> тело
+
+11) O2 WITH.
+    Представляется как
+        IF ... IS ... THEN
+        ELSIF ... IS ... THEN
+                ...
+        ELSE
+        END
+    Если ELSE-части нет, то она все равно создается - там паявляется wtrap
+
+12) Вызов процедуры или супер-метода.
+        mode    nd_call
+        obj     -> процедура
+        r       -> список параметров
+                Узел списка.
+                        mode    nd_value
+                        next    -> следующий
+
+13) Вызов метода.
+        mode    nd_call
+        r       -> список параметров (без this)
+                Узел списка.
+                        mode    nd_value
+                        next    -> следующий
+        l       -> NODE
+                        mode    nd_method
+                        obj     -> процедура
+                        type    -> ее тип ( = obj.type)
+                        l       -> this
+        
+

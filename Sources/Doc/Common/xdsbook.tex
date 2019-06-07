@@ -1,0 +1,76 @@
+% Generic manual
+% Copyright (c) Excelsior 1999,2000. All Rights Reserved.
+%
+% To create a new book:
+%   - create a subdirectory for a book
+%   - in this subdirectory, create a main file for the book, containing
+%     exactly the following string:
+%     \input{../xdsbook}
+%   - create the file called 'preamble.tex', which will be included in the
+%     preamble
+%   - create the file 'body.tex', which will be included in the body of the
+%     document
+
+\documentclass[10pt,a4paper,oneside]{book}
+\usepackage[cp866]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage{fancyhdr}
+\usepackage{latexsym}
+\usepackage{makeidx}
+
+\newif\ifonline\onlinefalse   % set to true automatically by LaTeX OnLine
+\ifonline
+  \newif\ifpdf\pdffalse
+\else
+  \input{../Common/pdfquery.tex}
+\fi
+
+\ifpdf
+\usepackage[pdftex,pdfstartview=FitH,colorlinks,plainpages=false,linkcolor=blue,unicode=true]{hyperref}
+\usepackage[pdftex]{graphicx}
+\else
+\usepackage[colorlinks,plainpages=false,linkcolor=blue]{hyperref}
+\usepackage{graphicx}
+\fi
+
+% Uncomment one of the following lines to use Adobe Postscript fonts:
+%\usepackage{avant}    % AvantGarde Fonts (sf only)
+%\usepackage{bookman}  % Bookman Fonts
+%\usepackage{chancery} % ZapfChancery (rm only)
+%\usepackage{helvet}   % Helvetica (sf only)
+%\usepackage{newcent}  % NewCenturySchoolbook
+%\usepackage{palatino} % Palatino 
+%\usepackage{times}    % Times Roman
+
+\newif\ifenglish\englishtrue
+
+\input{../Common/def.tex}
+
+\input{src/preamble.tex}
+
+\ifonline\else
+  \renewcommand{\headrulewidth}{0.2pt}
+  \lhead{\DocumentNumber}
+  \chead{}
+  \rhead{\thepage}
+  \lfoot{}
+  \cfoot{}
+  \rfoot{}
+\fi
+
+\begin{document}
+
+\setlength{\headheight}{50 pt}
+
+\input{../Common/title.tex}
+
+\setlength{\parskip}{0 pt}
+\tableofcontents
+% \listoftables !!!
+\setlength{\parskip}{6 pt}
+
+\input{src/body.tex}
+
+\input{../Common/back.tex}
+
+\end{document}

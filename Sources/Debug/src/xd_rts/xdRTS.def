@@ -1,0 +1,32 @@
+<* M2EXTENSIONS+ *>
+
+DEFINITION MODULE xdRTS;
+
+IMPORT sys := SYSTEM;
+
+IMPORT kt  := KrnTypes;
+IMPORT xi  := XDInterface;
+
+
+
+TYPE
+  HandlerType = xi.HandlerType;
+
+  -- returns TRUE if user wants to stop the program execution
+  HANDLER = PROCEDURE (HandlerType, kt.ADDRESS, ARRAY OF CHAR, SEQ sys.BYTE): BOOLEAN;
+
+
+PROCEDURE SetHandler (handler: HANDLER): HANDLER;
+
+
+
+PROCEDURE XDInterfacePresent (): BOOLEAN;
+
+PROCEDURE DestroyXDInterfaces ();
+
+PROCEDURE SetXDInterfacesHandlers (SoftwareExceptionsEnabled: BOOLEAN);
+
+PROCEDURE RemoveXDInterfacesHandlers ();
+
+
+END xdRTS.

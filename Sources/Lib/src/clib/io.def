@@ -1,0 +1,44 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+<*+ M2ADDTYPES *>
+<* IF __GEN_C__ THEN *>
+<*+ GENTYPEDEF *>
+<* END *>
+DEFINITION MODULE [2] io;
+
+FROM SYSTEM IMPORT size_t, ADDRESS, int, BYTE;
+FROM xmRTS  IMPORT X2C_pCHAR;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  SEEK_SET-: int;
+  SEEK_CUR-: int;
+  SEEK_END-: int;
+<* ELSE *>
+CONST
+  SEEK_SET = 0;
+  SEEK_CUR = 1;
+  SEEK_END = 2;
+<* END *>
+
+PROCEDURE creat     (path: X2C_pCHAR; amode: int): int;
+PROCEDURE creatnew  (path: X2C_pCHAR; mode: int): int;
+PROCEDURE creattemp (path: X2C_pCHAR; amode: int): int;
+PROCEDURE open      (path: X2C_pCHAR; access: int; mode:=0: int): int;
+PROCEDURE close     (f: int): int;
+PROCEDURE read      (f: int; ptr: ADDRESS; size: size_t): int;
+PROCEDURE write     (f: int; ptr: ADDRESS; size: size_t): int;
+PROCEDURE lseek     (f: int; offset: LONGINT; whence: int): LONGINT;
+PROCEDURE tell      (f: int): LONGINT;
+
+PROCEDURE chmod     (path: X2C_pCHAR; amode: int): int;
+PROCEDURE chsize    (f: int; size: LONGINT): int;
+PROCEDURE dup       (f: int): int;
+PROCEDURE dup2      (f: int; new: int): int;
+PROCEDURE eof       (f: int): int;
+PROCEDURE filelength(f: int): LONGINT;
+PROCEDURE ioctl     (f: int; func: int; SEQ x: BYTE): int;
+
+END io.

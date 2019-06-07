@@ -1,0 +1,38 @@
+# Builded files to be copied into an external workspace 
+# Target must be relative to the root of an external workplace
+# Note: target subfolder must end with symbol "\" 
+# <mode> ::= "" | "work" | "release"
+
+#-------------------------------------------------------------
+# <source>                  <target>        <mode>
+workplace\def\ob2\*.odf      def\ob2\
+
+
+# XDS Native library
+#-------------------------------------------------------------
+# <source>                  <target>        <mode>
+workplace\lib\x86\*.dll      bin\
+workplace\lib\x86\*.lib      lib\x86\
+
+# <source>                  <target>        <mode>
+sym\x86\*.sym                sym\x86\
+
+
+# XDS-C library
+#-------------------------------------------------------------
+# <source>                  <target>        <mode>
+ch\C\*.c                     C\
+include\*.h                  include\
+sym\C\*.sym                  sym\C\
+
+# <source>                  <target>        <mode>
+workplace\lib\C\*.lib        lib\C\
+
+# <source>                  <target>        <mode>
+workplace\lib\C\msvc.mkf     lib\C\
+workplace\lib\C\unix.mkf     lib\C\
+workplace\lib\C\watcom.mkf   lib\C\
+workplace\lib\C\msvcts.mkf   lib\C\
+workplace\lib\C\unixts.mkf   lib\C\
+workplace\lib\C\watcomts.mkf lib\C\
+

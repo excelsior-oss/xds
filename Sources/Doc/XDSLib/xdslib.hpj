@@ -1,0 +1,21 @@
+[OPTIONS]
+HCW=0
+COMPRESS=12 Hall Zeck
+ERRORLOG=.\xdslib.hlg
+LCID=0x409 0x0 0x0 ;U.S. English
+REPORT=Yes
+CONTENTS=contents
+TITLE=XDS Library Guide and Reference
+COPYRIGHT=XDS on-line help is copyright © 1999-2011 Excelsior, LLC.
+CITATION=Copyright © 1999-2011 Excelsior, LLC.
+CNT=.\xdslib.cnt
+HLP=.\xdslib.hlp
+
+[CONFIG]
+BrowseButtons()
+
+[FILES] 
+xdslib.rtf
+
+[WINDOWS]
+main=, (256, 0, 767, 1023), 0, , (192, 192, 192),

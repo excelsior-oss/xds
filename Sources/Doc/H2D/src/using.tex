@@ -1,0 +1,423 @@
+\chapter{Using H2D}
+\label{using}
+
+\section{Headers merging} % !!! Rewrite
+\label{using:merge}
+
+A C header file may contain one or more {\tt \#include} directives.
+H2D offer the following translation variants for included headers:
+
+\begin{itemize}
+\item All headers are merged and translated into a single definition module
+      (the \OERef{MERGEALL} option is set ON).
+\item Each included header is translated into a separate definition module
+      which name is added to the import list (the \OERef{MERGEALL}
+      option is set OFF).
+\item The headers which have to be merged are explicitly specified using the
+      {\tt \#merge} directive (the \OERef{MERGEALL} option must be OFF).
+\end{itemize}
+
+If the \OERef{GENSEP} option is set ON, H2D separates pieces of Modula-2
+text, which correspond to different merged headers, with comments containing header
+file names.
+
+The \PPDir{merge} provides more flexible method of merging control
+than the \OERef{MERGEALL} option. The example illustrates situation in which
+this directive is very helpful.
+
+\subsection*{Example}
+
+\begin{verbatim}
+/* m1.h */                      /* m2.h */
+typedef int INTEGER;            struct descriptor{
+#include <m2.h>                   INTEGER handl;
+#include <m3.h>                 };
+#include <m4.h>                 typedef int far * RETVAL;
+RETVAL handler();               /* end m2.h */
+/* end m1.h */
+\end{verbatim}
+
+In this example, the {\tt RETVAL} declaration from {\tt m2.h} is used in
+{\tt m1.h}. On the other hand, {\tt m2.h} uses the declaration from {\tt m1.h}
+({\tt INTEGER}). Setting the \OERef{MERGEALL} option ON
+results in all headers ({\tt m1.h}, {\tt m2.h},
+{\tt m3.h}, and {\tt m4.h}) being merged and translated into the single
+definition module {\tt m1}. If this is not a desired behaviour,
+the \PPDir{merge} should be used instead. If the \OERef{MERGEALL}
+option is OFF and the line
+
+\verb'    #merge <m2.h>'
+
+is added to either {\tt m1.h} or the corresponding \verb'#header'
+directive in a \ProjectFile{}, H2D produces
+{\em three} definition modules {\tt m1}, {\tt m3} and {\tt m4}, where {\tt m1}
+is a result of translation of two merged headers {\tt m1.h} and {\tt m2.h}.
+
+\section{Fitting a Modula-2 compiler}
+\label{using:fit}
+
+Some of H2D translation rules depend on the target Modula-2 compiler;
+even XDS-C and Native XDS require different definition modules.
+The \OERef{BACKEND} option is used to reflect the major difference:
+whether the target Modula-2 compiler is a native code compiler
+(\verb'-BACKEND = Native') or a convertor to C (\verb'-BACKEND = C').
+It is also possible to produce definition modules suitable for both XDS-C
+and Native XDS (\verb'-BACKEND = Common'). In this case H2D encloses
+target-dependent parts with XDS conditional compilation directives.
+
+\subsection{Native code}
+\label{using:fit:native}
+
+C headers often contain a number of useful function-like macros.
+These macros are translated into procedure declarations with
+parameters having type \verb'ARRAY OF SYSTEM.BYTE', which is assignment
+compatible with any other type. But C macros exist only at compile-time
+and are not present in object files. Therefore, a Modula-2 compiler is
+unable to handle them properly unless it is implemented as a convertor to C.
+Nevertheless, H2D provides a technique which allows to use C function-like
+macros even with a native code Modula-2 compiler.
+
+If the \OERef{BACKEND} option is set to either \verb'Native' or \verb'Common'
+and the \OERef{GENMACRO} option is set ON, H2D produces an additional
+module containing macro {\it prototypes} --- procedures corresponding to
+function-like macros, which bodies consist of a comment with C macro
+definition and are expected to be written by a programmer.
+These procedures are then declared as external in the main definition module.
+Thus, a macro prototype module need not to be imported, it should be just
+{\em linked} into an executable which uses the generated definition module.
+
+A macro prototype module name is constructed from a header module name and
+a prefix specified by the \OERef{MACPFX} option.
+
+\subsubsection*{Example}
+
+{\ifonline\else\small\fi
+\begin{verbatim}
+/* macro.h */
+    ...
+#define cube(x) (x*x*x)
+    ...
+\end{verbatim}
+
+\Sep %-----------------------------------------------------------------
+
+\begin{verbatim}
+(* macro.def  Sep 20  2:38:9  1996 *)
+    ...
+DEFINITION MODULE ["C"] macro;
+    ...
+PROCEDURE  / cube ( x: ARRAY OF SYSTEM.BYTE );
+    ...
+END macro.
+\end{verbatim}
+
+\Sep %-----------------------------------------------------------------
+
+\begin{verbatim}
+(* m_macro.def  Sep 20  2:38:9  1996 *)
+    ...
+DEFINITION MODULE m_macro;
+
+IMPORT SYSTEM;
+    ...
+PROCEDURE ["C"] cube ( x: ARRAY OF SYSTEM.BYTE );
+    ...
+END m_macro.
+\end{verbatim}
+
+\Sep %-----------------------------------------------------------------
+
+\begin{verbatim}
+(* m_macro.mod  Sep 20  2:38:9  1996 *)
+    ...
+IMPLEMENTATION MODULE m_macro;
+
+IMPORT SYSTEM;
+    ...
+PROCEDURE ["C"] cube ( x: ARRAY OF SYSTEM.BYTE );
+(*
+#define cube(x) (x*x*x)
+*)
+BEGIN
+END cube;
+    ...
+END m_macro.
+\end{verbatim}
+} % end \small
+
+\subsection{Convertor to C}
+\label{using:fit:c}
+
+A Modula-2 compiler implemented as a convertor to C (e.g. XDS-C)
+converts definition modules written by a programmer to C headers.
+But headers corresponding to definition modules generated by H2D
+already exist. To prevent them from being overridden, H2D inserts the
+{\bf NOHEADER} XDS option, which disables header file generation,
+at the beginning of each definition module.
+
+For all included header files, which are not merged (see \ref{using:merge}),
+H2D also sets the {\bf CSTDLIB} XDS option according to the parenthesis
+used in the \verb'#include' directive -- double quotes or angle brackets.
+For top-level header files, this option is set equal to the value of the
+\OERef{CSTDLIB} option.
+
+\ifcomment % !!! Do we really need this?
+
+Each definition module has a comment after the import section
+similar to the following:
+
+\begin{verbatim}
+(* H2D: Required IMPORT clause:
+IMPORT a, m1;
+*)
+\end{verbatim}
+
+In order to use this definition module, you have to add the
+commented IMPORT clause to the import section of your module.
+If some of the modules listed in it are already imported, you
+may wish to remove duplicated names.
+
+\fi
+
+H2D usually has to introduce a number of additional types in the
+definition module (see \ref{rules:functions} and \ref{rules:types}).
+These types are absent in the original header file, and their usage would
+cause C compilation to fail. To solve this problem, H2D constructs
+a resulting definition module name from a header file name and a
+prefix specified by the \OERef{DEFPFX} option.
+Then, it produces a {\em "wrapper" header file}, which name
+corresponds to the name of a {\em definition module}, containing
+an \verb'#include' directive with original header name, followed by
+required type declarations. Type declarations from a \ProjectFile{}
+are copied to a wrapper file as well.
+
+\subsubsection*{Example}
+
+{\ifonline\else\small\fi
+\begin{verbatim}
+/* type.h */
+
+struct Node {
+  struct Node *next;
+  struct Node *prev;
+  int          hash;
+};
+
+int Hash(char * str);
+\end{verbatim}
+
+\Sep %-----------------------------------------------------------------
+
+\begin{verbatim}
+(* h2d_type.def  Sep 20  2:51:7  1996 *)
+    ...
+DEFINITION MODULE ["C"] h2d_type;
+
+IMPORT SYSTEM;
+    ...
+<*- GENTYPEDEF *>
+
+TYPE
+  PtrNode = POINTER TO Node;
+
+<*+ GENTYPEDEF *>
+
+  Node = RECORD
+    next: PtrNode;
+    prev: PtrNode;
+    hash: SYSTEM.int;
+  END;
+
+<*- GENTYPEDEF *>
+
+  PtrSChar = POINTER TO CHAR;
+
+PROCEDURE Hash ( str: PtrSChar ): SYSTEM.int;
+
+END h2d_type.
+\end{verbatim}
+
+\Sep %-----------------------------------------------------------------
+
+\begin{verbatim}
+/* h2d_type.h  Sep 20  2:51:7  1996 */
+    ...
+#include "type.h"
+
+#ifndef h2d_type_H_
+#define h2d_type_H_
+
+typedef struct Node * PtrNode;
+typedef signed char * PtrSChar;
+
+#endif  /* h2d_type_H_ */
+\end{verbatim}
+} % end \small
+
+\section{Modifying translation rules}
+\label{using:modrules}
+
+\subsection{Base types mapping}
+\label{using:modrules:mapping}
+
+The \OERef{CTYPE} and \OERef{M2TYPE} options in conjunction with the
+\PPDir{variant} provide complete control over mapping of C base types
+to \mt{} types.
+
+The \OERef{CTYPE} option specifies sizes (in bytes) of C base types,
+and their default mapping to \mt{}:
+
+\verb'    -CTYPE = float              = 4, REAL' \\
+\verb'      . . .' \\
+\verb'    -CTYPE = unsigned short int = 2, SYSTEM.CARD16'
+
+The \OERef{M2TYPE} option specifies \mt{} types supported by a
+particular compiler, with their sizes and families to which they belong:
+
+\verb'    -M2TYPE = CARDINAL        = 4, UNSIGNED' \\
+\verb'    -M2TYPE = CHAR            = 1, CHAR' \\
+\verb'      . . .' \\
+\verb'    -M2TYPE = SYSTEM.SET16    = 2, SET'
+
+Finally, the \PPDir{variant} allows to explicitly specify a \mt{} type for
+a particular object:
+
+{\small
+\verb'    void f(unsigned short mask)      PROCEDURE f(mask : SYSTEM.SET16);' \\
+\verb'    #variant f(0) : SYSTEM.SET16'
+} % end \small
+
+{\bf Note:} In order to keep original headers intact, {\tt \#variant}
+directives may be placed into the \ProjectFile{} inside the corresponding
+\ProjDir{header}.
+
+H2D checks type mappings for correctness using the following rules:
+\begin{itemize}
+\item type sizes must match
+\item floating point C types may only be mapped to \mt{} types defined as REAL
+      by \OERef{M2TYPE} option.
+\item signed integer C types may be mapped to any \mt{} type except REAL and UNSIGNED.
+\item unsigned integer C types may be mapped to any \mt{} type except REAL and SIGNED.
+\end{itemize}
+
+One of the most advanced features of this mechanism is the ability
+to use \mt{} set types for C objects.
+The C programming language, as well as C++, has no built-in set type.
+The common practice is to treat unsigned integer types as bit scales
+and to use bitwise logical operators to manipulate them. Since \mt{}
+provides set types (and no bitwise operators), it would be more convenient to
+translate individual integer constants and types to set constants and types.
+
+\subsubsection*{Example}
+
+{\ifonline\else\small\fi
+\begin{verbatim}
+struct s{
+  unsigned int field;
+};
+typedef unsigned long BITSCALE;
+int variable;
+void long function(unsigned argument);
+char bitarray[10];
+#define constant 0x0011
+
+#variant s.field     : BITSET
+#variant BITSCALE    : BITSET
+#variant variable    : BITSET
+#variant function(0) : BITSET
+#variant bitarray[]  : SYSTEM.SET8
+#variant constant    : SYSTEM.SET16
+\end{verbatim}
+
+\Sep %-----------------------------------
+
+\begin{verbatim}
+TYPE
+  s = RECORD
+    field: BITSET;
+  END;
+
+  BITSCALE = BITSET;
+
+VAR
+  variable: BITSET;
+
+PROCEDURE function ( argument: BITSET );
+
+VAR
+  bitarray: ARRAY [0..9] OF SYSTEM.SET8;
+
+CONST
+  constant = SYSTEM.SET16{0, 4};
+\end{verbatim}
+} % end \small
+
+\subsection{Pointer type function parameters}
+\label{using:modrules:parameters}
+
+In C, the actual semantics of a pointer type function parameter depends on
+that function and cannot be determined automatically. A function
+may interpret its parameter of type {\tt T*} as either:
+
+\begin{itemize}
+\item pointer to T (type defined as {\tt POINTER TO T})
+\item single value passed by reference ({\tt VAR T})
+\item array ({\tt ARRAY OF T})
+\item array passed by reference ({\tt VAR ARRAY OF T})
+\end{itemize}
+
+where the corresponding Modula-2 formal types are given in parenthesis.
+
+The \PPDir{variant} may be used to explicitly point out the semantics
+of each pointer type parameter.
+
+{\bf Note:} In order to keep original headers intact, {\tt \#variant}
+directives may be placed into the \ProjectFile{} inside the corresponding
+\ProjDir{header}.
+
+\subsubsection*{Example}
+
+\begin{verbatim}
+#variant function(0) : VAR
+#variant function(1) : ARRAY
+#variant function(2) : VAR ARRAY
+
+void function(int*, int*, int*, int*);
+\end{verbatim}
+
+is translated to:
+
+\begin{verbatim}
+TYPE
+  PtrSInt = POINTER TO SYSTEM.int;
+
+PROCEDURE function ( VAR arg0: SYSTEM.int;
+                         arg1: ARRAY OF SYSTEM.int;
+                     VAR arg2: ARRAY OF SYSTEM.int;
+                         arg3: PtrSInt );
+\end{verbatim}
+
+\subsection{Preserving constant names}
+\label{using:modrules:constants}
+
+By default, a \verb'#define' directive introducing a constant is
+translated to a constant declaration:
+
+\verb'    #define ENOTEXIST 10              CONST            ' \\
+\verb'                                        ENOTEXIST = 10;'
+
+This is the only way in case of a native code \mt{} compiler, since
+such constants are substituted by a C preprocessor and do not appear
+in object files. But in case of a convertor to C, the original C headers
+will be used after conversion and it would be useful to refer to
+their names in the generated C text. Setting the \OERef{GENROVARS}
+option ON forces constants to be translated to read-only variables
+({\bf Note:} this is an XDS language extension). This option has no
+effect on generation for a native-code Modula-2 compiler.
+
+The \PPDir{variant} may be used to specify a type for a variable:
+
+\verb'    #define  ENOTEXIST 10             VAR' \\
+\verb'    #variant ENOTEXIST : CARDINAL       ENOTEXIST-: CARDINAL;'
+
+

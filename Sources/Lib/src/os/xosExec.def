@@ -1,0 +1,12 @@
+(* Copyright (c) 1996,99 XDS Ltd. All Rights Reserved. *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosExec; (* Hady. 28.06.96 16:57 *)
+
+IMPORT  SYSTEM, xlibOS, xmRTS;
+
+PROCEDURE X2C_Execute(cmd,args: xmRTS.X2C_pCHAR; overlay: SYSTEM.int; VAR exitcode: SYSTEM.CARD32): SYSTEM.INT32;
+PROCEDURE X2C_ExecuteNoWindow(cmd,args: xmRTS.X2C_pCHAR; overlay: SYSTEM.int; VAR exitcode: SYSTEM.CARD32): SYSTEM.INT32;
+
+PROCEDURE X2C_Command (cmd: xmRTS.X2C_pCHAR; VAR exitcode: SYSTEM.CARD32): SYSTEM.INT32;
+
+END xosExec.

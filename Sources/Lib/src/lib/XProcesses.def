@@ -1,0 +1,29 @@
+(* Copyright (c) 1996 xTech Ltd, Russia. All Rights Reserved. *)
+DEFINITION MODULE XProcesses;
+
+(* NOTE
+  ------
+
+  It should be stated that Oberon-2 Garbage Collector (GC) 
+  to work properly must suspend all threads and scan all
+  threads' stacks for Oberon-2 pointers.
+
+  To optimize performance all threads that
+  do not execute Oberon-2 code or do not have Oberon-2 pointers
+  in local variables may be marked as GC-inaware.
+
+*)
+
+IMPORT   Processes;
+
+TYPE
+  ProcessId = Processes.ProcessId;
+
+PROCEDURE IsGCAware(p: ProcessId): BOOLEAN;
+  (* return TRUE if given process is marked as GC-inaware *)
+
+PROCEDURE SetGCAware(p: ProcessId; yes: BOOLEAN);
+  (* if "yes"=TRUE, marks given process as GC-inaware,
+     otherwice marks it as GC-aware *)
+
+END XProcesses.

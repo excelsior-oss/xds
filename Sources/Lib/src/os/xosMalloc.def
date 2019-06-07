@@ -1,0 +1,22 @@
+(* Copyright (c) XDS 1992,96,99.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosMalloc; (* Hady. 30.05.96 15:43 *)
+
+IMPORT  SYSTEM;
+
+
+PROCEDURE X2C_InitHeap ( limit :CARDINAL; isIncr :BOOLEAN );
+
+PROCEDURE X2C_malloc(size: CARDINAL): SYSTEM.ADDRESS;
+PROCEDURE X2C_free(adr: SYSTEM.ADDRESS; size: CARDINAL);
+
+PROCEDURE X2C_gmalloc ( size :CARDINAL ) :SYSTEM.ADDRESS;
+PROCEDURE X2C_gfree ( p :SYSTEM.ADDRESS );
+
+PROCEDURE X2C_DestroyHeap ();
+
+<* IF (env_target = "x86linux") OR (env_target = "linux") THEN *>
+PROCEDURE xosMalloc_init();
+<* END *>
+
+END xosMalloc.

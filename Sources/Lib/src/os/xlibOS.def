@@ -1,0 +1,178 @@
+(* Copyright (c) XDS 1995,96,99. All Rights Reserved. *)
+(*
+ * XDS library.
+ * Interface of XDS libraries to underlying OS.
+ *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xlibOS;
+
+IMPORT  SYSTEM, xmRTS, ChanConsts, xrInt64;
+
+(* Access to environment *)
+PROCEDURE / X2C_EnvStringLength(name: xmRTS.X2C_pCHAR): SYSTEM.CARD32;
+PROCEDURE / X2C_EnvString(name: xmRTS.X2C_pCHAR; buf: xmRTS.X2C_pCHAR; blen: SYSTEM.CARD32);
+
+(* FileSys operations *)
+PROCEDURE / X2C_Exists(fname: xmRTS.X2C_pCHAR): BOOLEAN;
+(* Returns TRUE, if file "fname" exists. *)
+
+PROCEDURE / X2C_ModifyTime(fname: xmRTS.X2C_pCHAR;
+                        VAR time: SYSTEM.CARD32;
+                      VAR exists: BOOLEAN);
+(* Returns file modification time *)
+PROCEDURE / X2C_SetFileTime(fname: xmRTS.X2C_pCHAR;
+                          time: SYSTEM.CARD32);
+(* Sets file modification time *)
+
+PROCEDURE / X2C_Remove(fname: xmRTS.X2C_pCHAR): SYSTEM.int;
+PROCEDURE / X2C_Rename(oldname, newname: xmRTS.X2C_pCHAR): SYSTEM.int;
+
+PROCEDURE / X2C_FullName(full: xmRTS.X2C_pCHAR;
+                         len : SYSTEM.CARD32; 
+                         name: xmRTS.X2C_pCHAR);
+(* Determines the full pathname for file name and stores it into the buffer
+   of length len pointed to by full.
+*)
+
+
+(* time operations *)
+TYPE
+  X2C_TimeStruct = RECORD
+    year,month,day,hour,min,sec,fracs: SYSTEM.CARD32;
+    zone: SYSTEM.INT32;
+    stf: BOOLEAN;
+  END;
+
+PROCEDURE / X2C_CanGetTime(): BOOLEAN;
+PROCEDURE / X2C_CanSetTime(): BOOLEAN;
+PROCEDURE / X2C_GetTime(VAR t: X2C_TimeStruct);
+PROCEDURE / X2C_SetTime(VAR t: X2C_TimeStruct);
+PROCEDURE / X2C_FracsPerSec(): SYSTEM.CARD32;
+
+PROCEDURE / X2C_TimeCompare(tl,tr: X2C_TimeStruct): SYSTEM.INT32;
+PROCEDURE / X2C_TimeDayInt(fr,to: X2C_TimeStruct): SYSTEM.CARD32;
+PROCEDURE / X2C_TimeSecInt(fr,to: X2C_TimeStruct): SYSTEM.CARD32;
+PROCEDURE / X2C_TimeDayAdd(st: X2C_TimeStruct; days: SYSTEM.CARD32;
+                      VAR res: X2C_TimeStruct);
+PROCEDURE / X2C_TimeSecAdd(st: X2C_TimeStruct; secs: SYSTEM.CARD32;
+                      VAR res: X2C_TimeStruct);
+PROCEDURE / X2C_TimeDayNum(year,mon,day: SYSTEM.CARD32): SYSTEM.CARD32;
+
+(* File IO operations *)
+
+CONST
+  (* Seek op parameters *)
+  X2C_fSeekSet = 0;
+  X2C_fSeekCur = 1;
+  X2C_fSeekEnd = 2;
+
+  (* Access bitset *)
+  X2C_fAccessRead   = {0};
+  X2C_fAccessWrite  = {1};
+  X2C_fModeNew      = {2}; (* forces file to be created or truncated  *)
+  X2C_fModeText     = {3}; (* allows text mode operations if aplicable *)
+  X2C_fModeRaw      = {4}; (* allows raw  mode operations if aplicable *)
+
+TYPE
+  X2C_OSFHANDLE; (* file handle, some representation *)
+  X2C_FPOS = xrInt64.X2C_int64;
+
+CONST
+  X2C_MAXXATTRS = 8;
+TYPE
+  X2C_FXATTRS = ARRAY [0..X2C_MAXXATTRS-1] OF SYSTEM.CARD32;
+
+PROCEDURE / X2C_IsMixAllowed(): BOOLEAN;
+
+PROCEDURE / X2C_fGetXAttrs(VAR data: X2C_FXATTRS);
+PROCEDURE / X2C_fSetXAttrs(VAR data: X2C_FXATTRS);
+
+PROCEDURE / X2C_fOpen(VAR f: X2C_OSFHANDLE;
+                       name: ARRAY OF CHAR;
+                       tags: BITSET): ChanConsts.OpenResults;
+PROCEDURE / X2C_fClose(VAR f: X2C_OSFHANDLE): SYSTEM.int;
+PROCEDURE / X2C_fRead(f: X2C_OSFHANDLE; buf: SYSTEM.ADDRESS; size: SYSTEM.CARD32; VAR rd: SYSTEM.CARD32): SYSTEM.int;
+PROCEDURE / X2C_fWrite(f: X2C_OSFHANDLE; buf: SYSTEM.ADDRESS; size: SYSTEM.CARD32; VAR wr: SYSTEM.CARD32): SYSTEM.int;
+
+PROCEDURE / X2C_fSeek(f: X2C_OSFHANDLE; VAR ofs: X2C_FPOS; how: SYSTEM.int): SYSTEM.int;
+PROCEDURE / X2C_fTell(f: X2C_OSFHANDLE; VAR pos: X2C_FPOS): SYSTEM.int;
+PROCEDURE / X2C_fSize(f: X2C_OSFHANDLE; VAR siz: X2C_FPOS): SYSTEM.int;
+PROCEDURE / X2C_fFlush(f: X2C_OSFHANDLE): SYSTEM.int;
+
+PROCEDURE / X2C_fChSize(f: X2C_OSFHANDLE): SYSTEM.int;
+
+CONST
+  X2C_fStdIn  = 0;
+  X2C_fStdOut = 1;
+  X2C_fStdErr = 2;
+
+PROCEDURE / X2C_fGetStd(VAR f: X2C_OSFHANDLE; what: SYSTEM.int): SYSTEM.int;
+(* get system dependent standard handle *)
+PROCEDURE / X2C_fSetStd(new: X2C_OSFHANDLE; which: SYSTEM.int): SYSTEM.int;
+(* redirect standard handle "which" to given one *)
+
+CONST (* file types by the handle *)
+  X2C_ftDisk = 0; (* ordinary disk file *)
+  X2C_ftChar = 1; (* character device; use line buffering *)
+  X2C_ftPipe = 2; (* pipe; no buffering *)
+  X2C_ftUnk  = 3; (* unknown (other) type of file *)
+
+PROCEDURE / X2C_fGetFileType(f: X2C_OSFHANDLE): SYSTEM.int;
+(*
+(* NoBuffer. Used in xDevData.mod only *)
+PROCEDURE / X2C_fNoBuffer(f: X2C_OSFHANDLE): BOOLEAN;
+(* to suppress bufferization for this handle *)
+*)
+
+(* Execute function. Used in ProgExec.mod only *)
+
+PROCEDURE / X2C_Execute(cmd,args: xmRTS.X2C_pCHAR; overlay: SYSTEM.int; VAR exitcode: SYSTEM.CARD32): SYSTEM.INT32;
+
+(* console functions; used in TermFile.mod only *)
+PROCEDURE / X2C_ttyReadNE(buf: SYSTEM.ADDRESS; bsz: SYSTEM.CARD32; VAR rd: SYSTEM.CARD32): SYSTEM.INT32;
+  (* should read from a terminal at least 1 char with no echo;
+    if more than one char is ready in the tty buffer - should read all of them *)
+PROCEDURE / X2C_ttyReadLE(buf: SYSTEM.ADDRESS; bsz: SYSTEM.CARD32; VAR rd: SYSTEM.CARD32): SYSTEM.INT32;
+  (* reads a line from a terminal in line mode with echo.
+    It is supposed that line is being red into system buffer upto
+    endOfLine key is entered. This key shoud be represented in the
+    readen line as "platform.lineSep" string.
+   *)
+
+PROCEDURE / X2C_ttyWrite(buf: SYSTEM.ADDRESS; cc: SYSTEM.CARD32): SYSTEM.INT32;
+
+PROCEDURE / X2C_InitTTY(): SYSTEM.INT32;
+
+CONST X2C_DirSysAreaSize = 1024;
+
+TYPE
+  X2C_Dir = RECORD
+    sys: ARRAY [0..X2C_DirSysAreaSize-1] OF SYSTEM.BYTE;
+    namelen: SYSTEM.CARD32;
+    size   : SYSTEM.CARD32;
+    cretime: X2C_TimeStruct;
+    mdftime: X2C_TimeStruct;
+    is_dir : BOOLEAN;
+    done   : BOOLEAN;
+  END;
+
+PROCEDURE / X2C_DirOpen(VAR dir: X2C_Dir; name: xmRTS.X2C_pCHAR);
+PROCEDURE / X2C_DirClose(VAR dir: X2C_Dir);
+PROCEDURE / X2C_DirNext(VAR dir: X2C_Dir);
+PROCEDURE / X2C_DirGetName(VAR dir: X2C_Dir; name: xmRTS.X2C_pCHAR; nmlen: SYSTEM.CARD32);
+
+PROCEDURE / X2C_GetCDNameLength(): SYSTEM.CARD32;
+PROCEDURE / X2C_GetCDName(s: xmRTS.X2C_pCHAR; slen: SYSTEM.CARD32);
+PROCEDURE / X2C_SetCD(s: xmRTS.X2C_pCHAR): BOOLEAN;
+
+PROCEDURE / X2C_CreateDirectory(name: xmRTS.X2C_pCHAR): BOOLEAN;
+PROCEDURE / X2C_RemoveDirectory(name: xmRTS.X2C_pCHAR): BOOLEAN;
+
+PROCEDURE / X2C_GetDrive(VAR drive: CHAR): SYSTEM.INT32;
+PROCEDURE / X2C_SetDrive(drive: CHAR): SYSTEM.INT32;
+PROCEDURE / X2C_GetDriveCDNameLength(drive: CHAR; VAR len: SYSTEM.CARD32): SYSTEM.INT32;
+PROCEDURE / X2C_GetDriveCDName(drive: CHAR; dir: xmRTS.X2C_pCHAR; len: SYSTEM.CARD32): SYSTEM.INT32;
+PROCEDURE / X2C_GetLabel(drive: CHAR; label: xmRTS.X2C_pCHAR; len: SYSTEM.CARD32): SYSTEM.INT32;
+
+
+END xlibOS.

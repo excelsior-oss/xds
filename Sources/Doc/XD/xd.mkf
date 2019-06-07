@@ -1,0 +1,13 @@
+TARGET = xd
+SRCDIR = src
+
+SOURCE = ..\Common\platform.tex \
+	 $(SRCDIR)\xd.tex     $(SRCDIR)\preamble.tex  $(SRCDIR)\body.tex  \
+         $(SRCDIR)\intro.tex  $(SRCDIR)\start.tex  $(SRCDIR)\dialog.tex   \
+         $(SRCDIR)\batch.tex  $(SRCDIR)\keys.tex
+
+!if "$(TARGET_FMT)" == ""
+TARGET_FMT = pdf
+!endif
+
+!include ..\Common\$(TARGET_FMT).inc

@@ -1,0 +1,18 @@
+-- Задание контекста всплывающего меню
+-- Обработчик окна всплывающего меню
+
+DEFINITION MODULE DlgPopup;
+
+IMPORT crt := CRT;
+IMPORT act := Dlg_Acts;
+
+VAR
+  PopupMainHwnd : crt.HWND;
+  PopupGroupHwnd: crt.HWND;
+
+
+PROCEDURE PopupWindow (x,y: CARDINAL; Hwnd: crt.HWND; Actions: act.CONTEXT_LIST);
+
+
+END DlgPopup.
+

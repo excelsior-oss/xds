@@ -1,0 +1,1380 @@
+\newcommand{\Message}[3]{\ifonline\subsection{#1#2}\public{MESSAGE\_#2}{\tt #3}\else{\bf #1#2}\\{\tt #3}\index{message!#1#2}\fi}
+
+\chapter{Compiler messages}
+
+This chapter gives explanation for compiler diagnostics.  For each
+error, an error number is provided along with a text of error message and
+an explanation. An error message can contain a format specifier in the
+form \verb'%d' for a number or \verb'%s' for a string.  In this case,
+an argument (or arguments) is described on the next line.
+
+In most cases the compiler prints a source line in which the error was
+found. The position of the error in the line is marked with a dollar
+sign placed directly before the point at which the error occurred.
+
+\section{Lexical errors}
+
+\Message{E}{001}{illegal character}
+
+All characters within the \mt{} or \ot{} character sets are acceptable.
+Control characters in the range \verb'0C' to \verb'37C' are ignored.
+All other characters, e.g. \verb|%| are invalid.
+
+\Message{E}{002}{comment not closed; started at line \%d}
+(line number)
+
+This error is reported if a closing comment bracket is omitted
+for a comment started at the given line.
+
+\Message{E}{003}{illegal number}
+
+This error is reported in the following cases:
+\begin{itemize}
+\item a numeric constant contains a character other than a digit
+      (\verb'0..7' for octal constants, \verb'0..9' for decimal,
+      \verb'0..9,A..F' for hexadecimal).
+\item an exponent indicator is not followed by an integer
+\item an illegal suffix is used after a number, e.g. \verb'"X"' in \mt{}
+      or \verb'"C"' or \verb'"B"' in \ot{}.
+\end{itemize}
+
+\Message{E}{004}{string literal not closed or too long}
+
+This error usually occurs if a closing quote is omitted or does not
+match the opening quote. Note that a string literal is limited to a single
+line and its size cannot exceed 256 characters. In \mt{},
+string concatenation may be used to build long literal strings.
+
+\Message{F}{005}{unexpected end of file}
+
+Input file ends before end of a module.
+
+\Message{E}{006}{identifier too long}
+
+Length of an identifier exceeds compiler limit (127 characters).
+
+\Message{F}{010}{source text read error}
+
+A read error occurs while reading source text.
+
+\Message{E}{012}{character constant too large (377C or 0FFX is maximum)}
+
+The meaning of this message is obvious.
+
+\Message{E}{171}{illegal structure of conditional compilation options}
+
+This error is reported if a structure of conditional \verb'IF' statements is
+broken, e.g. there is no \verb'IF' for an \verb'END', \verb'ELSE', or \verb'ELSIF'
+clause or there is no \verb'END' for an \verb'IF'.
+
+\Message{E}{172}{conditional compilation option starts with incorrect symbol}
+
+\verb'IF', \verb'ELSIF', \verb'ELSE', \verb'END' or identifier expected.
+
+\Message{F}{173}{pragma not closed; started at line \%d}
+(line number)
+
+This error is reported if a closing bracket \verb'"*>"' is omitted
+for a pragma started at the given line.
+
+\Message{F}{174}{unexpected end of file while skipping; see at \%d}
+(line number)
+
+Input file ended while the compiler was skipping source text according
+to the conditional compilation statement. It may be a result of a missed
+\verb'<* END *>' clause. Check the pragma at the given line.
+
+\Message{E}{175}{invalid pragma syntax}
+
+Check the manual for the pragma syntax.
+
+\section{Syntax errors}
+
+\Message{E}{007}{identifier expected}
+
+The compiler expects an identifier at the indicated position.
+
+\Message{E}{008}{expected symbol \%s}
+(symbol)
+
+The compiler expects the given symbol at the indicated position. The symbol may
+be one of the following:
+
+\begin{verbatim}
+     |       ;       :       .       [       ]       :=
+     (       )       {       }       ,       =       ..
+     DO      END     OF      THEN    TO      UNTIL   IMPORT
+     MODULE
+\end{verbatim}
+
+\Message{E}{081}{expected start of factor}
+
+The compiler expects start of {\em factor} at the indicated position, i.e.
+an identifier, literal value, aggregate, left parenthesis, etc.
+See the syntax of the language for more information.
+
+\Message{E}{082}{expected start of declaration}
+
+The compiler expects start of declaration at the indicated position, i.e.
+one of the keywords: \verb'"CONST"', \verb'"VAR"', \verb'"TYPE"',
+\verb'"PROCEDURE"', \verb'"BEGIN"', or \verb'"END"'.
+
+\Message{E}{083}{expected start of type}
+
+The compiler expects start of a type at the indicated position.
+See the syntax of the language for more information.
+
+\Message{E}{085}{expected expression}
+
+The compiler expects expression at the indicated position.
+
+\Message{E}{086}{expected start of statement}
+
+The compiler expects start of a statement at the indicated position.
+See the syntax of the language for more information.
+
+
+\section{Semantic errors}
+
+\Message{E}{020}{undeclared identifier "\%s"}
+(name)
+
+The given identifier has no definition in the current scope.
+
+\Message{E}{021}{type identifier "\%s" shall not be used in declaring itself}
+(name)
+
+An identifier being declared as a type shall not be used in declaring
+that type, unless that type is a new pointer type or a new procedure
+type. This error will be reported for the following example
+
+\begin{verbatim}
+    TYPE
+      Rec = RECORD
+        next: POINTER TO Rec;
+      END;
+\end{verbatim}
+
+use the following declarations instead:
+
+\begin{verbatim}
+    TYPE
+      Ptr = POINTER TO Rec;
+      Rec = RECORD
+        next: Ptr;
+      END;
+\end{verbatim}
+
+\Message{E}{022}{identifier "\%s" was already defined at \%s[\%d.\%d]}
+(name,file name,line,column)\ifonline\else\\\fi
+\Message{E}{028}{identifier "\%s" was already defined in other module}
+(name)
+
+An identifier being declared is already known in the current context
+(the name used has some other meaning). If a file name and text
+position of previous definition are known, the compiler reports error 022
+otherwise 028.
+
+\Message{E}{023}{procedure with forward declaration cannot be a code procedure}
+
+A forward declaration of a procedure is followed by a declaration of a code
+procedure.
+
+\Message{E}{024}{recursive import not allowed}
+
+A module imports itself. Example:
+
+\begin{verbatim}
+    MODULE xyz;
+
+    IMPORT xyz;
+
+    END xyz.
+\end{verbatim}
+
+\Message{E}{025}{unsatisfied exported object}
+
+An object exported from a local object is not defined there. Example:
+
+\begin{verbatim}
+    MODULE M; (* local module *)
+
+    EXPORT Foo;
+
+    END M;
+\end{verbatim}
+
+\Message{E}{026}{identifier "\%s" is used in its own declaration, see \%s[\%d.\%d]}
+
+An identfier cannot be used in its own declaration, like in:
+
+\begin{verbatim}
+    CONST c = 1;
+    PROCEDURE proc;
+      CONST c = c + 1;
+    END proc;
+\end{verbatim}
+
+\Message{E}{027}{illegal usage of module identifier "\%s"}
+(module name)
+
+An identifier denoting module cannot be used at the indicated position.
+
+\Message{E}{029}{incompatible types: "\%s" "\%s"}(type,type) \ifonline\else\\\fi
+\Message{E}{030}{incompatible types}
+
+The compiler reports this error in the following cases:
+\begin{itemize}
+\item operands in an expression are not expression compatible
+\item an expression is not compatible with the type of the variable
+      in an assignment statement
+\item an actual parameter is not compatible with the type of the formal parameter
+      in a procedure call
+\end{itemize}
+
+The compiler reports error 29 if it can display incompatible types and error 30
+otherwise.
+
+\Message{E}{031}{identifier does not denote a type}
+
+An identifier denoting a type is expected at the indicated position.
+
+\Message{E}{032}{scalar type expected}
+
+The compiler expects a scalar type (real, integer,
+cardinal, range, enumeration, \verb'CHAR', or \verb'BOOLEAN').
+
+\Message{E}{033}{ordinal type expected}
+
+The compiler expects a value, variable, or type designator of ordinal
+type, i.e. \verb'CHAR', \verb'BOOLEAN', enumeration, integer, or cardinal type or
+a subrange of one of those types.
+
+\Message{E}{034}{invalid combination of parameters in type conversion}
+
+According to the language definition this combination of parameters
+in a call of the standard procedure \verb'VAL' is not valid.
+
+\Message{E}{035}{NEW: "\%s" not known in this scope}
+(ALLOCATE or DYNALLOCATE)
+
+A call to \verb'NEW' is treated as a call to \verb'ALLOCATE'
+(or \verb'DYNALLOCATE' for open arrays).
+The required procedure is not visible in this scope.
+It must be either imported or implemented.
+
+{\bf Note:} In \xds{}, the default memory managemet routines
+may be enabled by setting the \OERef{STORAGE} option ON.
+
+\Message{E}{036}{DISPOSE: "\%s" not known in this scope}
+(DEALLOCATE or DYNDEALLOCATE)
+
+A call to \verb'DISPOSE' is treated as a call to \verb'DEALLOCATE'
+(or \verb'DYNDEALLOCATE' for open arrays).
+The required procedure is not visible in this scope.
+It must be either imported or implemented.
+
+{\bf Note:} In xds{}, the default memory managemet routines
+may be enabled by setting the \OERef{STORAGE} option ON.
+
+\Message{E}{037}{procedure "\%s" should be a proper procedure}
+(procedure name)
+
+In \mt{}, calls of \verb'NEW' and \verb'DISPOSE' are substituted by calls of
+\verb'ALLOCATE' and \verb'DEALLOCATE' (for dynamic arrays by calls of
+\verb'DYNALLOCATE' and \verb'DYNDEALLOCATE').
+The error is reported if one of those procedures is declared as a function.
+
+\Message{E}{038}{illegal number of parameters "\%s"}
+(procedure name)
+
+In \mt{}, calls of \verb'NEW' and \verb'DISPOSE' are substituted by calls of
+\verb'ALLOCATE' and \verb'DEALLOCATE' (for dynamic arrays by calls of
+\verb'DYNALLOCATE' and \verb'DYNDEALLOCATE').
+The error is reported if a number of parameters
+in the declaration of a substitution procedure is wrong.
+
+\Message{E}{039}{procedure "\%s": \%s parameter expected for "\%s"}
+(procedure name,"VAR" or "value",parameter name)
+
+In \mt{}, calls of \verb'NEW' and \verb'DISPOSE' are substituted by calls of
+\verb'ALLOCATE' and \verb'DEALLOCATE' (for dynamic arrays by calls of
+\verb'DYNALLOCATE' and \verb'DYNDEALLOCATE').
+The error is reported if the kind (variable or value) of
+the given parameter in the declaration of a substitution procedure is
+wrong.
+
+\Message{E}{040}{procedure "\%s": type of parameter "\%s" mismatch}
+
+In \mt{}, calls of \verb'NEW' and \verb'DISPOSE' are substituted by calls of
+\verb'ALLOCATE' and \verb'DEALLOCATE' (for dynamic arrays by calls of
+\verb'DYNALLOCATE' and \verb'DYNDEALLOCATE').
+The error is reported if a type of the given parameter in the
+declaration of a substitution procedure is wrong.
+
+\Message{E}{041}{guard or test type is not an extension of variable type}
+
+In an \ot{} type test (\verb'v IS T') or type quard (\verb'v(T)'),
+\verb'T' should be an extension of the static type of \verb'v'.
+
+\Message{E}{043}{illegal result type of procedure}
+
+A type cannot be a result type of a function procedure (language or
+implementation restriction).
+
+\Message{E}{044}{incompatible result types}
+
+A result type of a procedure does not match those of a forward
+definition or definition of an overriden method.
+
+\Message{E}{046}{illegal usage of open array type}
+
+Open arrays (\verb'ARRAY OF') usage is restricted to pointer base types,
+element types of open array types, and formal parameter types.
+
+\Message{E}{047}{fewer actual than formal parameters}
+
+The number of actual parameters in a procedure call is less than
+the number of formal parameters.
+
+\Message{E}{048}{more actual than formal parameters}
+
+The number of actual parameters in a procedure call is greater than
+the number of formal parameters.
+
+\Message{E}{049}{sequence parameter should be of SYSTEM.BYTE or SYSTEM.LOC type}
+
+The only valid types of a sequence parameter are
+\verb'SYSTEM.BYTE' and \verb'SYSTEM.LOC'.
+
+\Message{E}{050}{object is not array}  \ifonline\else\\\fi
+\Message{E}{051}{object is not record} \ifonline\else\\\fi
+\Message{E}{052}{object is not pointer}\ifonline\else\\\fi
+\Message{E}{053}{object is not set}
+
+The compiler expects an object of the given type at the indicated
+position.
+
+\Message{E}{054}{object is not variable}
+
+The compiler expects a variable (designator) at the indicated position.
+
+\Message{E}{055}{object is not procedure: \%s}
+(procedure name)
+
+The compiler expects a procedure designator
+at the indicated position.
+
+\Message{E}{057}{a call of super method is valid in method redifinition only}
+
+A call of a super method (type-bound procedure bound to a base type)
+is valid only in a redifinition of that method:
+
+\begin{verbatim}
+    PROCEDURE (p: P) Foo;
+    BEGIN
+      p.Foo^
+    END Foo.
+\end{verbatim}
+
+\Message{E}{058}{type-bound procedure is not defined for the base type}
+
+In a call of a super method (type-bound procedure bound to a base type)
+\verb'p.Foo^' either \verb'Foo' is not defined for a base type of
+\verb'p' or there is no base type.
+
+\Message{E}{059}{object is neither a pointer nor a VAR-parameter record}
+
+The \ot{} compiler reports this error in the following cases:
+\begin{itemize}
+\item in a type test \verb'v IS T' or type guard \verb'v(T)', \verb'v'
+      should be a designator denoting either pointer or
+      variable parameter of a record type;
+      \verb'T' should be a record or pointer type
+\item in a declaration of type-bound procedure a receiver may be either a
+      variable parameter of a record type or a value parameter of a pointer
+      type.
+\end{itemize}
+
+\Message{E}{060}{pointer not bound to record or array type}
+
+In \ot{}, a pointer base type must be an array or record type.
+For instance, the declaration \verb'TYPE P = POINTER TO INTEGER' is invalid.
+
+\Message{E}{061}{dimension too large or negative}
+
+The second parameter of the LEN function is either negative or
+larger than the maximum dimension of the given array.
+
+\Message{E}{062}{pointer not bound to record}
+
+The \ot{} compiler reports this error in the following cases:
+\begin{itemize}
+\item in a type test \verb'v IS T' or type guard \verb'v(T)',
+      if \verb'v' is a pointer it should be a pointer to record
+\item in a type-bound procedure declaration, if a receiver is
+      a pointer, it should be a pointer to record
+\end{itemize}
+
+\Message{E}{064}{base type of open array aggregate should be a simple type}
+
+A base type of an open array aggregate (\verb'ARRAY OF T{}')
+cannot be a record or array type.
+
+\Message{E}{065}{the record type is from another module}
+
+A procedure bound to a record type should be declared in the same module
+as the record type.
+
+\Message{E}{067}{receiver type should be exported \%s}
+(name of type)
+
+A receiver type for an exported type-bound procedure should also be exported.
+
+\Message{E}{068}{this type-bound procedure cannot be called from a record}
+
+The receiver parameter of this type-bound procedure is of a pointer type,
+hence it cannot be called from a designator of a record type.
+Note that if a receiver parameter is of a record type, such type-bound
+procedure can be called from a designator of a pointer type as well.
+
+\Message{E}{069}{wrong mode of receiver type}
+
+A mode of receiver type in a type-bound procedure redefinition does not
+match the previous definition.
+
+\Message{E}{071}{non-Oberon type cannot be used in specific Oberon-2 construct}
+
+A (object of) non-Oberon type (imported from a non-Oberon module or
+declared with direct language specification) cannot be used in specific
+\ot{} constructs (type-bound procedures, type guards, etc).
+
+\Message{E}{072}{illegal order of redefinition of type-bound procedures}
+
+A type-bound procedure for an extended type is defined before
+a type-bound procedure with the same name for a base type.
+
+\Message{E}{074}{redefined type-bound procedure should be exported}
+
+A redefined type-bound procedure should be exported if both its
+receiver type and redefining procedure are exported.
+
+\Message{E}{075}{function procedure without RETURN statement}
+
+A function procedure has no \verb'RETURN' statement and so cannot return a
+result.
+
+\Message{E}{076}{value is required}
+
+The compiler expects an expression at the indicated position.
+
+\Message{E}{078}{SIZE (TSIZE) cannot be applied to an open array}
+
+Standard functions \verb'SIZE' and \verb'TSIZE' cannot be used to evaluate size of
+an open array designator or type in the standard mode. If language
+extensions are enabled, the compiler allows to apply \verb'SIZE' to an open
+array designator, but not type.
+
+\Message{E}{087}{expression should be constant}
+
+The compiler cannot evaluate this expression at compile time. It should
+be constant according to the language definition.
+
+\Message{E}{088}{identifier does not match block name}
+
+An identifier at the end of a procedure or module does not match the one
+in the procedure or module header. The error may occur
+as a result of incorrect pairing of \verb'END's with headers.
+
+\Message{E}{089}{procedure not implemented "\%s"}
+
+An exported procedure or forward procedure is not declared.
+This error often occurs due to comment misplacement.
+
+\Message{E}{090}{proper procedure is expected}
+
+A function is called as a proper procedure. It must be called in an
+expression. A function result can be ignored for procedures defined
+as \verb'"C"', \verb'"Pascal"', \verb'"StdCall"' or \verb'"SysCall"' only.
+See \ref{multilang:direct}.
+
+\Message{E}{091}{call of proper procedure in expression}
+
+A proper procedure is called in an expression.
+
+\Message{E}{092}{code procedure is not allowed in definition module}
+
+\Message{E}{093}{not allowed in definition module}
+
+The error is reported for a language feature that can not be used in
+definition module, including:
+\begin{itemize}
+\item local modules
+\item elaboration of an opaque type
+\item forward declaration
+\item procedure or module body
+\item read-only parameters
+\end{itemize}
+
+\Message{E}{094}{allowed only in definition module}
+
+The error is reported for a language feature that can be used in
+definition module only, i.e. read-only variables and record fields
+(extended \mt{}).
+
+\Message{E}{095}{allowed only in global scope}
+
+The error is reported for a language feature that can be used only
+in the global module scope, including:
+
+\begin{itemize}
+\item elaboration of an opaque type (\mt{})
+\item export marks (\ot{})
+\item type-bound procedure definition (\ot{})
+\end{itemize}
+
+\Message{E}{096}{unsatisfied opaque type "\%s"}
+
+An opaque type declared in a definition module must be elaborated
+in the implementation module.
+
+\Message{E}{097}{unsatisfied forward type "\%s"}
+
+A type \verb'T' can be introduced in a declaration of a pointer type as in:
+
+\verb'    TYPE Foo = POINTER TO T;'
+
+This type \verb'T' must then be declared at the same scope.
+
+\Message{E}{098}{allowed only for value parameter}
+
+The error is reported for a language feature that can be applied
+to value parameter only (not to \verb'VAR' parameters), such as
+a \See{read-only parameter mark}{}{m2:ext:RO_param}.
+
+\Message{E}{099}{RETURN allowed only in procedure body}
+
+In \ot{}, the \verb'RETURN' statement is not allowed in a module body. % What about exc handlers if o2ADDKWD is on???
+
+\Message{E}{100}{illegal order of declarations}
+
+In \ot{}. all constants, types and variables in one declaration
+sequence must be declared before any procedure declaration.
+
+\Message{E}{102}{language extension is not allowed \%s}
+(specification)
+
+The error is reported for a language feature that can be used only
+if language extensions are switched on. See options \OERef{M2EXTENSIONS} and
+\OERef{O2EXTENSIONS}.
+
+\Message{E}{107}{shall not have a value less than 0}
+
+The error reported if a value of a (constant) expression cannot be
+negative, including:
+\begin{itemize}
+\item second operand of \verb'DIV' and \verb'MOD'
+\item repetition count in an array constructor (\verb'expr BY count')
+\end{itemize}
+
+\Message{E}{109}{forward type cannot be opaque}
+
+A forward type \verb'T' (declared as \verb'TYPE Foo = POINTER TO T') cannot be
+elaborated as an opaque type, i.e. declared as \verb'TYPE T = <opaque type>').
+
+\Message{E}{110}{illegal length, \%d was expected}
+(expected number of elements)
+
+Wrong number of elements in an array constructor.
+
+\Message{E}{111}{repetition counter must be an expression of a whole number type}
+
+A repetition counter in an array constructor must be of a whole
+number type.
+
+\Message{E}{112}{expression for field "\%s" was expected}
+(field name)
+
+The error is reported if a record constructor does not contain
+an expression for the given field.
+
+\Message{E}{113}{no variant is associated with the value of the expression}
+
+The error is reported if a record constructor for a record type
+with variant part does not have a variant for the given value of a
+record tag and the \verb'ELSE' clause is omitted.
+
+\Message{E}{114}{cannot declare type-bound procedure: "\%s" is declared as a field}
+
+A type-bound procedure has the same name as a field
+already declared in that type or one of its base types.
+
+\Message{E}{116}{field "\%s" is not exported}
+(field name)
+
+The given field is not exported, put export mark into the declaration
+of the record type.
+
+%E117 type of "%s" is not defined yet % !!!
+%(name)
+%
+%A type of of this object is not defined yet.
+
+\Message{E}{118}{base type is not allowed for non-Oberon record}
+
+A record type can be defined as an extension of another type, only
+if it is an \ot{} record type.
+
+\Message{E}{119}{variant fields are not allowed in Oberon record}
+
+A record with variant parts cannot be declared as an \ot{} record.
+
+\Message{E}{120}{field of Oberon type is not allowed in non-Oberon record}
+
+This is considered an error because garbage collector does not trace
+non-Oberon records and reference to an object may be lost.
+
+\Message{E}{121}{illegal use of type designator "\%s"}
+
+A type designator cannot be used in a statement position.
+
+\Message{E}{122}{expression out of bounds}
+
+A value which can be checked at compile-time is out of range.
+
+\Message{E}{123}{designator is read-only}
+
+A designator marked as read-only cannot be used in a position where
+its value may be changed.
+
+\Message{E}{124}{low bound greater than high bound}
+
+A lower bound of a range is greater than high bound.
+
+\Message{E}{125}{EXIT not within LOOP statement}
+
+An \verb'EXIT' statement specifies termination of the enclosing \verb'LOOP' statement.
+This \verb'EXIT' is not within any \verb'LOOP'.
+
+\Message{E}{126}{case label defined more then once}
+
+In a \verb'CASE' statement all labels must have different values.
+The label at the indicated position is alfeady used in this \verb'CASE'
+statement.
+
+\Message{E}{128}{FOR-loop control variable must be declared in the local scope}
+
+A control variable of a \verb'FOR' loop must be declared locally
+in the procedure or module which body contains the loop.
+
+\Message{E}{129}{more expressions than fields in a record type}
+
+In a record constructor there are more expressions than there are fields
+in the record type (or in this variant of a variant record type).
+
+\Message{E}{131}{zero step in FOR statement}
+
+In a \verb'FOR' statement, the step cannot be equal to zero.
+
+\Message{E}{132}{shall be an open array designator}
+
+If language extensions are OFF, the standard procedure \verb'HIGH'
+can be applied to open arrays only, otherwise to any array designator.
+
+\Message{E}{133}{implementation limit exceeded for set base type (length > \%d)}
+
+The compiler restricts length of a base type of set
+(\verb'MAX(base)-MIN(base)+1'). Note, that the limit does not depend on the low
+bound, so the following set types are valid:
+
+\verb'    SET OF [-256..-5]'\\
+\verb'    SET OF [MAX(INTEGER)-512..MAX(INTEGER)]'
+
+\Message{E}{134}{must be value of unsigned type}
+
+The compiler expects a parameter of this standard procedure to
+be a value of an unsigned type.
+
+\Message{E}{135}{must be value of pointer type}
+
+The compiler expects a parameter of this standard procedure to be a
+value of a pointer type. {\bf Note:} the \verb'SYSTEM.ADDRESS' type is defined as
+\verb'POINTER TO LOC'.
+
+\Message{E}{136}{must be type designator}
+
+The compiler expects a parameter of this standard procedure to be a
+type designator.
+
+\Message{E}{137}{numeric constant does not have a defined storage size}
+
+The compiler must know the size of a value in the given context. A numeric
+constant cannot be used at the indicated position.
+
+\Message{E}{139}{must be (qualified) identifier which denotes variable}
+
+The ISO standard requires an "entire designator" in this context, e.g.  as
+a parameter of the \verb'SIZE' function. It may be either a variable (which
+may be a formal parameter) or a field of a record variable within a
+\verb'WITH' statement that applies to that variable.
+
+\Message{E}{140}{interrupt procedures are not implemented yet}
+
+Oberon compilers from ETH implements so-called interrupt procedures,
+marked by the symbol "+".
+
+\verb'    PROCEDURE + Foo;'
+
+In \XDS{}, this feature is not implemented.
+
+\Message{E}{141}{opaque type can not be defined as Oberon pointer}
+
+A \mt{} opaque type cannot be elaborated as an \ot{} pointer.
+See Chapter \ref{multilang}.
+
+\Message{E}{143}{not allowed in Oberon}
+
+The compiler reports this error for language features that are
+vaild in \mt{} but not in \ot{}, including:
+\begin{itemize}
+\item enumeration types
+\item range types
+\item local modules
+\end{itemize}
+
+\Message{E}{144}{pointer and record types are mixed in type test}
+
+In an \ot{} type test \verb'v IS T' or a type guard \verb'v(T)',
+both \verb'v' and \verb'T' must be either pointers or records.
+
+\Message{E}{145}{control variable must not be a formal parameter}
+
+According to ISO \mt{}, a control variable in a \verb'FOR'
+statement cannot be a formal parameter (either \verb'VAR' or value).
+
+\Message{E}{146}{control variable cannot be exported}
+
+A variable used as a control variable in a \verb'FOR' statement
+or an \ot{} \verb'WITH' statement cannot be exported.
+
+\Message{E}{147}{control variable cannot be threatened}
+
+A control variable of a \verb'FOR' statement or an \ot{} \verb'WITH'
+statement has been threatened inside the body of the statement,
+or in a nested procedure called from the body.  Threatening actions
+include assignment and passing as a \verb'VAR' parameter to a user-defined or
+standard procedure (\verb'ADR', \verb'INC', \verb'DEC', etc).
+The compiler also reports the error 158 to indicate the exact place of threatening.
+
+\Message{E}{148}{finalization is allowed only in module block}
+
+A procedure body can not contain a finalization part.
+
+\Message{E}{149}{RETRY is allowed only in exceptional part of block}
+
+This \verb'RETRY' statement is outside an exceptional part of a block.
+
+\Message{E}{150}{wrong value of direct language specification}
+
+A value must be either one of the strings (\verb'"Modula"', \verb'"Oberon"',
+\verb'"C"',\verb'"Pascal"', \verb'"SysCall"', or \verb'"StdCall"') or the
+corresponding integer value.  We recommend to use strings, integer values
+are preserved for backward compatibility.
+
+\Message{E}{151}{must be of integer type}
+
+The compiler expects a variable of an integer type.
+
+\Message{E}{152}{incompatible calling conventions: "\%s" "\%s"}\ifonline\else\\\fi
+\Message{E}{153}{incompatible calling conventions}
+
+Two procedure types have different calling conventions. The error can reported
+in the following cases:
+\begin{itemize}
+\item a procedure is assigned to a procedure variable
+\item a procedure is passed as a parameter
+\item two procedure values are compared
+\end{itemize}
+The compiler reports error 152 if it can show incompatible types and error 153
+otherwise.
+
+\Message{E}{154}{procedure "\%s" does not match previous definition: was: \%s now: \%s}
+(procedure name,proctype,proctype)\ifonline\else\\\fi
+\Message{E}{155}{procedure "\%s" does not match previous definition}
+(procedure name)
+
+A procedure heading must have the same number of parameters, the same
+parameter modes (variable or value) and the same types as in the
+previous declaration. A previous declaration may be one of the following:
+\begin{itemize}
+\item procedure declaration in a definition module
+\item forward procedure declaration
+\item type-bound procedure declaration in a base type
+\end{itemize}
+
+The compiler reports error 154 if it can show incompatible types and error 155
+otherwise.
+
+\Message{E}{156}{procedure designator is expected}
+
+A designator which appears to be called (e.g. \verb'Foo(...)') does not
+denote a procedure.
+
+%%%% E157 object must be exported                            % !!!
+
+\Message{E}{158}{control variable "\%s" is threatened here}
+(variable name)
+
+A control variable of a \verb'FOR' statement or an \ot \verb'WITH'
+statement is threatened at the indicated position. It means that its
+value may be changed. See also error 147.
+
+\Message{E}{159}{type of aggregate is not set or array or record}
+
+An object which appears to be an aggregate  (e.g. \verb'Foo{...}') begins with
+an identifier which is not a set, record, or array type.
+
+\Message{E}{160}{invalid parameter specification: expected NIL}
+
+Only one special kind of variable parameter is implemented: \verb'VAR [NIL]'.
+It means that \verb'NIL' may be passed to this parameter.
+
+\Message{E}{161}{VAR [NIL] parameter expected}
+
+A parameter of the \verb'SYSTEM.VALID' function must be a \verb'VAR [NIL]' parameter.
+
+\Message{E}{162}{\%s value should be in \%\{\} (not "\%s")}
+(equation,set of valid values,new value)
+
+This error is reported for a wrong setting of \verb'ALIGNMENT', \verb'ENUMSIZE',
+or \verb'SETSIZE' equation.
+
+\Message{E}{163}{control variable cannot not be volatile}
+
+A control variable of a \verb'FOR' statement cannot be marked as volatile. See
+the \OERef{VOLATILE} option.
+
+\Message{E}{200}{not yet implemented}
+
+This language feature is not implemented yet.
+
+\Message{E}{201}{real overflow or underflow in constant expression}
+
+This error is to be reported if a real overflow (underflow) occurs during
+evaluation of a constant expression.
+
+\Message{E}{202}{integer overflow in constant expression}
+
+The compiler uses 64-bits (signed) arithmetics for whole numbers.  The
+error is reported if an overflow occurs during evaluation of
+a constant expression. In the following example, an error will be reported
+for the assignment statement, while constant definition is valid.
+
+\begin{verbatim}
+    MODULE Test;
+
+    CONST
+      VeryBigConstant = MAX(CARDINAL)*2;            (* OK *)
+      TooBigConstant = VeryBigConstant*VeryBigConstant;   (* OK *)
+
+    END Test.
+\end{verbatim}
+
+\Message{E}{203}{division by zero}
+
+The second operand of a \verb'DIV', \verb'MOD', \verb'REM', or \verb'"/"'
+operator is zero.
+
+\Message{E}{206}{array length is too large or less then zero}
+
+The array length is either negative or exceeds implementation limit.
+
+\Message{E}{208}{CASE statement always fails}
+
+The error is reported if a case select expression can be evaluated at
+compile-time and there is no variant corresponding to its value,
+and the \verb'ELSE' clause is omitted. If not constantly evaluated,
+this \verb'CASE' statement would cause the \verb'caseSelectException'
+exception at run-time.
+
+\Message{E}{219}{too many nested open array types (implementation limit \%d)}
+(implementation limit)
+
+The compiler (more precisely, run-time support) puts a limit on the number
+of nested open array types (or dimensions). Note, that there is no limit
+for arrays with specified length, because such arrays do not require
+special support in run-time system.
+
+\Message{E}{220}{heirarchy of record extensions too high (implementation limit \%d)}
+(implementation limit)
+
+The run-time system puts a limit on the level of record extensions.
+It is required for efficient implementaion of type tests and type guards.
+
+\Message{E}{221}{procedure declaration nesting limit (\%d) has been exceeded}
+(implementation limit)
+
+The compiler puts a limit on the number of procedures nested inside each
+other. When modules are nested inside procedures, only the level
+of procedure declarations is counted.
+
+\Message{E}{281}{type-bound procedure is not valid as procedure value}
+
+A type-bound procedure cannot be assigned to a variable
+of procedure type.
+
+\Message{E}{282}{local procedure is not valid as procedure value "\%s"}
+(procedure name)
+
+A procedure local to another one cannot be assigned to a variable
+of procedure type.
+
+\Message{E}{283}{code (or external) procedure is not valid as procedure value}
+
+A code procedure and external procedure cannot be assigned to a
+variable of procedure type.
+
+\section{Symbol files read/write errors}
+
+\Message{F}{190}{incorrect header in symbol file "\%s"}
+(module name)
+
+A symbol file for the given module is corrupted. Recompile it.
+
+\Message{F}{191}{incorrect version of symbol file "\%s" (\%d instead of \%d)}
+(module name, symfile version, current version)
+
+The given symbol file is generated by a different 
+version of the compiler. Recompile the respecitve source
+or use compatible versions of the compiler and/or symbol file.
+
+
+\Message{F}{192}{key inconsistency of imported module "\%s"}
+(module name)
+
+The error occurs if an interface of some module is changed but not
+all its clients (modules that imports from it) were recompiled.
+For example, let \verb'A' imports from \verb'B' and \verb'M';
+\verb'B' in turn imports from \verb'M':
+
+\begin{verbatim}
+DEFINITION MODULE M;   DEFINITION MODULE B;     MODULE A;
+                       IMPORT M;                IMPORT M,B;
+END M.                 END B.                   END A.
+\end{verbatim}
+
+Let us recompile \verb'M.def', \verb'B.def' and then \verb'M.def' again. The error will
+be reported when compiling \verb'A.mod', because version keys of module \verb'M'
+imported through \verb'B' is not equal to the version key of \verb'M' imported directly.
+
+To fix the problem modules must be compiled in appropriate order.
+We recommend to use the \XDS{} compiler make facility, i.e. to compile your
+program in the \See{MAKE}{}{xc:modes:make} or \See{PROJECT}{}{xc:modes:project}
+operation mode. If you always use the make facility this error
+will never be reported.
+
+\Message{F}{193}{generation of new symbol file not allowed}
+
+The \ot{} compiler creates a temporary symbol file every time a
+module is compiled, compares that symbol file with the existing one and
+overwrites it with the new one if necessary. When the \OERef{CHANGESYM} option
+is OFF (by default), the compiler reports an error if the symbol file
+(and hence the module interface) had been changed and does not
+replace the old symbol file.
+
+{\bf Note:} if the \OERef{M2CMPSYM} option is set ON, the same applies to
+compilation of a \mt{} definition  module, i.e., the \OERef{CHANGESYM}
+option should be set if the module interface has been changed.
+
+\Message{F}{194}{module name does not match symbol file name "\%s"}
+(module name)
+
+A module name used in an \verb'IMPORT' clause must be equal to the actual
+name of the module, written in the module heading.
+
+\Message{F}{195}{cannot read symbol file "\%s" generated by \%s}
+(module name, compiler name)
+
+The symbol file for the given module is generated by another \xds{}
+compiler. Native code compilers can read symbol files generated
+by {\bf XDS-C} on the same platform, but not vice versa.
+
+\section{Internal errors}
+
+This section lists internal compiler errors. In some cases such a error
+may occur as a result of inadequate recovery from previous errors in
+your source text. In any case we recommend to provide us with a bug report,
+including:
+\begin{itemize}
+\item version of the compiler
+\item description of your environment (OS, CPU)
+\item minimal source text reproducing the error
+\end{itemize}
+
+\Message{F}{103}{INTERNAL ERROR(ME): value expected}      \ifonline\else\\\fi
+\Message{F}{104}{INTERNAL ERROR(ME): designator expected} \ifonline\else\\\fi
+\Message{F}{105}{INTERNAL ERROR(ME): statement expected}  \ifonline\else\\\fi
+\Message{F}{106}{INTERNAL ERROR(ME): node type = NIL}     \ifonline\else\\\fi
+\Message{F}{142}{INTERNAL ERROR(ME): can not generate code}
+
+\Message{F}{196}{INTERNAL ERROR: incorrect sym ident \%d while reading symbol file "\%s"} \ifonline\else\\\fi
+\Message{F}{197}{INTERNAL ASSERT(\%d) while reading symbol file "\%s"}
+
+\section{Warnings}
+
+In many cases a warning may help you to find a bug or a serious drawback in your
+source text. We recommend not to switch warnings off and carefully
+check all of them. In many cases warnings have helped us to find and
+fix bugs very quickly (note that \xds{} compilers are written in \xds{} \ot{} and
+\mt{}).
+
+Warnings described in this section are reported by both {\bf XDS-C} and
+{\bf Native XDS}. Each of these products may report additional warnings.
+Native XDS compilers fulfil more accurate analysis of the
+source code and report more warnings.
+
+\Message{W}{300}{variable declared but never used}
+
+This variable is of no use, it is not exported, assigned, passed as a
+parameter, or used in an expression.  The compiler will not allocate
+space for it.
+
+\Message{W}{301}{parameter is never used}
+
+This parameter is not used in the procedure.
+
+\Message{W}{302}{value was assigned but never used}
+
+The current version of the compiler does not report this warning.
+
+\Message{W}{303}{procedure declared but never used}
+
+This procedure is not exported, called or assigned. The compiler will
+not generate it.
+
+\Message{W}{304}{possibly used before definition "\%s"}
+(variable name)
+
+This warning is reported if a value of the variable may be undefined at
+the indicated position. Note, that it is just a warning. The compiler may
+be mistaken in complex contexts. In the following example, \verb'"y"' will be
+assigned at the first iteration, however, the compiler will report
+a warning, because it does not trace execution of the \verb'FOR' statement.
+
+\begin{verbatim}
+    PROCEDURE Foo;
+      VAR x,y: INTEGER;
+    BEGIN
+      FOR x:=0 TO 2 DO
+        IF x = 0 THEN y:=1
+        ELSE INC(y)  (* warning is reported here *)
+        END;
+      END;
+    END Foo;
+\end{verbatim}
+
+This warning is not reported for global variables.
+
+\Message{W}{305}{constant declared but never used}
+
+The current version of the compiler does not report this warning.
+
+\Message{W}{310}{infinite loop}
+
+Execution of this loop (\verb'LOOP', \verb'WHILE' or \verb'REPEAT')
+will not terminate normally.
+It means that statements after the loop will never be executed and the
+compiler will not generate them. Check that the loop was intentionally
+made infinite.
+
+\Message{W}{311}{unreachable code}
+
+This code cannot be executed and the compiler will not generate it
+(dead code elimination). It may be statements after a \verb'RETURN',
+\verb'ASSERT(FALSE)', \verb'HALT', infinite loop, statements under
+constant \verb'FALSE' condition (\verb'IF FALSE THEN'), etc.
+
+\Message{W}{312}{loop is executed exactly once}
+
+It may be a loop like
+
+\verb'    FOR i:=1 TO 1 DO ... END;'
+
+or
+
+\verb'    LOOP ...; EXIT END;'
+
+Check that you wrote it intentionally.
+
+\Message{W}{314}{variable "\%s" has compile time defined value here}
+
+The compiler was able to determine the run-time value of the given variable
+(due to constant propagation) and will use it instead of accessing the variable.
+For the following example
+
+\verb'    i:=5; IF i = 5 THEN S END;'
+
+the compiler will generate:
+
+\verb'    i:=5; S;'
+
+This warning is not reported for global variables.
+
+\Message{W}{315}{NIL dereference}
+
+The compiler knows that a value of a pointer variable is NIL (due to
+constant propagation), e.g:
+
+\verb'    p:=NIL;'\\
+\verb'    p^.field:=1;'
+
+The code will be generated and will cause "invalidLocation" exception at
+run-time.
+
+This warning is not reported for global variables.
+
+\Message{W}{316}{this SYSTEM procedure is not described in Modula-2 ISO standard}
+
+This warning is reported in order to simplify porting your program
+to other \mt{} compilers.
+
+\Message{W}{317}{VAR parameter is used here, check that it is not threatened inside WITH}
+
+A variable parameter of a pointer type is used as a control variable in
+an \ot{} \verb'WITH' statement. The compiler cannot check that it is not changed
+inside \verb'WITH'. In the the following example \verb'"ptr"' and, hence, \verb'"p"' becomes
+\verb'NIL' inside \verb'WITH':
+
+\begin{verbatim}
+    VAR ptr: P;
+
+    PROCEDURE proc(VAR p: P);
+    BEGIN
+      WITH p: P1 DO
+        ptr:=NIL;
+        p.i:=1;
+      END;
+    END proc;
+
+    BEGIN
+      proc(ptr);
+    END
+\end{verbatim}
+
+We recommend to avoid using variable parameters of pointer types in \verb'WITH'
+statements.
+
+\Message{W}{318}{redundant FOR statement}
+
+The \verb'FOR' statement is redundant (and not generated) if its low and high
+bounds can be evaluted at compile-time and it would be executed zero
+times, or if its body is empty.
+
+
+\section{Pragma warnings}
+
+\Message{W}{320}{undeclared option "\%s"}
+
+An undeclared option is used. Its value is assumed to be \verb'FALSE'.
+
+\Message{W}{322}{undeclared equation "\%s"}
+
+An undeclared equation is used. Its value is undefined.
+
+\Message{W}{321}{option "\%s" is already defined}   \ifonline\else\\\fi
+\Message{W}{323}{equation "\%s" is already defined}
+
+The option (equation) is already defined, second declaration is ignored.
+
+\Message{W}{390}{obsolete pragma setting}
+
+The syntax used is obsolete. The next release of the compiler will not
+understand it. We recommend to rewrite the clause using the new syntax.
+
+
+\section{Native XDS warnings}
+
+\Message{W}{900}{redundant code eliminated}
+
+This warning is reported if a program fragment does not influence
+to the program execution, e.g:
+
+\verb'    i:=1;'\\
+\verb'    i:=2;'
+
+The first assignemnt is redundant and will be deleted.
+
+\Message{W}{901}{redundant code not eliminated - can raise exception}
+
+The same as W900, but the redundant code is preserved because it can
+raise an exception, e.g.:
+
+\verb'    i:=a DIV b; (* raises exception if b <= 0 *)'\\
+\verb'    i:=2;'
+
+\Message{W}{902}{constant condition eliminated}
+
+The warning is reported if a boolean condition can be evaluated at
+run-time, e.g.
+
+\verb'    IF (i=1) & (i=1) THEN (* the second condition is TRUE *)'
+
+or
+
+\verb'    j:=2;'\\
+\verb'    IF (i=1) OR (j#2) THEN (* the second condition is FALSE *)'
+
+\Message{W}{903}{function result is not used}
+
+The compiler ignores function result, like in:
+
+\verb'    IF Foo() THEN END;'
+
+\Message{W}{910}{realValueException will be raised here}         \ifonline\else\\\fi
+\Message{W}{911}{wholeValueException will be raised here}        \ifonline\else\\\fi
+\Message{W}{912}{wholeDivException will be raised here}          \ifonline\else\\\fi
+\Message{W}{913}{indexException will be raised here}             \ifonline\else\\\fi
+\Message{W}{914}{rangeException will be raised here}             \ifonline\else\\\fi
+\Message{W}{915}{invalidLocation exception will be raised here}
+
+A warning from this group is reported if the compiler determines that
+the exception will be raised in the code corresponding to this program
+fragment. In this case the fragment is omitted and the compiler
+generates a call of a run-time procedure which will raise this exception.
+
+\ifgencode
+\section{Native XDS errors}
+
+This section describes errors reported by a native code generator
+(back-end).  The code generator is invoked only if no errors were found
+by a language parser.
+
+\Message{F}{950}{out of memory}
+
+The compiler cannot generate your module. Try to increase \OERef{COMPILERHEAP} or
+try to compile this module separately (not in the
+\See{MAKE}{}{xc:modes:make} or \See{PROJECT}{}{xc:modes:project} mode).
+Almost any module may be compiled if \OERef{COMPILERHEAP} is set to 16MB.
+Exceptions are very big modules or modules containing large procedures
+(more than 500 lines).
+Note that the amount of memory required for the code generator depends mostly on
+sizes of procedures, not of the module.
+
+\Message{F}{951}{expression(s) too complex}
+
+The compiler cannot generate this expression, it is too complex.
+Simplify the expression.
+
+\Message{F}{952}{that type conversion is not implemented}
+
+The compiler cannot generate this type conversion.
+
+\section{XDS-C warnings}
+
+\Message{W}{350}{non portable type cast: size is undefined}
+
+The compiler have to generate a type cast which may be unportable.
+Check that the generated code is correct or pay some attention to
+your C compiler warnings.
+
+\Message{W}{351}{option NOHEADER is allowed only in C-modules} \ifonline\else\\\fi
+\Message{W}{352}{option NOCODE is allowed only in C-modules}
+
+Options \OERef{NOHEADER} and \OERef{NOCODE} have meaning only for modules defined as
+\verb'"C"', \verb'"StdCall"' or \verb'"SysCall"'. See \ref{multilang:direct}
+
+\Message{W}{353}{dependence cycle in C code}
+
+The generated code contains a dependance cycle. It means that some
+declaration \verb'A' depends on \verb'B' and vice versa. It is not an error. The
+generated code may be valid.
+\fi % \ifgencode
+
+\ifgenc
+\section{XDS-C errors}
+
+This section describes errors reported by the C code generator (back-end).
+The code generator is invoked only if no errors are found by the
+language parser.
+
+\Message{E}{1001}{parameter "\%s" is not declared}
+(parameter name)
+
+An unknown parameter name is used in a protocol string of a code
+procedure.
+
+\Message{E}{1002}{can not generate recursive type definition} \ifonline\else\\\fi
+\Message{E}{1018}{can not generate recursive type declaration}
+
+In C, a recursive type definition must contain a struct, while in
+\mt{}/\ot{} this is done via forward declaration of a pointer
+type. The following types cannot be generated in C:
+
+\verb'    TYPE P = POINTER TO P;'
+
+or
+
+\verb'    TYPE P = POINTER TO A;'\\
+\verb'         A = ARRAY [0..1] OF P;'
+
+We feel that such types are of very low importance in real programs.
+
+\Message{E}{1003}{external names conflict: "\%s.\%s" and "\%s.\%s"}
+
+The compiler forms an external name (name of exported object)
+in the form \verb'<module name>_<object name>'. The error is reported
+if external names of two distinct objects are equal.
+
+\Message{E}{1004}{external name "\%s.\%s" conflict with standard name (xm.kwd)}
+
+The same as previous error, an external name is equal to a name
+defined in the \verb'xm.kwd' file.
+
+\Message{E}{1005}{unimplemented system procedure}
+
+This standard (system) procedure is not implemented yet.
+
+\Message{E}{1006}{undefined array length for dimension \%d}
+
+The \verb'LEN' function cannot be applied to an open array parameter of a
+procedure with the following calling conventions: \verb'"C"', \verb'"SysCall"',
+\verb'"StdCall"'. In the case of a "normal" (\ot{}/\mt{}) procedure
+the compiler passes an additional parameter for each dimension (length
+in this dimension). For \verb'"C"', \verb'"SysCall"', \verb'"StdCall"' procedures only
+an address of an array is passed.
+
+\Message{E}{1007}{undefined array size for dimension \%d}
+
+The compiler cannot evaluate the array size.
+
+\Message{E}{1014}{can not get size of (\%s)}
+(type)
+
+The error is reported if the compiler cannot evaluate size of this type.
+See also the \OERef{GENSIZE} option.
+
+\Message{E}{1015}{too many parameters}
+
+The implementation puts a limit on the number of parameters of a generated
+procedure (256). Note, that a source procedure may have less parameters,
+because additional parameters are passed for:
+\begin{itemize}
+\item open array parameters
+\item variable parameters of record type in \ot{}
+\item functions returning compound types
+\end{itemize}
+
+\Message{E}{1008}{can not generate expression}                      \ifonline\else\\\fi
+\Message{E}{1009}{can not generate l-value type cast}               \ifonline\else\\\fi
+\Message{E}{1010}{can not generate type conversion}                 \ifonline\else\\\fi
+\Message{E}{1011}{can not generate aggregate}                       \ifonline\else\\\fi
+\Message{E}{1012}{can not generate statement}                       \ifonline\else\\\fi
+\Message{E}{1013}{cannot generate constant aggregate of this type}  \ifonline\else\\\fi
+\Message{E}{1016}{can not generate type designator}                 \ifonline\else\\\fi
+\Message{E}{1017}{can not generate type declaration}                \ifonline\else\\\fi
+\Message{E}{1019}{can not generate object declaration}
+
+An error of this group usually means that some rare language feature
+(or combination) is not implemented yet. Please provide us with a bug report
+containing a miminal test case.
+\fi % \ifgenc

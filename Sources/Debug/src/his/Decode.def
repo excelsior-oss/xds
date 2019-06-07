@@ -1,0 +1,27 @@
+<*+M2ADDTYPES*>
+<*+M2EXTENSIONS*>
+
+DEFINITION MODULE Decode;
+
+
+CONST
+  MaxStringLength = 256;
+
+TYPE
+  StringType = ARRAY [0..MaxStringLength-1] OF CHAR;
+
+PROCEDURE ["C"] Demangle_PublicC(VAR source_str: StringType ;
+              VAR destination_str: StringType):BOOLEAN;
+
+PROCEDURE ["C"] Demangle_DebugC (VAR source_str: StringType ;
+              VAR destination_str: StringType):BOOLEAN;
+
+
+PROCEDURE Demangle_Public(VAR source_str: ARRAY OF CHAR;
+              VAR destination_str: ARRAY OF CHAR):BOOLEAN;
+
+PROCEDURE Demangle_Debug (VAR source_str: ARRAY OF CHAR;
+              VAR destination_str: ARRAY OF CHAR):BOOLEAN;
+
+END Decode.
+

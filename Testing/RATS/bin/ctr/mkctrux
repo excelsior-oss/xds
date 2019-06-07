@@ -1,0 +1,5 @@
+cp src/Unix/*.c src
+cp src/Unix/*.cfg .
+cp src/Unix/*.mkf .
+make -f ctr.mkf
+make -f ctrmake.mkf

@@ -1,0 +1,25 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=h2d.chm
+Contents file=h2d.hhc
+Default Window=Main
+Default topic=h2d.html
+Display compile progress=No
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=H2D User's Guide
+
+[WINDOWS]
+Main="H2D User's Guide","h2d.hhc",,"h2d000.html",,,,,,0x2520,,0x300e,[30,30,994,708],,,,,,,0
+
+[ALIAS]
+#include "h2d.hha"
+
+[MAP]
+
+[FILES]
+h2d.html
+..\default.css
+
+[INFOTYPES]
+

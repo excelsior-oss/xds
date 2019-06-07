@@ -1,0 +1,159 @@
+% Project file for XDS xServer 
+% modes are: enduser, work
+
+!if env_target = "x86os2" then
+  -PM
+!end
+
+!if not defined trialversion then
+  !new trialversion-
+!end
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if not defined placement then
+  !if (mode="enduser") then
+    -placement := release
+  !else
+    -placement := current
+  !end
+!end
+
+% output settings
+!if placement="release" then
+  -mkfname = $!/../../enduser/tmp/xd_srv
+  -lookup = *.sym  = $!/../../enduser/tmp; $!/../../enduser/xds/sym/x86
+  -lookup = *.lib  = $!/../../enduser/xds/lib/x86
+  -lookup = *.obj  = $!/../../enduser/tmp
+  -lookup = *.dbg  = $!/../../enduser/tmp
+  -lookup = *.exe  = $!/../../enduser/xds/bin
+  !if env_target = "x86os2" then
+    -lookup = *.dll  = $!/../../enduser/xds/dll
+  !else
+    -lookup = *.dll  = $!/../../enduser/xds/bin
+  !end
+!else
+  % work
+  -mkfname = xd_srv
+  -lookup = *.sym  = sym
+  -lookup = *.obj  = bin
+  -lookup = *.dbg  = dbg
+  -lookup = *.emf  = emf
+  -lookup = *.txt  = csv
+!end
+
+-m2cmpsym+
+-changesym+
+-m2extensions+
+-o2extensions-
+-m2addtypes+
+
+-gcthreshold =  96000000
+-heaplimit = 1000000000
+
+-compilerheap = 16777216
+
+-makefile+
+-longname+
+
+-implib-
+-usedll+
+
+
+-gendll-
+-dllexport-
+
+-xd_batch_included:+
+
+-TARGET_VAX:-
+-TARGET_x86:+
+-TARGET_m68k:-
+-TARGET_PPC:-
+
+-ONLY_REMOTE:+
+
+-DEST_XDS:+
+-DEST_K26:-
+
+-DEST_XDASM:-
+
+-SCHERN_K26:-
+
+% Source lookup settings
+!if placement="release" then
+  -lookup = *.def = src\xd_cmn; src\xd_enh; src\xd_386; src\xd_rmt;
+  -lookup = *.mod = src\xd_cmn; src\xd_enh; src\xd_386; src\xd_rmt;
+  !if env_target = "x86nt" then
+    -lookup = *.def = src\xd_386\win32;
+    -lookup = *.mod = src\xd_386\win32;
+  !elsif env_target = "x86os2" then
+    -lookup = *.def = src\xd_386\os2; 
+    -lookup = *.mod = src\xd_386\os2;
+    !if defined PM and PM then
+      -lookup = *.def = src\xd_386\os2\ifpm;
+      -lookup = *.mod = src\xd_386\os2\ifpm;
+      -lookup = *.res = src\xd_386\os2\ifpm;
+    !else
+      -lookup = *.mod = src\xd_386\os2\ifcon;
+    !end
+  !end
+!elsif placement="current" then
+  -lookup = *.def = ..\src\xd_cmn; ..\src\xd_enh; ..\src\xd_386; ..\src\xd_rmt;
+  -lookup = *.mod = ..\src\xd_cmn; ..\src\xd_enh; ..\src\xd_386; ..\src\xd_rmt;
+  !if env_target = "x86nt" then
+    -lookup = *.def = ..\src\xd_386\win32;
+    -lookup = *.mod = ..\src\xd_386\win32;
+  !elsif env_target = "x86os2" then
+    -lookup = *.def = ..\src\xd_386\os2;
+    -lookup = *.mod = ..\src\xd_386\os2;
+    !if defined PM and PM then
+      -lookup = *.def = ..\src\xd_386\os2\ifpm;
+      -lookup = *.mod = ..\src\xd_386\os2\ifpm;
+      -lookup = *.res = ..\src\xd_386\os2\ifpm;
+    !else
+      -lookup = *.mod = ..\src\xd_386\os2\ifcon;
+    !end
+  !end
+!end
+
+% Runtime checks and debug settings
+!if mode="enduser" then
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+
+  -xd_debug:-
+
+!elsif mode="work" then
+
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+
+  -dbgfmt = HLL
+  -xd_debug:+
+!end
+
+!module xd_serv.mod

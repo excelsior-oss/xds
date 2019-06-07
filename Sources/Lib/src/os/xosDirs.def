@@ -1,0 +1,19 @@
+(* Copyright (c) 1997 xTech Ltd, Russia. All Rights Reserved. *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosDirs;      (* Hady, 4 Sep 1997 *)
+
+IMPORT SYSTEM, xlibOS, xmRTS;
+
+PROCEDURE X2C_DirOpen(VAR dir: xlibOS.X2C_Dir; name: xmRTS.X2C_pCHAR);
+PROCEDURE X2C_DirClose(VAR dir: xlibOS.X2C_Dir);
+PROCEDURE X2C_DirNext(VAR dir: xlibOS.X2C_Dir);
+PROCEDURE X2C_DirGetName(VAR dir: xlibOS.X2C_Dir; name: xmRTS.X2C_pCHAR; nmlen: SYSTEM.CARD32);
+
+PROCEDURE X2C_GetCDNameLength(): SYSTEM.CARD32;
+PROCEDURE X2C_GetCDName(s: xmRTS.X2C_pCHAR; slen: SYSTEM.CARD32);
+PROCEDURE X2C_SetCD(s: xmRTS.X2C_pCHAR): BOOLEAN;
+
+PROCEDURE X2C_CreateDirectory(name: xmRTS.X2C_pCHAR): BOOLEAN;
+PROCEDURE X2C_RemoveDirectory(name: xmRTS.X2C_pCHAR): BOOLEAN;
+
+END xosDirs.

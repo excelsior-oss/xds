@@ -1,0 +1,9 @@
+(* Copyright (c) xTech 1995,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrnStkScan; (* Hady. 03.06.96 11:58 *)
+
+IMPORT  SYSTEM;
+
+PROCEDURE X2C_STACK_SCAN_PROC(from,to: SYSTEM.ADDRESS; exact: BOOLEAN);
+
+END xrnStkScan.

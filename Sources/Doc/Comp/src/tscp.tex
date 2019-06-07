@@ -1,0 +1,1112 @@
+% !!! Type designators: SIZE(T^)
+% !!! BiosIO, MsMouse, FIOR descriptions.
+
+\chapter{TopSpeed Compatibility Pack}
+\label{tscp}
+
+The TopSpeed \mt{} compiler for DOS and OS/2 by Jensen and Partners
+International had been rather popular in late 1980s. There are millions of 
+lines of TS \mt{} code still used in various environments. Unfortunately, 
+since that time the world has moved to Windows and Linux, and TopSpeed users
+could only watch this process as their compiler is no longer available as
+a standalone product, and is not actively developed, marketed, and supported
+by its new owners. 
+So there is a need for them to simultaneously change the compiler and the
+target operating system.
+
+\xds{} \mt{} compilers, available for Windows and Linux, are likely
+to be considered as a replacement for TopSpeed. But moving from TopSpeed
+to \xds{} can be difficult: the JPI implementation of the language is
+based on PIM, whereas \xds{} follows the ISO 10514 standard, which is not
+a superset of PIM. In addition, both compilers provide different sets of
+language extensions.
+
+That's why the TopSpeed Compatibility Pack (TSCP) has been developed by 
+Excelsior. The XDS compiler which is part of TSCP has one additional option ---
+\OERef{TOPSPEED}. Setting it ON enables a set of 
+language extensions that makes the compiler more compatible with TopSpeed.
+These extensions are described in the following sections.
+
+TSCP also contains a \See{set of TopSpeed-like library modules}{}{tscp:lib}.
+
+\section{Conditional compilation}
+\label{tscp:cc}
+
+The existing users of your DOS and/or OS/2 software products are not likely
+to move to Win32 at once as you do it. So it is desirable to be able to 
+compile the same sources with both TopSpeed and \xds{}. To facilitate this,
+\xds{} supports TopSpeed conditional compilation syntax.
+
+{\bf Note:} In TopSpeed, an identifier used in a conditional compilation 
+clause must be a boolean constant, either predefined, defined in the project 
+file, or in the source text. In \XDS{}, it has to be an option name.
+
+The \verb'__XDS__' option is always set to \verb'TRUE' in \XDS{} \mt{}, so
+we recommend you to define the \verb'__XDS__' constant in your TopSpeed project
+file:
+
+\verb'    #pragma define(__XDS__=>off)'
+
+and then use the above scheme to isolate TS- and \XDS{}-specific portions of
+code. See example in section \ref{tscp:pragmae:syntax}.
+
+
+\section{Declarations and visibility}
+
+\subsection{Alias declaration}
+
+    TopSpeed alias declaration (\verb'CONST id1 ::= id2;') is available in
+    \XDS{} if the option \OERef{TOPSPEED} is turned ON.
+
+\section{Types}
+
+\subsection{Numeric types}
+
+    Types \verb'LONGCARD', \verb'LONGINT', \verb'SHORTCARD', and 
+    \verb'SHORTINT' are not part of ISO \mt{}, but they are available
+    in \xds{} \mt{} if the \OERef{M2ADDTYPES} compiler option is switched on.
+    Usage of types \verb'SYSTEM.INT8', \verb'SYSTEM.INT16', etc. may 
+    also be considered.
+
+    TopSpeed \mt{} types \verb'TEMPREAL' and \verb'FIXREAL' have no analogs
+    in \xds{}.
+
+\subsection{Sizes of base types}
+
+    \xds{} compilers generate 32-bit code, so the base \mt{}
+    types, such as \verb'CARDINAL', \verb'INTEGER', and \verb'BITSET',
+    are 32-bit by default, whereas in TopSpeed \mt{} these types are 16-bit.
+    To achieve better performance, it is recommended to use 32-bit types 
+    anywhere except in declarations that represent externally defined 
+    data structures, such as network packet layouts or database records. 
+    Unfortunately, this requires a lot of analysis that can only be done
+    manually and requires deep understaning of the program being migrated,
+    and therefore is error prone. This problem resembles the famous Year 2000 
+    problem --- no one can tell where in a million of source lines your 
+    program relies on base types being exactly 16 bits wide.
+
+    You may consider usage of the following techniques that do not require 
+    this analysis:
+    \begin{itemize}
+    \item Turn the \OERef{M2BASE16} option ON in your project files. This would 
+          force base types to be 16-bit. Types \verb'SHORTINT', \verb'INTEGER',
+          and \verb'LONGINT', as well as \verb'SHORTCARD', \verb'CARDINAL',
+          and \verb'LONGCARD', are assignment and parameter compatible. 
+          The compiler inserts the required conversions and checks 
+          automatically. You may need to modify your code if there are
+          any calls of library procedures that accept or return \verb'BITSET's.
+
+          Take into account that the \xds{} runtime library has been 
+          compiled with the \OERef{M2BASE16} option turned OFF. 
+
+    \item Redefine these types in all your modules using fixed size types 
+          from the module SYSTEM:
+\begin{verbatim}
+    (*%T __XDS__ *)
+      TYPE 
+        INTEGER  = SYSTEM.INT16;
+        CARDINAL = SYSTEM.CARD16;
+        BITSET   = SYSTEM.SET16;
+    (*%E *)
+\end{verbatim}
+    \end{itemize}
+
+\subsection{Based and virtual pointers}
+
+    There are no based and virtual pointers in \xds{}.
+
+\subsection{Compatibility with system types }
+
+    In TopSpeed \mt{}, types \verb'BYTE', \verb'WORD', and \verb'LONGWORD'
+    are assignment compatible with any type of corresponding size
+    (1, 2, or 4 bytes), and allow testing for equality or inequality.
+    Due to a far more complex definition of the \verb'BYTE' and \verb'WORD'
+    types in ISO \mt{}, the only operation directly defined for them is an
+    assignment and there are special rules affecting parameter compatibility
+    (see \xds{} User Guide, System parameter compatibility for further details).
+    The \verb'LONGWORD' type does not exist in \xds{}.
+
+\section{Objects and values}
+
+\subsection{Fixed variable placement}
+
+    In TopSpeed, a variable can be placed at a fixed physical address 
+    which is specified in segment:offset form:
+
+\verb'    VAR Screen [0B800H:0] : ARRAY [1..25][1..80] OF Cell;'
+
+    In \XDS{}, the \verb'SYSTEM.MAKEADR' function has to be used:
+
+\verb'    VAR MyCardIO [SYSTEM.MAKEADR(0FFFF0000H)] : BITSET;'
+
+\subsection{Value constructors}
+
+    In ISO \mt{}, constructors of array type and record type value use curly
+    braces (\verb'{}') rather than parenthesis (\verb'()').
+
+\begin{verbatim}
+    TYPE
+      Struct = RECORD
+                 date :CARDINAL;
+                 time :CARDINAL;
+               END;
+
+    CONST
+      (* s = Struct ( 10, 12 );   TS manner *)
+
+      s = Struct { 10, 12 };  -- XDS (ISO) manner
+\end{verbatim}
+
+\section{Expressions}
+
+\subsection{Function calls in designators}
+
+    If the option \OERef{TOPSPEED} or the option \OERef{M2EXTENSIONS} is set ON,
+    \xds{} recognizes function procedure calls in designators, including
+    predefined, SYSTEM, and type transfer procedures:
+
+\begin{verbatim}
+    CurPos(point[i,j])^.x
+    GetCurDate().year
+    REC_PTR(adr)^.field
+\end{verbatim}
+
+\subsection{Logical shift operators}
+
+    The '\verb'<<'' and '\verb'>>'' infix operators of logical
+    left/right shift, defined for cardinal types in TS, are available in
+    \XDS{} if the option \OERef{TOPSPEED} or the option \OERef{M2EXTENSIONS} is 
+    set ON.
+
+\subsection{Comparison of structured values}
+
+    TopSpeed \mt{} supports comparison of structured values (arrays and 
+    records) as a language extension. In general, alignment and 
+    packing rules of the target environment may cause existence of 
+    gaps between elements of an array or fields of a record. 
+    So comparison of structured values in raw mode (e.g. using 
+    \verb'Lib.Compare') is likely to produce incorrect results.
+    In ISO \mt{}, you have to compare stuctured values element by element 
+    or field by field,
+
+
+\section{Statements}
+
+\subsection{CASE without ELSE}
+
+In TopSpeed \mt{}, absence of the \verb'ELSE' clause in a \verb'CASE'
+statement is equivalent to presense of an empty \verb'ELSE' clause.
+In \xds{} \mt{}, according to ISO 10514, if the value of the case
+selector is not contained in any case label list and the ELSE clause
+is not present, an exception shall be raised. Therefore, the \verb'CASE'
+statement in the following code fragment:
+
+\begin{verbatim}
+    x := 2;
+    CASE x OF
+    |0: p0;
+    |1: p1;
+    END;
+\end{verbatim}
+
+does nothing if compiled by TopSpeed, and raises an exception
+if compiled by \xds{}.
+
+The recommended solution is to add empty \verb'ELSE' clauses to all your
+\verb'CASE' statements that lack it, as this would make no difference in 
+TopSpeed. To quickly find all such statements, turn on warning 319:
+
+\begin{verbatim}
+    C:\WORK>xc t.mod -woff319-'
+
+    XDS Modula-2 v2.40 [x86, v1.08] - build 20.10.1998
+    Compiling "t.mod"
+
+    * [t.mod 12.05 W319]
+    * CASE statement without ELSE
+\end{verbatim}
+
+\subsection{FOR loop control variable}
+
+    ISO \mt{} requires that a \verb'FOR' loop control variable must be declared
+    in the scope to which the loop belongs. TopSpeed does not make this
+    restriction, so you may need to redesign some of your FOR loops.
+
+\subsection{GOTO statement}
+
+    There are no \verb'GOTO' and \verb'LABEL' clauses in ISO \mt{}. \XDS{}
+    provides them as an extension if the option \OERef{TOPSPEED} is turned ON.
+
+\section{Procedures}
+
+\subsection{External procedures}
+
+     \xds{} compilers allow only foreign procedures to be declared as 
+     external.
+
+     A declaration of an external procedure consists of a procedure header 
+     only, with the procedure name preceded by the symbol "\verb'/'":
+
+     \verb'    PROCEDURE ["C"] / putchar(ch: SYSTEM.CARD8): SYSTEM.INT32;'
+
+\subsection{Open arrray parameter compatibility}
+
+    In TopSpeed \mt{}, an expression of type \verb'T' can be substituted as 
+    a parameter whose formal type is \verb'ARRAY OF T'. \xds{} supports 
+    this if on of the \OERef{M2EXTENSIONS} or \OERef{TOPSPEED} is turned ON.
+
+\subsection{Procedure types}
+
+    In ISO \mt{}, a procedure belongs to a particular procedure type
+    if the types of each formal parameter, taken in turn, are exactly the same.
+    In TopSpeed \mt{}, there is one exception: if one of the two types is 
+    \verb'SYSTEM.ADDRESS', another type can be any pointer type,
+    so the following piece of code is legal:
+
+\begin{verbatim}
+    TYPE
+      SetNameMethod = PROCEDURE(SYSTEM.ADDRESS,ARRAY OF CHAR);
+
+      NodePtr = POINTER TO Node;
+      Node = RECORD
+               name   : ARRAY [0..63] OF CHAR;
+               setname: SetNameMethod;
+             END;
+                 
+    PROCEDURE SetNodeName(p: NodePtr; name: ARRAY OF CHAR);
+    BEGIN
+      Str.Copy(p^.name, name);
+    END SetNodeName;
+
+      .  .  .
+   
+     NEW(node);
+     node^.setname := SetNodeName;
+\end{verbatim}
+
+    In TopSpeed \mt{}, a procedure type definition may reference an incomplete
+    type containing that definition, provided that the incomplete type has 
+    already been referenced:
+
+\begin{verbatim}
+    TYPE
+      P = POINTER TO R;
+      R = RECORD
+            data: CARDINAL;
+            proc: PROCEDURE(R);
+          END;
+\end{verbatim}
+
+    \xds{} does not allow this, so you have to define the procedure type 
+    separately:
+
+\begin{verbatim}
+    TYPE
+      P = POINTER TO R;
+      R_proc_type = PROCEDURE(R);
+      R = RECORD
+            data: CARDINAL;
+            proc: R_proc_type;
+          END;
+\end{verbatim}
+
+    The \verb'NULLPROC' value is absent in \xds{}; \verb'NIL' should be
+    used instead. You may consider declaring \verb'NULLPROC' under 
+    conditional compilation in modules that use it:
+
+\begin{verbatim}
+    (*%T __XDS__ *)
+      CONST 
+        NULLPROC = NIL;
+    (*%E *)
+\end{verbatim}
+
+\subsection{Predefined procedures}
+
+     Predefined procedures \verb'FarADR', \verb'NearADR', \verb'Ofs', and 
+     \verb'Seg' are specific to the 80x86 16-bit real and protected modes
+     and therefore are not available in \XDS{}.
+
+     The \verb'FieldOfs' and \verb'VSIZE' procedures are predefined if the
+     option \OERef{TOPSPEED} is set ON and are available from the module SYSTEM
+     otherwise.
+
+\subsection{Type conversion vs type cast}
+
+     In TopSpeed \mt{}, the predefined function procedure 
+     \verb'VAL(type, expr)' performs {\em type conversion} if both \verb'type'
+     and \verb'expr' are numeric or ordinal, and performs {\em type cast}
+     otherwise. In ISO \mt{}, \verb'VAL' may only be used in the former case;
+     \verb'SYSTEM.CAST' has to be used for type casting.
+
+     According to PIM, a {\em type transfer function} \verb'type(expr)' shall 
+     not affect the bit pattern representaion of the result of \verb'expr'.
+     Unfortunately, TopSpeed does not follow this specification and treats
+     \verb'type(expr)' exactly as \verb'VAL(type,expr)' (see above).
+     Due to introduction of such ambiguities by pre-ISO compiler vendors, 
+     this feature was not included in the International Standard. 
+     \xds{} provided it as a language extension (option 
+     \OERef{M2EXTENSIONS} ON), but treated it as \verb'SYSTEM.CAST(type,expr)'.
+     Now, if the \OERef{TOPSPEED} option is turned ON, \xds{} will treat this
+     construction exaclty as TopSpeed. This ambiguity may lead to porting 
+     problems that are hard to detect, so the compiler issues a warning
+     upon encountering a type transfer function.
+     It is recommended to use the built-in \verb'VAL' and \verb'SYSTEM.CAST' 
+     function procedures for type conversion and type cast respectively. 
+
+\subsection{Inline and code procedures}
+
+    In \xds{}, there is no way to point out an inline procedure explicitly 
+    (yet), however native-code compilers can make inline substitutions of 
+    some procedures automatically. It is also not possible to define inline
+    procedures in a definition module. You have to move such procedures
+    into implementation modules.
+
+    As for TopSpeed binary inline procedures, they also have no equivalent 
+    in \xds{}. Since they contain 16-bit mode instructions, they would have
+    to be rewritten anyway. \xds{} inline assembler may be used to implement 
+    machine code routines.
+
+\section{Modules}
+
+\subsection{Import}
+
+    In TopSpeed, any entity imported into a definition module is "automatically" imported
+    into the corresponding implementation module. In ISO \mt{}, all entities
+    required by an implementation module should be explicitly imported into it.
+
+    TopSpeed \mt{} supports qualification of entities defined in a definition
+    module in the respecive implementation module. In \XDS{}, this is not 
+    possible.
+
+\subsection{Hidden pointer base types}
+
+    In TopSpeed, if \verb'T' is a type defined in an implementation module,
+    it is still possible to declare a type \verb'POINTER TO T' in a 
+    definition module:
+
+\begin{verbatim}
+    DEFINITION MODULE T;
+    
+    TYPE 
+      p1 = POINTER TO t1;
+      r1 = RECORD
+             p2: POINTER TO t2;
+           END;
+    
+    END T.
+\end{verbatim}
+
+    \xds{} does not allow this, so you have to either
+    \begin{itemize}
+    \item define such types as opaque
+    \item move base types into definition modules
+    \end{itemize}
+
+\subsection{Export from local module}
+
+    In TS. the keyword \verb'QUALIFIED' (in local modules) has no effect and
+    a name of an object exported from a local module can be used with or
+    without qualification. In ISO \mt{}, there is a distinction between
+    qualified an unqualified export. You will have to introduce uniformity
+    here: if you mostly use objects exported from local modules with 
+    qualification, ensure presence of the \verb'QUALIFIED' keyword, otherwise
+    remove it. Compilation errors will then indicate places where you have to
+    add or remove qualification.
+
+\subsection{The module SYSTEM}
+
+    In ISO \mt{}, all objects from the module \verb'SYSTEM', such as types
+    \verb'ADDRESS', \verb'WORD', \verb'BYTE', and the procedure \verb'ADR'
+    have to be explicitly imported. In TopSpeed \mt{}, they are predefined.
+
+    Although the \xds{} module \verb'SYSTEM' contains procedures 
+    \verb'NEWPROCESS', \verb'TRANSFER', and \verb'IOTRANSFER', 
+    it is recommended to replace them with more powerful mechanisms provided 
+    by the ISO system module \verb'COROUTINES'. See also \ref{mt}.
+
+    The set of platform-specific facilities is almost completely different
+    in TopSpeed and \xds{} variants of the module \verb'SYSTEM'.
+
+\section{Intel x86 16-bit mode specifics}
+
+    TopSpeed \mt{} supports Intel x86 16-bit real and protected modes,
+    whereas \XDS{} produces code for the 32-bit flat memory model. 
+    Therefore, code that deals with segment:offset addresses has to be
+    rewritten for \XDS{}.
+
+    In \XDS{}, there is no analog for TopSpeed pointer constructors of 
+    the form \verb'[seg:ofs type]'. These constructors are commonly used 
+    to directly interface to hardware and to access DOS and BIOS data areas,
+    so routines that utilize this feature have to be redesigned anyway,
+
+    The following TopSpeed \mt{} types and procedures, specific to
+    Intel x86 16-bit real and protected modes, are absent in \xds{}:
+
+    \verb'    FarADDRESS   FarNIL   FarADR' \\
+    \verb'    NearADDRESS  NearNIL  NearADR' \\
+    \verb'    Ofs Seg'
+
+    There are so called based pointers in TopSpeed, i.e. pointers belonging to
+    a particular segment. This feature is useless in 32-bit flat mode, so
+    it is not available in \xds{}.
+
+\section{Object oriented extensions}
+
+    There are no object-oriented extensions in \xds{} \mt{}. Although \xds{}
+    features \ot{} as well, its OO facilities are dissimilar in many
+    aspects from provided in TopSpeed \mt{}. So, unfortunately,
+    the required porting efforts for a program that makes heavy use of
+    TS OO extensions may be unaffordable.
+
+
+\section{Pragmae}
+
+\subsection{Pragma syntax}
+\label{tscp:pragmae:syntax}
+
+    \xds{} pragma syntax is completely different from TS. Most TopSpeed 
+    pragmae have no analogs in \XDS{}, and many of them are pretty useless
+    in the 32-bit flat memory model. 
+    \See{Conditional compilation}{}{tscp:cc}
+    has to be used to isolate TopSpeed and \XDS{} pragmae:
+
+\begin{verbatim}
+    (*%T __XDS__ *)
+      <* PUSH *> <* COVERFLOW - *>
+    (*%E *)
+    (*%F __XDS__ *)
+      (*# save, check(overflow=>off) *)
+    (*%E *)
+      hash := hash*alpha+ORD(ch);
+    (*%T __XDS__ *)
+      <* POP *>
+    (*%E *)
+    (*%F __XDS__ *)
+      (*# restore *)
+    (*%E *)
+\end{verbatim}
+
+\subsection{Open array parameters passing}
+
+    When an array is passed as a value parameter in TS, it can be either copied
+    onto the stack or passed by reference, depending on the \verb'call(o_a_copy)'
+    pragma setting. In \xds{}, an array is always copied onto the stack unless the
+    formal parameter is marked as read-only, for instance:
+
+\verb'    PROCEDURE PrintStr (s  : ARRAY OF CHAR);  -- pass by value'
+
+\verb'    PROCEDURE PrintStr (s- : ARRAY OF CHAR);  -- pass by reference'
+
+    Note: the \OERef{M2EXTENSIONS} option should be turned on.
+
+    When a procedure parameter has type \verb'ARRAY OF CHAR', TopSpeed allows an
+    actual parameter of type \verb'CHAR' to be passed. This is not allowed by
+    the ISO standard, and \xds{} will not accept it.
+
+\subsection{Bitwise operations on cardinals}
+
+    In TopSpeed \mt{}, the pragma \verb'option(bit_expr=>on}' enables
+    bitwise operations \verb'AND', \verb'OR', and \verb'NOT' to be applied
+    to cardinals. In \XDS{}, this feature is enabled if the \OERef{M2EXTENSIONS}
+    option is set ON.
+
+\subsection{Other pragmae}
+
+    More information on TS-to-XDS pragmae mapping will be provided in future releases.
+
+\pagebreak
+
+\section{\xds{} TS-like library}
+\label{tscp:lib}
+
+Table \ref{tscp:matrix} shows which TopSpeed-like library modules are implemented
+in which edition of TSCP.
+
+In order to preserve the overall level of the \xds{} libraries portability,
+a number of modifications was made to the original interface and functionality of the
+modules. Also, some restrictions were induced by differences between target
+operating systems. There are also some useful extensions. See the following sections
+for details.
+
+{\bf Note:} The library is compiled with the \OERef{M2BASE16} compiler option
+turned OFF, so types \verb'INTEGER', \verb'CARDINAL', and \verb'BITSET' 
+are 32-bit.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\bf Module & XDS-x86     & XDS-x86  & XDS-C \\
+\bf name   & (Windows)   & (Linux)  & (all platforms) \\
+\hline
+\tt BiosIO     & $\surd$ & $\surd$  & $\surd$ \\
+\tt FIO        & $\surd$ & $\surd$- & $\surd$- \\
+\tt FIOR       & $\surd$ & $\surd$  & $\surd$ \\
+\tt Graph      & $\surd$ & -        & - \\
+\tt IO         & $\surd$ & $\surd$  & $\surd$ \\
+\tt Lib        & $\surd$ & $\surd$  & $\surd$ \\
+\tt MATHLIB    & $\surd$ & $\surd$  & $\surd$ \\
+\tt MsMouse    & $\surd$ & $\surd$  & - \\
+\tt ShtHeap    & $\surd$ & $\surd$  & $\surd$ \\
+\tt Str        & $\surd$ & $\surd$  & $\surd$ \\
+\tt Window     & $\surd$ & $\surd$  & - \\
+\hline
+\end{tabular}
+\caption{Module/product availability matrix}
+\label{tscp:matrix}
+\end{center}
+\end{table}
+
+%-------------------------------------------------------------------------------
+
+\subsection{Module FIO}
+
+{\bf MODIFICATIONS}
+
+\begin{enumerate}
+
+\item Since the module {\bf FIO} is implemented on top of the ISO standard library,
+      the procedural variable \verb'RunTimeError' has been removed. If \verb'IOCheck'
+      is set to \verb'TRUE', an I/O error raises an exception, so ISO Modula-2
+      exception handling facilities can be used. Exceptions raised in {\bf FIO}
+      can be indentified in an exception handler by means of the procedures
+      \verb'FIO.IsFIOException()' or \verb'IOChan.IsChanException()'.
+
+\item The constant \verb'MaxOpenFiles' is no longer needed, since the maximum number of
+      open files is limited only by the system resources. If there are
+      too many open files, either an exception will be raised or the error
+      \verb'tooManyOpen' will be returned by the procedure \verb'FIO.IOresult()'
+      (it depends on the state of the variable \verb'IOcheck').
+
+\item File share modes are defined as an enumeration type:
+
+\begin{verbatim}
+    TYPE
+      SHAREMODE = (ShareCompat,
+                   ShareDenyRW,
+                   ShareDenyRD,
+                   ShareDenyWR,
+                   ShareDenyNone);
+\end{verbatim}
+
+      Supported target operating systems do not distingiush between subsequent opens
+      of a file done by the same or different process, so \verb'ShareCompat' works
+      as \verb'ShareDenyWR' in \verb'OpenRead' and as \verb'ShareDenyRW' in other
+      file open procedures.
+
+\item Standard file handles (e.g. \verb'StandardInput') are predefined variables of
+      the \verb'File' type rather than constants.
+
+\item Type of the buffer parameter for \verb'RdBin' and \verb'WrBin' has been changed to
+      \verb'ARRAY OF SYSTEM.LOC' which works perfectly the same as \verb'ARRAY OF BYTE'.
+
+\item When a file opening error occurs, the procedures \verb'Open', \verb'OpenRead',
+      \verb'Create', etc. return a special invalid value instead of MAX(CARDINAL).
+      The procedure \verb'InvalidFile' always returns that value.
+
+\item A disk label can be obtained by calling \verb'FIO.GetLabel' rather
+      than \verb'FIO.ScanFirst' with the volume attribute set.
+
+\item After directory scanning (\verb'FIO.ReadFirstEntry', \verb'FIO.ReadNextEntry') process
+      is completed, a call to the \verb'FIO.ReadClose' procedure {\em has to be issued} with
+      the scan-buffer passed as a parameter.
+
+\item The procedure \verb'FIO.SetDrive' does not return the total number of drives
+      available on the system.
+
+\item The \verb'EOF' flag is not set when the current read position {\it reaches} end of file,
+      but on attempt to read {\it past it}, as in ISO routines.
+
+\item The \verb'Ctrl-Z' character is {\it not} recognized as an end-of-file mark.
+
+\item For all procedures accepting or returning a drive number, drive numeration
+      starts from 1 (1 is drive A, 2 is drive B and so on).
+
+\item The {\bf SysErr} module contains constants defining symbolic names of error
+      codes. Those constants may be used to test a return code obtained from
+      \verb'FIO.IOresult'. The constant \verb'SysErr.allRight' corresponds to a normal
+      procedure termination (it is recommended to use this constant instead of
+      zero value).
+
+\item 32-bit file length is supported.
+
+\item A file handle obtained from a system call can {\bf NOT} be directly passed
+      to {\bf FIO} procedures. It has to be converted to a value of the type \verb'File'
+      using the \verb'AppendHandle' procedure:
+
+\begin{verbatim}
+    PROCEDURE AppendHandle(fh : LONGCARD
+                          ;ReadOnly : BOOLEAN
+                          ) : File;
+\end{verbatim}
+
+\item The type \verb'FIO.FileStamp' is declared as equal to 
+      \verb'SysClock.DateTime'.
+
+\item The parameter of \verb'FIO.Close' now is a VAR parameter and the procedure
+      shall assign an "invalid" value to it if the close operation succeeds,
+
+\end{enumerate}
+
+{\bf RESTRICTIONS}
+
+\begin{enumerate}
+\item There is no multithread program support yet. Namely, the \verb'IOresult',
+      \verb'ThreadEOF' and \verb'ThreadOK' procedures are not implemented yet,
+      Nevertheless, the module can be used in multithread programs with the
+      reservations listed above.
+
+\item File share modes are only supported by Native XDS-x86 for Windows.
+
+\item Assinging a buffer to a file is not implemented yet. I/O operations are
+      buffered internally, but there is no way to flush an internal buffer (yet).
+
+\item The procedures \verb'GetStreamPointer' and \verb'AppendStream' 
+      have been excluded,
+
+\item The predefined variable \verb'PrinterDevice' is not eliminated yet.
+
+\item \verb'RdReal' and \verb'RdLngReal' do not recognize exponent-only zeroes,
+      such as \verb'E+0'.
+\end{enumerate}
+
+{\bf PRODUCTS}
+
+Native XDS-x86 for Windows\\
+Native XDS-x86 for Linux (with limitations)\\
+XDS-C (with limitations)
+
+%------------------------------------------------------------------------------
+
+\subsection{Module Graph}
+
+{\bf MODIFICATIONS}
+
+\begin{enumerate}
+\item The major difference between TS original and XDS implementations
+      of the module {\bf Graph} is a windowed mode: a program, which uses the
+      module, opens the \verb'Graph' window by a call to the \verb'Graph.Init'
+      procedure, invokes the procedures provided by the module to draw in the
+      window and set some parameters (e.g. a clipping  region) and calls to
+      the \verb'Graph.Exit' procedure to close the {\bf Graph} window.
+      It is possible to open only one {\bf Graph} window at a time.
+
+      The \verb'Init' procedure has been changed to
+
+      \verb'PROCEDURE Init(xLeft, yTop, xd, yd : LONGCARD) : BOOLEAN;'
+
+      The position of the left upper corner of the {\bf Graph} window is passed in
+      the \verb'xLeft' and \verb'yTop' parameters, horizontal and vertical sizes
+      of the window are passed in the \verb'xd' and \verb'yd' parameters.
+      The {\bf Graph} window is closed automatically upon program termination.
+      The \verb'Exit' procedure can be used to close the {\bf Graph} window before
+      the program execution is finished:
+
+      \verb'PROCEDURE Exit;'
+
+      The \verb'Init' procedure returns success indicator (\verb'TRUE' means succesful
+      module initialization) and it is recommended to test the value in the
+      program.
+      
+\item The procedures \verb'GraphMode' and \verb'TextMode' switch focus between
+      the console window and the \verb'Graph' window and appropriately change
+      their z-order.
+ 
+\item The procedure \verb'SetGraphWindowTitle', which sets the title of the
+      \verb'Graph' window, has been added:
+
+      \verb'PROCEDURE SetGraphWindowTitle (text :ARRAY OF CHAR);'
+
+\item The procedure \verb'GetVideoConfig' has been removed. The fields of the
+      \verb'VideoConfig' record, which were typically used, are exported as variables:
+
+      \begin{tabular}{l|l|l}
+      \bf Name    &        \bf Explanation                & \bf VideoConfig field \\
+      \hline
+      \tt Width      & width of the Graph window work area  & \tt numxpixels            \\
+      \tt Depth      & depth of the Graph window work area  & \tt numypixels            \\
+      \tt NumPColors & number of colors in use              & \tt numcolors             \\
+      \tt Columns    & number of text columns available     & \tt numtextcols           \\
+      \tt Rows       & number of text rows available        & \tt numtextrows
+      \end{tabular}
+
+      {\bf Note:} By "number of text columns" ("text rows") a maximum number
+                  of monospaced font characters which can be placed into the {\bf Graph}
+                  window in one column (row) is meant.
+
+\item The \verb'Fill' parameter has been added to the procedure \verb'Polygon':
+
+\begin{verbatim}
+PROCEDURE Polygon(n : CARDINAL;
+                  px, py : ARRAY OF CARDINAL;
+                  FillColor : CARDINAL;
+                  Fill : BOOLEAN);
+\end{verbatim}
+
+      The variable \verb'FillState', influencing on \verb'Polygon''s
+      fill mode, has been excluded.
+
+\item The procedure \verb'Pie_a' has been added:
+
+\begin{verbatim}
+PROCEDURE Pie_a (x1, y1, x2, y2 : LONGCARD;
+                 startAngle, sweepAngle : LONGREAL;
+                 Color :CARDINAL; Fill : BOOLEAN);
+\end{verbatim}
+
+        A pie is defined as a part of an ellipse enclosed in the rectangle
+        ( \verb'x1', \verb'y1', \verb'x2', \verb'y2' ), with a start angle
+        passed in the \verb'startAngle' parameter and a sweep angle passed
+        in the \verb'sweepAngle'. Angles are measured in degrees. The pie
+        is drawn counterclockwise.
+
+\item It is recommended to invoke the \verb'CancelClipRgn' procedure to disable
+      clipping instead of a call to \verb'SetClipRgn' with a whole window position
+      and sizes passed as parameters.
+
+\item The procedure \verb'RawOutText' draws a text at the position (\verb'x',\verb'y')
+      defined in pels rather than in text columns and rows:
+
+\begin{verbatim}
+PROCEDURE RawOutText (x, y : LONGCARD;
+                      Color : LONGCARD;
+                      Text :ARRAY OF CHAR);
+\end{verbatim}
+
+\item Since Win32 GDI engine keep a bitmap in a system heap,
+      there is no need to allocate memory for a bitmap in a program which
+      uses the module, so the procedure \verb'ImageSize' always returns 0.
+
+      The following scheme shows the standard order of procedure calls within
+      the program which uses bitmaps:
+
+      \begin{enumerate}
+      \item Invoke the \verb'GetImage' procedure to create a bitmap:
+
+\begin{verbatim}
+PROCEDURE GetImage(x1, y1, x2, y2 : LONGCARD; 
+                   VAR bmpHandle : HBITMAP );
+\end{verbatim}
+            The handle of the created bitmap will be returned in the \verb'bmpHandle'
+            parameter (the \verb'HBITMAP' type is exported from the module).
+
+      \item To draw the previously created bitmap, call the \verb'PutImage' procedure,
+            passing the bitmap handle in the \verb'bmpHandle' parameter:
+
+\begin{verbatim}
+PROCEDURE PutImage(x, y : LONGCARD; 
+                   bmpHandle : HBITMAP;
+                   Action : LONGCARD);
+\end{verbatim}
+
+      \item When a bitmap is no longer needed, it is recommended to delete it
+            in order to release system resources by calling the 
+            \verb'DelImage' procedure:
+
+            \verb'PROCEDURE DelImage(hbmHandle :HBITMAP);'
+      \end{enumerate}
+
+\item Because of an OS/2 GPI restriction, there is no way to set an arbitrary line
+      style (e.g. to draw outline circle ), nevertheless there is a number of
+      the predefined line styles which can be set by means of a call to the
+      \verb'SetLineStyle' procedure. Any of the following constants, exported from the
+      module, can be passed to the \verb'SetLineStyle' procedure:
+
+\begin{verbatim}
+    LNSTYLE_DOT
+    LNSTYLE_SHORTDASH
+    LNSTYLE_DASHDOT
+    LNSTYLE_DOUBLEDOT
+    LNSTYLE_DASHDOUBLEDOT
+    LNSTYLE_SOLID
+\end{verbatim}
+
+\item A program can define its own fill mask (the \verb'SetFillMask' procedure).
+      Also the {\bf Graph} module provides the \verb'SetStdFillMask' procedure to use
+      several standard fill masks. The following constants, exported from
+      the module, define different fill masks :
+
+\begin{verbatim}
+    PATSYM_DENSE1
+    PATSYM_DENSE2
+    PATSYM_DENSE3
+    ...
+\end{verbatim}
+
+\item The \verb'SetBkMix' procedure has been added to the original functionality.
+
+          PROCEDURE SetBkMix (isOpaque : BOOLEAN);
+
+      The \verb'_TRANSPARENT' and \verb'_OPAQUE' constants can be passed to the
+      \verb'isOpague' parameter.
+      The procedure sets background color mixture mode. Namely, if \verb'_OPAQUE'
+      passed, bits of a fill mask, set in zero, are painted in background color
+      when filling with a non-solid mask is used. If \verb'_TRANSPARENT' passed,
+      screen pixels corresponding to zero bits of a fill mask, are not
+      changed.
+
+\item The \verb'RemapPalette' and \verb'RemapAllPalette' procedures are provided to set
+      a logical palette. The \verb'InitStdPalette' procedure allows to set
+      the palette to the initial state, in which only 16 colors, corresponding
+      to the colors constants (e.g. \verb'_clrLIGHTBLUE' ), are defined.
+
+\item The procedures \verb'TrueCircle' and \verb'TrueDisc' are defined as equal
+      to \verb'Circle' and \verb'Disc' respectively, as pixels are square
+      in all commonly used video modes provided by modern display adapters.
+\end{enumerate}
+
+{\bf RESTRICTIONS}
+
+\begin{enumerate}
+\item Device specific constants and routines, such as \verb'CGAWidth',
+      \verb'InitCGA', etc., have been removed
+
+\item The following procedures have been excluded:
+      \verb'SelectPalette' (CGA only),
+      \verb'SetVideoMode',
+      \verb'SetActivePage',
+      \verb'SetVisualPage',
+
+\item It is possible to set a custom palette by means of a call to the
+      \verb'RemapPalette' or \verb'RemapAllPalette' procedures. However,
+      the palette colors map to the nearest colors of the current physical
+      palette on your device.
+\end{enumerate}
+
+{\bf PRODUCTS}
+
+Native XDS-x86 for Windows\\
+Native XDS-x86 for Linux (with limitations)\\
+
+%-------------------------------------------------------------------------------
+
+\subsection{Module IO}
+
+{\bf RESTRICTIONS}
+
+\begin{enumerate}
+\item The \verb'IO.KeyPressed()' and \verb'IO.RdKey()' procedures,
+      providing direct read from keyboard, are available in console
+      applications only.
+
+\item \verb'RdReal' and \verb'RdLngReal' do not recognize exponent-only zeroes,
+      such as \verb'E+0'.
+\end{enumerate}
+
+{\bf PRODUCTS}
+
+All XDS products
+
+%-----------------------------------------------------------------------------
+
+\subsection{Module Lib}
+
+{\bf MODIFICATIONS}
+
+\begin{enumerate}
+\item Although address operations (\verb'SubAddr', \verb'AddAddr' etc.) and
+      other low-level procedures (such as \verb'Fill', \verb'Move') are 
+      available, usage of their analogs from the module \verb'SYSTEM'
+      (\verb'ADDADR', \verb'SUBADR', \verb'FILL', etc.) would improve
+      performance. Please consult the User's Guide, Chapter "XDS Modula-2" 
+      for more information.
+
+\item The procedural variable \verb'RunTimeError' has been removed. In ISO
+      Modula-2, exceptions should be used for error handling purposes.
+      The \verb'MathError' procedure has been excluded because of
+      the same reason. See also the description of changes made to the {\bf FIO} module.
+
+\item The \verb'Terminate' procedure has been removed because the same effect
+      can be obtained by means of ISO Modula-2 standard mechanisms, such as module
+      finalization and the system module {\bf TERMINATION}
+      (see XDS User Guide, new language's features)
+
+\item \verb'SetDate' and \verb'SetTime' are now pure procedures.
+
+\item The \verb'Environment' procedure definition has been changed to
+
+\verb'    PROCEDURE Environment (N :CARDINAL;'\\
+\verb'                           VAR result :ARRAY OF CHAR);'
+
+\item The \verb'WordFill' procedure definition has been changed to
+
+\verb'    PROCEDURE WordFill(Dest: ADDRESS;'\\
+\verb'                       WordCount: CARDINAL;'\\
+\verb'                       Value: SYSTEM.CARD16);'
+\end{enumerate}
+
+{\bf RESTRICTIONS}
+
+\begin{enumerate}
+\item The following platform-specific procedures have been removed:
+\begin{verbatim}
+      AddressOK               CpuId
+      GetInProgramFlag        Execute
+      NoSound                 ProtectedMode
+      SelectorLimit           SetReturnCode
+      SetInProgramFlag        Sound
+      SysErrNo                UserBreak
+      WrDosError
+\end{verbatim}
+
+\item The \verb'EnableBreakCheck' and \verb'DisableBreakCheck' procedures are
+      not implemented; the \verb'CtrlC' module from the XDS run-time library
+      should be used to handle \verb'Ctrl-C' and \verb'Ctrl-Break' events.
+\end{enumerate}
+
+{\bf PRODUCTS}
+
+All XDS products
+
+%-------------------------------------------------------------------------------
+
+\subsection{Module MATHLIB}
+
+{\bf RESTRICTIONS}
+
+\begin{enumerate}
+\item The following procedures are not implemented:
+      \verb'LongToBcd',
+      \verb'BcdToLong'
+
+\item ISO \mt{} exception handling (see \ref{m2:ISO:features})
+      is used to report floating point errors,
+      therefore the procedure variable \verb'MathError' is not provided.
+\end{enumerate}
+
+{\bf PRODUCTS}
+
+All XDS products
+
+%-----------------------------------------------------------------------------
+
+\subsection{Module ShtHeap}
+
+{\bf MODIFICATIONS}
+
+\begin{enumerate}
+\item If a memory allocation failure occurs, \verb'NIL' is returned.
+
+\item The type \verb'ShtHeap.Pointer' was replaced with the type
+      \verb'SYSTEM.ADDRESS'.
+
+\item The \verb'ShtHeap.Increase' procedure has been eliminated.
+
+\item Heap size is not resricted by 64 Kbytes (so \verb'ShtHeap' is a 
+      historical name).
+\end{enumerate}
+
+{\bf PRODUCTS}
+
+All XDS products
+
+%-------------------------------------------------------------------------------
+
+\subsection{Module Str}
+
+{\bf MODIFICATIONS}
+
+\begin{enumerate}
+\item The \verb'LowS' procedure (conversion to lower case) has been added to
+      the module.
+\item In TopSpeed, the procedure \verb'FixRealToStr' does not output more than 
+      17 digits, whereas in XDS there is always \verb'Precision' digits after 
+      decimal point.
+
+      As a result, after a call \verb'FixRealToStr(V,5,S,Ok)' variables
+      \verb'S' and \verb'Ok' have the following vaues in TS and XDS 
+      respectively:
+
+      {\tt
+      \begin{tabular}{ll|ll}
+      V       & SIZE(S) & S                       & OK \\
+      \hline
+      0.99E17 & 30      & 99000000000000000.0      & TRUE \\
+              &         & 99000000000000000.00000  & TRUE \\
+      0.99E18 & 30      & 990000000000000000       & TRUE \\
+              &         & 990000000000000000.00000 & TRUE \\
+      0.99E18 & 18      & 990000000000000000       & TRUE \\
+              &         & ?                        & FALSE \\
+      \end{tabular}
+      }
+   
+
+\end{enumerate}
+
+{\bf PRODUCTS}
+
+All XDS products
+
+%-----------------------------------------------------------------------------
+
+\subsection{Module Window}
+\index{Window}
+
+{\bf EXTENSIONS}
+
+\begin{enumerate}
+\item An arbitrary screen size (number of rows and columns) is supported.
+      The \verb'ScreenWidth' ( = 80 ) and \verb'ScreenDepth' (= 25) constants are
+      remained, but in the case of non-standard screen size,
+      actual values can be obtained from the \verb'CurrentScreenWidth' and
+      \verb'CurrentScreenDepth' variables (the \verb'CurrentScreenWidth' variable has
+      been added to the original TS Window functionality).
+
+\item Input and output in any window, can be performed not only by means
+      of the XDS TS-like module {\bf IO}, but also through ISO standard
+      input/output modules, such as STextIO or SRawIO.
+\end{enumerate}
+
+{\bf RESTRICTIONS}
+
+\begin{enumerate}
+\item The \verb'CGASnow' constant has been removed.
+
+\item It is needed to call the \verb'GetWDescriptor' procedure to obtain
+      pointer to the \verb'WinDescriptor' record, since in the XDS
+      implementation of the {\bf Window} module,  \verb'WinType' is an opaque type
+      rather than pointer to record. The following declarations were
+      added to the definition module:
+
+\begin{verbatim}
+    TYPE
+      p2WDescriptor = POINTER TO WinDescriptor;
+
+      PROCEDURE GetWDescriptor ( W :WinType ) :p2WDescriptor;
+\end{verbatim}
+
+\item The \verb'SetProcessLocks' procedures has been removed (multithread
+      support implemented in such a way, that there is no need to use it).
+\end{enumerate}
+
+{\bf PRODUCTS}
+
+Native XDS-x86 for Windows\\
+Native XDS-x86 for Linux (with limitations)
+
+\subsection{Multithreading}
+\label{mt}
+
+    The TopSpeed module \verb'Process' implements its own scheduler which does
+    not make use of the underlying operating system multithreading capabilities,
+    in order to enable the development of multithread programs portable between
+    DOS and OS/2. In case of \xds{}, the ISO \verb'Processes' module should be used.
+    Under Windows, its functionality is mapped onto
+    the corresponding thread control API.
+
+    {\bf Note:} The {\bf MULTITHREAD} option should be set on to enable the
+    functionality described above. Otherwise, the module \verb'Processes' will
+    work in coroutines mode.
+
+    An example of the \verb'Processes' module usage is the \verb'WinDemoM'
+    sample which was ported from TopSpeed \mt{}.
+
+    The \verb'Processes' module does not provide direct way to start or stop the
+    process scheduler, which is possible in TopSpeed \verb'Process' module, but this
+    problem can be easily solved by writing some extra code (see \verb'WinDemoM.mod').
+
+    The ISO standard module \verb'Semaphores' can be used to utilize the underlying
+    operating system semaphore API.
+
+

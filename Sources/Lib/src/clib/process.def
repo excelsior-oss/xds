@@ -1,0 +1,33 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE [2] process;
+
+FROM SYSTEM IMPORT int;
+FROM X2C    IMPORT X2C_ppcCHAR;
+FROM xmRTS  IMPORT X2C_pCHAR;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  P_WAIT- 	: int; (* Child runs separately, parent waits until exit *)
+  P_NOWAIT-	: int; (* Child and parent run concurrently *)
+  P_OVERLAY-	: int; (* Child replaces parent so that parent no longer exists *)
+<* ELSE *>
+CONST
+  P_WAIT        = 0; (* Child runs separately, parent waits until exit *)
+  P_NOWAIT      = 1; (* Child and parent run concurrently *)
+  P_OVERLAY     = 2; (* Child replaces parent so that parent no longer exists *)
+<* END *>
+
+PROCEDURE spawnv  (mode: int; path: X2C_pCHAR; argv: X2C_ppcCHAR): int;
+PROCEDURE spawnve (mode: int; path: X2C_pCHAR; argv,env: X2C_ppcCHAR): int;
+PROCEDURE spawnvp (mode: int; path: X2C_pCHAR; argv: X2C_ppcCHAR): int;
+PROCEDURE spawnvpe(mode: int; path: X2C_pCHAR; argv,env: X2C_ppcCHAR): int;
+
+PROCEDURE execv   (path: X2C_pCHAR; argv: X2C_ppcCHAR): int;
+PROCEDURE execve  (path: X2C_pCHAR; argv,env: X2C_ppcCHAR): int;
+PROCEDURE execvp  (path: X2C_pCHAR; argv: X2C_ppcCHAR): int;
+PROCEDURE execvpe (path: X2C_pCHAR; argv,env: X2C_ppcCHAR): int;
+
+END process.

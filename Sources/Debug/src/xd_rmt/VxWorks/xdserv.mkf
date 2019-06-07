@@ -1,0 +1,60 @@
+M       = xdserv.mkf
+
+TARGET  = xdserv.o
+
+CC	= cc68k -DCPU=MC68040 -I/home/alexs/vxWorks/vw/h -O -fno-builtin -m68040 -nostdinc -c
+
+
+
+# ------------------ objects enumeration ------------------
+#                    -------------------
+
+OBJ= \
+      obj/xdDemon.o \
+      obj/xdTransportTCP.o \
+      obj/xdTransact.o \
+      obj/xdServer.o \
+      obj/xdTypes.o
+
+# ------------------- target make rules -------------------
+#                     -----------------
+
+$(TARGET): $(OBJ)
+	ld68k -o $(TARGET) -r $(OBJ)
+
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+obj/xdDemon.o: src/xdTypes.h
+obj/xdDemon.o: src/xdAssert.h
+obj/xdDemon.o: src/xdServer.h
+obj/xdDemon.o: src/xdTransport.h
+obj/xdDemon.o: src/xdTransportTCP.h
+obj/xdDemon.o: src/xdDemon.c
+	$(CC) src/xdDemon.c -o obj/xdDemon.o
+
+obj/xdTransportTCP.o: src/xdTypes.h
+obj/xdTransportTCP.o: src/xdAssert.h
+obj/xdTransportTCP.o: src/xdTransport.h
+obj/xdTransportTCP.o: src/xdTransportTCP.h
+obj/xdTransportTCP.o: src/xdTransportTCP.c
+	$(CC) src/xdTransportTCP.c -o obj/xdTransportTCP.o
+
+obj/xdTransact.o: src/xdTypes.h
+obj/xdTransact.o: src/xdAssert.h
+obj/xdTransact.o: src/xdTransact.h
+obj/xdTransact.o: src/xdTransact.c
+	$(CC) src/xdTransact.c -o obj/xdTransact.o
+
+obj/xdServer.o: src/xdTypes.h
+obj/xdServer.o: src/xdAssert.h
+obj/xdServer.o: src/xdTransact.h
+obj/xdServer.o: src/xdServer.h
+obj/xdServer.o: src/xdServer.c
+	$(CC) src/xdServer.c -o obj/xdServer.o
+
+obj/xdTypes.o: src/xdTypes.h
+obj/xdTypes.o: src/xdTypes.c
+	$(CC) src/xdTypes.c -o obj/xdTypes.o
+
+# end of makefile

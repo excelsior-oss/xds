@@ -1,0 +1,36 @@
+If the definition module is found, and implementation one is not, \xds{}
+tries to find a {\em pseudo implementation} module
+which contains only the import list of the module:
+\begin{verbatim}
+IMPLEMENTATION MODULE module_name;
+IMPORT module_list;
+END module_name.
+\end{verbatim}
+
+The equation {\bf IMPEXT} is used to specify a file name extension
+for pseudo implementation modules (default {\bf .imp}).
+\index{.imp (See IMPEXT)}
+Pseudo implementation modules are useful
+when a project contains a module written in a foreign language,
+and this module imports a \mt{} or \ot{} module.
+Let a project contain modules {\bf A}, {\bf B} and {\bf C},
+where
+        \begin{center}
+        \begin{tabular}{|c|c|l|} \hline
+        \bf Module name & Import  & Language \\ \hline
+        \bf A           & B       & \mt{}    \\ \hline
+        \bf B           & C       & C        \\ \hline
+        \bf C           &         & \mt{}    \\ \hline
+        \end{tabular}
+        \end{center}
+To find all module in project \xds{}
+needs a method to determine which modules are imported by
+the module {\bf B}. It can be done with the help of pseudo
+implementation module (file {\tt B.imp}):
+\begin{verbatim}
+IMPLEMENTATION MODULE B;
+IMPORT C;
+END B.
+\end{verbatim}
+In this example we assume that the definition module {\tt B.def}
+is already included in the project.

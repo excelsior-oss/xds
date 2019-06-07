@@ -1,0 +1,12 @@
+(* Copyright (c) xTech 1993,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xmRTSdef; (* Hady. 28.05.96 13:05 *)
+
+IMPORT  SYSTEM;
+
+TYPE
+  X2C_pCHAR = POINTER TO CHAR;
+  X2C_pVOID = SYSTEM.ADDRESS;
+  LSET      = POINTER TO BITSET;
+
+END xmRTSdef.

@@ -1,0 +1,645 @@
+<*+ M2EXTENSIONS *>
+<*+ DLLEXPORT    *>
+--------------------------------------------------------------------------------
+--                   Excelsior XDS Test Coverage Runtime Library
+--                          (c) 2015, Excelsior Ltd.
+--
+-- Module:       xrTCSx86
+-- Synonym:      tc
+-- Authors:      Lvov Konstantin
+-- Created:      10-Dec-2002
+--------------------------------------------------------------------------------
+<*+ M2ADDTYPES *>
+<* ALIGNMENT = '8' *> 
+
+<* IF ~ DEFINED(NOMODULEINIT) THEN *>  <* NEW NOMODULEINIT+ *>
+<* ELSE *>                             <*+ NOMODULEINIT *>
+<* END *>
+
+<* IF ~ DEFINED(TARGET_VAX)  THEN *>  <* NEW TARGET_VAX- *>   <* END *>
+<* IF ~ DEFINED(TARGET_MIPS) THEN *>  <* NEW TARGET_MIPS- *>  <* END *>
+<* IF ~ DEFINED(TARGET_SPARC) THEN *>  <* NEW TARGET_SPARC- *>  <* END *>
+<* IF ~ DEFINED(TARGET_PPC)   THEN *>  <* NEW TARGET_PPC-   *>  <* END *>
+<* IF ~ DEFINED(TARGET_386)  THEN *>  <* NEW TARGET_386- *>   <* END *>
+
+<* IF ~ DEFINED(__GEN_VAX__)  THEN *>  <* NEW __GEN_VAX__- *>   <* END *>
+<* IF ~ DEFINED(__GEN_MIPS__) THEN *>  <* NEW __GEN_MIPS__- *>  <* END *>
+<* IF ~ DEFINED(__GEN_SPARC__) THEN *>  <* NEW __GEN_SPARC__- *>  <* END *>
+<* IF ~ DEFINED(__GEN_PPC__)   THEN *>  <* NEW __GEN_PPC__-   *>  <* END *>
+<* IF ~ DEFINED(__GEN_X86__)  THEN *>  <* NEW __GEN_X86__- *>   <* END *>
+
+DEFINITION MODULE xrTCSx86;
+IMPORT sys := SYSTEM;
+
+CONST
+  TCS_OUT_ENV_VAR     = "TCS_OUT";
+  TCS_MESSAGE_ENV_VAR = "TCS_MESSAGE";
+  TCS_MESSAGE_OFF     = "OFF"; -- value of TCS_MESSAGE environment variable
+
+  TCS_RTS_VERSION     = 101;
+
+TYPE
+  TCard32 = sys.CARD32;
+
+  -- cource line and column
+  TSourceLine = LONGINT;
+  TSourceCol  = LONGINT;
+  -- index of used test conditions
+  TIndex   = sys.INT32;
+  -- test condition pass counter
+  TCounter = sys.INT32;
+  -- source file modification time
+  TTime    = TCard32;
+  -- test coverage run-time version
+  TVersion = TCard32;
+  -- cyclic redundancy check 
+  TCRCSum  = TCard32;
+  -- test coverage errors counter
+  TErrorCnt = TCard32;
+
+  -- type of test condition
+  TestConditionType = (
+    tc_Version             --  0
+  , tc_Targets             --  1
+  , tc_File                --  2
+  , tc_Empty               --  3
+
+  -- C1 criterion: compilation unit
+  , tc_C1_Procedure        --  4
+  , tc_C1_Module           --  5
+  , tc_C1_Finally          --  6
+
+  -- C1 criterion: IF statement
+  , tc_C1_IF               --  7
+  , tc_C1_IF_true          --  8
+  , tc_C1_IF_false         --  9
+
+  , tc_C1_IF_elsif         -- 10
+  , tc_C1_IF_elsif_true    -- 11
+  , tc_C1_IF_elsif_false   -- 12
+
+  , tc_Info_IF_else        -- 13
+
+  , tc_C1_IF_end           -- 14
+  , tc_Info_IF_end         -- 15
+
+  -- C1 criterion: CASE statement
+  , tc_C1_Case             -- 16
+  , tc_C1_Case_else        -- 17
+  , tc_C1_Case_end         -- 18
+  , tc_Info_Case_end       -- 19
+
+  -- C1 criterion: Oberon WHIT statement
+  , tc_C1_OberonWith       -- 20
+  , tc_C1_OberonWith_else  -- 21
+  , tc_C1_OberonWith_end   -- 22
+  , tc_Info_OberonWith_end -- 23
+
+  -- C1 criterion: WHILE statement
+  , tc_C1_While_true       -- 24
+  , tc_C1_While_false      -- 25
+  , tc_C1_While_end        -- 26
+  , tc_Info_While_end      -- 27
+
+  -- C criterion: WHILE statement
+  , tc_C_While_itr_0       -- 28
+  , tc_C_While_itr_1       -- 29
+  , tc_C_While_itr_N       -- 30
+
+  -- C1 criterion: REPEAT statement
+  , tc_C1_Repeat_true      -- 31
+  , tc_C1_Repeat_false     -- 32
+  , tc_C1_Repeat_end       -- 33
+  , tc_Info_Repeat_end     -- 34
+
+  -- C criterion: REPEAT statement
+  , tc_Info_Repeat_itr_0   -- 35
+  , tc_C_Repeat_itr_1      -- 36
+  , tc_C_Repeat_itr_N      -- 37
+
+  -- C1 criterion: FOR statement
+  , tc_C1_For              -- 38
+  , tc_C1_For_end          -- 39
+  , tc_Info_For_end        -- 40
+
+  -- C criterion: FOR statement
+  , tc_Info_For_itr_0      -- 41
+  , tc_Info_For_itr_1      -- 42
+  , tc_C_For_itr_0         -- 43
+  , tc_C_For_itr_1         -- 44
+  , tc_C_For_itr_N         -- 45
+
+  -- C1 criterion: LOOP statement
+  , tc_C1_Loop             -- 46
+  , tc_C1_Loop_end         -- 47
+  , tc_Info_Loop_end       -- 48
+
+  -- C criterion: LOOP statement
+  , tc_Info_Loop_itr_0     -- 49
+  , tc_C_Loop_itr_1        -- 50
+  , tc_C_Loop_itr_N        -- 51
+
+  , tc_C_Expr_true         -- 52
+  , tc_C_Expr_false        -- 53
+  , tc_C_Expr_equal        -- 54
+  , tc_C_Case_else         -- 55
+  , tc_C1_Except           -- 56
+                               
+  , tc_C_Recur_0           -- 57
+  , tc_C_Recur_1           -- 58
+  , tc_C_Recur_N           -- 59
+  
+  ); -- TestConditionType
+
+TYPE
+  -- target development system
+  TTargetSystem = (
+    tgs_VAX
+  , tgs_MIPS
+  , tgs_x86
+  , tgs_C
+  , tgs_SPARC
+  , tgs_PPC 
+  ); -- TargetSystemType
+
+  TTargetSystemSet *= PACKEDSET OF TTargetSystem;
+
+CONST
+  UNKNOWN_TargetSystem = TTargetSystemSet{};
+
+TYPE
+  -- test conditions source code affixment
+  TSourceRefPtr = POINTER TO TSourceRef;
+  TSourceRef = RECORD
+    proc: TIndex;
+    line: TSourceLine;
+    col:  TSourceCol;
+    end_line: TSourceLine;
+    end_col:  TSourceCol;
+    type: TestConditionType;
+  END; -- TSourceRef
+
+  -- test coverage module information
+  TModuleInfoPtr = POINTER TO TModuleInfo;
+  TModuleInfo = RECORD
+    count:      TIndex;
+    -- module info
+    modtime:    TTime;
+    crcsum:     TCRCSum;
+    modname:    sys.ADDRESS;
+    procnames:  sys.ADDRESS;
+    srcrefs:    sys.ADDRESS;
+    counters:   sys.ADDRESS;
+    -- rts info
+    next:  TModuleInfoPtr;
+  END; -- TModuleInfo
+
+CONST
+  PROCNAME_SEPARATOR = ';';
+
+VAR
+  StaticModuleList  := NIL : TModuleInfoPtr;
+  DynamicModuleList := NIL : TModuleInfoPtr;
+
+--------------------------------------------------------------------------------
+PROCEDURE InitIterationCounter ( index_0: TIndex
+                               ; VAR local_counter: TCounter
+                               ; VAR counters: ARRAY OF TCounter
+                               );
+
+--------------------------------------------------------------------------------
+PROCEDURE IncreaseIterationCounter ( index_0: TIndex
+                                   ; index_1: TIndex
+                                   ; index_N: TIndex
+                                   ; VAR local_counter: TCounter
+                                   ; VAR counters: ARRAY OF TCounter
+                                   );
+
+
+--------------------------------------------------------------------------------
+PROCEDURE InitRecursionDepth ( VAR depth : TCounter
+                             ; VAR was_return: BOOLEAN );
+
+--------------------------------------------------------------------------------
+PROCEDURE IncreaseRecursionDepth ( index_0: TIndex
+                                 ; index_1: TIndex
+                                 ; index_N: TIndex
+                                 ; VAR depth: TCounter
+                                 ; VAR was_return: BOOLEAN
+                                 ; VAR counters: ARRAY OF TCounter
+                                 );
+
+--------------------------------------------------------------------------------
+PROCEDURE DecreaseRecursionDepth ( VAR depth: TCounter
+                                 ; VAR was_return: BOOLEAN
+                                 );
+
+--------------------------------------------------------------------------------
+PROCEDURE DecreaseVariableValue (VAR value: TCounter);
+
+--------------------------------------------------------------------------------
+
+PROCEDURE IncreaseConditionCounter ( condition: BOOLEAN
+                                   ; index_true: TIndex
+                                   ; index_false: TIndex
+                                   ; VAR counters: ARRAY OF TCounter
+                                   ): BOOLEAN;
+
+--------------------------------------------------------------------------------
+TYPE
+  TRelation = (
+    rel_LessThen
+  , rel_LessEqual
+  , rel_GreaterThen
+  , rel_GreaterEqual
+  );
+
+
+  TSignedArgument   = sys.INT32;
+  TUnsignedArgument = sys.CARD32;
+
+--------------------------------------------------------------------------------
+PROCEDURE IncreaseRelationCounterSigned ( relation: TRelation
+                                        ; arg_left: TSignedArgument
+                                        ; arg_right: TSignedArgument
+                                        ; index: TIndex
+                                        ; VAR counters: ARRAY OF TCounter
+                                        ): BOOLEAN;
+
+--------------------------------------------------------------------------------
+PROCEDURE IncreaseRelationCounterUnsigned ( relation: TRelation
+                                          ; arg_left: TUnsignedArgument
+                                          ; arg_right: TUnsignedArgument
+                                          ; index: TIndex
+                                          ; VAR counters: ARRAY OF TCounter
+                                          ): BOOLEAN;
+
+--------------------------------------------------------------------------------
+PROCEDURE IncreaseRelationCounter ( condition: BOOLEAN
+                                  ; equals: BOOLEAN
+                                  ; index: TIndex
+                                  ; VAR counters: ARRAY OF TCounter
+                                  ): BOOLEAN;
+
+--------------------------------------------------------------------------------
+PROCEDURE IncreaseCounter ( index: TIndex
+                          ; VAR counters: ARRAY OF TCounter
+                          );
+
+--------------------------------------------------------------------------------
+PROCEDURE IncreaseCounterExt ( index: TIndex
+                             ; Init: PROC
+                             ; VAR counters: ARRAY OF TCounter
+                             );
+
+
+--------------------------------------------------------------------------------
+PROCEDURE RegistryModule ( module:    TModuleInfoPtr
+                         ; modtime:   TTime
+                         ; crcsum:    TCRCSum
+                         ; modname:   ARRAY OF CHAR
+                         ; procnames: ARRAY OF CHAR
+                         ; srcrefs:   ARRAY OF TSourceRef
+                         ; counters:  ARRAY OF TCounter
+                         );
+
+PROCEDURE RegistryModuleDynamic ( module:     TModuleInfoPtr
+                                ; modtime:    TTime
+                                ; crcsum:     TCRCSum
+                                ; modname:    ARRAY OF CHAR
+                                ; procnames:  ARRAY OF CHAR
+                                ; srcrefs:    ARRAY OF TSourceRef 
+                                ; VAR counters: sys.ADDRESS 
+                                );
+
+
+--------------------------------------------------------------------------------
+CONST 
+<* IF __GEN_SPARC__ THEN *>
+  CallConv = "RtsCall";
+<* ELSE *>
+  CallConv = "C";
+<* END *>
+
+<* IF DEFINED(COMPONENT_TESTCOVERAGE) AND COMPONENT_TESTCOVERAGE THEN *>
+--------------------------------------------------------------------------------
+-- Merge and store statistics. It is automatically called at exit
+PROCEDURE [CallConv] / X2C_EXIT_TESTCOVERAGE ();
+
+-- To support package mode of debugger
+PROCEDURE [CallConv] / X2C_TESTCOVERAGE_COMPLETE();
+
+<* ELSE *>
+--------------------------------------------------------------------------------
+-- Merge and store statistics. It is automatically called at exit
+PROCEDURE [CallConv] X2C_EXIT_TESTCOVERAGE ();
+
+-- To support package mode of debugger
+PROCEDURE [CallConv] X2C_TESTCOVERAGE_COMPLETE();
+<* END *>
+
+--------------------------------------------------------------------------------
+CONST
+  MAX_TypeNameLen = 32;
+
+TYPE
+  TTestConditionTypeNames = ARRAY TestConditionType OF
+                            ARRAY [0..MAX_TypeNameLen-1] OF CHAR;
+CONST
+  TestConditionNames = TTestConditionTypeNames {
+     "version"
+  ,  "targets"
+  ,  "file"
+  ,  "empty" 
+  -- C1 criterion: compilation unit
+  ,  "C1_proc"
+  ,  "C1_proc_module"
+  ,  "C1_proc_finally"
+
+  -- C1 criterion: IF statement
+  ,  "C1_if"
+  ,  "C1_if_true"
+  ,  "C1_if_false"
+
+  ,  "C1_if_elsif"
+  ,  "C1_if_elsif_true"
+  ,  "C1_if_elsif_false"
+
+  ,  "Info_if_else"
+
+  ,  "C1_if_end"
+  ,  "Info_if_end"
+
+  -- C1 criterion: CASE statement
+  ,  "C1_case"
+  ,  "C1_case_else"
+  ,  "C1_case_end"
+  ,  "Info_case_end"
+
+  -- C1 criterion: Oberon WHIT statement
+  ,  "C1_o2with"
+  ,  "C1_o2with_else"
+  ,  "C1_o2with_end"
+  ,  "Info_o2with_end"
+
+  -- C1 criterion: WHILE statement
+  ,  "C1_while_true"
+  ,  "C1_while_false"
+  ,  "C1_while_end"
+  ,  "Info_while_end"
+
+  -- C criterion: WHILE statement
+  ,  "C_While_itr_0"
+  ,  "C_While_itr_1"
+  ,  "C_While_itr_N"
+
+  -- C1 criterion: REPEAT statement
+  ,  "C1_repeat_true"
+  ,  "C1_repeat_false"
+  ,  "C1_repeat_end"
+  ,  "Info_repeat_end"
+
+  -- C criterion: REPEAT statement
+  ,  "Info_Repeat_itr_0"
+  ,  "C_Repeat_itr_1"
+  ,  "C_Repeat_itr_N"
+
+  -- C1 criterion: FOR statement
+  ,  "C1_for"
+  ,  "C1_for_end"
+  ,  "Info_for_end"
+
+  -- C criterion: FOR statement
+  ,  "Info_For_itr_0"
+  ,  "Info_For_itr_1"
+  ,  "C_For_itr_0"
+  ,  "C_For_itr_1"
+  ,  "C_For_itr_N"
+
+  -- C1 criterion: LOOP statement
+  ,  "C1_loop"
+  ,  "C1_loop_end"
+  ,  "Info_loop_end"
+
+  -- C criterion: LOOP statement
+  ,  "Info_Loop_itr_0"
+  ,  "C_Loop_itr_1"
+  ,  "C_Loop_itr_N"
+
+  , "C_Expr_true"
+  , "C_Expr_false"
+  , "C_Expr_equal"
+  , "C_Case_else"
+  , "C1_Except"
+
+  , "C_Recur_0"
+  , "C_Recur_1"
+  , "C_Recur_N"
+  
+  };
+
+
+--------------------------------------------------------------------------------
+CONST
+  MAX_TargetSystemsNameLen = 16;
+
+TYPE
+  TTargetSystemsNames = ARRAY TTargetSystem OF
+                        ARRAY [0..MAX_TargetSystemsNameLen-1] OF CHAR;
+CONST
+  TargetSystemsNames = TTargetSystemsNames {
+    "CAMV"
+  , "M2-MIPS"
+  , "XDS-x86"
+  , "XDS-C"
+  , "M2-SPARC"
+  , "M2-PPC"
+  }; -- TargetSystemsNames
+
+--------------------------------------------------------------------------------
+TYPE
+  TestCriterion = PACKEDSET OF TestConditionType;
+
+CONST
+  C1 = TestCriterion {
+  -- C1 criterion: compilation unit
+    tc_C1_Procedure, tc_C1_Module, tc_C1_Finally
+  -- C1 criterion: IF statement
+  , tc_C1_IF_true, tc_C1_IF_false
+  , tc_C1_IF_elsif_true, tc_C1_IF_elsif_false
+  , tc_C1_IF_end
+  -- C1 criterion: CASE statement
+  , tc_C1_Case
+  , tc_C1_Case_else
+  , tc_C1_Case_end
+  -- C1 criterion: Oberon WHIT statement
+  , tc_C1_OberonWith
+  , tc_C1_OberonWith_else
+  , tc_C1_OberonWith_end
+  -- C1 criterion: WHILE statement
+  , tc_C1_While_true
+  , tc_C1_While_false
+  , tc_C1_While_end
+  -- C1 criterion: REPEAT statement
+  , tc_C1_Repeat_true
+  , tc_C1_Repeat_false
+  , tc_C1_Repeat_end
+  -- C1 criterion: FOR statement
+  , tc_C1_For
+  , tc_C1_For_end
+  -- C1 criterion: LOOP statement
+  , tc_C1_Loop
+  , tc_C1_Loop_end
+  , tc_C1_Except
+  }; -- C1
+
+  C1_Info = TestCriterion {
+  -- C1 criterion: IF statement
+    tc_Info_IF_else
+  }; -- C1_Info
+
+  C = TestCriterion {
+  -- C criterion: WHILE statement
+    tc_C_While_itr_0
+  , tc_C_While_itr_1
+  , tc_C_While_itr_N
+  -- C criterion: REPEAT statement
+  , tc_C_Repeat_itr_1
+  , tc_C_Repeat_itr_N
+  -- C criterion: FOR statement
+  , tc_C_For_itr_0
+  , tc_C_For_itr_1
+  , tc_C_For_itr_N
+  -- C criterion: LOOP statement
+  , tc_C_Loop_itr_1
+  , tc_C_Loop_itr_N
+
+  , tc_C_Expr_true
+  , tc_C_Expr_false
+  , tc_C_Expr_equal
+  , tc_C_Case_else
+
+  , tc_C_Recur_0
+  , tc_C_Recur_1
+  , tc_C_Recur_N
+
+  }; -- C
+
+
+--------------------------------------------------------------------------------
+--                     Support Test Coverage Utilities
+--------------------------------------------------------------------------------
+TYPE
+  TStringPtr  = POINTER TO ARRAY [0..MAX(sys.CARD32) DIV SIZE(sys.CARD32)] OF CHAR;
+  TModuleName = TStringPtr;
+  TProcNames  = TStringPtr;
+  TSourceRefs = POINTER TO ARRAY [0..MAX(TIndex)-1] OF TSourceRef;
+  TCounters   = POINTER TO ARRAY [0..MAX(TIndex)-1] OF TCounter;
+  TProcedureName = ARRAY [0..1024-1] OF CHAR;
+
+VAR
+  OutFileName := NIL : sys.ADDRESS;
+  Version := TCS_RTS_VERSION : TVersion;
+  SkipTCFileReading := FALSE : BOOLEAN;
+
+<* IF __GEN_VAX__ THEN *>
+  TargetSystems : TTargetSystemSet;
+
+<* ELSE *>
+  TargetSystems := TTargetSystemSet{
+                   <* IF    TARGET_VAX  THEN *>     tgs_VAX
+                   <* ELSIF TARGET_MIPS THEN *>     tgs_MIPS
+                   <* ELSIF TARGET_386  THEN *>     tgs_x86
+                   <* ELSIF TARGET_C     THEN *>     tgs_C
+                   <* ELSIF TARGET_SPARC THEN *>     tgs_SPARC
+                   <* ELSIF TARGET_PPC   THEN *>     tgs_PPC
+                   <* ELSE *>
+                     <* IF    __GEN_VAX__  THEN *>  tgs_VAX
+                     <* ELSIF __GEN_MIPS__ THEN *>  tgs_MIPS
+                     <* ELSIF __GEN_X86__  THEN *>  tgs_x86
+                     <* ELSIF __GEN_C__     THEN *>  tgs_C
+                     <* ELSIF __GEN_SPARC__ THEN *>  tgs_SPARC
+                     <* ELSIF __GEN_PPC__   THEN *>  tgs_PPC
+                     <* ELSE *>                     UNKNOWN_TargetSystem
+                     <* END  *>
+                   <* END *>
+                   } : TTargetSystemSet;
+<* END *>
+
+
+--------------------------------------------------------------------------------
+PROCEDURE VersionSupported (version: TVersion): BOOLEAN;
+
+PROCEDURE MakeBackUp (fname: ARRAY OF CHAR);
+
+PROCEDURE ReadTCFile ( fname: ARRAY OF CHAR
+                     ; regModuleList: TModuleInfoPtr
+                     ; VAR unregModuleList: TModuleInfoPtr );
+
+PROCEDURE WriteTCFile ( fname: ARRAY OF CHAR
+                      ; regModuleList: TModuleInfoPtr
+                      ; VAR unregModuleList: TModuleInfoPtr
+                      ; targets:=UNKNOWN_TargetSystem: TTargetSystemSet
+                      );
+
+PROCEDURE UpdateTCFile ( fname: ARRAY OF CHAR
+                       ; regModuleList: TModuleInfoPtr
+                       ; VAR unregModuleList: TModuleInfoPtr
+                       ; skipReading: BOOLEAN
+                       ; targets:=UNKNOWN_TargetSystem: TTargetSystemSet
+                       );
+
+PROCEDURE GetProcNameLength ( procs: ARRAY OF CHAR
+                            ; index: TIndex
+                            ): CARDINAL;
+
+PROCEDURE GetProcName ( procs: ARRAY OF CHAR
+                      ; index: TIndex
+                      ; VAR proc: ARRAY OF CHAR
+                      );
+  
+PROCEDURE CancelTCFileOperation (VAR unregModuleList: TModuleInfoPtr);
+
+PROCEDURE NewModuleInfo ( count: TIndex
+                        ; modname: ARRAY OF CHAR
+                        ; modtime: TTime
+                        ; crcsum: TCRCSum ): TModuleInfoPtr;
+
+PROCEDURE GetClone (moduleList: TModuleInfoPtr): TModuleInfoPtr;
+
+PROCEDURE allocate (VAR addr: sys.ADDRESS; amount: CARDINAL);
+PROCEDURE free (VAR addr: sys.ADDRESS; amount: CARDINAL);
+
+PROCEDURE blocks_allocate (VAR addr: sys.ADDRESS; amount: CARDINAL);
+PROCEDURE blocks_free (VAR addr: sys.ADDRESS; amount: CARDINAL);
+
+--------------------------------------------------------------------------------
+TYPE
+  FILE_LINE_ACTION = PROCEDURE (ARRAY OF CHAR);
+
+PROCEDURE ItereateFileLines ( fname: ARRAY OF CHAR
+                            ; action: FILE_LINE_ACTION );
+
+
+--------------------------------------------------------------------------------
+TYPE
+  MODULE_ACTION    = PROCEDURE (TModuleInfoPtr);
+  PROCEDURE_ACTION = PROCEDURE (TProcedureName, TIndex);
+  COUNTER_ACTION   = PROCEDURE (TCounter, TSourceRefPtr);
+
+-- Iterates entries in a .TC file. A caller receives information through the
+-- three callbacks
+PROCEDURE ItereateEntries ( fname: ARRAY OF CHAR
+                          -- module header; procedure_action's and
+                          -- counter_action's will follow
+                          ; module_action: MODULE_ACTION
+                          -- procedure header; counter_action's will follow
+                          ; procedure_action: PROCEDURE_ACTION
+                          -- single 
+                          ; counter_action: COUNTER_ACTION );
+
+--------------------------------------------------------------------------------
+VAR
+  ErrorCnt: TErrorCnt;
+
+END xrTCSx86.

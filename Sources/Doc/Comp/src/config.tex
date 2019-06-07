@@ -1,0 +1,563 @@
+\chapter{Configuring the compiler}\label{config}
+\index{configuration}
+
+\section{System search paths}
+\index{configuration!search paths}
+
+In order for your operating system to know where to find the executable
+binary files which constitute the \xds{}  package, you must set your
+operating system search paths appropriately. See the Read Me First
+file from your on-line documentation.
+
+\section{Working configuration}\label{config:work}
+
+The core part of \xds{} is the \xc{}\index{\XC{}@{\XC{}}} utility, which combines the
+project subsystem with \mt{} and \ot{} compilers, accompanied with
+a set of system files\footnote{A name of a system file
+is constructed from the name of
+the compiler utility and the correspondent filename extension. If you rename
+the \xc{} utility, you should also rename all system files.}:
+
+\begin{tabular}{ll}
+\bf \red    & \See{Search path redirection file}{}{xc:red} \\
+\bf \cfg    & \See{Configuration file}{}{config:cfg}  \\
+\bf \msg    & \See{Texts of error messages}{}{xc:msg}  \\
+\ifgenc
+\bf \kwd    & List of C/C++ keywords and reserved identifiers \\ % !!! describe?
+\fi
+\end{tabular}
+
+Being invoked, \xc{} tries to locate the {\tt \red} file, first in the
+current directory and then in the directory where \xc{} is placed
+(so called {\it master redirection file\index{master redirection file}\index{redirection file!master}}).
+
+Other system files are sought by paths defined in {\tt \red}.
+If {\tt \red} is not found, or it does not contain paths for
+a particular system file, that file is sought in the current directory
+and then in the directory where the \xc{} utility resides.
+
+A configuration file contains settings that are relevant for all
+projects. Project specific settings are defined in project files (See
+\ref{xc:project}). A so-called template file is used to automate
+the program build process (See \ref{xc:template}).
+
+A redirection file, a configuration file, and, optionally, a project file
+and a template file constitute a working environment for a single
+execution of the \xc{} utility. The compiler preprocesses files
+of all these types as described in \ref{usage:cfp}.
+
+Portable software development is one of the main goals of \XDS{}.
+To achieve that goal, not only the source texts should be portable between
+various platforms, but the environment also. \XDS{} introduces
+a portable notation for file names
+\index{file name!portable notation}
+\index{portability!file names}
+that may be used in all
+system files and on the command line. The portable notation combines
+DOS-like and Unix-like notations (file names are case sensitive):
+
+\verb'    [ drive_letter ":" ] unix_file_name'
+
+\Examples
+\begin{verbatim}
+    c:/xds/bin
+    /mnt/users/alex/cur_pro
+    cur_pro/sources
+\end{verbatim}
+Along with the {\em base directory} macro (See \ref{usage:cfp}) this portable
+notation allows to write all environment files in a platform independent
+and location independent manner.
+
+\section{\XDS{} memory usage}
+\label{config:memory}
+\index{memory usage (compilers)}
+
+\XDS{} compilers are written in \ot\footnote{We use
+\XDS{} in most of our developments.}. As any other \ot{} program, a
+compiler uses garbage collector to deallocate memory. These days,
+most operating systems, including Windows and Linux,
+provide virtual memory. If an \ot{} program exceeds the amount
+of avaiable physical memory, the garbage collector becomes
+inefficient. Thus, it is important to restrict the amount of memory
+that can be used by an \ot{} program. As a rule, such restriction
+is set in the configuration or project file (See the \OERef{HEAPLIMIT} equation).
+You may also let the run-time system determine the proper heap size 
+at run time by setting \OERef{HEAPLIMIT} to zero.
+
+Similarly, the equation \OERef{COMPILERHEAP}
+should be used to control the amount of memory used by a compiler
+itself. That equation is set in the configuration file ({\tt \cfg{}}).
+We recommend to set it according to the
+amount of physical memory in your computer:
+\begin{flushleft}
+\begin{tabular}{cr}
+RAM in megabytes & COMPILERHEAP \\
+\hline
+32-64         &   16000000   \\
+64-128        &   48000000   \\
+more than 128 &   96000000
+\end{tabular}
+\end{flushleft}
+It may be necessary to increase \OERef{COMPILERHEAP} if you get
+the "\verb'out of memory'" message (\Ref{F950}{MESSAGE\_950}).
+It is very unlikely, if \OERef{COMPILERHEAP} is set to 16 megabytes or more.
+Your compilation unit should be very large to exceed this memory limit.
+{\bf Note:} if you are using Win32 or X Window API definition modules,
+set \OERef{COMPILERHEAP} to at least 16 megabytes.
+
+Vice versa, if you notice unusually intensive disk
+activity when compiling your program, it may indicate that the
+value of the \OERef{COMPILERHEAP} equation is too large for your
+system configuration.
+
+Set \OERef{COMPILERHEAP} to zero if would prefer the compiler to
+dynamically adjust heap size in accordance with system load.
+
+See \ref{rts:mm} for more information on \XDS{} memory management.
+
+\section{Directory hierarchies}
+\index{configuration!directories}
+
+\xds{} compilers give you complete freedom over where you store both your source
+code files and any files which compilers create for you. It
+is advisable to work in a project oriented fashion --- i.e. to have a separate
+directory hierarchy for each independent project.
+
+Due to the re-usable nature of modules written in \mt{} or \ot{},
+it is wise to keep a separate directory for those files which are to  be
+made available to several projects. We will call such files the {\em  library}
+files.
+
+We recommend you to have a separate working directory for each project.
+You can also create subdirectories to store symbol files and
+generated code files. We recommend to use the supplied script
+or its customized version to create all subdirectories and,
+optionally, a local redirection file or a project file. Refer to the
+"Read Me First" file for more information about that script.
+
+\section{\XDS{} search paths}
+
+Upon activation, \XC{} looks for a file called {\tt \red} ---
+a {\em redirection file}. That file defines paths by which all
+other files are sought. If a redirection file was not found in
+the current directory, the master redirection file is loaded
+from the directory where \XC{} executable is placed.
+
+\subsection{Redirection file}\label{xc:red}
+\index{configuration!redirection file}
+\index{redirection file}
+\index{\XC{}.red@{\XC{}.red}}
+
+A redirection file consists of several lines
+of the form\footnote{See also \ref{usage:cfp}}:
+
+\verb'    pattern = directory {";" directory}'
+
+{\tt pattern}
+is a regular expression with which names of files \XC{} has to open
+or create are compared. A pattern usually contains wildcard symbols '*'
+and '?', where
+
+\begin{tabular}{cl}
+\bf Symbol & \bf Matches \\
+\hline
+\tt * & any (possibly empty) string \\
+\tt ? & any single character.
+\end{tabular}
+
+For a full description of regular expressions see \ref{xc:regexpr}.
+
+It is also possible to have comment lines in a redirection file.
+A comment line should start with the "\verb'%'" symbol.
+
+A \See{portable notation}{}{config:work} is used for directory names
+or paths. A path may be absolute or relative, i.e. may consist  of
+full names such as
+
+\verb'    /usr/myproj/def'
+
+or of names relative to the current directory, such as
+
+\verb'    src/common'
+
+denoting the directory \verb'src/common' which is a subdirectory of the
+current directory. A single dot as a pathname represents the current
+directory, a double dot represents the parent, i.e. the
+directory which has the current directory as a
+subdirectory.
+
+The base directory macro \verb|$!|  % \index{$!@\verb'$!'} !!!
+can be used in a directory name.
+It denotes the path to the redirection file.
+If the redirection file is placed in the \verb|/usr/alex| directory
+then \verb|$!/sym| denotes the \verb|/usr/alex/sym| directory,
+whereas \verb|$!/..| denotes the \verb|/usr| directory.
+
+For any file, its name is sequentially matched with a pattern
+of each line. If a match was found, the file is sought in the
+first of the directories listed on that line, then in the second
+directory, and so on until either the file is found, or there are
+no more directories to search or there are no more patterns to match.
+
+If \xc{} could not locate a file which is needed for correct
+operation, e.g. a necessary symbol file, it terminates
+with an appropriate error message.
+
+When creating a file, \xc{} also uses redirection, and its
+behavior is determined by the \OERef{OVERWRITE} option. If the
+option was set ON, \xc{} first searches for the file it is
+about to create using redirection. Then, if the file was found,
+\xc{} overwrites it. If no file of the same name as the one which \xc{} needs
+to create was found or the \OERef{OVERWRITE} option was set OFF, then the
+file is be created in the directory which appears first in the
+search path list which pattern matched the filename.
+
+If no pattern matching a given filename can be found in the {\tt
+\red} file, then the file will be read from (or written to) the
+current working directory.
+
+{\bf Note:}
+If a pattern matching a given filename is found then \xc{}
+will {\em not} look into the current directory, unless it is
+explicitly specified in the search path.
+
+The following entry in {\tt \red} would be appropriate for
+searching for the symbol files (provided that symbol files have the
+extension {\bf.sym}).
+
+\ifunix
+\verb'    *.sym=sym;/usr/xds/sym;.'
+\else
+\verb'    *.sym=sym;c:/xds/sym;.'
+\fi
+
+Given the above redirection, the compiler will first search for
+symbol files in the directory \verb'sym'
+which is a subdirectory of the current working directory; then in the
+directory storing the \xds{} library symbol files and then in
+the current directory.
+
+\paragraph{Example of a redirection file:}
+\ifgencode
+\begin{verbatim}
+    xc.msg = /xds/bin
+    *.mod = mod
+    *.def = def
+    *.ob2 = oberon
+    *.sym = sym; /xds/sym/x86
+\end{verbatim}
+\else % ---- genc
+\begin{verbatim}
+    xm.msg = /xds/bin
+    *.mod = mod
+    *.def = def
+    *.ob2 = oberon
+    *.c   = c
+    *.h   = include;/xds/include
+    *.sym = sym; /xds/sym/C
+\end{verbatim}
+\fi % ---- gencode
+
+\subsection{Regular expression}\label{xc:regexpr}
+\index{regular expressions}
+
+A regular expression is a string  containing  certain  special  symbols:
+
+\begin{center}
+\begin{tabular}{cl}
+\bf Sequence & \bf Denotes \\
+\hline
+\verb+*+     & an arbitrary sequence of any characters, possibly empty \\
+             & (equivalent to \verb|{\000-\377}| expression) \\
+\verb+?+     & any single character \\
+             & (equivalent to \verb|[\000-\377]| expression) \\
+\verb+[...]+ & one of the listed characters \\
+\verb+{...}+ & an arbitrary sequence of the listed characters, possibly empty \\
+\verb+\nnn+  & the ASCII character with octal code \verb|nnn|, where n is \verb|[0-7]| \\
+\verb+&+     & the logical operation AND \\
+\verb+|+     & the logical operation OR  \\
+\verb+^+     & the logical operation NOT \\
+\verb+(...)+ & the priority of operations
+\end{tabular}
+\end{center}
+
+A  sequence of the  form \verb|a-b|  used  within  either
+\verb|[]| or \verb|{}| brackets denotes all characters from
+\verb|a| to \verb|b|.
+
+\paragraph{Examples}
+\begin{description}
+
+\item[{\tt *.def}] \mbox{} \\
+    all files which extension is {\tt .def}
+
+\item[{\tt project.*}] \mbox{} \\
+    files which name is {\tt project} with an arbitrary extension
+
+\item[{\tt *.def|*.mod}] \mbox{} \\
+    files which extension is either {\tt .def} or {\tt .mod}
+
+\item[{\tt \{a-z\}*X.def}] \mbox{} \\
+    files starting with any sequence of letters,
+    ending in one final "X" and having the extension \verb|.def|.
+\end{description}
+
+\section{Options}\label{config:options}
+
+A rich set of \xc{} options allows one to control the source language,
+code generation and internal limits and settings.  We distinguish
+between boolean options (or just options) and equations. An {\em option} can
+be set ON (TRUE) or OFF (FALSE), while an {\em equation} value is a string.
+In this chapter we describe only the syntax of setup
+directive. The full list of \xc{} options and equations is provided in
+the Chapter \ref{options}.
+
+Options and equations may be set in a \See{configuration file}{}{config:cfg},
+\See{on the command line}{}{xc:modes}, in a \See{project file}{}{xc:project}),
+and in the source text (see \ref{m2:pragmas}).
+
+The same syntax of a setup directive is used in configuration
+and project files and on the command line. The only difference is
+that arbitrary spaces are permitted in files, but not on the
+command line. Option and equation names are case independent.
+
+\begin{verbatim}
+SetupDirective   = SetOption
+                 | SetEquation
+                 | DeclareOption
+                 | DeclareEquation
+                 | DeclareSynonym
+SetOption        = '-' name ('+'| '-')
+SetEquation      = '-' name '=' [ value ]
+DeclareOption    = '-' name ':' [ '+' | '-' ]
+DeclareEquation  = '-' name ':=' [ value ]
+DeclareSynonym   = '-' name '::' name
+\end{verbatim}
+\index{-NAME+@\verb'-NAME+'}
+\index{-NAME-@\verb'-NAME-'}
+\index{-NAME=@\verb'-NAME='}
+\index{-NAME:@\verb'-NAME:'}
+\index{-NAME:=@\verb'-NAME:='}
+\index{-NAME::@\verb'-NAME::'}
+All options and equations used by \xc{} are predeclared.
+
+The \verb|DeclareSynonym| directive allows one to use a different name
+(e.g. shorter name) for an option or equation.
+
+The old version of {\tt SetOption} is also supported for convenience:
+
+\verb"OldSetOption   = '+' name | '-' name"
+
+\Examples
+\begin{flushleft}
+\begin{tabular}{l|p{8.0cm}}
+\bf Directive & \bf Meaning \\ \hline
+\verb|-M2Extensions+| & {\bf M2EXTENSION} is set ON \\
+\verb|-Oberon=o2|     & {\bf OBERON} is set to \verb|"o2"| \\
+\verb|-debug:|        & {\bf DEBUG} is declared and set OFF \\
+\verb|-Demo:+|        & {\bf DEMO} is declared  and set ON \\
+\verb|-Vers:=1.0|     & {\bf VERS} is declared and set to \verb|"1.0"| \\
+\verb|-A::genasm|     & {\bf A} is declared as a synonym for {\bf GENASM} \\
+\verb|+m2extensions|  & {\bf M2EXTENSIONS} is set OFF
+\end{tabular}
+\end{flushleft}
+
+\section{Configuration file}\label{config:cfg}
+\index{configuration file (\cfg)}
+\index{\XC{}.cfg@{\XC{}.cfg}}
+\index{configuration!configuration file}
+
+A configuration file can be used to set the default values of options and
+equations (see Chapter \ref{options}) for all projects (or a set of projects).
+A non-empty line of a configuration file may contain a single compiler option or
+equation setup directive (see \ref{config:options}) or a comment.
+Arbitrary spaces are permitted. The "\verb|%|" character indicates a comment;
+it causes the rest of a line to be discarded. {\bf Note:} the comment character
+can not be used when setting an equation.
+
+The {\it master configuration file\index{master configuration file}\index{configuration file!master}},
+placed along with the \xc{} utility, usually contains default settings for
+the target platform and declarations of platform-specific options and
+equations, which may be used in project and template files.
+
+\begin{figure}[htb]
+\begin{verbatim}
+  % this is a comment line
+  % Set equation:
+   - BSDef = df
+  % Set predeclared options:
+   - RangeCheck -   % turn range checks off
+   - M2EXTENSIONS + % allow Modula-2 extensions
+  % Declare new options:
+   -iPentium:+
+   -i80486:-
+   -i80386:         % is equal to -i80386:-
+  % Declare synonym:
+   -N :: checknil
+   -N               % disallow NIL checks
+  % end of configuration file
+\end{verbatim}
+\caption{A sample configuration file}
+\end{figure}
+
+\section{Filename extensions}\label{config:fileext}
+\index{configuration!filename extensions}
+\index{file name!extension}
+
+\xc{} allows you to define what you want to be the standard extensions
+for each particular type of file. For instance, you may prefer your
+\ot{} source code texts to end in {\bf .o2} instead of {\bf .ob2}.
+
+We recommend to either use the traditional extensions or at least the extensions
+which describe the kind of file they refer to, and keep same extensions
+across all your projects. For example, use
+{\bf.def} \index{.def (See DEF)}
+and {\bf.mod} \index{.mod (See MOD)}
+for \mt{} modules,
+{\bf .ob2} \index{.ob2 (See OBERON)}
+for \ot{} modules, etc.
+
+Certain other factors must also influence your decisions.
+Traditionally, \ot{} pseudo-definition  modules (as created by a
+browser) are extended with a {\bf.def}. With \xds{}, this may conflict
+with the extension used for Modula-2 definition modules.
+Therefore, \See{the \XDS{} browser}{}{xc:modes:browse}
+uses the extension {\bf .odf} by default.
+
+The following filename extensions are usually defined in
+the configuration file:
+\begin{flushleft}
+\begin{tabular}{ll}
+\OERef{DEF}    & extension for Modula-2 definition  modules        \\
+\OERef{MOD}    & extension for Modula-2 implementation modules     \\
+\OERef{OBERON} & extension for Oberon-2 modules                    \\
+\OERef{BSDEF}  & extension for Oberon-2 pseudo definition modules  \\
+\ifgenc
+\OERef{HEADER} & extension for C header files                      \\
+\fi
+\OERef{CODE}   & extension for generated code files                \\
+\OERef{SYM}    & extension for symbol files                        \\
+\end{tabular}
+\end{flushleft}
+See Table \ref{table:equ:ext} for the full list of file extensions.
+
+\paragraph{Example (file extension entries in \cfg):}
+
+\begin{verbatim}
+   -def     = def
+   -mod     = mod
+   -oberon  = ob2
+   -sym     = sym
+\end{verbatim}
+
+\section{Customizing compiler messages}\label{xc:msg}
+\index{\XC{}.msg@{\XC{}.msg}}
+
+The file {\tt \msg} contains texts of error messages in the form
+
+\verb'    number text'
+
+The following is an extract from \msg{}:
+\begin{verbatim}
+001 illegal character
+002 comment not closed; started at line %d
+...
+042 incompatible assignment
+...
+\end{verbatim}
+Some messages contain format specifiers
+for additional arguments. In the above example, the message 002
+contains a \verb|%d| specifier used to print a line number.
+
+To use a language other than English for compiler messages
+it is sufficient to translate \msg,  preserving error
+numbers and the order of format specifiers.
+\ifcomment
+        % Comment \else, if Russian font is not available
+% \else   % or rewrite example on some other language
+        %
+The following is an extract from the Russian
+variant of \msg{}:
+\begin{verbatim}
+001 недопустимый символ
+002 незакрытый комментарий, начатый в строке %d
+...
+042 несовместимы по присваиванию
+...
+\end{verbatim}
+\fi
+
+\section{XDS and your C compiler}\label{config:C}
+
+\ifgencode % ------------------------
+
+  \xds{} allows C object modules and libraries to be used in your projects.
+  Different C compilers use different alignment, naming and calling conventions.
+  \iflinux
+    {\bf ATTENTION!} Since \xds{} libraries on linux are built through GCC
+    compiler it is {\em absolutely neccesary} to configure XDS for GCC.
+  \else % not linux -------------------------------
+    Thus it is necessary to configure \xds{} for your C compiler in order
+    to use C libraries and modules in your program.
+  \fi  % end linux
+  See \ref{multilang:ccomp} for more details.
+\fi  % end gencode ------------------------
+
+\ifgenc % ------------------------
+
+XDS-C can be used as a translator or compiler.
+In the first case, the C code generated by \xc{} will be used for
+further development or will be ported to another platform. In the
+second case, \xc{} is used as first pass of compilation process;
+to get an executable program a C compiler must be used. A C compiler,
+linker, or make utility may be invoked \See{seamlessly}{}{config:seamless}
+
+Usually, you have to configure \xc{} for your C compiler only once and
+then \xc{} will do everything to get your program ready for execution.
+
+\subsection{Building the run-time library}
+
+The XDS run-time library is included in an \XDS{} package
+in C source form, i.e. for each library module its header
+file and C source file are provided. For Unix platforms, a
+pre-built library file containing object files may be included.
+This is not the case for the Windows platform,
+because different C compilers support different calling and naming
+conventions. We recommend to build the library file for your
+C compiler or several library files for various C compilers
+or memory models. The \verb'LIB/C' subdirectory or your
+\XDS{} installation contains makefiles which can be used
+for that purpose. It may be necessary to change a C compiler
+name or compiler options in this file.
+
+\subsection{Configuring XDS for seamless compilation}\label{config:seamless}
+
+We will use the term {\em seamless compilation} if \XC{} is
+configured to call a C compiler, linker or make implicitly to prepare
+an executable for your program. A makefile can be produced after
+successful completion of a project and a make utility can be implicitly
+called then to compile and link your program.
+
+% The following is not true anymore !!!
+
+The compiler uses a template file (See \ref{xc:template}) to generate
+a makefile. The \XDS{} distribution contains the {\tt xds.tem} template
+file, which can be used for various C compilers. The equation {\bf
+ENV\_TARGET} determines a target platform, i.e. a file system,
+including a representation of a file name, C compiler to use, its
+options, etc.  By default, the value of this equation is equal to the
+value of the {\bf ENV\_HOST} equation.  The configuration file {\tt
+\cfg} contains a list of supported platform, i.e. list of names, that
+can be used as a value of {\bf ENV\_TARGET} equation. We recommend to
+set the value of the equation in the beginning of the configuration
+file. It may be necessary to change some settings for your platform or
+append a new platform. All changes should be done in {\tt \cfg} and
+{\tt xds.tem} files.
+
+Note, in the current version it is not possible to append a new
+platform with DOS-like file system. We recommend to change settings
+for platform "MSDOS", "OS2" and "WinNT" if necessary.
+
+See \ref{start:build} for more information.
+
+\fi  % end genc ------------------------

@@ -1,0 +1,328 @@
+(* Copyright (c) Excelsior 1999.  All Rights Reserved *)
+(* Copyright (c) XDS 1998.  All Rights Reserved *)
+(*
+ * XDS library.
+ * Interface of XDS runtime to POSIX.
+ *)
+<*+ M2EXTENSIONS *>
+<*+ M2ADDTYPES *>
+<*+ NOHEADER*>
+<*+ GENTYPEDEF *>
+
+DEFINITION MODULE ["C"] xPOSIX;
+
+FROM SYSTEM IMPORT size_t, ADDRESS, int, INT32, unsigned, BYTE;
+
+TYPE 
+  xPOSIX_PCHAR  = POINTER TO CHAR;
+
+(* stdio.h *)
+
+<* IF __GEN_C__ THEN *>
+VAR
+  SEEK_SET-: int;
+  SEEK_CUR-: int;
+  SEEK_END-: int;
+  EOF-     : int;
+<* ELSE *>
+CONST
+  SEEK_SET = 0;
+  SEEK_CUR = 1;
+  SEEK_END = 2;
+  EOF      =-1;
+<* END *>
+
+TYPE
+  FILE = RECORD END;
+
+VAR (* Standard I/O predefined streams (POINTER TO FILE) *)
+  stdin- : POINTER TO FILE;
+  stdout-: POINTER TO FILE;
+  stderr-: POINTER TO FILE;
+
+PROCEDURE clearerr(VAR f: FILE);
+PROCEDURE fclose(VAR f: FILE): int;
+PROCEDURE fflush(VAR f: FILE): int;
+PROCEDURE fgetc(VAR f: FILE): int;
+PROCEDURE fgets(VAR s: ARRAY OF CHAR; n: int; VAR f: FILE): ADDRESS;
+PROCEDURE fileno(VAR f: FILE): int;
+PROCEDURE fopen(path,mode: ARRAY OF CHAR): ADDRESS;
+(* returns POINTER TO FILE *)
+
+PROCEDURE fprintf(VAR f: FILE; format: ARRAY OF CHAR; SEQ x: BYTE): int;
+PROCEDURE fputc(c: int; VAR f: FILE): int;
+PROCEDURE fputs(s: ARRAY OF CHAR; VAR f: FILE): int;
+PROCEDURE fread(ptr: ADDRESS; size,n: size_t; VAR f: FILE): size_t;
+
+PROCEDURE freopen(path,mode: ARRAY OF CHAR; VAR oldfile: FILE): ADDRESS;
+(* returns POINTER TO FILE *)
+
+PROCEDURE fdopen(handle: int; type: ARRAY OF CHAR): ADDRESS;
+(* returns POINTER TO FILE *)
+
+PROCEDURE fscanf(VAR f: FILE; format: ARRAY OF CHAR; SEQ x: BYTE): int;
+PROCEDURE fseek(VAR f: FILE; offset: LONGINT; whence: int): int;
+PROCEDURE ftell(VAR f: FILE): LONGINT;
+PROCEDURE fwrite(ptr: ADDRESS; size,n: size_t; VAR f: FILE): size_t;
+
+PROCEDURE gets(VAR s: ARRAY OF CHAR): ADDRESS;
+PROCEDURE perror(s: ARRAY OF CHAR);
+PROCEDURE printf(format: ARRAY OF CHAR; SEQ x: BYTE): int;
+PROCEDURE puts(s: ARRAY OF CHAR): int;
+PROCEDURE rename(oldnam,newname: ARRAY OF CHAR): int;
+PROCEDURE rewind(VAR f: FILE);
+
+PROCEDURE scanf(format: ARRAY OF CHAR; SEQ x: BYTE): int;
+PROCEDURE setbuf(VAR f: FILE; buf: ADDRESS);
+PROCEDURE setvbuf(VAR f: FILE; buf: ADDRESS; type: int; size: size_t): int;
+
+PROCEDURE sprintf(VAR s: ARRAY OF CHAR; format: ARRAY OF CHAR; SEQ x: BYTE): int;
+PROCEDURE sscanf(s,format: ARRAY OF CHAR; SEQ x: BYTE): int;
+
+PROCEDURE tmpfile(): ADDRESS;
+(* returns POINTER TO FILE *)
+
+PROCEDURE ungetc(c: int; VAR f: FILE): int;
+
+PROCEDURE vfprintf(VAR f: FILE; format: ARRAY OF CHAR; args: ADDRESS): int;
+PROCEDURE vfscanf(VAR f: FILE; format: ARRAY OF CHAR; args: ADDRESS): int;
+PROCEDURE vprintf(format: ARRAY OF CHAR; args: ADDRESS): int;
+PROCEDURE vscanf(format: ARRAY OF CHAR; args: ADDRESS): int;
+PROCEDURE vsprintf(VAR s: ARRAY OF CHAR; format: ARRAY OF CHAR; args: ADDRESS): int;
+PROCEDURE vsscanf(VAR s: ARRAY OF CHAR; format: ARRAY OF CHAR; args: ADDRESS): int;
+
+PROCEDURE fgetpos(VAR f: FILE; VAR fp: LONGINT): int;
+PROCEDURE fsetpos(VAR f: FILE; VAR fp: LONGINT): int;
+
+PROCEDURE putchar(c: int): int;
+PROCEDURE getchar(): int;
+PROCEDURE putc(c: int; VAR f: FILE): int;
+PROCEDURE getc(VAR f: FILE): int;
+PROCEDURE remove(path: ARRAY OF CHAR): int;
+
+PROCEDURE feof(VAR f: FILE): int;
+PROCEDURE ferror(VAR f: FILE): int;
+             
+
+(* ctype.h *)
+
+PROCEDURE isalnum (c: int): int;
+PROCEDURE isalpha (c: int): int;
+PROCEDURE iscntrl (c: int): int;
+PROCEDURE isdigit (c: int): int;
+PROCEDURE isgraph (c: int): int;
+PROCEDURE islower (c: int): int;
+PROCEDURE isprint (c: int): int;
+PROCEDURE ispunct (c: int): int;
+PROCEDURE isspace (c: int): int;
+PROCEDURE isupper (c: int): int;
+PROCEDURE isxdigit(c: int): int;
+PROCEDURE tolower (c: int): int;
+PROCEDURE toupper (c: int): int;
+
+
+(* math.h *)
+
+PROCEDURE atan2(y,x: LONGREAL): LONGREAL;
+PROCEDURE cos(x: LONGREAL): LONGREAL;
+PROCEDURE sin(x: LONGREAL): LONGREAL;
+PROCEDURE exp(x: LONGREAL): LONGREAL;
+PROCEDURE pow(x,y: LONGREAL): LONGREAL;
+PROCEDURE sqrt(x: LONGREAL): LONGREAL;
+
+(* setjmp.h *)
+
+TYPE jmp_buf;
+
+PROCEDURE setjmp  (env: jmp_buf): int;
+PROCEDURE longjmp (env: jmp_buf; val: int);
+
+(* stdlib.h *)
+
+TYPE
+  div_t  = RECORD
+	     quot: int;
+	     rem : int;
+	   END;
+  ldiv_t = RECORD
+	     quot: INT32;
+	     rem : INT32;
+	   END;
+  CompProc = PROCEDURE(ADDRESS,ADDRESS): int;
+  PROC     = PROCEDURE;
+
+PROCEDURE abort;
+PROCEDURE abs(num: int): int;
+
+PROCEDURE atexit(func: PROC): int;
+PROCEDURE atof(nptr: ARRAY OF CHAR): LONGREAL;
+PROCEDURE atoi(nptr: ARRAY OF CHAR): int;
+PROCEDURE atol(nptr: ARRAY OF CHAR): INT32;
+
+PROCEDURE bsearch(key,base: ADDRESS; num,width: size_t;
+		  compare: CompProc): ADDRESS;
+
+PROCEDURE calloc(num,size: size_t): ADDRESS;
+
+PROCEDURE div(numer,denom: int): div_t;
+
+PROCEDURE exit(code: int);
+PROCEDURE free(block: ADDRESS);
+PROCEDURE getenv(name: ARRAY OF CHAR): xPOSIX_PCHAR;
+PROCEDURE labs(j: INT32): INT32;
+
+PROCEDURE ldiv(numer,denom: INT32): ldiv_t;
+
+PROCEDURE malloc(size: size_t): ADDRESS;
+
+PROCEDURE qsort(base: ADDRESS; num,width: size_t; compare: CompProc);
+
+PROCEDURE rand(): int;
+PROCEDURE realloc(block: ADDRESS; size: int): ADDRESS;
+PROCEDURE srand(seed: unsigned);
+PROCEDURE strtod(s: ARRAY OF CHAR; endptr: ADDRESS): LONGREAL;
+PROCEDURE strtol(s: ARRAY OF CHAR; endptr: ADDRESS; base: int): INT32;
+PROCEDURE strtoul(s: ARRAY OF CHAR; endptr: ADDRESS; base: int): BITSET;
+PROCEDURE system(string: ARRAY OF CHAR): int;
+
+
+(* string.h *)
+
+PROCEDURE memchr(s: ADDRESS; c: int; n: size_t): ADDRESS;
+PROCEDURE memcmp(s1,s2: ADDRESS; n: size_t): int;
+PROCEDURE memcpy(dest,src: ADDRESS; n: size_t): ADDRESS;
+PROCEDURE memmove(dest,src: ADDRESS; n: size_t): ADDRESS;
+PROCEDURE memset(s: ADDRESS; c: int; n: size_t): ADDRESS;
+
+PROCEDURE strcat(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strchr(s: ARRAY OF CHAR; c: int): ADDRESS;
+PROCEDURE strcmp(s1,s2: ARRAY OF CHAR): int;
+PROCEDURE strcpy(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strcspn(s1,s2: ARRAY OF CHAR): size_t;
+PROCEDURE strerror(errnum: int): ADDRESS;
+
+PROCEDURE strlen(s: ARRAY OF CHAR): size_t;
+PROCEDURE strncat(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR; n: size_t): ADDRESS;
+PROCEDURE strncmp(s1,s2: ARRAY OF CHAR; n: CARDINAL): int;
+PROCEDURE strncpy(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR; n: size_t): ADDRESS;
+PROCEDURE strpbrk(s1,s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strrchr(s: ARRAY OF CHAR; c: int): ADDRESS;
+PROCEDURE strspn(s1,s2: ARRAY OF CHAR): size_t;
+PROCEDURE strstr(s1,s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strtok(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR): ADDRESS;
+PROCEDURE strxfrm(VAR s1: ARRAY OF CHAR; s2: ARRAY OF CHAR; size: size_t): size_t;
+PROCEDURE strcoll(s1,s2: ARRAY OF CHAR): int;
+
+(* errno.h *)
+
+VAR
+  errno: int;
+
+<* IF __GEN_C__ THEN *>
+  E2BIG       -: INTEGER; (* Arg list too long             *)
+  EACCES      -: INTEGER; (* Permission denied             *)
+  EAGAIN      -: INTEGER; (* Try again                     *)
+  EBADF       -: INTEGER; (* Bad file number               *)
+  EBUSY       -: INTEGER; (* Device or resource busy       *)
+  ECHILD      -: INTEGER; (* No child processes            *)
+  EDEADLK     -: INTEGER; (* Resource deadlock would occur *)
+  EDOM        -: INTEGER; (* Math argument                 *)
+  EEXIST      -: INTEGER; (* File already exists           *)
+  EFAULT      -: INTEGER; (* Unknown error                 *)
+  EFBIG       -: INTEGER; (* File too large                *)
+  EINTR       -: INTEGER; (* Interrupted system call       *)
+  EINVAL      -: INTEGER; (* Invalid argument              *)
+  EIO         -: INTEGER; (* I/O error                     *)
+  EISDIR      -: INTEGER; (* File is a directory           *)
+  EMFILE      -: INTEGER; (* Too many open files           *)
+  EMLINK      -: INTEGER; (* Too many links                *)
+  ENAMETOOLONG-: INTEGER; (* File name too long            *)
+  ENFILE      -: INTEGER; (* File table overflow           *)
+  ENODEV      -: INTEGER; (* No such device                *)
+  ENOENT      -: INTEGER; (* No such file or directory     *)
+  ENOEXEC     -: INTEGER; (* Exec format error             *)
+  ENOLCK      -: INTEGER; (* No record locks available     *)
+  ENOMEM      -: INTEGER; (* Not enough memory             *)
+  ENOSPC      -: INTEGER; (* No space left on device       *)
+  ENOSYS      -: INTEGER; (* Function not implemented      *)
+  ENOTDIR     -: INTEGER; (* Not a directory               *)
+  ENOTEMPTY   -: INTEGER; (* Directory not empty           *)
+  ENOTTY      -: INTEGER; (* Not a typewriter              *)
+  ENXIO       -: INTEGER; (* No such device or address     *)
+  EPERM       -: INTEGER; (* Operation not permitted       *)
+  EPIPE       -: INTEGER; (* Broken pipe                   *)
+  ERANGE      -: INTEGER; (* Result too large              *)
+  EROFS       -: INTEGER; (* Read-only file system         *)
+  ESPIPE      -: INTEGER; (* Illegal seek                  *)
+  ESRCH       -: INTEGER; (* No such process               *)
+  EXDEV       -: INTEGER; (* Cross-device link             *)
+<* ELSE *>
+(* Constants values was got from LiNUX *)
+CONST
+  E2BIG=7;		(* Arg list too long *)
+  EACCES=13;		(* Permission denied *)
+  EAGAIN=11;		(* Try again *)
+  EBADF=9;		(* Bad file number *)
+  EBUSY=16;		(* Device or resource busy *)
+  ECHILD=10;		(* No child processes *)
+  EDEADLK=35;		(* Resource deadlock would occur *)
+  EDOM=33;		(* Math argument out of domain of func *)
+  EEXIST=17;		(* File exists *)
+  EFAULT=14;		(* Bad address *)
+  EFBIG=27;		(* File too large *)
+  EINTR=4;		(* Interrupted system call *)
+  EINVAL=22;		(* Invalid argument *)
+  EIO=5;		(* I/O error *)
+  EISDIR=21;		(* Is a directory *)
+  EMFILE=24;		(* Too many open files *)
+  EMLINK=31;		(* Too many links *)
+  ENAMETOOLONG=36;	(* File name too long *)
+  ENFILE=23;		(* File table overflow *)
+  ENODEV=19;		(* No such device *)
+  ENOENT=2;		(* No such file or directory *)
+  ENOEXEC=8;		(* Exec format error *)
+  ENOLCK=37;		(* No record locks available *)
+  ENOMEM=12;		(* Out of memory *)
+  ENOSPC=28;		(* No space left on device *)
+  ENOSYS=38;		(* Function not implemented *)
+  ENOTDIR=20;		(* Not a directory *)
+  ENOTEMPTY=39;		(* Directory not empty *)
+  ENOTTY=25;		(* Not a typewriter *)
+  ENXIO=6;		(* No such device or address *)
+  EPERM=1;		(* Operation not permitted *)
+  EPIPE=32;		(* Broken pipe *)
+  ERANGE=34;		(* Math result not representable *)
+  EROFS=30;		(* Read-only file system *)
+  ESPIPE=29;		(* Illegal seek *)
+  ESRCH=3;		(* No such process *)
+  EXDEV=18;		(* Cross-device link *)
+<* END *>
+
+(* unistd.h *)
+
+<* IF __GEN_C__ THEN *>
+VAR
+  P_WAIT- 	: int; (* Child runs separately, parent waits until exit *)
+  P_NOWAIT-	: int; (* Child and parent run concurrently *)
+  P_OVERLAY-	: int; (* Child replaces parent so that parent no longer exists *)
+<* ELSE *>
+CONST
+  P_WAIT        = 0; (* Child runs separately, parent waits until exit *)
+  P_NOWAIT      = 1; (* Child and parent run concurrently *)
+  P_OVERLAY     = 2; (* Child replaces parent so that parent no longer exists *)
+<* END *>
+
+PROCEDURE spawnv  (mode: int; path: ARRAY OF CHAR; argv: ARRAY OF xPOSIX_PCHAR): int;
+PROCEDURE spawnve (mode: int; path: ARRAY OF CHAR; argv,env: ARRAY OF xPOSIX_PCHAR): int;
+PROCEDURE spawnvp (mode: int; path: ARRAY OF CHAR; argv: ARRAY OF xPOSIX_PCHAR): int;
+PROCEDURE spawnvpe(mode: int; path: ARRAY OF CHAR; argv,env: ARRAY OF xPOSIX_PCHAR): int;
+
+PROCEDURE execv   (path: ARRAY OF CHAR; argv: ARRAY OF xPOSIX_PCHAR): int;
+PROCEDURE execve  (path: ARRAY OF CHAR; argv,env: ARRAY OF xPOSIX_PCHAR): int;
+PROCEDURE execvp  (path: ARRAY OF CHAR; argv: ARRAY OF xPOSIX_PCHAR): int;
+PROCEDURE execvpe (path: ARRAY OF CHAR; argv,env: ARRAY OF xPOSIX_PCHAR): int;
+
+PROCEDURE write (fildes: int; buf: ADDRESS; nbyte: unsigned): int;
+
+
+END xPOSIX.

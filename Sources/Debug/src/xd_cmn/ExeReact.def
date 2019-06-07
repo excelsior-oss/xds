@@ -1,0 +1,89 @@
+-- Определяет понятие реакции на событие в программе.
+-- Содержит списки все реакций, процедуры для добавления,
+-- вставки, удаления реакций. При возникновении события
+-- возбуждает указаную цепочку реакций на него. Кроме этого,
+-- содержить процедуры для поиска реакций и управления
+-- ходом выполнения цепочки реакций.
+
+DEFINITION MODULE ExeReact;
+
+IMPORT eve := Events;
+
+
+PROCEDURE Ini;
+
+
+TYPE
+  DATA;
+  DO_PROC = PROCEDURE (DATA);
+  PREACTION = POINTER TO REACTION;
+  REACTION = RECORD
+               data : DATA; (* Данные *)
+               do   : DO_PROC; (* собственно выполняемые действия *)
+               next : PREACTION;
+               ready: BOOLEAN;
+             END;
+
+  AllReactions = ARRAY eve.EVENT_TYPE OF PREACTION;
+
+
+VAR
+  NextReaction- : PREACTION;
+  (* Следущая реакция в списке реакций на произошедшее событие.
+     Когда происходит некое событие, начинает выполняться цепочка
+     реакций на это событие, и когда подходящая реакция останавливает
+     выполнение этой цепочки, в NextReaction запоминается след. реакция
+     в цепочке за только что исполненной. При ПРОДОЛЖЕНИИ работы
+     будет отработана ВСЯ цепочка реакций на данное событие, хотя
+     РЕАЛЬНО целевой испольнитель запускаться не будет !
+     При первом запуске NextReaction = NIL *)
+
+  DATA_NIL-: DATA;
+
+
+(* Процедуры для работы с реакциями на события *)
+
+(* Добавляет еще одну реакцию на событие *)
+PROCEDURE AddAction (ev: eve.EVENT_TYPE; data: DATA; do: DO_PROC);
+
+(* Вставляет новую реакцию newR перед уже имевшейся oldR *)
+PROCEDURE InsAction (ev: eve.EVENT_TYPE; data: DATA; do: DO_PROC; old: PREACTION);
+
+(* Добавляет еще одну реакцию на событие, пропустив первую, если есть *)
+PROCEDURE AddActionSecond (ev: eve.EVENT_TYPE; data: DATA; do: DO_PROC);
+
+(* Вставляет новую реакцию первой перед уже имеющимися *)
+PROCEDURE InsActionFirst (ev: eve.EVENT_TYPE; data: DATA; do: DO_PROC);
+
+(* Удаляет реакцию на событие *)
+PROCEDURE RemAction (ev: eve.EVENT_TYPE; R: PREACTION);
+
+(* Первая реакция на событие *)
+PROCEDURE FirstReaction (ev: eve.EVENT_TYPE): PREACTION;
+
+(* Поиск реакции *)
+PROCEDURE FindReaction (first: PREACTION; do: DO_PROC): PREACTION;
+
+(* Делает реакцию активной *)
+PROCEDURE ReadyReaction (preact: PREACTION);
+
+(* Делает все реакции активными *)
+PROCEDURE Ready;
+
+(* Возбуждает реакции, начиная с указанной *)
+PROCEDURE Raise (preact: PREACTION);
+
+(* Прекратить выполнение последующих реакций *)
+PROCEDURE StopReact;
+
+PROCEDURE IsStopReact () : BOOLEAN;
+
+(* Прекратить выполнение цепочки реакций на текущее событие *)
+PROCEDURE CancelReact;
+
+
+
+
+END ExeReact.
+
+

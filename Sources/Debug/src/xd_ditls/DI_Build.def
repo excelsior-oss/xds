@@ -1,0 +1,116 @@
+-- Предоставляет процедуры для преобразования и постороения
+-- внутреннего универсального представления отладочной информации.
+
+DEFINITION MODULE DI_Build;
+
+IMPORT sys := SYSTEM;
+
+IMPORT dt := DI_Types;
+IMPORT kt := KrnTypes;
+IMPORT Ud := Unidata;
+
+
+VAR
+  Names            : Ud.STORAGE;
+  TypesTbl         : Ud.STORAGE;
+
+(* Добавить имя в таблицу имен модуля *)
+PROCEDURE AddName (name: ARRAY OF CHAR): CARDINAL;
+
+(* Добавить новое имя в таблицу имен модуля *)
+PROCEDURE AddNewName (name: ARRAY OF CHAR): CARDINAL;
+
+
+PROCEDURE AddComponent (Component: dt.COMPONENT);
+
+
+
+PROCEDURE CreateKCLTable (com: dt.ComNo; mod: dt.ModNo);
+
+(* Создание ключа для сводной таблицы сегментов программы *)
+PROCEDURE CreateKGroupSegments (com: dt.ComNo);
+
+
+(* Добавить тип в таблицу типов, вернет ссылку на тип         *)
+(* ТОЛЬКО ДЛЯ НЕ ПРИМИТИВНЫХ ТИПОВ! Описание примитивных      *)
+(* находится в DI_Types.def                                   *)
+(* При необходимости одинаковые типы отождествляются, однако  *)
+(* имя добавляемого типа может беть потеряно                  *)
+PROCEDURE AddType (type: ARRAY OF sys.LOC; VAR unique: BOOLEAN): dt.R_TYPE;
+
+
+PROCEDURE TypeImageLength (addr: Ud.IMAGE): CARDINAL;
+
+(* Создание лексикографического ключа для таблицы типов модуля *)
+PROCEDURE SortKTName (com: dt.ComNo; mod: dt.ModNo);
+
+
+
+(* Добавить обьект в таблицу обьектов, если номер модуля равен    *)
+(* dt.Fake_Module, то добавляется в таблицу обьектов компоненты   *)
+(* Обьект должен быть правильно сформирован, проверок не делается *)
+PROCEDURE AddObject (com: dt.ComNo;
+                     mod: dt.ModNo;
+                     obj: dt.RAW_OBJECT);
+
+(* Создание ключей для таблицы модулей *)
+PROCEDURE CreateKeysByModules (com: dt.ComNo);
+
+
+
+(* Добавить паблик в таблицу *)
+PROCEDURE AddPublic (com: dt.ComNo; public: dt.PUBLIC);
+
+(* Отсортировать паблики по адресам *)
+PROCEDURE SortPublicsByAddr (com: dt.ComNo);
+
+(* Отсортировать паблики по именам *)
+PROCEDURE SortPublicsByName (com: dt.ComNo);
+
+
+
+(* Добавить идентификатор перечислимого типа в таблицу *)
+PROCEDURE AddEnumeration (com: dt.ComNo; mod: CARDINAL; name, value: CARDINAL);
+
+(* Отсортировать идентификаторы перечислимых типов *)
+PROCEDURE SortEnumerationsByName (com: dt.ComNo; mod: dt.ModNo);
+
+(* Сформировать таблицу точек останова по вызову процудур *)
+PROCEDURE CreateProcBegin (com: dt.ComNo);
+
+
+
+(* Построение таблицы обьектов                                     *)
+(* Если номер модуля равен dt.Fake_Module - таблица для компоненты *)
+PROCEDURE ReadObjects (com: dt.ComNo; mod: dt.ModNo);
+
+
+(* Установить язык для компоненты *)
+PROCEDURE SetComLanguage (com: dt.ComNo);
+
+
+PROCEDURE CorrectModuleName (VAR name: ARRAY OF CHAR);
+
+
+
+TYPE
+  P1 = POINTER TO sys.CARD8;
+  P2 = POINTER TO sys.CARD16;
+  P4 = POINTER TO sys.CARD32;
+
+
+(* Прочитать из дампа заданое количество байт *)
+PROCEDURE Read (Dump: dt.DUMP; l: CARDINAL; VAR Pos: CARDINAL) : CARDINAL;
+
+(* Записать в дампа заданое количество байт с указаным значением *)
+PROCEDURE Write (Dump: dt.DUMP; l,v: CARDINAL; VAR Pos: CARDINAL);
+
+
+<* IF DEFINED (xd_debug) & xd_debug THEN *>
+
+PROCEDURE ShowDebugInfo (com: dt.ComNo);
+PROCEDURE ShowDebugStat();
+
+<* END *>
+
+END DI_Build.

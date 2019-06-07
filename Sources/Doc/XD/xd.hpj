@@ -1,0 +1,22 @@
+; This file is maintained by HCW. Do not modify this file directly.
+
+[OPTIONS]
+HCW=0
+COMPRESS=12 Hall Zeck
+ERRORLOG=.\xd.hlg
+LCID=0x409 0x0 0x0 ;U.S. English
+REPORT=Yes
+CONTENTS=contents
+TITLE=XDS Debugger User's Guide
+COPYRIGHT=XDS on-line help is copyright © 1999-2011 Excelsior, LLC.
+CITATION=Copyright © 1999-2011 Excelsior, LLC.
+HLP=.\xd.hlp
+
+[FILES]
+.\xd.rtf
+
+[WINDOWS]
+main="",(256,0,767,1023),0,,(r12632256)
+
+[CONFIG]
+BrowseButtons()

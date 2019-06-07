@@ -1,0 +1,1007 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] WinSock;
+
+(* WinSock.def--definitions to be used with the WINSOCK.DLL
+ *
+ * This definition module corresponds to version 1.1 of the
+ * Windows Sockets specification.
+ *
+ * This file includes parts which are Copyright (c) 1982-1986 Regents
+ * of the University of California.  All rights reserved.  The
+ * Berkeley Software License Agreement specifies the terms and
+ * conditions for redistribution.
+ *
+ *)
+
+FROM WinDef IMPORT FARPROC, PVOID, PCBYTE, BOOL, WORD, DWORD, SHORT, LONG,
+                   UCHAR, USHORT, UINT, ULONG, PBYTE,
+                   PSTR, PPSTR, PCSTR, HANDLE, HWND,
+                   LOWORD, HIWORD, MAKELONG;
+FROM WinBase IMPORT OVERLAPPED;
+
+
+(*
+ * Basic system type definitions, taken from the BSD file sys/types.h.
+ *)
+
+TYPE u_char   = UCHAR;
+TYPE u_short  = USHORT;
+TYPE u_int    = UINT;
+TYPE u_long   = ULONG;
+     p_u_long = POINTER TO u_long;
+
+(*
+ * The new type to be used in all
+ * instances which refer to sockets.
+ *)
+TYPE SOCKET = u_int;
+
+
+(*
+ * Select uses arrays of SOCKETs.  These macros manipulate such
+ * arrays.  FD_SETSIZE may be defined by the user before including
+ * this file, but the default here should be >= 64.
+ *
+ * CAVEAT IMPLEMENTOR and USER: THESE MACROS AND TYPES MUST BE
+ * INCLUDED IN WINSOCK.H EXACTLY AS SHOWN HERE.
+ *)
+
+CONST FD_SETSIZE = 64;
+
+TYPE fd_set = RECORD
+                   fd_count : u_int;                             (* how many are SET? *)
+                   fd_array : ARRAY [0..FD_SETSIZE-1] OF SOCKET; (* an array of SOCKETs *)
+              END;
+     Pfd_set = POINTER TO fd_set;
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE __WSAFDIsSet (fd : SOCKET; set : fd_set) : INTEGER;
+<* ELSE *>
+PROCEDURE __WSAFDIsSet (fd : SOCKET; set : Pfd_set) : INTEGER;
+<* END *>
+
+(* FD_CLR, FD_SET, FD_ZERO were defined as macroes; now they're in RTL *)
+
+PROCEDURE FD_CLR (fd : SOCKET; VAR set : fd_set);
+PROCEDURE FD_SET (fd : SOCKET; VAR set : fd_set);
+PROCEDURE FD_ZERO (VAR set : fd_set);
+CONST FD_ISSET = __WSAFDIsSet;
+
+(*
+ * Structure used in select() call, taken from the BSD file sys/time.h.
+ *)
+
+<* IF BACKEND = "C" THEN *> <* PUSH *> <* GENTYPEDEF- *> <* END *>
+TYPE timeval = RECORD
+                      tv_sec  : LONG;         (* seconds *)
+                      tv_usec : LONG;        (* and microseconds *)
+               END;
+     Ptimeval = POINTER TO timeval;
+<* IF BACKEND = "C" THEN *> <* POP *> <* END *>
+
+(*
+ * Operations on timevals.
+ *
+ * They all were macroes. General macro timercmp was replaced with
+ * three different procedures: timergt, timerlt and timerequ.
+ *)
+
+PROCEDURE timerisset (VAR tvp : timeval) : BOOL;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE timergt    (tvp, uvp : timeval) : BOOL;
+<* ELSE *>
+PROCEDURE timergt    (tvp, uvp : Ptimeval) : BOOL;
+<* END *>
+<* IF BACKEND # "C" THEN *>
+PROCEDURE timerlt    (tvp, uvp : timeval) : BOOL;
+<* ELSE *>
+PROCEDURE timerlt    (tvp, uvp : Ptimeval) : BOOL;
+<* END *>
+<* IF BACKEND # "C" THEN *>
+PROCEDURE timerequ   (tvp, uvp : timeval) : BOOL;
+<* ELSE *>
+PROCEDURE timerequ   (tvp, uvp : Ptimeval) : BOOL;
+<* END *>
+PROCEDURE timerclear (VAR tvp : timeval);
+
+(*
+ * Commands for ioctlsocket(),  taken from the BSD file fcntl.h.
+ *
+ *
+ * Ioctl's have the command encoded in the lower word,
+ * and the size of any in or out parameters in the upper
+ * word.  The high 2 bits of the upper word are used
+ * to encode the in/out status of the parameter; for now
+ * we restrict parameters to at most 128 bytes.
+ *)
+
+CONST IOCPARM_MASK = 07fh;           (* parameters must be < 128 bytes *)
+      IOC_VOID     = 20000000h;      (* no parameters *)
+      IOC_OUT      = 40000000h;      (* copy out parameters *)
+      IOC_IN       = 80000000h;      (* copy in parameters *)
+      IOC_INOUT    = IOC_IN+IOC_OUT;
+                                        (* 0x20000000 distinguishes new &
+                                           old ioctl's *)
+
+      FIONREAD   = IOC_OUT + 4 * 65536 + ORD ('f') * 256 + 127; (* get # bytes to read *)
+      FIONBIO    = IOC_IN  + 4 * 65536 + ORD ('f') * 256 + 126; (* set/clear non-blocking i/o *)
+      FIOASYNC   = IOC_IN  + 4 * 65536 + ORD ('f') * 256 + 125; (* set/clear async i/o *)
+
+(* Socket I/O Controls *)
+
+      SIOCSHIWAT = IOC_IN  + 4 * 65536 + ORD ('s') * 256 + 0; (* set high watermark *)
+      SIOCGHIWAT = IOC_OUT + 4 * 65536 + ORD ('s') * 256 + 1; (* get high watermark *)
+      SIOCSLOWAT = IOC_IN  + 4 * 65536 + ORD ('s') * 256 + 2; (* set low watermark *)
+      SIOCGLOWAT = IOC_OUT + 4 * 65536 + ORD ('s') * 256 + 3; (* get low watermark *)
+      SIOCATMARK = IOC_OUT + 4 * 65536 + ORD ('s') * 256 + 7; (* at oob mark? *)
+
+(*
+ * Structures returned by network data base library, taken from the
+ * BSD file netdb.h.  All addresses are supplied in host order, and
+ * returned in network order (suitable for use in system calls).
+ *)
+
+TYPE hostent = RECORD
+                      h_name      : PSTR;  (* official name of host *)
+                      h_aliases   : PPSTR; (* alias list *)
+                      h_addrtype  : SHORT; (* host address type *)
+                      h_length    : SHORT; (* length of address *)
+                      h_addr_list : PPSTR; (* list of addresses *)
+               END;
+   p_hostent = POINTER TO hostent;
+
+(*
+ * It is assumed here that a network number
+ * fits in 32 bits.
+ *)
+TYPE netent = RECORD
+                   n_name     : PSTR;   (* official name of net *)
+                   n_aliases  : PPSTR;  (* alias list *)
+                   n_addrtype : SHORT;  (* net address type *)
+                   n_net      : u_long; (* network # *)
+              END;
+
+TYPE servent = RECORD
+                    s_name    : PSTR;   (* official service name *)
+                    s_aliases : PPSTR;  (* alias list *)
+                    s_port    : SHORT;  (* port # *)
+                    s_proto   : PSTR;   (* protocol to use *)
+               END;
+   p_servent = POINTER TO servent;
+
+TYPE protoent = RECORD
+                     p_name    : PSTR;  (* official protocol name *)
+                     p_aliases : PPSTR; (* alias list *)
+                     p_proto   : SHORT; (* protocol # *)
+                END;
+   p_protoent = POINTER TO protoent;
+
+(*
+ * Constants and structures defined by the internet system,
+ * Per RFC 790, September 1981, taken from the BSD file netinet/in.h.
+ *)
+
+(*
+ * Protocols
+ *)
+
+CONST IPPROTO_IP            = 0;              (* dummy for IP *)
+      IPPROTO_ICMP          = 1;              (* control message protocol *)
+      IPPROTO_IGMP          = 2;              (* group management protocol *)
+      IPPROTO_GGP           = 3;              (* gateway^2 (deprecated) *)
+      IPPROTO_TCP           = 6;              (* tcp *)
+      IPPROTO_PUP           = 12;             (* pup *)
+      IPPROTO_UDP           = 17;             (* user datagram protocol *)
+      IPPROTO_IDP           = 22;             (* xns idp *)
+      IPPROTO_ND            = 77;             (* UNOFFICIAL net disk proto *)
+
+      IPPROTO_RAW           = 255;            (* raw IP packet *)
+      IPPROTO_MAX           = 256;
+
+(*
+ * Port/socket numbers: network standard functions
+ *)
+      IPPORT_ECHO           = 7;
+      IPPORT_DISCARD        = 9;
+      IPPORT_SYSTAT         = 11;
+      IPPORT_DAYTIME        = 13;
+      IPPORT_NETSTAT        = 15;
+      IPPORT_FTP            = 21;
+      IPPORT_TELNET         = 23;
+      IPPORT_SMTP           = 25;
+      IPPORT_TIMESERVER     = 37;
+      IPPORT_NAMESERVER     = 42;
+      IPPORT_WHOIS          = 43;
+      IPPORT_MTP            = 57;
+
+(*
+ * Port/socket numbers: host specific functions
+ *)
+      IPPORT_TFTP           = 69;
+      IPPORT_RJE            = 77;
+      IPPORT_FINGER         = 79;
+      IPPORT_TTYLINK        = 87;
+      IPPORT_SUPDUP         = 95;
+
+(*
+ * UNIX TCP sockets
+ *)
+      IPPORT_EXECSERVER     = 512;
+      IPPORT_LOGINSERVER    = 513;
+      IPPORT_CMDSERVER      = 514;
+      IPPORT_EFSSERVER      = 520;
+
+(*
+ * UNIX UDP sockets
+ *)
+      IPPORT_BIFFUDP        = 512;
+      IPPORT_WHOSERVER      = 513;
+      IPPORT_ROUTESERVER    = 520;
+                                        (* 520+1 also used *)
+
+(*
+ * Ports < IPPORT_RESERVED are reserved for
+ * privileged processes (e.g. root).
+ *)
+      IPPORT_RESERVED       = 1024;
+
+(*
+ * Link numbers
+ *)
+      IMPLINK_IP            = 155;
+      IMPLINK_LOWEXPER      = 156;
+      IMPLINK_HIGHEXPER     = 158;
+
+(*
+ * Internet address (old style... should be updated)
+ *)
+
+TYPE in_addr = RECORD
+                    CASE : INTEGER OF
+                    | 0 : s_b1, s_b2, s_b3, s_b4 : u_char;
+                    | 1 : s_w1, s_w2 : u_short;
+                    | 2 : S_addr : u_long;
+                    | 3 : s_addr : u_long;
+                                            (* can be used for most tcp & ip code *)
+                    | 4 : s_net,            (* netword *)
+                          s_host,           (* host on imp *)
+                          s_lh,             (* logical host *)
+                          s_impno : u_char; (* imp # *)
+                    | 5 : s_dummy,
+                          s_imp : u_short;  (* imp *)
+                    END;
+               END;
+
+
+(*
+ * Definitions of bits in internet address integers.
+ * On subnets, the decomposition of addresses to host and net parts
+ * is done according to subnet mask, not the masks here.
+ *)
+
+(* IN_CLASSA, IN_CLASSB, IN_CLASSC implemented in RTL *)
+
+PROCEDURE IN_CLASSA (i : ULONG) : BOOL;
+
+CONST IN_CLASSA_NET         = 0ff000000h;
+      IN_CLASSA_NSHIFT      = 24;
+      IN_CLASSA_HOST        = 000ffffffh;
+      IN_CLASSA_MAX         = 128;
+
+PROCEDURE IN_CLASSB (i : ULONG) : BOOL;
+
+CONST IN_CLASSB_NET         = 0ffff0000h;
+      IN_CLASSB_NSHIFT      = 16;
+      IN_CLASSB_HOST        = 00000ffffh;
+      IN_CLASSB_MAX         = 65536;
+
+PROCEDURE IN_CLASSC (i : ULONG) : BOOL;
+
+CONST IN_CLASSC_NET         = 0ffffff00h;
+      IN_CLASSC_NSHIFT      = 8;
+      IN_CLASSC_HOST        = 0000000ffh;
+
+      INADDR_ANY            = 000000000h;
+      INADDR_LOOPBACK       = 07f000001h;
+      INADDR_BROADCAST      = 0ffffffffh;
+      INADDR_NONE           = 0ffffffffh;
+
+(*
+ * Socket address, internet style.
+ *)
+
+TYPE sockaddr_in = RECORD
+                        sin_family : SHORT;
+                        sin_port   : u_short;
+                        sin_addr   : in_addr;
+                        sin_zero   : ARRAY [0..7] OF CHAR;
+                   END;
+
+
+CONST WSADESCRIPTION_LEN = 256;
+      WSASYS_STATUS_LEN  = 128;
+
+TYPE WSADATA = RECORD
+                    wVersion       : WORD;
+                    wHighVersion   : WORD;
+                    szDescription  : ARRAY [0..WSADESCRIPTION_LEN] OF CHAR;
+                    szSystemStatus : ARRAY [0..WSASYS_STATUS_LEN]  OF CHAR;
+                    iMaxSockets    : USHORT;
+                    iMaxUdpDg      : USHORT;
+                    lpVendorInfo   : PSTR;
+               END;
+
+       PWSADATA = POINTER TO WSADATA;
+
+(*
+ * Options for use with [gs]etsockopt at the IP level.
+ *)
+
+CONST IP_OPTIONS          = 1;           (* set/get IP per-packet options    *)
+      IP_MULTICAST_IF     = 2;           (* set/get IP multicast interface   *)
+      IP_MULTICAST_TTL    = 3;           (* set/get IP multicast timetolive  *)
+      IP_MULTICAST_LOOP   = 4;           (* set/get IP multicast loopback    *)
+      IP_ADD_MEMBERSHIP   = 5;           (* add  an IP group membership      *)
+      IP_DROP_MEMBERSHIP  = 6;           (* drop an IP group membership      *)
+
+      IP_DEFAULT_MULTICAST_TTL  = 1;    (* normally limit m'casts to 1 hop  *)
+      IP_DEFAULT_MULTICAST_LOOP = 1;    (* normally hear sends if a member  *)
+      IP_MAX_MEMBERSHIPS        = 20;   (* per socket; must fit in one mbuf *)
+
+(*
+ * Argument structure for IP_ADD_MEMBERSHIP and IP_DROP_MEMBERSHIP.
+ *)
+
+TYPE ip_mreq = RECORD
+                  imr_multiaddr : in_addr;  (* IP multicast address of group *)
+                  imr_interface : in_addr;  (* local IP address of interface *)
+               END;
+
+(*
+ * Definitions related to sockets: types, address families, options,
+ * taken from the BSD file sys/socket.h.
+ *)
+
+(*
+ * This is used instead of -1, since the
+ * SOCKET type is unsigned.
+ *)
+
+CONST INVALID_SOCKET = VAL (SOCKET, 0FFFFFFFFh);
+      SOCKET_ERROR   = -1;
+
+(*
+ * Types
+ *)
+
+CONST SOCK_STREAM     = 1;               (* stream socket *)
+      SOCK_DGRAM      = 2;               (* datagram socket *)
+      SOCK_RAW        = 3;               (* raw-protocol interface *)
+      SOCK_RDM        = 4;               (* reliably-delivered message *)
+      SOCK_SEQPACKET  = 5;               (* sequenced packet stream *)
+
+(*
+ * Option flags per-socket.
+ *)
+
+CONST SO_DEBUG        = 0001h;          (* turn on debugging info recording *)
+      SO_ACCEPTCONN   = 0002h;          (* socket has had listen() *)
+      SO_REUSEADDR    = 0004h;          (* allow local address reuse *)
+      SO_KEEPALIVE    = 0008h;          (* keep connections alive *)
+      SO_DONTROUTE    = 0010h;          (* just use interface addresses *)
+      SO_BROADCAST    = 0020h;          (* permit sending of broadcast msgs *)
+      SO_USELOOPBACK  = 0040h;          (* bypass hardware when possible *)
+      SO_LINGER       = 0080h;          (* linger on close if data present *)
+      SO_OOBINLINE    = 0100h;          (* leave received OOB data in line *)
+
+      SO_DONTLINGER   = 0FFFFFF7Fh; (* (u_int)(~SO_LINGER) *)
+
+(*
+ * Additional options.
+ *)
+
+CONST SO_SNDBUF       = 1001h;          (* send buffer size *)
+      SO_RCVBUF       = 1002h;          (* receive buffer size *)
+      SO_SNDLOWAT     = 1003h;          (* send low-water mark *)
+      SO_RCVLOWAT     = 1004h;          (* receive low-water mark *)
+      SO_SNDTIMEO     = 1005h;          (* send timeout *)
+      SO_RCVTIMEO     = 1006h;          (* receive timeout *)
+      SO_ERROR        = 1007h;          (* get error status and clear *)
+      SO_TYPE         = 1008h;          (* get socket type *)
+
+(*
+ * Options for connect and disconnect data and options.  Used only by
+ * non-TCP/IP transports such as DECNet, OSI TP4, etc.
+ *)
+
+CONST SO_CONNDATA     = 7000h;
+      SO_CONNOPT      = 7001h;
+      SO_DISCDATA     = 7002h;
+      SO_DISCOPT      = 7003h;
+      SO_CONNDATALEN  = 7004h;
+      SO_CONNOPTLEN   = 7005h;
+      SO_DISCDATALEN  = 7006h;
+      SO_DISCOPTLEN   = 7007h;
+
+(*
+ * Option for opening sockets for synchronous access.
+ *)
+
+CONST SO_OPENTYPE     = 7008h;
+
+CONST SO_SYNCHRONOUS_ALERT    = 10h;
+      SO_SYNCHRONOUS_NONALERT = 20h;
+
+(*
+ * Other NT-specific options.
+ *)
+
+CONST SO_MAXDG        = 7009h;
+      SO_MAXPATHDG    = 700Ah;
+
+(*
+ * TCP options.
+ *)
+
+CONST TCP_NODELAY     = 0001h;
+      TCP_BSDURGENT   = 7000h;
+
+(*
+ * Address families.
+ *)
+
+CONST AF_UNSPEC       = 0;              (* unspecified *)
+      AF_UNIX         = 1;              (* local to host (pipes, portals) *)
+      AF_INET         = 2;              (* internetwork: UDP, TCP, etc. *)
+      AF_IMPLINK      = 3;              (* arpanet imp addresses *)
+      AF_PUP          = 4;              (* pup protocols: e.g. BSP *)
+      AF_CHAOS        = 5;              (* mit CHAOS protocols *)
+      AF_IPX          = 6;              (* IPX and SPX *)
+      AF_NS           = 6;              (* XEROX NS protocols *)
+      AF_ISO          = 7;              (* ISO protocols *)
+      AF_OSI          = AF_ISO;         (* OSI is ISO *)
+      AF_ECMA         = 8;              (* european computer manufacturers *)
+      AF_DATAKIT      = 9;              (* datakit protocols *)
+      AF_CCITT        = 10;             (* CCITT protocols, X.25 etc *)
+      AF_SNA          = 11;             (* IBM SNA *)
+      AF_DECnet       = 12;             (* DECnet *)
+      AF_DLI          = 13;             (* Direct data link interface *)
+      AF_LAT          = 14;             (* LAT *)
+      AF_HYLINK       = 15;             (* NSC Hyperchannel *)
+      AF_APPLETALK    = 16;             (* AppleTalk *)
+      AF_NETBIOS      = 17;             (* NetBios-style addresses *)
+      AF_VOICEVIEW    = 18;             (* VoiceView *)
+
+      AF_MAX          = 19;
+
+(*
+ * Structure used by kernel to store most
+ * addresses.
+ *)
+
+TYPE sockaddr = RECORD
+                  sa_family : u_short;               (* address family *)
+                  sa_data   : ARRAY [0..13] OF CHAR; (* up to 14 bytes of direct address *)
+                END;
+     Psockaddr = POINTER TO sockaddr;
+
+(*
+ * Structure used by kernel to pass protocol
+ * information in raw sockets.
+ *)
+
+TYPE sockproto = RECORD
+                   sp_family   : u_short; (* address family *)
+                   sp_protocol : u_short; (* protocol *)
+                 END;
+
+(*
+ * Protocol families, same as address families for now.
+ *)
+
+CONST PF_UNSPEC      = AF_UNSPEC;
+      PF_UNIX        = AF_UNIX;
+      PF_INET        = AF_INET;
+      PF_IMPLINK     = AF_IMPLINK;
+      PF_PUP         = AF_PUP;
+      PF_CHAOS       = AF_CHAOS;
+      PF_NS          = AF_NS;
+      PF_IPX         = AF_IPX;
+      PF_ISO         = AF_ISO;
+      PF_OSI         = AF_OSI;
+      PF_ECMA        = AF_ECMA;
+      PF_DATAKIT     = AF_DATAKIT;
+      PF_CCITT       = AF_CCITT;
+      PF_SNA         = AF_SNA;
+      PF_DECnet      = AF_DECnet;
+      PF_DLI         = AF_DLI;
+      PF_LAT         = AF_LAT;
+      PF_HYLINK      = AF_HYLINK;
+      PF_APPLETALK   = AF_APPLETALK;
+      PF_VOICEVIEW   = AF_VOICEVIEW;
+
+      PF_MAX         = AF_MAX;
+
+(*
+ * Structure used for manipulating linger option.
+ *)
+
+TYPE linger = RECORD
+                l_onoff  : u_short;               (* option on/off *)
+                l_linger : u_short;               (* linger time *)
+              END;
+
+(*
+ * Level number for (get/set)sockopt() to apply to socket itself.
+ *)
+
+CONST SOL_SOCKET =  0ffffh;          (* options for socket level *)
+
+(*
+ * Maximum queue length specifiable by listen.
+ *)
+
+CONST SOMAXCONN = 5;
+
+CONST MSG_OOB       = 1;             (* process out-of-band data *)
+      MSG_PEEK      = 2;             (* peek at incoming message *)
+      MSG_DONTROUTE = 4;             (* send without using routing tables *)
+
+      MSG_MAXIOVLEN = 16;
+
+      MSG_PARTIAL   = 8000h;         (* partial send or recv for message xport *)
+
+(*
+ * Define constant based on rfc883, used by gethostbyxxxx() calls.
+ *)
+
+CONST MAXGETHOSTSTRUCT = 1024;
+
+(*
+ * Define flags to be used with the WSAAsyncSelect() call.
+ *)
+
+TYPE FD_ENUM = (FD__READ,     (* 0 *)
+                FD__WRITE,    (* 1 *)
+                FD__OOB,      (* 2 *)
+                FD__ACCEPT,   (* 3 *)
+                FD__CONNECT,  (* 4 *)
+                FD__CLOSE);   (* 5 *)
+ 
+     FD_FLAGS = SET OF FD_ENUM;
+
+CONST FD_READ     = FD_FLAGS {FD__READ};    (* 0x01 *)
+      FD_WRITE    = FD_FLAGS {FD__WRITE};   (* 0x02 *)
+      FD_OOB      = FD_FLAGS {FD__OOB};     (* 0x04 *)
+      FD_ACCEPT   = FD_FLAGS {FD__ACCEPT};  (* 0x08 *)
+      FD_CONNECT  = FD_FLAGS {FD__CONNECT}; (* 0x10 *)
+      FD_CLOSE    = FD_FLAGS {FD__CLOSE};   (* 0x20 *)
+
+(*
+ * All Windows Sockets error constants are biased by = WSABASEERR from
+ * the "normal"
+ *)
+
+CONST WSABASEERR = 10000;
+
+(*
+ * Windows Sockets definitions of regular Microsoft C error constants
+ *)
+
+CONST WSAEINTR                = WSABASEERR+4;
+      WSAEBADF                = WSABASEERR+9;
+      WSAEACCES               = WSABASEERR+13;
+      WSAEFAULT               = WSABASEERR+14;
+      WSAEINVAL               = WSABASEERR+22;
+      WSAEMFILE               = WSABASEERR+24;
+
+(*
+ * Windows Sockets definitions of regular Berkeley error constants
+ *)
+
+CONST WSAEWOULDBLOCK          = WSABASEERR+35;
+      WSAEINPROGRESS          = WSABASEERR+36;
+      WSAEALREADY             = WSABASEERR+37;
+      WSAENOTSOCK             = WSABASEERR+38;
+      WSAEDESTADDRREQ         = WSABASEERR+39;
+      WSAEMSGSIZE             = WSABASEERR+40;
+      WSAEPROTOTYPE           = WSABASEERR+41;
+      WSAENOPROTOOPT          = WSABASEERR+42;
+      WSAEPROTONOSUPPORT      = WSABASEERR+43;
+      WSAESOCKTNOSUPPORT      = WSABASEERR+44;
+      WSAEOPNOTSUPP           = WSABASEERR+45;
+      WSAEPFNOSUPPORT         = WSABASEERR+46;
+      WSAEAFNOSUPPORT         = WSABASEERR+47;
+      WSAEADDRINUSE           = WSABASEERR+48;
+      WSAEADDRNOTAVAIL        = WSABASEERR+49;
+      WSAENETDOWN             = WSABASEERR+50;
+      WSAENETUNREACH          = WSABASEERR+51;
+      WSAENETRESET            = WSABASEERR+52;
+      WSAECONNABORTED         = WSABASEERR+53;
+      WSAECONNRESET           = WSABASEERR+54;
+      WSAENOBUFS              = WSABASEERR+55;
+      WSAEISCONN              = WSABASEERR+56;
+      WSAENOTCONN             = WSABASEERR+57;
+      WSAESHUTDOWN            = WSABASEERR+58;
+      WSAETOOMANYREFS         = WSABASEERR+59;
+      WSAETIMEDOUT            = WSABASEERR+60;
+      WSAECONNREFUSED         = WSABASEERR+61;
+      WSAELOOP                = WSABASEERR+62;
+      WSAENAMETOOLONG         = WSABASEERR+63;
+      WSAEHOSTDOWN            = WSABASEERR+64;
+      WSAEHOSTUNREACH         = WSABASEERR+65;
+      WSAENOTEMPTY            = WSABASEERR+66;
+      WSAEPROCLIM             = WSABASEERR+67;
+      WSAEUSERS               = WSABASEERR+68;
+      WSAEDQUOT               = WSABASEERR+69;
+      WSAESTALE               = WSABASEERR+70;
+      WSAEREMOTE              = WSABASEERR+71;
+
+      WSAEDISCON              = WSABASEERR+101;
+
+(*
+ * Extended Windows Sockets error constant definitions
+ *)
+
+CONST WSASYSNOTREADY          = WSABASEERR+91;
+      WSAVERNOTSUPPORTED      = WSABASEERR+92;
+      WSANOTINITIALISED       = WSABASEERR+93;
+
+(*
+ * Error return codes from gethostbyname() and gethostbyaddr()
+ * (when using the resolver). Note that these errors are
+ * retrieved via WSAGetLastError() and must therefore follow
+ * the rules for avoiding clashes with error numbers from
+ * specific implementations or language run-time systems.
+ * For this reason the codes are based at WSABASEERR+1001.
+ * Note also that [WSA]NO_ADDRESS is defined only for
+ * compatibility purposes.
+ *)
+
+(* Authoritative Answer: Host not found *)
+
+CONST WSAHOST_NOT_FOUND     = WSABASEERR+1001;
+      HOST_NOT_FOUND        = WSAHOST_NOT_FOUND;
+
+(* Non-Authoritative: Host not found, or SERVERFAIL *)
+
+CONST WSATRY_AGAIN          = WSABASEERR+1002;
+      TRY_AGAIN             = WSATRY_AGAIN;
+
+(* Non recoverable errors, FORMERR, REFUSED, NOTIMP *)
+
+CONST WSANO_RECOVERY        = WSABASEERR+1003;
+      NO_RECOVERY           = WSANO_RECOVERY;
+
+(* Valid name, no data record of requested type *)
+
+CONST WSANO_DATA            = WSABASEERR+1004;
+      NO_DATA               = WSANO_DATA;
+
+(* no address, look for MX record *)
+
+CONST WSANO_ADDRESS         = WSANO_DATA;
+      NO_ADDRESS            = WSANO_ADDRESS;
+
+(*
+ * Windows Sockets errors redefined as regular Berkeley error constants.
+ * These were commented out in Windows NT to avoid conflicts with errno.h.
+ * However, we can define it in DEF-file (unlike C, import in Modula-2
+ * is qualified)
+ *)
+
+CONST EWOULDBLOCK           = WSAEWOULDBLOCK;
+      EINPROGRESS           = WSAEINPROGRESS;
+      EALREADY              = WSAEALREADY;
+      ENOTSOCK              = WSAENOTSOCK;
+      EDESTADDRREQ          = WSAEDESTADDRREQ;
+      EMSGSIZE              = WSAEMSGSIZE;
+      EPROTOTYPE            = WSAEPROTOTYPE;
+      ENOPROTOOPT           = WSAENOPROTOOPT;
+      EPROTONOSUPPORT       = WSAEPROTONOSUPPORT;
+      ESOCKTNOSUPPORT       = WSAESOCKTNOSUPPORT;
+      EOPNOTSUPP            = WSAEOPNOTSUPP;
+      EPFNOSUPPORT          = WSAEPFNOSUPPORT;
+      EAFNOSUPPORT          = WSAEAFNOSUPPORT;
+      EADDRINUSE            = WSAEADDRINUSE;
+      EADDRNOTAVAIL         = WSAEADDRNOTAVAIL;
+      ENETDOWN              = WSAENETDOWN;
+      ENETUNREACH           = WSAENETUNREACH;
+      ENETRESET             = WSAENETRESET;
+      ECONNABORTED          = WSAECONNABORTED;
+      ECONNRESET            = WSAECONNRESET;
+      ENOBUFS               = WSAENOBUFS;
+      EISCONN               = WSAEISCONN;
+      ENOTCONN              = WSAENOTCONN;
+      ESHUTDOWN             = WSAESHUTDOWN;
+      ETOOMANYREFS          = WSAETOOMANYREFS;
+      ETIMEDOUT             = WSAETIMEDOUT;
+      ECONNREFUSED          = WSAECONNREFUSED;
+      ELOOP                 = WSAELOOP;
+      ENAMETOOLONG          = WSAENAMETOOLONG;
+      EHOSTDOWN             = WSAEHOSTDOWN;
+      EHOSTUNREACH          = WSAEHOSTUNREACH;
+      ENOTEMPTY             = WSAENOTEMPTY;
+      EPROCLIM              = WSAEPROCLIM;
+      EUSERS                = WSAEUSERS;
+      EDQUOT                = WSAEDQUOT;
+      ESTALE                = WSAESTALE;
+      EREMOTE               = WSAEREMOTE;
+
+(* Socket function prototypes *)
+
+PROCEDURE accept (s : SOCKET; VAR addr : sockaddr; VAR [NIL] addrlen : INTEGER) : SOCKET;
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE bind (s : SOCKET; addr : sockaddr; namelen : INTEGER) : INTEGER;
+<* ELSE *>
+PROCEDURE bind (s : SOCKET; addr : Psockaddr; namelen : INTEGER) : INTEGER;
+<* END *>
+
+PROCEDURE closesocket (s : SOCKET) : INTEGER;
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE connect (s : SOCKET; name : sockaddr; namelen : INTEGER) : INTEGER;
+<* ELSE *>
+PROCEDURE connect (s : SOCKET; name : Psockaddr; namelen : INTEGER) : INTEGER;
+<* END *>
+
+PROCEDURE ioctlsocket (s : SOCKET; cmd : LONG; argp : p_u_long) : INTEGER;
+
+PROCEDURE getpeername (s : SOCKET; VAR name : sockaddr; VAR [NIL] namelen : INTEGER) : INTEGER;
+
+PROCEDURE getsockname (s : SOCKET; VAR name : sockaddr; VAR [NIL] namelen : INTEGER) : INTEGER;
+
+PROCEDURE getsockopt (s : SOCKET; level : INTEGER; optname : INTEGER;
+                      optval : PBYTE; VAR optlen : INTEGER) : INTEGER;
+
+PROCEDURE htonl (hostlong : u_long) : u_long;
+
+PROCEDURE htons (hostshort : u_short) : u_short;
+
+PROCEDURE inet_addr (cp : ARRAY OF CHAR) : u_long;
+
+(* inet_ntoa required structure passing by value; implemented in RTL *)
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE rtl_inet_ntoa (in : in_addr) : PSTR;
+CONST inet_ntoa = rtl_inet_ntoa;
+<* ELSE *>
+PROCEDURE inet_ntoa (in : in_addr) : PSTR;
+<* END *>
+
+PROCEDURE listen (s : SOCKET; backlog : INTEGER) : INTEGER;
+
+PROCEDURE ntohl (netlong : u_long) : u_long;
+
+PROCEDURE ntohs (netshort : u_short) : u_short;
+
+PROCEDURE recv (s : SOCKET; buf : PBYTE; len : INTEGER; flags : INTEGER) : INTEGER;
+
+PROCEDURE recvfrom (s : SOCKET; buf : PBYTE; len : INTEGER; flags : INTEGER;
+                    VAR [NIL] from : sockaddr; VAR [NIL] fromlen : INTEGER) : INTEGER;
+
+<* IF BACKEND # "C" THEN *>
+PROCEDURE select (nfds : INTEGER;
+                  VAR readfds, writefds, exceptfds : FD_FLAGS;
+                  timeout : timeval) : INTEGER;
+<* ELSE *>
+PROCEDURE select (nfds : INTEGER;
+                  VAR readfds, writefds, exceptfds : FD_FLAGS;
+                  timeout : Ptimeval) : INTEGER;
+<* END *>
+
+PROCEDURE send (s : SOCKET; buf : PCBYTE; len : INTEGER; flags : INTEGER) : INTEGER;
+
+PROCEDURE sendto (s : SOCKET; buf : PCBYTE; len : INTEGER; flags : INTEGER;
+                  VAR [NIL] to : sockaddr; tolen : INTEGER) : INTEGER;
+
+PROCEDURE setsockopt (s : SOCKET; level : INTEGER; optname : INTEGER;
+                      optval : PCBYTE; optlen : INTEGER) : INTEGER;
+
+PROCEDURE shutdown (s : SOCKET; how : INTEGER) : INTEGER;
+
+PROCEDURE socket (af : INTEGER; type : INTEGER; protocol : INTEGER) : SOCKET;
+
+(* Database function prototypes *)
+
+PROCEDURE gethostbyaddr (addr : PCBYTE; len : INTEGER; type : INTEGER) : p_hostent;
+
+PROCEDURE gethostbyname (name : ARRAY OF CHAR) : p_hostent;
+
+PROCEDURE gethostname (name : PSTR; namelen : INTEGER) : INTEGER;
+
+PROCEDURE getservbyport (port : INTEGER; proto : PCSTR) : p_servent;
+
+PROCEDURE getservbyname (name : ARRAY OF CHAR; proto : PCSTR) : p_servent;
+
+PROCEDURE getprotobynumber (proto : INTEGER) : p_protoent;
+
+PROCEDURE getprotobyname (name : ARRAY OF CHAR) : p_protoent;
+
+(* Microsoft Windows Extension function prototypes *)
+
+PROCEDURE WSAStartup (wVersionRequired : WORD; VAR WSAData : WSADATA) : INTEGER;
+
+PROCEDURE WSACleanup () : INTEGER;
+
+PROCEDURE WSASetLastError (iError : INTEGER);
+
+PROCEDURE WSAGetLastError () : INTEGER;
+
+PROCEDURE WSAIsBlocking () : BOOL;
+
+PROCEDURE WSAUnhookBlockingHook () : INTEGER;
+
+PROCEDURE WSASetBlockingHook (BlockFunc : FARPROC) : FARPROC;
+
+PROCEDURE WSACancelBlockingCall () : INTEGER;
+
+PROCEDURE WSAAsyncGetServByName (hwnd   : HWND;
+                                 wMsg   : u_int;
+                                 name   : ARRAY OF CHAR;
+                                 proto  : PCSTR;
+                                 buf    : PBYTE;
+                                 buflen : INTEGER) : HANDLE;
+
+PROCEDURE WSAAsyncGetServByPort (hwnd   : HWND;
+                                 wMsg   : u_int;
+                                 port   : INTEGER;
+                                 proto  : PCSTR;
+                                 buf    : PBYTE;
+                                 buflen : INTEGER) : HANDLE;
+
+PROCEDURE WSAAsyncGetProtoByName (hwnd   : HWND;
+                                  wMsg   : u_int;
+                                  name   : ARRAY OF CHAR;
+                                  buf    : PBYTE;
+                                  buflen : INTEGER) : HANDLE;
+
+PROCEDURE WSAAsyncGetProtoByNumber (hwnd   : HWND;
+                                    wMsg   : u_int;
+                                    number : INTEGER;
+                                    buf    : PBYTE;
+                                    buflen : INTEGER) : HANDLE;
+
+PROCEDURE WSAAsyncGetHostByName (hwnd   : HWND;
+                                 wMsg   : u_int;
+                                 name   : ARRAY OF CHAR;
+                                 buf    : PBYTE;
+                                 buflen : INTEGER) : HANDLE;
+
+PROCEDURE WSAAsyncGetHostByAddr (hwnd   : HWND;
+                                 wMsg   : u_int;
+                                 addr   : ARRAY OF CHAR;
+                                 len    : INTEGER;
+                                 type   : INTEGER;
+                                 buf    : PBYTE;
+                                 buflen : INTEGER) : HANDLE;
+
+PROCEDURE WSACancelAsyncRequest (hAsyncTaskHandle : HANDLE) : INTEGER;
+
+PROCEDURE WSAAsyncSelect (s      : SOCKET;
+                          hwnd   : HWND;
+                          wMsg   : u_int;
+                          lEvent : LONG) : INTEGER;
+
+PROCEDURE WSARecvEx (s : SOCKET;
+                     buf : PBYTE;
+                     len : INTEGER;
+                     VAR [NIL] flags : INTEGER) : INTEGER;
+
+TYPE TRANSMIT_FILE_BUFFERS = RECORD
+                                    Head       : PVOID;
+                                    HeadLength : DWORD;
+                                    Tail       : PVOID;
+                                    TailLength : DWORD;
+                             END;
+
+    PTRANSMIT_FILE_BUFFERS = POINTER TO TRANSMIT_FILE_BUFFERS;
+
+PROCEDURE TransmitFile (hSocket                   : SOCKET;
+                        hFile                     : HANDLE;
+                        nNumberOfBytesToWrite     : DWORD;
+                        nNumberOfBytesPerSend     : DWORD;
+                        VAR [NIL] Overlapped      : OVERLAPPED;
+                        VAR [NIL] TransmitBuffers : TRANSMIT_FILE_BUFFERS;
+                        dwReserved                : DWORD
+                       ) : BOOL;
+
+
+
+(* Microsoft Windows Extended data types *)
+
+TYPE  SOCKADDR = sockaddr;
+TYPE PSOCKADDR = POINTER TO SOCKADDR;
+
+TYPE  SOCKADDR_IN = sockaddr_in;
+TYPE PSOCKADDR_IN = POINTER TO SOCKADDR_IN;
+
+TYPE  LINGER = linger;
+TYPE PLINGER = POINTER TO LINGER;
+
+TYPE  IN_ADDR = in_addr;
+TYPE PIN_ADDR = POINTER TO IN_ADDR;
+
+(* Original windock.h defined FD_SET = fd_set;
+   We do not because there's function (former macro) FD_SET *)
+
+TYPE  HOSTENT = hostent;
+TYPE PHOSTENT = POINTER TO HOSTENT;
+
+TYPE  SERVENT = servent;
+TYPE PSERVENT = POINTER TO SERVENT;
+
+TYPE  PROTOENT = protoent;
+TYPE PPROTOENT = POINTER TO PROTOENT;
+
+TYPE TIMEVAL  = timeval;
+TYPE PTIMEVAL = POINTER TO TIMEVAL;
+
+(*
+ * Windows message parameter composition and decomposition
+ * macros.
+ *
+ * WSAMAKEASYNCREPLY is intended for use by the Windows Sockets implementation
+ * when constructing the response to a WSAAsyncGetXByY() routine.
+ *)
+
+ (* WSAMAKEASYNCREPLY (buflen,error) *)
+
+CONST WSAMAKEASYNCREPLY = MAKELONG;
+
+(*
+ * WSAMAKESELECTREPLY is intended for use by the Windows Sockets implementation
+ * when constructing the response to WSAAsyncSelect().
+ *)
+
+ (* WSAMAKESELECTREPLY (event,error) *)
+
+CONST WSAMAKESELECTREPLY = MAKELONG;
+
+(*
+ * WSAGETASYNCBUFLEN is intended for use by the Windows Sockets application
+ * to extract the buffer length from the lParam in the response
+ * to a WSAGetXByY().
+ *)
+
+  (* WSAGETASYNCBUFLEN (lParam) *)
+
+CONST WSAGETASYNCBUFLEN = LOWORD;
+
+(*
+ * WSAGETASYNCERROR is intended for use by the Windows Sockets application
+ * to extract the error code from the lParam in the response
+ * to a WSAGetXByY().
+ *)
+
+ (* WSAGETASYNCERROR (lParam) *)
+
+CONST WSAGETASYNCERROR = HIWORD;
+
+(*
+ * WSAGETSELECTEVENT is intended for use by the Windows Sockets application
+ * to extract the event code from the lParam in the response
+ * to a WSAAsyncSelect().
+ *)
+
+ (* WSAGETSELECTEVENT (lParam) *)
+
+CONST WSAGETSELECTEVENT = LOWORD;
+
+(*
+ * WSAGETSELECTERROR is intended for use by the Windows Sockets application
+ * to extract the error code from the lParam in the response
+ * to a WSAAsyncSelect().
+ *)
+
+ (* WSAGETSELECTERROR (lParam) *)
+
+CONST WSAGETSELECTERROR = HIWORD;
+
+
+END WinSock.

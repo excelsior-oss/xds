@@ -1,0 +1,12 @@
+(* Copyright (c) xTech 1992,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosEnv; (* Hady. 31.05.96 16:26 *)
+
+IMPORT  SYSTEM, xmRTS;
+
+PROCEDURE X2C_EnvStringLength(name: xmRTS.X2C_pCHAR): SYSTEM.CARD32;
+PROCEDURE X2C_EnvString(name: xmRTS.X2C_pCHAR; buf: xmRTS.X2C_pCHAR; blen: SYSTEM.CARD32);
+
+PROCEDURE X2C_GetProgramName(): xmRTS.X2C_pCHAR;
+
+END xosEnv.

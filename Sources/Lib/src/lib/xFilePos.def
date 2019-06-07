@@ -1,0 +1,16 @@
+DEFINITION MODULE xFilePos; (* Hady. 25.06.96 18:20 *)
+
+IMPORT  RndFile;
+
+TYPE
+  FilePos = RndFile.FilePos;
+
+PROCEDURE CardToPos(VAR p: FilePos; c: CARDINAL);
+
+PROCEDURE IntToPos(VAR p: FilePos; i: INTEGER);
+
+PROCEDURE PosToInt(VAR i: INTEGER; p: FilePos): BOOLEAN;
+
+PROCEDURE PosToCard(VAR c: CARDINAL; p: FilePos): BOOLEAN;
+
+END xFilePos.

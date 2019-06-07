@@ -1,0 +1,289 @@
+(* Copyright (c) Excelsior 2003.  All Rights Reserved *)
+
+(* Constants and structures for ELF *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] elf; (* Jek *)
+
+FROM SYSTEM IMPORT ADDRESS, CARD8, CARD16, CARD32, INT32;
+
+TYPE PCHAR = POINTER TO CHAR;
+
+CONST
+  (* Legal values for e_type (object file type).  *)
+
+  ET_NONE         = 0;              -- No file type 
+  ET_REL          = 1;              -- Relocatable file 
+  ET_EXEC         = 2;              -- Executable file 
+  ET_DYN          = 3;              -- Shared object file 
+  ET_CORE         = 4;              -- Core file 
+  ET_NUM          = 5;              -- Number of defined types 
+  ET_LOOS         = 0fe00H;         -- OS-specific range start 
+  ET_HIOS         = 0feffH;         -- OS-specific range end 
+  ET_LOPROC       = 0ff00H;         -- Processor-specific range start 
+  ET_HIPROC       = 0ffffH;         -- Processor-specific range end 
+                    
+  (* Legal values for p_type (segment type).  *)
+                    
+  PT_NULL         = 0;              -- Program header table entry unused 
+  PT_LOAD         = 1;              -- Loadable program segment 
+  PT_DYNAMIC      = 2;              -- Dynamic linking information 
+  PT_INTERP       = 3;              -- Program interpreter 
+  PT_NOTE         = 4;              -- Auxiliary information 
+  PT_SHLIB        = 5;              -- Reserved 
+  PT_PHDR         = 6;              -- Entry for header table itself 
+  PT_TLS          = 7;              -- Thread-local storage segment 
+  PT_NUM          = 8;              -- Number of defined types 
+  PT_LOOS         = 060000000H;     -- Start of OS-specific 
+  PT_GNU_EH_FRAME = 06474e550H;     -- GCC .eh_frame_hdr segment 
+  PT_LOSUNW       = 06ffffffaH;
+  PT_SUNWBSS      = 06ffffffaH;     -- Sun Specific segment 
+  PT_SUNWSTACK    = 06ffffffbH;     -- Stack segment 
+  PT_HISUNW       = 06fffffffH;
+  PT_HIOS         = 06fffffffH;     -- End of OS-specific 
+  PT_LOPROC       = 070000000H;     -- Start of processor-specific 
+  PT_HIPROC       = 07fffffffH;     -- End of processor-specific 
+                    
+  (* Legal values for p_flags (segment flags).  *)
+                    
+  PF_X            = 1;              -- Segment is executable 
+  PF_W            = 2;              -- Segment is writable 
+  PF_R            = 4;              -- Segment is readable 
+  PF_MASKOS       = 00ff00000H;     -- OS-specific 
+  PF_MASKPROC     = 0f0000000H;     -- Processor-specific 
+                    
+  (* Legal values for note segment descriptor types for core files. *)
+
+  NT_PRSTATUS     = 1;              -- Contains copy of prstatus struct 
+  NT_FPREGSET     = 2;              -- Contains copy of fpregset struct 
+  NT_PRPSINFO     = 3;              -- Contains copy of prpsinfo struct 
+  NT_PRXREG       = 4;              -- Contains copy of prxregset struct 
+  NT_PLATFORM     = 5;              -- String from sysinfo(SI_PLATFORM) 
+  NT_AUXV         = 6;              -- Contains copy of auxv array 
+  NT_GWINDOWS     = 7;              -- Contains copy of gwindows struct 
+  NT_ASRS         = 8;              -- Contains copy of asrset struct 
+  NT_PSTATUS      = 10;             -- Contains copy of pstatus struct 
+  NT_PSINFO       = 13;             -- Contains copy of psinfo struct 
+  NT_PRCRED       = 14;             -- Contains copy of prcred struct 
+  NT_UTSNAME      = 15;             -- Contains copy of utsname struct 
+  NT_LWPSTATUS    = 16;             -- Contains copy of lwpstatus struct 
+  NT_LWPSINFO     = 17;             -- Contains copy of lwpinfo struct 
+  NT_PRFPXREG     = 20;             -- Contains copy of fprxregset struct
+                   
+  (* Legal values for the note segment descriptor types for object files.  *)
+                    
+  NT_VERSION      = 1;              -- Contains a version string.  
+                    
+  (* Legal values for sh_type (section type).  *)
+  
+  SHT_NULL          = 0;             -- Section header table entry unused 
+  SHT_PROGBITS      = 1;             -- Program data 
+  SHT_SYMTAB        = 2;             -- Symbol table 
+  SHT_STRTAB        = 3;             -- String table 
+  SHT_RELA          = 4;             -- Relocation entries with addends 
+  SHT_HASH          = 5;             -- Symbol hash table 
+  SHT_DYNAMIC       = 6;             -- Dynamic linking information 
+  SHT_NOTE          = 7;             -- Notes 
+  SHT_NOBITS        = 8;             -- Program space with no data (bss) 
+  SHT_REL           = 9;             -- Relocation entries, no addends 
+  SHT_SHLIB         = 10;            -- Reserved 
+  SHT_DYNSYM        = 11;            -- Dynamic linker symbol table 
+  SHT_INIT_ARRAY    = 14;            -- Array of constructors 
+  SHT_FINI_ARRAY    = 15;            -- Array of destructors 
+  SHT_PREINIT_ARRAY = 16;            -- Array of pre-constructors 
+  SHT_GROUP         = 17;            -- Section group 
+  SHT_SYMTAB_SHNDX  = 18;            -- Extended section indeces 
+  SHT_NUM           = 19;            -- Number of defined types.  
+  SHT_LOOS          = 060000000H;    -- Start OS-specific 
+  SHT_GNU_LIBLIST   = 06ffffff7H;    -- Prelink library list 
+  SHT_CHECKSUM      = 06ffffff8H;    -- Checksum for DSO content.  
+  SHT_LOSUNW        = 06ffffffaH;    -- Sun-specific low bound.  
+  SHT_SUNW_move     = 06ffffffaH;
+  SHT_SUNW_COMDAT   = 06ffffffbH;
+  SHT_SUNW_syminfo  = 06ffffffcH;
+  SHT_GNU_verdef    = 06ffffffdH;    -- Version definition section.  
+  SHT_GNU_verneed   = 06ffffffeH;    -- Version needs section.  
+  SHT_GNU_versym    = 06fffffffH;    -- Version symbol table.  
+  SHT_HISUNW        = 06fffffffH;    -- Sun-specific high bound.  
+  SHT_HIOS          = 06fffffffH;    -- End OS-specific type 
+  SHT_LOPROC        = 070000000H;    -- Start of processor-specific 
+  SHT_HIPROC        = 07fffffffH;    -- End of processor-specific 
+  SHT_LOUSER        = 080000000H;    -- Start of application-specific 
+  SHT_HIUSER        = 08fffffffH;    -- End of application-specific 
+                                
+  (* Legal values for sh_flags (section flags).  *)
+  
+  SHF_WRITE            = 1;          -- Writable 
+  SHF_ALLOC            = 2;          -- Occupies memory during execution 
+  SHF_EXECINSTR        = 4;          -- Executable 
+  SHF_MERGE            = 16;         -- Might be merged 
+  SHF_STRINGS          = 32;         -- Contains nul-terminated strings 
+  SHF_INFO_LINK        = 64;         -- `sh_info' contains SHT index 
+  SHF_LINK_ORDER       = 128;        -- Preserve order after combining 
+  SHF_OS_NONCONFORMING = 256;        -- Non-standard OS specific handling equired 
+  SHF_GROUP            = 512;        -- Section is member of a group.  
+  SHF_TLS              = 1024;       -- Section hold thread-local data.  
+  SHF_MASKOS           = 00ff00000H; -- OS-specific.  
+  SHF_MASKPROC         = 0f0000000H; -- Processor-specific 
+                       
+  (* Section group handling.  *)
+  
+  GRP_COMDAT      = 01H;            -- Mark group as COMDAT.  
+
+  (* Legal values for d_tag (dynamic entry type). *)
+
+  DT_NULL            = 0;          -- Marks end of dynamic section 
+  DT_NEEDED          = 1;          -- Name of needed library 
+  DT_PLTRELSZ        = 2;          -- Size in bytes of PLT relocs 
+  DT_PLTGOT          = 3;          -- Processor defined value 
+  DT_HASH            = 4;          -- Address of symbol hash table 
+  DT_STRTAB          = 5;          -- Address of string table 
+  DT_SYMTAB          = 6;          -- Address of symbol table 
+  DT_RELA            = 7;          -- Address of Rela relocs 
+  DT_RELASZ          = 8;          -- Total size of Rela relocs 
+  DT_RELAENT         = 9;          -- Size of one Rela reloc 
+  DT_STRSZ           = 10;         -- Size of string table 
+  DT_SYMENT          = 11;         -- Size of one symbol table entry 
+  DT_INIT            = 12;         -- Address of init function 
+  DT_FINI            = 13;         -- Address of termination function 
+  DT_SONAME          = 14;         -- Name of shared object 
+  DT_RPATH           = 15;         -- Library search path (deprecated) 
+  DT_SYMBOLIC        = 16;         -- Start symbol search here 
+  DT_REL             = 17;         -- Address of Rel relocs 
+  DT_RELSZ           = 18;         -- Total size of Rel relocs 
+  DT_RELENT          = 19;         -- Size of one Rel reloc 
+  DT_PLTREL          = 20;         -- Type of reloc in PLT 
+  DT_DEBUG           = 21;         -- For debugging; unspecified 
+  DT_TEXTREL         = 22;         -- Reloc might modify .text 
+  DT_JMPREL          = 23;         -- Address of PLT relocs 
+  DT_BIND_NOW        = 24;         -- Process relocations of object 
+  DT_INIT_ARRAY      = 25;         -- Array with addresses of init fct 
+  DT_FINI_ARRAY      = 26;         -- Array with addresses of fini fct 
+  DT_INIT_ARRAYSZ    = 27;         -- Size in bytes of DT_INIT_ARRAY 
+  DT_FINI_ARRAYSZ    = 28;         -- Size in bytes of DT_FINI_ARRAY 
+  DT_RUNPATH         = 29;         -- Library search path 
+  DT_FLAGS           = 30;         -- Flags for the object being loaded 
+  DT_ENCODING        = 32;         -- Start of encoded range 
+  DT_PREINIT_ARRAY   = 32;         -- Array with addresses of preinit fct
+  DT_PREINIT_ARRAYSZ = 33;         -- size in bytes of DT_PREINIT_ARRAY 
+  DT_NUM             = 34;         -- Number used 
+
+  (* Special section indices.  *)
+  
+  SHN_UNDEF       = 0;             -- Undefined section 
+  SHN_LORESERVE   = 0ff00H;        -- Start of reserved indices 
+  SHN_LOPROC      = 0ff00H;        -- Start of processor-specific 
+  SHN_HIPROC      = 0ff1fH;        -- End of processor-specific 
+  SHN_LOOS        = 0ff20H;        -- Start of OS-specific 
+  SHN_HIOS        = 0ff3fH;        -- End of OS-specific 
+  SHN_ABS         = 0fff1H;        -- Associated symbol is absolute 
+  SHN_COMMON      = 0fff2H;        -- Associated symbol is common 
+  SHN_XINDEX      = 0ffffH;        -- Index is in extra table.  
+  SHN_HIRESERVE   = 0ffffH;        -- End of reserved indices 
+                                                        
+  (* Legal values for ST_BIND subfield of st_info (symbol binding).  *)
+  
+  STB_LOCAL      = 0;              -- Local symbol 
+  STB_GLOBAL     = 1;              -- Global symbol 
+  STB_WEAK       = 2;              -- Weak symbol 
+  STB_NUM        = 3;              -- Number of defined types.  
+  STB_LOOS       = 10;             -- Start of OS-specific 
+  STB_HIOS       = 12;             -- End of OS-specific 
+  STB_LOPROC     = 13;             -- Start of processor-specific 
+  STB_HIPROC     = 15;             -- End of processor-specific 
+
+  (* Legal values for ST_TYPE subfield of st_info (symbol type).  *)
+  
+  STT_NOTYPE     = 0;              -- Symbol type is unspecified 
+  STT_OBJECT     = 1;              -- Symbol is a data object 
+  STT_FUNC       = 2;              -- Symbol is a code object 
+  STT_SECTION    = 3;              -- Symbol associated with a section 
+  STT_FILE       = 4;              -- Symbol's name is file name 
+  STT_COMMON     = 5;              -- Symbol is a common data object 
+  STT_TLS        = 6;              -- Symbol is thread-local data object
+  STT_NUM        = 7;              -- Number of defined types.  
+  STT_LOOS       = 10;             -- Start of OS-specific 
+  STT_HIOS       = 12;             -- End of OS-specific 
+  STT_LOPROC     = 13;             -- Start of processor-specific 
+  STT_HIPROC     = 15;             -- End of processor-specific 
+  
+  EI_NIDENT      = 16;
+                             
+TYPE
+  Elf32_Word    = CARD32;
+  Elf32_Sword   = INT32;
+  Elf32_Addr    = CARD32;
+  Elf32_Section = CARD16;
+  Elf32_Half    = CARD16;
+  Elf32_Off     = CARD32;
+
+  (* The ELF file header.  This appears at the start of every ELF file.  *)
+  Elf32_Ehdr = POINTER TO Elf32_Ehdr_STR;
+  Elf32_Ehdr_STR = RECORD
+    e_ident      : ARRAY[0..EI_NIDENT-1] OF CARD8;    -- Magic number and other info 
+    e_type       : Elf32_Half;                        -- Object file type 
+    e_machine    : Elf32_Half;                        -- Architecture 
+    e_version    : Elf32_Word;                        -- Object file version 
+    e_entry      : Elf32_Addr;                        -- Entry point virtual address 
+    e_phoff      : Elf32_Off;                         -- Program header table file offset 
+    e_shoff      : Elf32_Off;                         -- Section header table file offset 
+    e_flags      : Elf32_Word;                        -- Processor-specific flags 
+    e_ehsize     : Elf32_Half;                        -- ELF header size in bytes 
+    e_phentsize  : Elf32_Half;                        -- Program header table entry size 
+    e_phnum      : Elf32_Half;                        -- Program header table entry count 
+    e_shentsize  : Elf32_Half;                        -- Section header table entry size 
+    e_shnum      : Elf32_Half;                        -- Section header table entry count 
+    e_shstrndx   : Elf32_Half;                        -- Section header string table index 
+  END;
+  
+  (* Program segment header.  *)
+  Elf32_Phdr = POINTER TO Elf32_Phdr_STR;
+  Elf32_Phdr_STR = RECORD
+    p_type       : Elf32_Word;       -- Segment type 
+    p_offset     : Elf32_Off;        -- Segment file offset 
+    p_vaddr      : Elf32_Addr;       -- Segment virtual address 
+    p_paddr      : Elf32_Addr;       -- Segment physical address 
+    p_filesz     : Elf32_Word;       -- Segment size in file 
+    p_memsz      : Elf32_Word;       -- Segment size in memory 
+    p_flags      : Elf32_Word;       -- Segment flags 
+    p_align      : Elf32_Word;       -- Segment alignment 
+  END;             
+  
+  Elf32_Dyn = POINTER TO Elf32_Dyn_STR;
+  Elf32_Dyn_STR = RECORD
+    d_tag : Elf32_Sword;   -- Dynamic entry type
+
+    CASE :BOOLEAN OF
+      |TRUE:   d_val : Elf32_Word;
+      |FALSE:  d_ptr : Elf32_Addr;
+    END;
+  END;
+ 
+  Elf32_Sym = POINTER TO Elf32_Sym_STR;
+  Elf32_Sym_STR = RECORD
+    st_name  : Elf32_Word;       -- Symbol name (string tbl index)
+    st_value : Elf32_Addr;       -- Symbol value
+    st_size  : Elf32_Word;       -- Symbol size
+    st_info  : CARD8;            -- Symbol type and binding
+    st_other : CARD8;            -- Symbol visibility 
+    st_shndx : Elf32_Section;    -- Section index
+  END;
+
+  Elf32_StrTab = ADDRESS;    -- String table address.
+
+  (*
+   * Structure representing a sequence of loaded shared objects in memory.
+   * This is, in point of fact, a handle of object opened by dlopen().
+   *)
+  link_map = POINTER TO link_map_STR;
+  link_map_STR = RECORD
+    l_addr : Elf32_Addr;         -- Base address shared object is loaded at.
+    l_name : PCHAR;              -- Absolute file name object was found in. 
+    l_ld   : Elf32_Dyn;          -- Dynamic section of the shared object.
+    l_next : link_map;           -- Chain of loaded objects.
+    l_prev : link_map;              
+  END;
+END elf.

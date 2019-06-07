@@ -1,0 +1,100 @@
+-- Описание формата сообщений очереди интерфейсной компоненты
+-- диалогового отладчика
+-- Организация очереди событий
+-- функции цикла обработки событий (MainLoop) и немедленной дообработки
+-- очереди (Flush).
+-- Организация опроса мыши
+--
+-- Перед использованием необходимо вызвать процедуру Ini, по окончании Exi;
+
+DEFINITION MODULE DlgEvent;
+
+IMPORT DlgTypes;
+
+TYPE
+  HWND = DlgTypes.HWND;
+
+CONST
+  AllWindows = DlgTypes.AllWindows;
+
+TYPE
+  EVENT = ( None,     (* пустое событие *)
+            DoAction, (* предложение окну обработать дейсвие инициированное shortcut'ом  *)
+            QueryAction,
+            KbHit,    (* нажатие клавиши в дополнительном параметре код клавиши из модуля Keys *)
+            QueryKbHit,
+            ContextItem,
+            QueryItem,
+            Paint,    (* отрисовка картинки в буфере экрана *)
+            Redraw,   (* отрисовка картинки в буфере экрана и выдача на физический экран *)
+            Rise,     (* всплытие окна наверх *)
+            Hide,     (* закрытие окна        *)
+            Quit,     (* конец обработки основного цикла событий *)
+            Search,   (* позиционирование в окне по результатам поиска текстовой строки в
+                         контексте окна                                                    *)
+
+            Defocus,  (* событие приходит активному окну в случае переключения с него мышью *)
+
+            Mouse_Pressed,
+            Mouse_Released,
+            Mouse_Moved,
+            Mouse_Dbl,
+            R_Mouse_Pressed,
+            R_Mouse
+          );
+
+  EVENTS = SET OF EVENT;
+
+
+CONST
+  MouseEvents = EVENTS{ Mouse_Pressed,
+                        Mouse_Released,
+                        Mouse_Moved,
+                        Mouse_Dbl,
+                        R_Mouse,
+                        R_Mouse_Pressed };
+
+
+TYPE
+  MSG = RECORD
+          hwnd : HWND;      (* окно - приемник события.
+                               DlgTypes.AllWindows адресует все видимые окна *)
+          ID   : EVENT;     (* тип события      *)
+          par  : CARDINAL;  (* параметр события *)
+        END;
+
+VAR
+  Empty: MSG;  (* пустое событие  EVENTS{ DlgTypes.Invalid_H, None, 0 }  *)
+
+CONST
+  par_RedrawNormal  = 0;
+  par_RedrawInFlush = 21;
+
+PROCEDURE ModalRedraw (hwnd: HWND);
+
+PROCEDURE CheckWaitForEvent (hwnd: HWND; par: CARDINAL);
+
+PROCEDURE AddToHead (hwnd: HWND; ID: EVENT; par: CARDINAL);
+
+PROCEDURE AddToTail (hwnd: HWND; ID: EVENT; par: CARDINAL);
+
+PROCEDURE AddToHeadIfValid (hwnd: HWND; ID: EVENT; par: CARDINAL);
+
+PROCEDURE AddToTailIfValid (hwnd: HWND; ID: EVENT; par: CARDINAL);
+
+PROCEDURE Make (hwnd: HWND; ID: EVENT; par: CARDINAL): MSG;
+
+PROCEDURE GetEvent(): MSG;
+
+PROCEDURE MainLoop;
+(* основной цикл событий *)
+
+PROCEDURE Flush;
+
+VAR
+  InFlush: BOOLEAN;
+(* дополнительный цикл обработки событий. Работает до опустевания очереди *)
+
+PROCEDURE WaitForEvent;
+
+END DlgEvent.

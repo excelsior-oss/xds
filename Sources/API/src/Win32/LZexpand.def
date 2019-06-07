@@ -1,0 +1,70 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] LZExpand;
+
+(*
+** LZExpand.def - Public interface to LZEXP?.LIB.
+*)
+
+FROM WinDef IMPORT PBYTE, WCHAR, LONG, HFILE;
+FROM WinBase IMPORT OFSTRUCT, OF_FLAGS;
+
+(*
+** Error Return Codes
+*)
+
+CONST LZERROR_BADINHANDLE    = -1;  (* invalid input handle *)
+      LZERROR_BADOUTHANDLE   = -2;  (* invalid output handle *)
+      LZERROR_READ           = -3;  (* corrupt compressed file format *)
+      LZERROR_WRITE          = -4;  (* out of space for output file *)
+      LZERROR_GLOBALLOC      = -5;  (* insufficient memory for LZFile struct *)
+      LZERROR_GLOBLOCK       = -6;  (* bad global handle *)
+      LZERROR_BADVALUE       = -7;  (* input parameter out of acceptable range*)
+      LZERROR_UNKNOWNALG     = -8;  (* compression algorithm not recognized *)
+
+(*
+** Prototypes
+*)
+
+PROCEDURE LZStart () : INTEGER;
+PROCEDURE LZDone;
+PROCEDURE CopyLZFile (Source, Dest : HFILE) : LONG;
+PROCEDURE LZCopy (hfSource, hfDest : INTEGER) : LONG;
+PROCEDURE LZInit (hfSource : INTEGER) : INTEGER;
+PROCEDURE GetExpandedNameA (Source : ARRAY OF  CHAR; VAR Buffer : ARRAY OF  CHAR) : INTEGER;
+PROCEDURE GetExpandedNameW (Source : ARRAY OF WCHAR; VAR Buffer : ARRAY OF WCHAR) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetExpandedName = GetExpandedNameW;
+<* ELSE *>
+      CONST GetExpandedName = GetExpandedNameA;
+<* END *>
+
+PROCEDURE LZOpenFileA (filename      : ARRAY OF CHAR;
+                       VAR ReOpenBuf : OFSTRUCT;
+                       wStyle        : OF_FLAGS) : INTEGER;
+
+PROCEDURE LZOpenFileW (filename      : ARRAY OF WCHAR;
+                       VAR ReOpenBuf : OFSTRUCT;
+                       wStyle        : OF_FLAGS) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST LZOpenFile = LZOpenFileW;
+<* ELSE *>
+      CONST LZOpenFile = LZOpenFileA;
+<* END *>
+
+PROCEDURE LZSeek (hFile  : INTEGER;
+                  Offset : LONG;
+                  Origin : INTEGER) : LONG;
+
+PROCEDURE LZRead (hFile  : INTEGER;
+                  Buffer : PBYTE;
+                  cbRead : INTEGER) : INTEGER;
+
+PROCEDURE LZClose (hFile : INTEGER);
+
+END LZExpand.

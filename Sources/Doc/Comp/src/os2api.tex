@@ -1,0 +1,196 @@
+\chapter{Using the OS/2 API}
+\label{os2api}
+
+This chapter contains a short description of the OS/2 API usage
+in your Modula-2/Oberon-2 programs.
+
+\section{Obtaining API documentation}
+
+Your XDS package includes the OS/2 API definition module and the import
+library, but no documentation on the API. You have to use
+third-party books or the on-line documentation from the
+IBM Developer's Toolkit for OS/2, which is available on
+Developers Connection CD-ROMs and along with some C compilers,
+for instance, IBM VisualAge C++ or Watcom. It can also be downloaded
+from the IBM Developers Connection Web site. % !!! URL?
+
+Unfortunately, we can not afford purchasing the on-line API
+documentation sources from IBM for adapting them to Modula-2
+and distributing with XDS. We regret the inconvenience.
+
+\section{Using the OS/2 API in your programs}
+
+The whole API is defined in a single Modula-2 definition module \verb'OS2.DEF',
+which resides in the \verb'DEF\OS2' subdirectory of your \XDS{} installation.
+It is very large (about 20000 lines) and its symbolic file would be very large too
+and would create a great time and memory overhead during compilation.
+Fortunately, the original C header files were built using conditional
+compilation sections --- a macro, for instance \verb'INCL_DOSPROCESS', has to be
+defined before including the main \verb'OS2.H' header file to select the
+appropriate section. This idea, as well as constant names, is preserved
+in XDS.
+
+Thus, to use an OS/2 API call in your program:
+
+\begin{enumerate}
+
+\item Declare the correspondent \verb'INCL_xxx' option in the PROJECT file:
+
+\verb'    -INCL_DOSPROCESS:+'
+
+\item Add the module \verb'OS2' to the import list of your module:
+
+\verb'    IMPORT OS2;                 (* qualified import *)'
+
+or
+
+\verb'    FROM OS2 IMPORT DosBeep;    (* unqualified import *)'
+
+\item Insert the required call:
+
+\verb'    OS2.DosBeep(1000,100);      (* qualified import *)'
+
+or
+
+\verb'    DosBeep(1000,100);          (* unqualified import *)'
+
+\end{enumerate}
+
+{\bf Note:} You have to manually recompile the \verb'OS2.DEF' file after you
+add or remove \verb'INCL_xxx' options from your project. Alternatively,
+you may either remove the \verb'OS2.SYM' file or use the =all submode
+when making your project.
+
+If your computer has enough resources to use the complete \verb'OS2.SYM'
+file, compile the \verb'OS2.DEF' file with the following options:
+
+\verb'    -INCL_BASE:+ -INCL_PM:+'
+
+then copy the resulting \verb'OS2.sym' file to the
+\ifgencode \verb'SYM\X86' \else \verb'SYM\C' \fi
+subdirectory of your XDS installation.
+Remove \verb'"$!/../def/os2"' reference from your master redirection file, % !!! \ref{}
+\ifgencode \verb'BIN\xc.red'\else\verb'BIN\xm.red'\fi,
+and redirection file template,
+\ifgencode \verb'BIN\xc.ret'\else\verb'BIN\xm.ret'\fi
+
+\subsection{Building PM applications}
+
+If your program is a Presentation Manager application, toggle
+the PM option ON in the project file:
+
+\verb'    +PM'
+
+\subsection{Declaring callbacks}
+
+If you have to pass a procedure as a parameter to an API call (a window
+procedure, for example), you should specify the "SysCall" calling
+and naming convention (see \ref{multilang:direct}):
+
+\begin{verbatim}
+    PROCEDURE ["SysCall"] MyWindowProc
+    ( hwnd         : OS2.HWND;
+      msg          : OS2.ULONG;
+      mp1          : OS2.MPARAM;
+      mp2          : OS2.MPARAM
+    )              : OS2.MRESULT;
+\end{verbatim}
+
+\subsection{Additional macros}
+
+In order to reduce need for type casting, the following "macros" are
+provided in the definition module \verb'OS2'
+(they are implemented in the run-time library):
+
+\begin{verbatim}
+    MPFROMUSHORT    USHORT1FROMMP
+    MPFROM2USHORT   USHORT2FROMMP
+    MPFROMULONG     ULONGFROMMP
+
+    MRFROMUSHORT    USHORT1FROMMR
+    MRFROM2USHORT   USHORT2FROMMR
+    MRFROMULONG     ULONGFROMMR
+\end{verbatim}
+
+Although these "macros" are declared in the module \verb'OS2', you are
+requested to import the module \verb'OS2RTL' as well. More precisely,
+the original IBM OS/2 Toolkit header files, which are used during C compilation
+in case of XDS-C, do {\em not} contain these macros, so they are implemented in
+the \verb'OS2RTL.h' header file supplied with XDS-C.
+To have that header included into the generated C code, you need to
+import the module \verb'OS2RTL'.
+In XDS-x86, these macros are implemented as procedures which reside
+in the XDS run-time library, so they will be linked in even if you do not
+import \verb'OS2RTL', but importing it will ensure portability between
+XDS-x86 and XDS-C.
+
+\section{Using resources}
+
+\subsection{Automatic resource binding}
+
+In early XDS versions, resources had to be bound to an executable
+"manually", i.e. by invoking a resource compiler, each time after linking.
+Starting from version 2.20, it is possible to specify any file in
+the \See{{\tt!module} project file directive}{}{xc:project}
+and iterate files by extensions in \See{makefile templates}
+{}{xc:template}.
+
+\ifcomment !!!
+On the other hand, since LINK386 does not accept resource files,
+it is required to call RC separately which is impossible in the
+make system currently implemented in XDS compilers. To overcome
+this problem, a fake linker called XLINK, which invokes both
+LINK386 and RC, was added to the package. Its response file has
+the following format:
+
+    <LINK386 responce file> [
+    <empty line>
+    { <binary resource file name> } ]
+
+The default template file, XC.TEM, produces response file in this
+format. For example:
+
+    /PM:PM /NOLOGO /BAT /NON /NOI /NOO /ST:100000 app.obj,
+    app.exe,
+    nul,
+    c:\xds\lib\x86\libxds.lib+
+    c:\xds\lib\x86\os2face.lib
+
+    d:\work\app.res
+\fi
+
+Thus, if your application uses resources, you may specify
+binary resource files as modules in your project to have them
+been automaticlly bound to the executable, provided that
+the used \See{template}{}{xc:template} has adequate support:
+
+\verb'    !module myapp.res'
+
+\subsection{Header files}
+
+XDS package contain no resource-related tools, such
+as a dialog editor or a resource compiler. By now, you have to use
+programs which come with OS/2 (RC), the Developer's Toolkit, or a
+C compiler. Those programs, however, have no idea about what
+Modula-2 is and work only with C header files. Therefore,
+constants which identify resources have to be defined in
+both C headers and Modula-2 definition modules, which may
+easily go out of sync.
+
+To solve this problem, we suggest you to define resource
+identifiers in header files and then use H2D to convert these
+files to definition modules before compilation.
+
+\section{PM application template}
+
+The \verb'SAMPLES\TEMPLATE' subdirectory of your installation contains
+a Presentation Manager application "template" which you can use as
+a base for your own applications. The sample program uses the
+standard menus and dialogs that most applications would use.
+The source is designed to serve as a base for any Presentation
+Manager application and was written in such a way that it can be
+easily modified to handle any application specific commands.
+
+The template PM program was taken from the IBM Developer's Toolkit for
+OS/2 Warp and translated to Modula-2.
+

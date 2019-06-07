@@ -1,0 +1,41 @@
+-- Содержит глобальные переменные диалогового отладчика.
+
+DEFINITION MODULE Dlg_Vars;
+
+IMPORT xStr;
+IMPORT dt := DI_Types;
+  
+FROM DlgTypes IMPORT MESSAGE, HWND, Invalid_H;
+
+VAR
+  expr       : xStr.String;
+  DumpAddrStr: xStr.String;
+  VarName    : xStr.String;
+
+  FirstTime  : BOOLEAN;     (* В первый ли раз запускается из пакета или нет           *)
+  PrimeFile  : xStr.String; (* Имя первой из загруженных фаз. Требуется для загрузки и *)
+                            (* Записи конфигурации *)
+
+  N_Call      : CARDINAL; -- Глубина стека вызовов. Используется при режиме запуска Over
+
+  MainPulldown: HWND;
+
+  Delay       : CARDINAL;
+
+  LocalScope     : dt.OBJECT;
+  LocalScopeLevel: CARDINAL;
+
+
+  F_Init_Wnds: CARDINAL;
+
+
+TYPE
+  MAINMODE = (source, need_disasm, disasm, disasm_first);
+
+VAR
+  MainMode-: MAINMODE;
+
+PROCEDURE SetMainMode(mode: MAINMODE);
+PROCEDURE RestoreMainMode;
+
+END Dlg_Vars.

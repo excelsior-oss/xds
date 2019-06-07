@@ -1,0 +1,375 @@
+% Project file for XDS native debugger
+% modes are: enduser, work
+
+
+!if not defined trialversion then
+  !new trialversion-
+!end
+
+!if not defined component then
+  -component := xd
+!end
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if not defined PM then
+  -PM:-
+!end
+
+!if not defined placement then
+  !if (mode="enduser") then
+    -placement := release
+  !else
+    -placement := current
+  !end
+!end
+
+% output settings
+!if placement="release" then
+  !if    component = "xd_utl" then
+    -mkfname = $!/../../enduser/tmp/xd_utl
+  !elsif component = "xd_ditls" then
+    -mkfname = $!/../../enduser/tmp/xd_ditls
+  !elsif component = "xd_nb04" then
+    -mkfname = $!/../../enduser/tmp/xd_nb04
+  !elsif component = "xd_nb09" then
+    -mkfname = $!/../../enduser/tmp/xd_nb09
+  !elsif component = "xd_dwrf" then
+    -mkfname = $!/../../enduser/tmp/xd_dwrf
+  !elsif component = "xd_edif" then
+    -mkfname = $!/../../enduser/tmp/xd_edif
+  !elsif component = "xd" then
+    -mkfname = $!/../../enduser/tmp/xd
+  !end
+  -lookup = *.sym  = $!/../../enduser/tmp; $!/../../enduser/xds/sym/x86
+  -lookup = *.lib  = $!/../../enduser/xds/lib/x86
+  -lookup = *.obj  = $!/../../enduser/tmp
+  -lookup = *.dbg  = $!/../../enduser/tmp
+  -lookup = *.exe  = $!/../../enduser/xds/bin
+  !if env_target = "x86os2" then
+    -lookup = *.dll  = $!/../../enduser/xds/dll
+  !else
+    -lookup = *.dll  = $!/../../enduser/xds/bin
+  !end
+!else
+  % work
+  !if    component = "xd_utl" then
+    -mkfname = xd_utl
+  !elsif component = "xd_ditls" then
+    -mkfname = xd_ditls
+  !elsif component = "xd_nb04" then
+    -mkfname = xd_nb04
+  !elsif component = "xd_nb09" then
+    -mkfname = xd_nb09
+  !elsif component = "xd_dwrf" then
+    -mkfname = xd_dwrf
+  !elsif component = "xd_edif" then
+    -mkfname = xd_edif
+  !else
+    -mkfname = xd
+  !end
+  -lookup = *.sym  = sym
+  -lookup = *.obj  = bin
+  -lookup = *.dbg  = dbg
+  -lookup = *.emf  = emf
+  -lookup = *.txt  = csv
+!end
+
+-m2cmpsym+
+-changesym+
+-m2extensions+
+-o2extensions-
+-m2addtypes+
+
+
+!if env_target = "x86nt" then
+  -gcthreshold = 512000000 
+  -heaplimit   = 512000000
+!else
+  -gcthreshold = 128000000 
+  -heaplimit   = 128000000
+!end
+
+-stacklimit=10000000
+
+-makefile+
+-longname+
+
+-implib-
+-usedll+
+
+
+!if component = "xd_all" then
+  -implib-
+  -usedll-
+  -gendll-
+  -dllexport-
+!else
+  -implib-
+  -usedll+
+  !if component = "xd" then
+    -gendll-
+    -dllexport-
+  !else
+    -gendll+
+    -dllexport+
+  !end
+!end
+
+               
+-TARGET_VAX:-
+-TARGET_x86:+
+-TARGET_m68k:-
+-TARGET_PPC:-
+
+-ONLY_REMOTE:+
+
+-DEST_XDS:+
+-DEST_K26:-
+
+-DEST_XDASM:-
+
+-SCHERN_K26:-
+
+!if not defined xd_batch_included then
+  -xd_batch_included:+
+!end
+
+!if not defined xd_batch_dlg_cmd then
+  -xd_batch_dlg_cmd:-
+!end
+
+% Source lookup settings
+!if placement="release" then
+  !if    component = "xd_utl" then
+    -lookup = *.mod = src\xd_utl
+    -lookup = *.def = src\xd_utl
+    !if DEST_XDS  then
+      -lookup = *.def = src\xd_rts;
+      -lookup = *.mod = src\xd_rts;
+    !end
+  !elsif component = "xd_ditls" then
+    -lookup = *.def = src\xd_ditls
+    -lookup = *.mod = src\xd_ditls  
+  !elsif component = "xd_nb04" then
+    -lookup = *.def = src\xd_difmt
+    -lookup = *.mod = src\xd_difmt
+    -lookup = *.edf = src\xd_difmt
+  !elsif component = "xd_nb09" then
+    -lookup = *.def = src\xd_difmt
+    -lookup = *.mod = src\xd_difmt
+    -lookup = *.edf = src\xd_difmt
+  !elsif component = "xd_dwrf" then
+    -lookup = *.def = src\xd_difmt
+    -lookup = *.mod = src\xd_difmt
+    -lookup = *.edf = src\xd_difmt
+  !elsif component = "xd_edif" then
+    -lookup = *.def = src\xd_difmt
+    -lookup = *.mod = src\xd_difmt
+    -lookup = *.edf = src\xd_difmt
+  !elsif component = "xd" then
+    -lookup = *.def = src\xd_cmn; src\xd_enh; src\xd_rmt;
+    -lookup = *.mod = src\xd_cmn; src\xd_enh; src\xd_rmt;
+    !if TARGET_x86  then
+      -lookup = *.def = src\xd_386; 
+      -lookup = *.mod = src\xd_386;
+    !elsif TARGET_m68k then
+      -lookup = *.def = src\xd_m68k;
+      -lookup = *.mod = src\xd_m68k;
+    !end
+    !if env_target = "x86nt" then
+      -lookup = *.def = src\xd_386\win32;
+      -lookup = *.mod = src\xd_386\win32;
+    !elsif env_target = "x86os2" then
+      -lookup = *.def = src\xd_386\os2;
+      -lookup = *.mod = src\xd_386\os2;
+      !if PM then
+        -lookup = *.def = src\xd_386\os2\ifpm;
+        -lookup = *.mod = src\xd_386\os2\ifpm;
+        -lookup = *.res = src\xd_386\os2\ifpm;
+      !else
+        -lookup = *.mod = src\xd_386\os2\ifcon;
+      !end
+    !end
+    !if DEST_XDS  then
+      -lookup = *.def = src\xd_rts;
+      -lookup = *.mod = src\xd_rts;
+    !end
+  !end
+!elsif placement="current"  then
+  !if    component = "xd_utl" then
+    -lookup = *.mod = ..\src\xd_utl
+    -lookup = *.def = ..\src\xd_utl
+    !if DEST_XDS  then
+      -lookup = *.def = ..\src\xd_rts;
+      -lookup = *.mod = ..\src\xd_rts;
+    !end
+  !elsif component = "xd_ditls" then
+    -lookup = *.def = ..\src\xd_ditls
+    -lookup = *.mod = ..\src\xd_ditls  
+  !elsif component = "xd_nb04" then
+    -lookup = *.def = ..\src\xd_difmt
+    -lookup = *.mod = ..\src\xd_difmt
+    -lookup = *.edf = ..\src\xd_difmt
+  !elsif component = "xd_nb09" then
+    -lookup = *.def = ..\src\xd_difmt
+    -lookup = *.mod = ..\src\xd_difmt
+    -lookup = *.edf = ..\src\xd_difmt
+  !elsif component = "xd_dwrf" then
+    -lookup = *.def = ..\src\xd_difmt
+    -lookup = *.mod = ..\src\xd_difmt
+    -lookup = *.edf = ..\src\xd_difmt
+  !elsif component = "xd_edif" then
+    -lookup = *.def = ..\src\xd_difmt
+    -lookup = *.mod = ..\src\xd_difmt
+    -lookup = *.edf = ..\src\xd_difmt
+  !elsif component = "xd" then
+    -lookup = *.def = ..\src\xd_cmn; ..\src\xd_enh; ..\src\xd_rmt;
+    -lookup = *.mod = ..\src\xd_cmn; ..\src\xd_enh; ..\src\xd_rmt;
+    !if    TARGET_x86  then
+      -lookup = *.def = ..\src\xd_386;
+      -lookup = *.mod = ..\src\xd_386;
+    !elsif TARGET_m68k then
+      -lookup = *.def = ..\src\xd_m68k;
+      -lookup = *.mod = ..\src\xd_m68k;
+    !end
+    !if env_target = "x86nt" then
+      -lookup = *.def = ..\src\xd_386\win32;
+      -lookup = *.mod = ..\src\xd_386\win32;
+    !elsif env_target = "x86os2" then
+      -lookup = *.def = ..\src\xd_386\os2;
+      -lookup = *.mod = ..\src\xd_386\os2;
+      !if PM then
+        -lookup = *.def = ..\src\xd_386\os2\ifpm;
+        -lookup = *.mod = ..\src\xd_386\os2\ifpm;
+        -lookup = *.res = ..\src\xd_386\os2\ifpm;
+      !else
+        -lookup = *.mod = ..\src\xd_386\os2\ifcon;
+      !end
+    !end
+    !if DEST_XDS  then
+      -lookup = *.def = ..\src\xd_rts;
+      -lookup = *.mod = ..\src\xd_rts;
+    !end
+  !elsif component = "xd_all" then
+    -lookup = *.mod = ..\src\xd_utl
+    -lookup = *.def = ..\src\xd_utl
+    -lookup = *.def = ..\src\xd_ditls
+    -lookup = *.mod = ..\src\xd_ditls  
+    -lookup = *.def = ..\src\xd_difmt
+    -lookup = *.mod = ..\src\xd_difmt
+    -lookup = *.edf = ..\src\xd_difmt
+    -lookup = *.def = ..\src\xd_difmt
+    -lookup = *.mod = ..\src\xd_difmt
+    -lookup = *.edf = ..\src\xd_difmt
+    -lookup = *.def = ..\src\xd_cmn; ..\src\xd_enh; ..\src\xd_rmt;
+    -lookup = *.mod = ..\src\xd_cmn; ..\src\xd_enh; ..\src\xd_rmt;
+    !if    TARGET_x86  then
+      -lookup = *.def = ..\src\xd_386;
+      -lookup = *.mod = ..\src\xd_386;
+    !elsif TARGET_m68k then
+      -lookup = *.def = ..\src\xd_m68k;
+      -lookup = *.mod = ..\src\xd_m68k;
+    !end
+    !if env_target = "x86nt" then
+      -lookup = *.def = ..\src\xd_386\win32;
+      -lookup = *.mod = ..\src\xd_386\win32;
+    !elsif env_target = "x86os2" then
+      -lookup = *.def = ..\src\xd_386\os2;
+      -lookup = *.mod = ..\src\xd_386\os2;
+      !if PM then
+        -lookup = *.def = ..\src\xd_386\os2\ifpm;
+        -lookup = *.mod = ..\src\xd_386\os2\ifpm;
+        -lookup = *.res = ..\src\xd_386\os2\ifpm;
+      !else
+        -lookup = *.mod = ..\src\xd_386\os2\ifcon;
+      !end
+    !end
+    !if DEST_XDS  then
+      -lookup = *.def = ..\src\xd_rts;
+      -lookup = *.mod = ..\src\xd_rts;
+    !end
+  !end
+!else
+  Setup placement!
+!end
+
+% Runtime checks and debug settings
+!if mode="enduser" then
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc-
+  -ioverflow+
+  -coverflow-
+  -foverflow-
+  -xd_debug:-
+
+!elsif mode="work" then
+
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+
+  !if genasm THEN
+    -dbgfmt = stab
+  !else
+    -dbgfmt = HLL
+  !end   
+  -dbgnestedproc+
+
+  !if not defined noregvars then
+    -noregvars:+
+  !else
+    -noregvars+
+  !end
+
+  -xd_debug:+
+!end
+
+
+!if component = "xd_utl" then
+  -dllname:=xd_utl
+  !module xd_utl.mod
+!elsif component = "xd_ditls" then
+  -dllname:=xd_ditls
+  !module xd_ditls.mod
+!elsif component = "xd_nb04" then
+  -dllname:=xd_nb04
+  !module xd_nb04.mod xd_nb04.edf
+!elsif component = "xd_edif" then
+  -dllname:=xd_edif
+  !module xd_edif.mod xd_edif.edf
+!elsif component = "xd_nb09" then
+  -dllname:=xd_nb09
+  !module xd_nb09.mod xd_nb09.edf
+!elsif component = "xd_dwrf" then
+  -dllname:=xd_dwrf
+  !module xd_dwrf.mod xd_dwrf.edf
+!elsif component = "xd" then
+  !module xd_main.mod
+  !if PM then
+    !module xd.res
+  !end
+!elsif component = "xd_all" then
+  !module xd_main.mod
+!end
+

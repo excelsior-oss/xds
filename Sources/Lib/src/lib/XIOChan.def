@@ -1,0 +1,16 @@
+(* Copyright (c) 1996 xTech Ltd, Russia. All Rights Reserved. *)
+DEFINITION MODULE XIOChan;
+
+IMPORT  IOChan;
+
+TYPE ChanId = IOChan.ChanId;
+
+PROCEDURE Truncate(cid: ChanId);
+  (* truncates file associated with the given channel.
+     Note that this operation is applicable to channels
+     managed by RndFile, SeqFile and StreamFile device modules, 
+     otherwise an exception wrongDevice is raised.
+     Note also that givven channel must have write access.
+  *)
+
+END XIOChan.

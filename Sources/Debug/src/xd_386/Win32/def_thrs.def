@@ -1,0 +1,26 @@
+DEFINITION MODULE Def_Thrs;
+
+IMPORT Win := Windows;
+
+TYPE
+ <* IF TARGET_x86 THEN *>
+  ACCESS_BREAKS = ARRAY [1..4] OF BOOLEAN;
+ <* END *>
+
+  THREAD = RECORD
+             Handle      : Win.HANDLE;
+             ID          : Win.DWORD;
+            <* IF TARGET_x86 THEN *>
+             AccessBreaks: ACCESS_BREAKS; (* Debug registers, Used or free *)
+            <* END *>
+           END;
+
+  PTHREAD = POINTER TO THREAD;
+
+
+CONST
+  InitialAccessBreaks = ACCESS_BREAKS {FALSE, FALSE, FALSE, FALSE};
+  InitialThread = THREAD {NIL, MAX(Win.DWORD), InitialAccessBreaks};
+
+
+END Def_Thrs.

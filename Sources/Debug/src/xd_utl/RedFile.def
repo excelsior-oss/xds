@@ -1,0 +1,53 @@
+-- Модуль, предоставляющий функции для работы с перенаправляющим
+-- файлом системы. Структура списков путей поиска создается на
+-- основе указанного файла.
+
+DEFINITION MODULE RedFile;
+
+TYPE
+  (* Ошибки при работе с red-файлом *)
+  RedirectionResults = ( Ok,              (* Все нормально *)
+                         RedFileNotFound, (* red-файл не найден *)
+                         RedFileEmpty,    (* red-файл пустой *)
+                         CantOpen,        (* не могем открыть red-файл *)
+                         NotOpenRedFile,  (* red-файл не был открыт *)
+                         NotFound,        (* файл не найден (для чтения) *)
+                         WrongPattern,    (* кривой шаблон *)
+                         EquivExpected,   (* ожидаеться "=" *)
+                         EmptyListPath);  (* пустой список путей *)
+
+
+PROCEDURE Create(name: ARRAY OF CHAR) : RedirectionResults;
+(* По имени red-файла создает red-структуру *)
+(* Если указано только имя файла, возможно, с расширением, то
+   поиск файла осуществляеться сначала в текущей, затем, если не найден,
+   в "домашней". При отсутствии у имени файла расширения добавляется
+   ".RED". Если указано не только имя файла, но и путь, то поиск
+   осуществляеться только по указанному пути. *)
+
+PROCEDURE RedirectionCreated (): BOOLEAN;
+(* Создан ли уже redirection *)
+
+
+PROCEDURE InitRedirection;
+
+PROCEDURE MessageCreate (res: RedirectionResults; red_fname: ARRAY OF CHAR);
+(* Выдает сообщение о результате создания red-файла *)
+
+PROCEDURE Read (fname:ARRAY OF CHAR;VAR fullname:ARRAY OF CHAR) : RedirectionResults;
+(* Ищет файл по redirection'у. Если указано не только имя файла, но и путь,
+   то поиск осуществляеться только по указанному пути. Если ни один шаблон
+   в red-файле не подошел, то пытаеться поискать файл в текущей
+   директории.  Проверяет, чтобы файл существовал, и, если найден,
+   вернет полный путь до файла. *)
+
+PROCEDURE ReadEx (basepath, fname: ARRAY OF CHAR; VAR fullname: ARRAY OF CHAR): RedirectionResults;
+
+
+PROCEDURE Write (fname:ARRAY OF CHAR;VAR fullname:ARRAY OF CHAR);
+(* Возвращает полный путь до файла по redirection'у. Если не один
+   шаблон не подошел, имя не измениться (т.е. запись будет в файл
+   на текущей директории). *)
+
+END RedFile.
+

@@ -1,0 +1,106 @@
+% Project file for H2D
+% modes are: enduser, work
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if not defined placement then
+  !if (mode="enduser") then
+    -placement := release
+  !else
+    -placement := current
+  !end
+!end
+
+% ======================================================
+% Files lookup settings
+% ======================================================
++makedirs
+
+% Output lookup settings
+-lookup = *.sym  = sym
+-lookup = *.obj  = ch
+-lookup = *.lnk  = ch
+-lookup = *.exe  = workplace
+-lookup = *.dll  = workplace
+
+% Source lookup settings
+-lookup = *.def  = $!/src
+-lookup = *.mod  = $!/src
+-lookup = *.ob2  = $!/src
+
+!if not defined debug then
+  !if mode = "work" then
+    -debug:+
+  !else
+    -debug:-
+  !end
+!end
+
+!if debug then
+  -gendebug+
+  -genhistory+
+  -lineno+
+  -checkindex+
+  -checknil+
+  -checkdindex+
+  -checktype+
+  -checkrange+
+  -checkset+
+  -checkdiv+
+  -checkproc+
+  -assert+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+!else
+  -gendebug-
+  -genhistory-
+  -lineno-
+  -checkindex-
+  -checknil-
+  -checkdindex-
+  -checktype-
+  -checkrange-
+  -checkset-
+  -checkdiv-
+  -checkproc-
+  -assert-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+!end
+
+!if mode = "enduser" then
+  !if backend = "X86" then
+    -gendebug+
+    -lineno+
+    -genhistory+
+  !elsif backend = "C" then
+    -gendebug-
+    -lineno-
+  !end
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+!end
+
+-decor=rt
+
++o2extensions
++m2extensions
+
+-makefile+
+
+-heaplimit = 16000000
+-gcthreshold = 8000000
+
+!module h2d.ob2

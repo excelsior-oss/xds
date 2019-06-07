@@ -1,0 +1,57 @@
+-- Загрузка программы, отгрузка, рестарт, остановы, исполнение,
+-- режимы исполнения, получение времен исполнения.
+-- Модуль является системо-зависимым.
+<* NOHEADER+ *> -- NEVER GET THE HEADER FOR THIS FILE
+
+DEFINITION MODULE Krn_Prog;
+
+IMPORT sys := SYSTEM;
+IMPORT kt  := KrnTypes;
+
+
+PROCEDURE StartProgram (name, args: ARRAY OF CHAR): CARDINAL;
+(* Загрузка указанной программы с заданными аргументами *)
+
+PROCEDURE GetProgramInfo (VAR info: kt.EXEC_INFO): BOOLEAN;
+(* Получение информации о загруженной программе *)
+
+PROCEDURE GetDebugInfo (exec_info: kt.EXEC_INFO; info_addr: sys.ADDRESS): BOOLEAN;
+(* Получение отладочной информации о программе *)
+
+<* PUSH *>
+<* ALIGNMENT = "1" *>
+
+TYPE
+  MODE = ( None            -- Режимы исполнения программы
+         , SingleStep      -- Исполнить одну команду
+         , RangeStep       -- Исполнять в указанном диапазоне адресов
+         , Go );           -- Исполнять до возникновения события
+  
+  GO_MODE = RECORD
+              CASE mode: MODE OF
+              | RangeStep :             -- Исполнять в указанном диапазоне адресов
+                Begin, End: kt.ADDRESS; -- Диапазон адресов
+              | SingleStep:             -- Исполнить одну команду
+                add_step  : BOOLEAN;    -- Добавлять событие SingleStep?
+              END;
+            END;
+
+<* POP *>
+
+
+VAR
+  ProgramExecuting: BOOLEAN;
+            
+PROCEDURE Execute (go_mode: GO_MODE);
+(* Выполнить программу в указанном режиме *)
+
+PROCEDURE ReadExport (full_name: ARRAY OF CHAR; VAR exp: kt.EXPORTS): BOOLEAN;
+(* Для компоненты получить таблицу экспорта, если она есть *)
+
+PROCEDURE RestartProgram (): BOOLEAN;
+(* Рестарт программы, состояние программы после рестарта как после старта *)
+
+PROCEDURE UnloadProgram;
+(* Отгрузить программу *)
+
+END Krn_Prog.

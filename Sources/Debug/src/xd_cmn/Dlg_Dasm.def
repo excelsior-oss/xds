@@ -1,0 +1,39 @@
+-- Поддержка буфера дизассемблирования для отображения дизассемблерного
+-- и смешанного режима отображения основного окна.
+-- Перемещение буфера по адресному пространству
+-- Выдача строкового представления дизассеблируемой команды
+-- Поиск по адресу позиции в буфере
+
+DEFINITION MODULE Dlg_Dasm;
+
+FROM KrnTypes IMPORT ADDRESS;
+
+TYPE
+  DISASM_MODE = (None, D, DS);
+
+VAR
+  Mode-: DISASM_MODE;
+
+  D_curr : CARDINAL;
+  D_frame: CARDINAL;
+
+PROCEDURE SetDisasmMode (mode: DISASM_MODE);
+
+PROCEDURE ShiftFrame (delta: INTEGER; len: CARDINAL);
+
+PROCEDURE SetNewPos (addr: ADDRESS; len: CARDINAL): BOOLEAN;
+
+PROCEDURE Dasm (dpos: CARDINAL; width: CARDINAL; VAR str: ARRAY OF CHAR): BOOLEAN;
+
+PROCEDURE GetAddr (dpos: CARDINAL; VAR address: ADDRESS): BOOLEAN;
+
+PROCEDURE GetPosByAddr (addr: ADDRESS; len: CARDINAL; VAR pos: CARDINAL): BOOLEAN;
+
+PROCEDURE SaveCurrentState;
+
+PROCEDURE RestoreCurrentState;
+
+PROCEDURE MakeInvalid;
+
+
+END Dlg_Dasm.

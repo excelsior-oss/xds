@@ -1,0 +1,154 @@
+-- События, обрабатываемые отладчиком
+-- Содержит описание событий в программе
+-- Поддержка очереди событий
+<* NOHEADER+ *> -- NEVER GET THE HEADER FOR THIS FILE
+
+DEFINITION MODULE Events;
+
+<* ALIGNMENT = "1" *>
+
+IMPORT KrnTypes;
+
+<* IF DEST_XDS THEN *>
+IMPORT Krn_Thrs;
+<* END *>
+
+
+TYPE
+  EXCEPTION_ID = ( OutOfMemory      (* Доступ по адресу вне диапазона адресов *)
+                 , WriteProtected   (* Запись в защищенную область памяти     *)
+                 , ProgramException (* Программное прерывание                 *)
+                 , UserException    (* Исполнение прервано пользователем      *)
+                 );
+
+  EVENT_TYPE = ( InternalError  (* Исключительная ситуация в отладчике *)
+               , Exception      (* Исключительная ситуация в программе *)
+               , BreakpointHit  (* Точка останова                      *)
+               , SingleStep     (* Исполнена одна команда              *)
+               , Call           (* Выполнена инструкция CALL           *)
+               , Return         (* Выполнена инструкция RET            *)
+               , MemoryAccess   (* Достпуп к памяти                    *)
+               , CompCreated    (* Создана новая компонента программы  *)
+               , CompDestroyed  (* Создана новая компонента программы  *)
+
+<* IF TARGET_VAX THEN *>
+               , RegisterAccess (* Достпуп к регистрам                 *)
+               , DeviceAccess   (* Обращение к устройству              *)
+<* ELSIF DEST_XDS THEN *>
+               , ThreadCreated  (* Создан/удален thread                *)
+               , ThreadDestroyed
+<* END *>
+
+               );
+
+  ACCESS_TYPE = ( Nothing, Read, Write, ReadWrite );
+
+  (* Информация о последнем произошедшем событии *)
+  EVENT = RECORD
+            IP: KrnTypes.ADDRESS;   (* Текуший адрес *)
+            CASE Event: EVENT_TYPE OF
+            | SingleStep     :             (* Исполнена одна команда              *)
+
+            | InternalError  :             (* Исключительная ситуация в отладчике *)
+              ErrorNo        : CARDINAL;   (* Номер ошибки                        *)
+              ErrorContext   : CARDINAL;   (* Дополнительные атрибуты             *)
+
+            | Exception      :             (* Исключительная ситуация в программе *)
+              Exception_ID   : EXCEPTION_ID;
+              XCPT_INFO_1    : KrnTypes.WORD;
+              XCPT_INFO_2    : KrnTypes.WORD;
+              XCPT_INFO_3    : KrnTypes.WORD;
+              XCPT_INFO_4    : KrnTypes.WORD;
+
+            | Call           :                   (* Выполнена инструкция CALL     *)
+              CallAddr       : KrnTypes.ADDRESS; (* Адрес вызываемой команды      *)
+             <* IF TARGET_VAX THEN *>
+              SP_before_CALL : KrnTypes.ADDRESS; (* значение SP до выполнения CALL*)
+             <* END *>
+
+            | Return         :                   (* Выполнена инструкция RET      *)
+              ReturnAddr     : KrnTypes.ADDRESS; (* Адрес возврата                *)
+             <* IF TARGET_VAX THEN *>
+              SP_before_RET  : KrnTypes.ADDRESS; (* значение SP до выполнения RET *)
+             <* END *>
+
+            | BreakpointHit  :                   (* Точка останова                *)
+              BreakpointInd  : CARDINAL;
+
+            | CompCreated    :
+              Component      : KrnTypes.EXEC_INFO;
+              Stopable       : BOOLEAN;
+
+            | CompDestroyed  :
+              Handle         : CARDINAL;
+
+<* IF TARGET_VAX THEN *>
+            | MemoryAccess   :                   (* Достпуп к памяти              *)
+              MemAccess_Ind  : CARDINAL;
+              MemAccess_Type : ACCESS_TYPE;
+              MemAccess_Addr : KrnTypes.ADDRESS;
+              MemAccess_Len  : CARDINAL;
+
+            | RegisterAccess :           (* Достпуп к регистрам                   *)
+              RegAccess_Type : ACCESS_TYPE;
+              RegAccess_RegNo: CARDINAL;
+              RegAccess_Len  : CARDINAL;
+              RegAccess_Ind  : CARDINAL;
+
+            | DeviceAccess   :            (* Обращение к устройству               *)
+              DevAccess_Type : ACCESS_TYPE;
+              DevAccess_DevNo: CARDINAL;
+              DevAccess_RegNo: CARDINAL;
+              DevAccess_Len  : CARDINAL;
+
+<* ELSIF DEST_XDS THEN *>
+
+            | MemoryAccess   :                   (* Достпуп к памяти              *)
+              MemAccess_Ind  : CARDINAL;
+
+            | ThreadCreated,
+              ThreadDestroyed:
+              Thread        : Krn_Thrs.THREAD_INX;
+<* END *>
+
+            END;
+          END;
+
+
+
+-------------------- Обработка очереди сообщений -------------------------
+                    -----------------------------
+VAR
+  (* Описание последнего произошедшего события               *)
+  (* NB: всегда в реакциях следует пользоваться этой записью *)
+
+  LastEvent: EVENT;
+
+
+PROCEDURE QuantityEvents (): CARDINAL;
+
+(* Очеpедь пуста? Если пуста - TRUE, непуста - FALSE *)
+PROCEDURE QueueIsEmpty () : BOOLEAN;
+
+(* Добавить событие в очеpедь, при переполнении очереди вернет FALSE *)
+PROCEDURE AddEvent (Event: EVENT): BOOLEAN;
+
+(* Получить событие, оно помещается в LastEvent и удаляется очереди *)
+PROCEDURE GetEvent;
+
+(* Возвращеющая TRUE, если в очереди есть событие *)
+(* указаного типа, иначе вернет FALSE             *)
+PROCEDURE QueryEvent (Event_type: EVENT_TYPE): BOOLEAN;
+
+(* Очишает текущее содержимое очереди событий *)
+PROCEDURE ClearQueue;
+
+
+<* IF DEFINED (xd_debug) & xd_debug THEN *>
+
+PROCEDURE PrintEvent (event: EVENT);
+
+<* END *>
+
+
+END Events.

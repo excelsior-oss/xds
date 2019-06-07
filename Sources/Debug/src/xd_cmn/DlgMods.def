@@ -1,0 +1,49 @@
+-- Описание структур данных для работы с загруженными фазами и их модулями
+-- Переключения текущей фазы и/или модуля
+-- поиск позиции исходного текста, соответсвующей заданному адресу
+-- Обработчики окон Фаз, Модулей и Секций Модуля
+
+DEFINITION MODULE DlgMods;
+
+IMPORT dt := DI_Types;
+IMPORT kt := KrnTypes;
+
+TYPE
+  STATE   = (enabled, disabled);
+  MOD_REC = RECORD
+              Pos      : dt.POS;
+              state    : STATE;
+              curr     : CARDINAL;           (* положение пользовательского курсора    *)
+              frame    : CARDINAL;           (* начало видимой части                   *)
+              N        : CARDINAL;           (* количество строк в исходном тексте     *)
+              pos      : CARDINAL;           (* позиция вывода строк                   *)
+              l_curr,
+              l_frame  : CARDINAL;   (* состояние списка меток                 *)
+              v_curr,
+              v_frame  : CARDINAL;   (* состояние списка глобальных переменных *)
+              dis_addr : kt.ADDRESS;
+            END;
+
+  PMOD = POINTER TO MOD_REC;
+
+VAR
+  Curr    : PMOD;
+
+
+(* Устанавливает текущую линию в текущем модуле и позициониpует frame так, *)
+(* чтобы ее было видно на экpане                                           *)
+PROCEDURE SetCurrLine(ln: CARDINAL);
+
+(* Переводит пользовательский курсор  в указанную позицию. Нумерация внешняя *)
+PROCEDURE SetNewPos(com, m, ln: CARDINAL);
+
+PROCEDURE SetNewPosByAddr(addr: kt.ADDRESS): BOOLEAN;
+
+PROCEDURE ResetTryRead;
+
+PROCEDURE RefreshModulesKey;
+
+PROCEDURE ClearModules;
+
+
+END DlgMods.

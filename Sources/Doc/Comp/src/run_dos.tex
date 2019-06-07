@@ -1,0 +1,119 @@
+\section{Running a program}\label{start:run}
+\index{running a program}
+
+\ifgencode        %----------------------
+  After compilation of all modules composing your project you have
+  to link the program. It can be done using a linker from your
+  C compiler package. In this section examples of using linkers
+  from Symantec (v6.x, for DOSX extender) and Watcom (v10.x,
+  DOS4/GW extender) are provided (See also Chapter \ref{ccomp}).
+
+  \paragraph{To link a program (Symantec):}
+\begin{verbatim}
+  sc -mx hello.obj \xds\lib\xds_sc.lib
+\end{verbatim}
+
+  \paragraph{To link a program (Watcom):}
+\begin{verbatim}
+  wcl386 /"op c" hello.obj \xds\lib\xds_wc.lib
+\end{verbatim}
+  After that, one can invoke the program:
+  \begin{flushleft} \tt
+        hello
+  \end{flushleft}
+
+  It may be necessary to specify additional options to put the debug
+  information into {\tt hello.exe} file, or to specify the stack size for
+  DOS4GW. For Watcom compiler the option "op c" (case-sensitive) should
+  be set.
+
+  To simplify linking, \XDS{} allows one to specify a linker command line
+  in the \XDS{} environment, using the {\bf LINK} equation.
+  A command line
+  specified by the equation will be executed after successful
+  compilation of the whole project. Usually, the equation is specified
+  in the project file (See \ref{xc:project}).
+
+\paragraph{Example of the project file {\tt hello.prj} (Symantec)}
+\begin{verbatim}
+-link="sc -mx hello.obj \\xds\\lib\\xds_sc.lib"
+!module hello.mod
+\end{verbatim}
+
+\paragraph{Example of the project file {\tt hello.prj} (Watcom)}
+\begin{verbatim}
+-link='wcl386 /"op c" hello.obj \\xds\\lib\\xds_wc.lib'
+!module hello.mod
+\end{verbatim}
+The project file contains the {\bf LINK} equation and
+a name of a program module.
+The following invokation
+\begin{flushleft} \tt
+        \xc{} hello.prj =project
+\end{flushleft}
+will compile modules constituting the project (if required) and
+then execute the linker command line specified.
+
+As can be seen, a linker command line consists of a name of a linker
+(or C compiler), options, a list of object files and required libraries.
+\XDS{} allows a linker command to be specified in a generic form, so
+a list of object files constituting your program will be generated
+automatically. It can be done using the so called {\em iterator}
+(See \ref{xc:template}). An iterator of the form
+\begin{verbatim}
+{ " %s",imp+main+oberon#objext; }
+\end{verbatim}
+will insert the names of all implementation modules,
+all oberon modules and the name of a program module in the command line.
+Thus, the value of a link equation shall look like
+\begin{verbatim}
+<linker> <options> <iterator> <library>
+\end{verbatim}
+
+\paragraph{For Symantec:}
+\begin{flushleft}
+\begin{tabular}{ll}
+linker  & \verb|sc|                            \\
+options & \verb|-mx|                           \\
+library & \verb|c:\xds\lib\xds_sc.lib|         \\
+\end{tabular}
+\end{flushleft}
+
+\paragraph{For Watcom:}
+\begin{flushleft}
+\begin{tabular}{ll}
+linker  & \verb|wl386|                            \\
+options & \verb|/"deb codeview op c op st=128k"|  \\
+library & \verb|c:\xds\lib\xds_wc.lib|            \\
+\end{tabular}
+\end{flushleft}
+Here the stack size (128k) and the format of debug
+information (CodeView) are specfied.
+
+If your project contains more than one module, the linker command
+line can be too long. Usually under MS-DOS a command line cannot
+exceed 128 symbols.
+It can be more convenient to link such projects using
+the {\em make} utility. The \XDS{} distribution contains
+template files ({\tt symantec.tem} and {\tt watcom.tem}),
+that are used to generate a makefile.
+
+\paragraph{Example of the project file (Symantec)}
+\begin{verbatim}
+-LINK='make -f %s',project#'mkf';
+-makefile+
+-template=\xds\bin\symantec.tem
+!module hello.mod
+\end{verbatim}
+
+\paragraph{Example of the project file (Symantec)}
+\begin{verbatim}
+-LINK='wmake -f %s',project#'mkf';
+-makefile+
+-template=\xds\bin\watcom.tem
+!module hello.mod
+\end{verbatim}
+
+For more details see \ref{xc:project} and \ref{xc:template}.
+
+\fi % end ifgencode ----------------------

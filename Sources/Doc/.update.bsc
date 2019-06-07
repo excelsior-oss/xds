@@ -1,0 +1,8 @@
+# Builded files to be copied into external workspace 
+# Target must be relative to the root of an external workplace
+# Note: target subfolder must end with symbol "\" 
+# <mode> ::= "" | "work" | "release"
+
+# <source>                     <target>        <mode>
+workplace\*.pdf                pdf\
+workplace\html\*.*             doc\

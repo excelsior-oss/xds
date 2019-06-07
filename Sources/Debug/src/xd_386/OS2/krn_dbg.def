@@ -1,0 +1,29 @@
+DEFINITION MODULE Krn_Dbg;
+
+IMPORT OS2;
+
+
+VAR
+  DbgBuffer : OS2.uDB_t;
+  SID-      : OS2.ULONG;
+  PID-      : OS2.PID;
+  TID       : OS2.TID;
+  HModule   : OS2.HMODULE;
+  MyPID     : OS2.PID;
+  MyHwnd    : OS2.HWND;
+
+VAR
+  Program_started, Program_started_2, Program_stopped: OS2.HEV;
+
+
+PROCEDURE StartSmartSelector;
+
+PROCEDURE StopSmartSelector;
+
+PROCEDURE SwitchToDebugger;
+
+PROCEDURE SwitchToDebuggee;
+
+PROCEDURE NewDebuggee(pid: OS2.PID; sid: OS2.ULONG);
+
+END Krn_Dbg.

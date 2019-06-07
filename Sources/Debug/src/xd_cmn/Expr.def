@@ -1,0 +1,200 @@
+-- Содержит процедуры, с помощью которых пользователю предоставляется
+-- возможность при отладке программы работать с выражениями языка
+-- программирования в привычном для него виде. В качестве средства
+-- разработчика, предоставляет набор функций, предназначенных для разбора
+-- строкового представления выражения и вычисления его результата,
+-- получения разнообразных атрибутов логических объектов программы,
+-- доступа к внутренней структуре логических объектов, преобразования
+-- внутреннего представления объектов и результатов вычисления
+-- выражений в строковое представление.
+
+DEFINITION MODULE Expr;
+
+IMPORT sys := SYSTEM;
+
+IMPORT kt  := KrnTypes;
+IMPORT dt  := DI_Types;
+
+IMPORT xs  := xStr;
+
+<* IF DEST_K26 THEN *>
+IMPORT typ := IntVType;
+<* END *>
+
+CONST
+  NIL_ADDR = kt.ADDRESS( 0 );
+
+
+TYPE
+  SORT = ( Empty, WHOLEval, CARDval, INTval, CHARval, BOOLval,
+           REALval, Address, Register, Variable, Reference, STRINGval);
+
+  SORTS = SET OF SORT;
+
+  STRINGval_TYPE = xs.String;
+
+<* IF DEST_K26 THEN *>
+  R_TYPE = (PC_const, f, g, d);
+<* END *>
+
+  PExprRes = POINTER TO ExprRes;
+
+  ExprRes = RECORD
+              type: dt.SYM_TYPE_ID;
+              CASE sort: SORT OF
+              | Empty      :
+              | WHOLEval   ,
+                CARDval    ,
+                INTval     : value    : LONGCARD;
+              | CHARval    : ch       : CHAR;
+              | BOOLval    : b_val    : BOOLEAN;
+              | REALval    :
+                            <* IF DEST_K26 THEN *>
+                             CASE r_type: R_TYPE OF
+                             | PC_const: r_val_const: LONGLONGREAL;
+                             | f    : r_val_f: typ.BoardFloatF;
+                             | g    : r_val_g: typ.BoardFloatG;
+                             | d    : r_val_d: typ.BoardFloatD;
+                             END;
+                            <* ELSE *>
+                             r_val    : LONGLONGREAL;
+                            <* END *>
+              | Address    : address  : kt.ADDRESS;
+              | Register   : reg_no   : CARDINAL;
+                             reg_type : dt.PTYPE;
+              | Variable   : location : kt.ADDRESS;
+                             var_type : dt.PTYPE;
+                             arr_desc : kt.ADDRESS;
+              | Reference  : reference: kt.ADDRESS;
+                             ref_type : dt.PTYPE;
+              | STRINGval  : string   : STRINGval_TYPE;
+              END;
+            END;
+
+  FORMAT  = ARRAY [0..31] OF CHAR;
+
+  LONGCONST = RECORD
+                ptr: POINTER TO ARRAY OF sys.CARD8;
+                len: CARDINAL;
+              END;
+
+  CHARSET = SET OF CHAR;
+
+
+CONST
+  LatLetter = CHARSET {'a'..'z', 'A'..'Z'};
+  RusLetter = CHARSET {'а'..'п', 'р'..'я', 'А'..'Я'};
+  Digits    = CHARSET {'0'..'9'};
+
+  WHOLES = SORTS { WHOLEval, CARDval, INTval };
+
+  ADRESSES = SORTS { Address, Variable, Reference };
+
+VAR
+  dfn   : BOOLEAN;  (* Определено ли выражение в момент вычисления             *)
+  error : CARDINAL; (* номер ошибки в нумерации MsgNo, если выражение ошибочно *)
+
+  Fmt_Special    : FORMAT;
+  Fmt_REALval    : FORMAT;
+  Fmt_ADDRval    : FORMAT;
+  Fmt_Register   : FORMAT;
+  Fmt_RegWindow  : FORMAT;
+  Fmt_STRINGval  : FORMAT;
+  Fmt_CHARval    : FORMAT;
+  Fmt_CTRL_CHAR  : FORMAT;
+
+
+PROCEDURE AddIdentExprConst (ident: ARRAY OF CHAR; expr: ExprRes): BOOLEAN;
+
+PROCEDURE AddIdentExprVar (ident: ARRAY OF CHAR; expr: PExprRes): BOOLEAN;
+
+
+PROCEDURE CheckName (st: ARRAY OF CHAR; lat: BOOLEAN) : BOOLEAN;
+
+PROCEDURE CheckFileName (st: ARRAY OF CHAR; VAR ext: BOOLEAN) : BOOLEAN;
+
+PROCEDURE Var2Value (arg:ExprRes; VAR res:ExprRes): BOOLEAN;
+
+PROCEDURE Index(arr, index: ExprRes; VAR res: ExprRes);
+
+
+PROCEDURE ArrayOf_Desc2Loc (VAR array_of: ExprRes): BOOLEAN;
+
+PROCEDURE ArrayOf_Size (array_of: ExprRes; VAR size: CARDINAL): BOOLEAN;
+
+PROCEDURE ArrayOf_Len (array_of: ExprRes; VAR len: CARDINAL): BOOLEAN;
+
+
+PROCEDURE OpenArray_Size (open_array: ExprRes; VAR size: CARDINAL): BOOLEAN;
+
+PROCEDURE OpenArray_Len (open_array: ExprRes; VAR len: CARDINAL): BOOLEAN;
+
+
+PROCEDURE CheckRegionValid (arg: ExprRes): BOOLEAN;
+
+
+PROCEDURE CheckBit(set: ExprRes; N: CARDINAL; VAR bit: BOOLEAN): BOOLEAN;
+
+PROCEDURE ToggleBit(set: ExprRes; N: CARDINAL): BOOLEAN;
+
+
+(* Выдать полное имя объекта, пригодное для вычислений с ним *)
+PROCEDURE ObjectFullName (object: dt.OBJECT; VAR name: ARRAY OF CHAR);
+
+
+PROCEDURE GetSource (com: CARDINAL;
+                     mod: CARDINAL;
+                     st: ARRAY OF CHAR;
+                     VAR LC: LONGCONST;
+                     VAR Source: ExprRes) : BOOLEAN;
+
+PROCEDURE GetCardValue (com: dt.ComNo; mod: dt.ModNo; st: ARRAY OF CHAR; VAR value:LONGCARD): BOOLEAN;
+
+PROCEDURE GetRealValue (com: dt.ComNo; mod: dt.ModNo; st: ARRAY OF CHAR; VAR value:LONGLONGREAL): BOOLEAN;
+
+PROCEDURE GetAddrOrReg (com: dt.ComNo; mod: dt.ModNo; st: ARRAY OF CHAR; VAR addr: kt.ADDRESS; VAR RegNo:CARDINAL): BOOLEAN;
+
+PROCEDURE GetLeftValue (com: dt.ComNo; mod: dt.ModNo; st: ARRAY OF CHAR; VAR res: ExprRes);
+
+PROCEDURE Dereference (arg: ExprRes; VAR res: ExprRes): BOOLEAN;
+
+PROCEDURE GetIntValue (com: dt.ComNo; mod: dt.ModNo; st: ARRAY OF CHAR; VAR value:LONGINT) : BOOLEAN;
+
+PROCEDURE GetRelation (com: dt.ComNo; mod: dt.ModNo; st: ARRAY OF CHAR; VAR res:BOOLEAN) : BOOLEAN;
+
+PROCEDURE GetAddress (com: dt.ComNo; mod: dt.ModNo; st: ARRAY OF CHAR; VAR addr: kt.ADDRESS) : BOOLEAN;
+
+PROCEDURE CalcExpr (com: dt.ComNo; mod: dt.ModNo; st: ARRAY OF CHAR; VAR res: ExprRes);
+
+PROCEDURE Res2Str (res: ExprRes; VAR str: ARRAY OF CHAR);
+
+PROCEDURE Assign (left,right: ExprRes): BOOLEAN;
+
+(* Печать i-го элемента типа, если этот тип может быть перечислен *)
+PROCEDURE i2Str (type: dt.PTYPE; i: LONGCARD; VAR str: ARRAY OF CHAR);
+
+(* Сравнивает результаты двух выражений *)
+PROCEDURE CompareRes(res1, res2: ExprRes): BOOLEAN;
+
+(* Установить умолчательные форматы вывода переменных *)
+PROCEDURE SetDefaultFormat;
+
+PROCEDURE GetLastErrorPos (): CARDINAL;
+
+PROCEDURE ConvertReal2Host (VAR res: ExprRes; VAR value: LONGLONGREAL): BOOLEAN;
+
+
+<* IF DEST_XDS THEN *>
+
+(* Проверяет, можно ли для выражения вычислить настоящий *)
+(* тип обьекта; делает это, если возможно                *)
+PROCEDURE CheckActualType (VAR arg: ExprRes; get_td: BOOLEAN): BOOLEAN;
+
+(* Перевычисляет для выражения настоящий тип *)
+PROCEDURE GetActualType (VAR arg: ExprRes);
+
+PROCEDURE ROT_xjRTS_Java (addr: kt.ADDRESS; get_td: BOOLEAN; VAR type: dt.PTYPE): BOOLEAN;
+
+<* END *>
+
+END Expr.

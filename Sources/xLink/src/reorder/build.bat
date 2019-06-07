@@ -1,0 +1,1 @@
+call msvc2005 cl -Dxos_WINNT reorder.cpp parser.cpp xmem.cpp xos.cpp messages.cpp /Fexreorder.exe

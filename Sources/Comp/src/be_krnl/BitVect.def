@@ -1,0 +1,133 @@
+DEFINITION MODULE BitVect;
+
+IMPORT SYSTEM;
+IMPORT lh := LocalHeap;
+
+TYPE
+    INT       = SYSTEM.INT32;
+    BitVector = POINTER TO RECORD
+                              n: INT;
+                              v: ARRAY [0..7FFFH] OF BITSET;
+                            END;
+
+<* IF TARGET_386 AND fast_bitvect_in THEN *>
+<* PUSH *>
+<* NEW override_max_set_len+ *>
+    LongBitVector = POINTER TO RECORD
+                              n: INT;
+                              v: PACKEDSET OF [0..MAX(INT)-1];
+                            END;
+<* POP *>
+<* END *>
+
+CONST BitsPerSet = SYSTEM.BITS (BITSET);
+
+PROCEDURE In (p: BitVector; e: INT): BOOLEAN;
+
+PROCEDURE Incl (p: BitVector; e: INT);
+
+PROCEDURE Excl (p: BitVector; e: INT);
+
+(*
+  Fill bitvector by TRUE/FALSE
+*)
+
+PROCEDURE Fill (p: BitVector; filler: BOOLEAN; n: INT);
+
+(*
+  Create new bitvector
+*)
+
+
+VAR
+  defaultHeap: lh.heapID;
+
+PROCEDURE New_Ex (heap: lh.heapID; n: INT; filler: BOOLEAN): BitVector;
+PROCEDURE New (n: INT; filler: BOOLEAN): BitVector;
+
+(*
+  Make new copy of source bitvector
+*)
+
+PROCEDURE MakeCopy (s: BitVector): BitVector;
+
+(*
+  Dispose bitvector
+*)
+
+PROCEDURE Free_Ex (heap: lh.heapID; VAR p: BitVector);
+PROCEDURE Free (VAR p: BitVector);
+
+(*
+  d := s
+*)
+
+PROCEDURE Move (s, d: BitVector);
+
+(*
+  s := d (d shorter than s)
+  THERE MAY BE GARABAGE AT UNUSED BITS OF d!
+*)
+
+PROCEDURE Shorten (s, d: BitVector);
+
+(*
+  d := s
+  return CHANGED
+*)
+
+PROCEDURE Assign (s, d: BitVector): BOOLEAN;
+
+(*
+  Add new element(s) to bitvector
+*)
+
+PROCEDURE Realloc (VAR p: BitVector; n: INT);
+
+(*
+  r := p1 * p2
+*)
+
+PROCEDURE Intersect  (p1, p2, r: BitVector);
+
+(*
+  RETURN p1 * p2 <> {}
+*)
+
+PROCEDURE Intersecting (p1, p2: BitVector): BOOLEAN;
+
+(*
+  r := p1 + p2
+*)
+
+PROCEDURE Union (p1, p2, r: BitVector);
+
+(*
+  d += s (assumes s <= d)
+  return CHANGED
+*)
+
+PROCEDURE UnionAssign (d, s: BitVector): BOOLEAN;
+
+(*
+  r := p1 - p2
+*)
+
+PROCEDURE Sub (p1, p2, r: BitVector);
+
+(*
+  p1 = p2 ?
+*)
+
+PROCEDURE Eq (p1, p2: BitVector): BOOLEAN;
+
+(*
+  p1 <= p2 ?
+*)
+
+PROCEDURE Subset (p1, p2: BitVector): BOOLEAN;
+
+
+PROCEDURE IsEmpty (p: BitVector): BOOLEAN;
+
+END BitVect.

@@ -1,0 +1,327 @@
+DEFINITION MODULE coffDef;
+
+-- Modified and ported to MODULA by Rainbow for XDS xc compiler 
+-- Original stuff was given from DJGPP coff.h
+-- We don't pretend to any copyrights,
+-- and shoulder no responsibility for these data.
+
+-- coff information for Intel 386/486.  
+
+IMPORT SYSTEM;
+
+TYPE
+    INT32     = SYSTEM.INT32;
+    INT16     = SYSTEM.INT16;
+    INT8      = SYSTEM.INT8;
+    CARD32    = SYSTEM.CARD32;
+    CARD16    = SYSTEM.CARD16;
+    CARD8     = SYSTEM.CARD8;
+
+--********************** FILE HEADER **********************
+TYPE FILHDR = RECORD
+	f_magic  : CARD16;	-- magic number			
+	f_nscns  : INT16;	-- number of sections		
+	f_timdat : CARD32;	-- time & date stamp
+       	f_symptr : INT32;	-- file pointer to symtab	
+	f_nsyms  : INT32;	-- number of symtab entries	
+	f_opthdr : CARD16;	-- sizeof(optional hdr)		
+	f_flags  : CARD16;	-- flags			
+END;
+
+CONST FILHSZ = 20; -- sizeof(FILHDR)
+
+-- * Bits for f_flags:
+-- *	F_RELFLG	relocation info stripped from file
+-- *	F_EXEC		file is executable (no unresolved external references)
+-- *	F_LNNO		line numbers stripped from file
+-- *	F_LSYMS		local symbols stripped from file
+-- *	F_AR32WR	file has byte ordering of an AR32WR machine (e.g. vax)
+-- *                    ( file is 32-bit little-endian )
+
+CONST F_RELFLG = 0001H;
+CONST F_EXEC   = 0002H;
+CONST F_LNNO   = 0004H;
+CONST F_LSYMS  = 0008H;
+CONST F_AR32WR = 0100H;
+
+CONST I386MAGIC = 014CH;
+
+--********************** AOUT "OPTIONAL HEADER" **********************--
+
+TYPE AOUTHDR = RECORD
+   	magic      : CARD16;	-- type of file				
+  	vstamp     : CARD16;	-- version stamp			
+  	tsize      : CARD32;	-- text size in bytes, padded to FW bdry
+  	dsize      : CARD32;	-- initialized data "  "		
+  	bsize      : CARD32; 	-- uninitialized data "   "		
+  	entry 	   : CARD32;	-- entry pt.				
+   	text_start : CARD32;	-- base of text used for this file 
+   	data_start : CARD32;	-- base of data used for this file 
+END;
+
+CONST AOUTSZ = 28; -- sizeof(AOUTHDR)
+
+TYPE GNU_AOUT = RECORD
+	info    : CARD32;
+	tsize   : CARD32;
+	dsize   : CARD32;
+	bsize   : CARD32;
+	symsize : CARD32;
+	entry   : CARD32;
+	txrel   : CARD32;
+	dtrel   : CARD32;
+END;
+
+-- attention! B means octal, not binary!
+CONST OMAGIC  = 0404B; -- object files, eg as output 
+CONST ZMAGIC  = 0413B; -- demand load format, eg normal ld output 
+CONST STMAGIC = 0401B; -- target shlib 
+CONST SHMAGIC = 0443B; -- host   shlib 
+
+
+--********************** SECTION HEADER **********************--
+
+
+TYPE SCNHDR = RECORD
+	s_name    : ARRAY [0..7] OF CHAR;	-- section name			
+	s_paddr   : INT32;	-- physical address, aliased s_nlib
+	s_vaddr   : INT32;	-- virtual address		
+	s_size    : INT32;	-- section size			
+	s_scnptr  : INT32;	-- file ptr to raw data for section
+	s_relptr  : INT32;	-- file ptr to relocation	
+	s_lnnoptr : INT32;	-- file ptr to line numbers	
+	s_nreloc  : INT16;	-- number of relocation entries	
+	s_nlnno   : INT16;	-- number of line number entries
+	s_flags   : CARD32;	-- flags			
+END;
+
+CONST SCNHSZ = 40; -- sizeof(SCNHDR)
+
+-- *
+-- * names of "special" sections
+-- *
+
+CONST _TEXT 	= ".text";
+CONST _DATA 	= ".data";
+CONST _BSS  	= ".bss";
+CONST _COMMENT  = ".comment";
+CONST _LIB	= ".lib";
+
+-- *
+-- * s_flags "type"
+-- *
+CONST STYP_TEXT	= 0020H; -- section contains text only 
+CONST STYP_DATA	= 0040H; -- section contains data only 
+CONST STYP_BSS	= 0080H; -- section contains bss only
+
+--********************** LINE NUMBERS **********************--
+
+-- * 1 line number entry for every "breakpointable" source line in a section.
+-- * Line numbers are grouped on a per function basis; first entry in a function
+-- * grouping will have l_lnno = 0 and in place of physical address will be the
+-- * symbol table index of the function name.
+
+TYPE LINENO = RECORD 
+        l_addr : RECORD                 -- union
+                CASE : INTEGER OF
+                 | 1 : l_symndx : CARD32;	-- function name symbol index, if l_lnno == 0 
+	         | 2 : l_paddr  : CARD32;	-- (physical) address of line number 
+                END;
+        END;
+        l_lnno : CARD16;		-- line number 
+END;
+
+CONST LINESZ = 6; -- sizeof(LINENO)
+
+--********************** SYMBOLS **********************--
+
+CONST E_SYMNMLEN = 8;	-- # characters in a symbol name	
+CONST E_FILNMLEN = 14;	-- # characters in a file name		
+CONST E_DIMNUM   = 4;	-- # array dimensions in auxiliary entry
+
+
+TYPE SYMENT = RECORD
+     CASE : INTEGER OF
+     | 1 : whole : ARRAY[0..17] OF INT8;
+     | 2 :
+        e : RECORD
+           CASE : INTEGER OF
+           | 1 :  e_name  : ARRAY [0..7] OF CHAR;
+           | 2 :  e : RECORD
+                       	e_zeroes  : INT32;  -- offset in strtab, if zero then look into s_name;
+                	e_offset  : INT32;
+                      END;
+           END;
+        END;
+	e_value   : INT32;
+      	e_scnum   : INT16;
+      	e_type    : CARD16; 
+      	e_sclass  : INT8;   -- Storage class, values defined bellow
+      	e_numaux  : INT8;
+    END;
+END;
+
+CONST SYMESZ = 18; -- sizeof(SYMENT)
+
+TYPE T_x_sym = RECORD
+	x_tagndx : CARD32;              -- str, un, or enum tag indx 
+        x_misc   : RECORD               -- union
+                CASE : INTEGER OF
+                | 1 : x_lnsz : RECORD
+			x_lnno : CARD16;-- declaration line number 
+			x_size : CARD16;-- str/union/array size 
+                      END;
+                | 2 : x_fsize : CARD32;	-- size of function 
+                END;
+        END;
+
+        x_fcnary : RECORD               -- union
+                CASE : INTEGER OF
+                | 1 : x_fcn : RECORD          -- if ISFCN, tag, or .bb 
+			    x_lnnoptr : CARD32;	 -- ptr to fcn line # 
+			    x_endndx  : CARD32;	 -- entry ndx past block end 
+                      END;
+                | 2 : x_ary : RECORD          -- if ISARY, up to 4 dimen. 
+			    x_dimen : ARRAY [0..E_DIMNUM-1] OF CARD16;
+                      END;
+                END;
+        END;
+        x_tvndx : CARD16;		-- tv index 
+END;
+
+TYPE T_x_file = RECORD                    -- union
+        CASE : INTEGER OF
+       	| 1 : x_fname : ARRAY [0..E_FILNMLEN-1] OF CHAR;
+	| 2 : x_n : RECORD
+		x_zeroes : CARD32;
+		x_offset : CARD32;
+  	      END;
+        END;
+END;
+
+TYPE  T_x_scn = RECORD
+	x_scnlen : CARD32;  		-- section length 
+	x_nreloc : CARD16;   		-- # relocation entries 
+	x_nlinno : CARD16;  		-- # line numbers 
+END;
+
+TYPE T_x_tv = RECORD		        -- info about .tv section (in auxent of symbol .tv)) 
+	x_tvfill : CARD32;		-- tv fill value 
+	x_tvlen  : CARD16;		-- length of .tv 
+	x_tvran  : ARRAY [0..1] OF CARD16;	-- tv range
+END;
+
+TYPE AUXENT = RECORD
+	CASE : INTEGER OF
+        | 1 : x_sym : T_x_sym;
+        | 2 : x_file: T_x_file;
+        | 3 : x_scn : T_x_scn;
+        | 4 : x_tv  : T_x_tv;
+        | 5 : whole : ARRAY [0..17] OF INT8;
+        END;
+END;
+
+CONST	AUXESZ = 18 ; -- sizeof(AUXENT)
+
+-- this record is created especially to fight with strong M2/O2 typisation
+-- it is NOT reflection of some coff.h member
+TYPE ANYENT = RECORD
+	CASE : INTEGER OF
+        | 1 : aux   : AUXENT;
+        | 2 : sym   : SYMENT;
+        | 3 : whole : ARRAY [0..17] OF INT8;
+        END;
+END;
+        	
+-- Relocatable symbols have number of the section in which they are defined,
+--  or one of the following: 
+
+CONST N_UNDEF =  0; -- undefined symbol 
+CONST N_ABS   = -1; -- value of symbol is absolute 
+CONST N_DEBUG = -2; -- debugging symbol -- value is meaningless 
+CONST N_TV    = -3; -- indicates symbol needs preload transfer vector 
+CONST P_TV    = -4; -- indicates symbol needs postload transfer vector
+
+-- *
+-- * Type of a symbol, in low N bits of the word
+-- *
+CONST T_NULL    =       0;
+CONST T_VOID    =       1;	-- function argument (only used by compiler) 
+CONST T_CHAR    =       2;	-- character		
+CONST T_SHORT	=	3;	-- short integer	
+CONST T_INT	=	4;	-- integer		
+CONST T_LONG	=	5;	-- long integer		
+CONST T_FLOAT	=	6;	-- floating point	
+CONST T_DOUBLE	=       7;	-- double word		
+CONST T_STRUCT	=       8;	-- structure 		
+CONST T_UNION	=	9;	-- union 		
+CONST T_ENUM	=	10;	-- enumeration 		
+CONST T_MOE	=	11;	-- member of enumeration
+CONST T_UCHAR	=	12;	-- unsigned character	
+CONST T_USHORT	=       13;	-- unsigned short       
+CONST T_UINT	=	14;	-- unsigned integer	
+CONST T_ULONG	=	15;	-- unsigned long        
+CONST T_LNGDBL	=       0;	-- long double		
+
+-- *
+-- * derived types, in n_type
+-- *
+CONST DT_NON	=	0;	-- no derived type 
+CONST DT_PTR	=	16;	-- pointer ( FIXME, it's not true )
+CONST DT_FCN	=	32;	-- function 
+CONST DT_ARY	=	48;	-- array 
+
+--********************** STORAGE CLASSES **********************--
+
+-- This used to be defined as -1, but now n_sclass is unsigned.  
+CONST C_EFCN	=	255;	-- physical end of function	
+CONST C_NULL	=	0;
+CONST C_AUTO	=	1;	-- automatic variable		
+CONST C_EXT	=	2;	-- external symbol		
+CONST C_STAT	=	3;	-- static			
+CONST C_REG	=	4;	-- register variable		
+CONST C_EXTDEF	=       5;	-- external definition		
+CONST C_LABEL	=	6;	-- label			
+CONST C_ULABEL	=       7;	-- undefined label		
+CONST C_MOS	=	8;	-- member of structure		
+CONST C_ARG	=	9;	-- function argument		
+CONST C_STRTAG	=       10;	-- structure tag		
+CONST C_MOU	=	11;	-- member of union		
+CONST C_UNTAG	=	12;	-- union tag			
+CONST C_TPDEF	=	13;	-- type definition		
+CONST C_USTATIC	=       14;	-- undefined static		
+CONST C_ENTAG	=	15;	-- enumeration tag		
+CONST C_MOE	=	16;	-- member of enumeration	
+CONST C_REGPARM	=       17;	-- register parameter		
+CONST C_FIELD	=	18;	-- bit field			
+CONST C_AUTOARG	=       19;	-- auto argument		
+CONST C_LASTENT	=       20;	-- dummy entry (end of block)	
+CONST C_BLOCK	= 	100;	-- ".bb" or ".eb"		
+CONST C_FCN	=	101;	-- ".bf" or ".ef"		
+CONST C_EOS	=	102;	-- end of structure		
+CONST C_FILE	=	103;	-- file name			  
+CONST C_LINE	=	104;	-- line # reformatted as symbol table entry 
+CONST C_ALIAS	= 	105;	-- duplicate tag		  
+CONST C_HIDDEN	=       106;	-- ext symbol in dmert public lib   
+                           
+--********************** RELOCATION DIRECTIVES **********************--
+
+TYPE RELOC = RECORD
+   r_vaddr  : CARD32;
+   r_symndx : CARD32;
+   r_type   : CARD16;
+END;
+
+CONST RELSZ = 10; -- sizeof(RELOC)
+
+CONST RELOC_REL32   =	20;	-- 32-bit PC-relative address
+CONST RELOC_ADDR32  =	6;	-- 32-bit absolute address
+
+CONST DEFAULT_DATA_SECTION_ALIGNMENT = 4;
+CONST DEFAULT_BSS_SECTION_ALIGNMENT  = 4;
+CONST DEFAULT_TEXT_SECTION_ALIGNMENT = 4;
+
+-- For new sections we havn't heard of before
+CONST DEFAULT_SECTION_ALIGNMENT      = 4;
+
+END coffDef.

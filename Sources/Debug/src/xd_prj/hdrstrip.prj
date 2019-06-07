@@ -1,0 +1,102 @@
+% Project file for xStrip utility
+% modes are: enduser, work
+
+!if not defined trialversion then
+  !new trialversion-
+!end
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if not defined placement then
+  !if (mode="enduser") then
+    -placement := release
+  !else
+    -placement := current
+  !end
+!end
+
+% output settings
+!if placement="release" then
+  -mkfname = $!/../../enduser/tmp/hdrstrip
+  -lookup = *.sym  = $!/../../enduser/tmp; $!/../../enduser/xds/sym/x86
+  -lookup = *.lib  = $!/../../enduser/xds/lib/x86
+  -lookup = *.obj  = $!/../../enduser/tmp
+  -lookup = *.exe  = $!/../../enduser/xds/bin
+!else
+  % work
+  -mkfname = xstrip
+  -lookup = *.sym  = sym
+  -lookup = *.obj  = bin
+  -lookup = *.emf  = emf
+  -lookup = *.txt  = csv
+!end
+
+-m2cmpsym+
+-changesym+
+-m2extensions+
+-o2extensions-
+-m2addtypes+
+
+-gcthreshold =  32000000
+-heaplimit = 32000000
+
+-compilerheap = 16777216
+
+-makefile+
+-longname+
+
+-implib-
+-usedll+
+-gendll-
+-dllexport-
+
+% Source lookup settings
+!if mode = "enduser" then
+  -lookup = *.mod = src\strip
+  -lookup = *.def = src\strip
+!elsif mode = "work" then
+  -lookup = *.mod = ..\src\strip
+  -lookup = *.def = ..\src\strip
+!end
+
+% Runtime checks and debug settings
+!if mode="enduser" then
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+
+  -xd_debug:-
+
+!elsif mode="work" then
+
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+
+  -dbgfmt = HLL
+  -xd_debug:+
+!end
+
+!module hdrstrip.mod

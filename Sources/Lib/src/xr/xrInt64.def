@@ -1,0 +1,30 @@
+(* Copyright (c) xTech 1992,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xrInt64; (* Hady. 20.06.96 17:22 *)
+
+IMPORT  SYSTEM;
+
+TYPE
+  CARD32 = SYSTEM.CARD32;
+  INT32 = SYSTEM.INT32;
+  X2C_int64 = RECORD
+    low: CARD32;
+    high: CARD32;
+  END;
+
+PROCEDURE X2C_INTTO64(VAR res: X2C_int64; val: INT32);
+PROCEDURE X2C_CARDTO64(VAR res: X2C_int64; val: CARD32);
+
+PROCEDURE X2C_IsNeg64(a: X2C_int64): BOOLEAN;
+
+PROCEDURE X2C_CMP64(a,b: X2C_int64): SYSTEM.int;
+(* returns integer value with sign equal to sign(a-b) *)
+
+(* folowing procedures return TRUE if fault (namely overflow) occures *)
+PROCEDURE X2C_64TOINT(VAR res: INT32; x: X2C_int64): BOOLEAN;
+PROCEDURE X2C_64TOCARD(VAR res: CARD32; x: X2C_int64): BOOLEAN;
+PROCEDURE X2C_UnMinus64(VAR res: X2C_int64; x: X2C_int64): BOOLEAN;
+PROCEDURE X2C_ADD64(VAR res: X2C_int64; a,b: X2C_int64): BOOLEAN;
+PROCEDURE X2C_MUL64(VAR res: X2C_int64; a: INT32; b: CARD32);
+
+END xrInt64.

@@ -1,0 +1,16 @@
+(* Copyright (C) 1999 XDS Ltd. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE xtsLib;
+
+TYPE ExecEnvPtr = POINTER TO CHAR;
+
+PROCEDURE Delay( t :LONGCARD);
+
+PROCEDURE Speaker( FreqHz, TimeMs :CARDINAL);
+
+PROCEDURE Environment(N :CARDINAL; VAR result :ARRAY OF CHAR);
+
+END xtsLib.

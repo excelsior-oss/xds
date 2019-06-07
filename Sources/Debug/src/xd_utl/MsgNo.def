@@ -1,0 +1,397 @@
+-- Определение номеров сообщений отладчика.
+
+DEFINITION MODULE ["C"] MsgNo;
+
+
+(*░░░░░░░░░░░░░░ С О О Б Щ Е Н И Я    П А Р С Е Р А ░░░░░░░░░░░*)
+
+CONST
+
+<* IF DEST_K26 THEN *>
+
+  Parse_Invalid_Option      = 'Неправильный параметр "%s".\n';
+  Parse_Paket_missed        = 'Отсутствует имя пакета.\n';
+  Parse_Extra_param_ignored = 'Параметры, начиная с %u, проигнорированны.\n';
+
+<* ELSE *>
+
+  Parse_Invalid_Option      = 'Incorrect parameter "%s".\n';
+  Parse_Paket_missed        = 'Batch name missed.\n';
+  Parse_Extra_param_ignored = 'Parameters from %d and further were ignored.\n';
+
+<* END *>
+
+
+
+(*░░░░░░░░░░░░░░  Н О М Е Р А   С О О Б Щ Е Н И Й  ░░░░░░░░░░░░*)
+
+CONST
+  Ok                    =   0; -- Ok
+  File_not_found        =   1; -- Файл не найден
+  Read_error            =   2; -- Ошибка чтения файла
+  File_is_empty         =   3; -- Файл пустой
+  Cant_open_protocol    =   4; -- Ошибка при открытии файла протокола
+
+  Not_enough_memory     =   6; -- Память кончилась...
+  Paket_missed          =   7; -- Отсутствует имя пакета
+
+  Too_many_pakets       =   9; -- Слишком много пакетов одновременно
+  Paket_cross_reference =  10; -- Взаимные вызовы пакетов %s и %s
+  Incorrect_paket_name  =  11; -- Hепpавильное имя пакета
+  Include               =  12; -- Включение пакета
+  Executing_part        =  13; -- Исполняется часть
+  Include_not_executing =  14; -- INCLUDE не выпонен
+
+  Not_found_RETURN      =  16; -- Нет оператора возврата из импорт. пакета
+  JumpByError           =  17; -- Переход по ошибке
+  DirectiveUndefined    =  18; -- Директива не определена
+  ErrorWritingProtocol  =  19; -- Ошибка при записи в протокол
+
+  Paket                 = 100; -- ПАКЕТ ОТЛАДКИ
+  Term                  = 101; -- Исполнение пакета отладки
+  Not_normal_term       = 102; -- Прерванно
+  Normal_term           = 103; -- Завершенно
+  Warning               = 104; -- Предупреждение
+  Error                 = 105; -- Ошибка в строке
+  FoundErrorsWarnings   = 106; -- Всего ошибок
+  Expected_parameter    = 107; -- Ожидаеться параметр
+  Expected_end_param    = 108; -- Ожидаются пробелы или комментарий
+  On_line               = 109; -- Номер строки
+
+  Dublicate_label       = 111; -- Повторное использование метки
+  Incorrect_label       = 112; -- Неправильная метка
+  Label_equal_operator  = 113; -- Метка совпадает с именем оператора
+  Label_not_found       = 114; -- Метка не найдена
+  Return_without_Gosub  = 115; -- ВОЗВРАТ/RETURN без ВЫЗОВ/GOSUB
+  Load_must_be_first    = 116; -- Программа не загружена
+  Incorrect_prot_name   = 117; -- Неправильное имя протокола
+  ExpectedOperatorName  = 118; -- Ожидаеться имя оператора
+  Test_begin_duplicate  = 119; -- Вложенные вырианты недопустимы
+  Test_Begin            = 120; -- Начало варианта
+  Test_End              = 121; -- Конец варианта
+  Expected_test_begin   = 122; -- Нет начала варианта
+  Time                  = 123; -- Время выпонения тактов.
+  Press_any_key         = 124; -- Нажмите любую клавишу...
+  Pause                 = 125; -- Пауза сек.
+  Incorrect_parameter   = 126; -- Неправильный параметр
+  Incorrect_prog_name   = 127; -- Неправильное имя программы
+  THEN_expected         = 128; -- THEN expected
+  Dublicate_GO          = 129; -- Повторный запуск программы
+  GOBackOn_without_GO   = 130; -- Программа не была запущена
+  Incorrect_address     = 131; -- Неправильный адрес
+  Dublicate_kod         = 132; -- Повторное задание темы
+  ProgramCantRestarted  = 133; -- Program not restarted
+  Expected_expression   = 134; -- Ожидаеться выражение
+  RestartNotAllowed     = 135; -- Restart not allowed
+  Expected_separator    = 136; -- Ожидаеться запятая
+  Mode_incorrect        = 137; -- Неправильный режим
+  ErrorsSetToMaxLimits  = 138; -- Максимальное количество ошибок
+  Incorrect_Model_Table = 139; -- Неправильная таблица для моделирования
+  Error_in_Model_Table  = 140; -- Ощибка в таблице для моделирования.
+  Desassembler_command  = 141; -- Команда ассемблера
+  Last_address          = 142; -- Адрес выполненной команды
+  Quota_expected        = 143; -- Ожидаются двойные кавычки
+  String_not_terminated = 144; -- Строка не завершена (ожидаются кавычки)
+  Break                 = 145; -- Останов
+  BreakProgInt          = 146; -- Программное прерывание
+  BreakWrite            = 147; -- Трассировка записи
+  BreakAddress          = 148; -- Останов по адресу
+  BreakIf               = 149; -- Останов по условию
+  BreakLine             = 150; -- Останов по заданной линии
+  ProgramFinished       = 151; -- Программа завершилась
+  Duplicate_ident_break = 152; -- Повторное использование идентификатора
+  Incorrect_event       = 153; -- Неправильный идентификатор события
+  Assert                = 154; -- Assert
+  Incorrect_length      = 155; -- Неправильная длина
+  Expected_var          = 156; -- Ожидается переменная
+  Expected_address      = 157; -- Ожидается адрес
+  Incorrect_line_down   = 158; -- Неправильная строка, сдвигаем вниз
+  Expected_line         = 159; -- Ожидаеться строка в модуле
+  Incorrect_line        = 160; -- Неправильная строка
+  Dublicate_reaction    = 161; -- Найдена реакция с такими же атрибутами
+  Cant_found_break      = 162; -- Останов с идентификатором не найден
+  Incorrect_equiv_name  = 163; -- Неправильное эквивалентное имя
+  EquName_not_found     = 164; -- Эквивалентное имя %s не определенно
+  Expected_program_name = 165; -- Ожидается имя программы
+  Expected_table_name   = 166; -- Ожидается имя таблицы
+  Expected_start_addr   = 167; -- Ожидается адрес запуска программы
+  Expected_label        = 168; -- Ожидается метка
+  Expected_break_ident  = 169; -- Ожидается идентификатор точки останова
+  Expected_break_type   = 170; -- Ожидается тип останова
+  Expected_break_attr   = 171; -- Ожидаются атрибуты останова
+  Expected_mode         = 172; -- Ожидается режим отображения информации
+  Expected_test_name    = 173; -- Ожидается имя варианта
+  Expected_equnamel     = 174; -- Ожидается эквивалентное имя
+  Expected_def_equnamel = 175; -- Ожидается определение эквивалентного имени
+  Incorrect_Expression  = 176; -- Неправильное выражение
+  ExpectedModuleName    = 177; -- Ожидается имя модуля обмена
+
+  Expected_interrupt_vector  = 178; -- Ожидается вектор прерывания
+  Incorrect_interrupt_vector = 179; -- Неправильный вектор прерывания
+  CantSupportMemoryManager   = 180; -- Невозможно установить поддержку MM
+
+  Impossible_Break      = 182; -- Плохой остонов установить нельзя
+  Undefined_Expression  = 183; -- Выражение не определено
+  BreakWriteReg         = 184; -- Трассировка записи в регистр
+  Incorrect_file_name   = 185; -- Неверное имя файла
+  DeviceTableNotLoaded  = 186; -- Не загружена таблица описаний устройств
+  WriteErrorRegister    = 187; -- Ошибка при записи в регистр
+  ReadErrorRegister     = 188; -- Ошибка при чтении из регистра
+  Expected_equ_type     = 189; -- Ожидается тип эквивалентного имени
+  BreakRead             = 190; -- Чтение из переменной
+  BreakReadReg          = 191; -- Чтение из регистра
+  BreakCall             = 192; -- Вызов процедуры
+  BreakCallByAddr       = 193; -- Вызов процедуры по адресу
+  BreakRet              = 194; -- Возврат из процедуры
+  BreakCompCreated      = 195; -- Останов по загрузке новой компоненты
+  BreakOutMem           = 196; -- Outmem
+  BreakWrProt           = 197; -- WrProt
+  BreakIO               = 198; -- Обмен с утройством
+  BreakCompDestroyed    = 199; -- Останов по выгрузке компоненты
+
+  Expected_VarOrReg     = 200; -- Ожидается переменная или регистр
+  Type_inconsistance    = 201; -- Несовместимость по присваиванию
+
+  WriteErrorAddress     = 203; -- Ошибка при записи по адресу
+  ReadErrorAddress      = 204; -- Ошибка при чтении по адресу
+  Struct_var_not_here   = 205; -- Здесь не может быть структю переменной
+  Point_reg_not_here    = 206; -- Здесь нельзя ссылаться на регистр
+  Overlapping_blocks    = 207; -- Копируемый блок перекрывает адрес
+  Expected_error_number = 208; -- Ожидается номер ошибки
+  Incorrect_error_act   = 209; -- Неправильное действие над списком ошибок
+  Incorrect_error_num   = 210; -- Неправильный номер ошибки
+  JumpErrAlreadyPresent = 211; -- Переход по ошибке был определен ранее
+  JumpByErrorNotPresent = 212; -- Переход по ошибке не определен
+  Module_not_found      = 213; -- Модуль не найден
+  Length_LS_const       = 214; -- Длина меньше реальной длины константы
+  Length_GR_const       = 215; -- Длина больше реальной длины константы
+  EquOperatorError      = 216; -- Нельзя переопределить имя оператора
+
+
+  LineNotFound          = 219; -- Стpочка не найдена
+  ExpectedBooleanValue  = 220; -- Ожидается булевское выражение
+
+
+
+  User_React_Default    = 313; -- Ctrl-Break
+  go_React_Default      = 314; -- События go не должно быть
+
+  IncorrectEntryPoint   = 316; -- Hекоppектная точка входа в код
+
+
+  FileDeviceEmpty       = 501; -- Пустой файл описаний устройств
+  ExpectedDefineDevice  = 502; -- Ожидается определение устройства
+  ExpectedDeviceName    = 503; -- Ожидается имя устройства
+  DublicateDevice       = 504; -- Повторное описание устройства
+
+  ExpectedModelName     = 506; -- Ожидается определение имени модели
+  ExpectedDefineRegs    = 507; -- Ожидается определения регистров
+  ExpectedRegisterName  = 508; -- Ожидается имя регистра
+  ExpectedAddrIO        = 509; -- Ожидается адрес обмена
+  DublicateAddress      = 510; -- Повторное описание адреса обмена
+  DublicateNameAddress  = 511; -- Повторное использование имени адреса
+  ExpectedTypeIO        = 512; -- Ожидается тип операция обмена
+  IncorrectTypeIO       = 513; -- Неправильный тип операции обмена
+  DeviceNotFound        = 514; -- Устройство не найдено
+  PktModelNotInstall    = 515; -- Нештатная модель не определена
+  DataNotDefine         = 516; -- Данные для регистра не определены
+  Incorrect_Data        = 517; -- Неверный список данных для регистра
+  AddressNotFound       = 518; -- Адрес обмена не найден
+  IO_Exchange_Pre       = 519; -- Обмен: операция, с адреса, длина.
+  IO_Exchange_Post      = 520; -- Завершение обмена
+  IO_Write              = 521; -- Запись
+  IO_Read               = 522; -- Чтение
+  IO_Info               = 523; -- Информация об устройстве, регистре
+  IO_Remark             = 524; -- Комментарий
+  IO_ExchangeArea       = 525; -- Буфер
+
+  MM_ALLOCATE           = 526; -- Моделирование MM ALLOCATE
+  MM_ALLOCATE_Error     = 527; -- Ошибка при моделировании ALLOCATE
+  MM_DEALLOCATE         = 528; -- Моделирование MM DEALLOCATE
+  MM_DEALLOCATE_Error   = 529; -- Ошибка при моделировании DEALLOCATE
+
+  ModelProcNotDefine    = 530; -- Модель для процедуры не определена
+  ModelProcCantInstall  = 531; -- Невозможно установить моделирование
+  ModelProcedure        = 532; -- Результаты моделирование
+
+  IncompatibleTypes     = 600; -- Несовместимые типы
+  DivizionByZero        = 601; -- Деление на нуль
+  IllegalUsageOperation = 602; -- Неправильное использование операции
+  RealTooBig            = 603; -- Слишком большая вещественная константа
+  EmptyIntConstant      = 604; -- Задана база без определения числа
+  IncorrectIntConstant  = 605; -- Неправильноя целая константа
+  IncorrectRealConstant = 606; -- Неправильная вещественная константа
+  ErrorRealOperation    = 607; -- Ошибка при выполнении вещ. операции
+  IntTooBig             = 608; -- Слишком большая целая константа
+  UnknownSpecialName    = 609; -- Неизвестное специальное имя
+
+  IncorrectToken        = 611; -- Неправильная лексема
+  UnknownType           = 612; -- Неизвестный тип
+  ObjectIsNotArray      = 613; -- Обьект не является массивом
+  IncompatibleTypeIndex = 614; -- Несовместимый тип индекса
+  RangeError            = 615; -- Выход за границы индексов
+  ExpectedDot           = 616; -- Ожидается символ .
+  ExpectedIdent         = 617; -- Ожидается идентификатор
+  UsageEquNameInCycles  = 618; -- Циклическое использование экв. имени
+  ObjectNotFound        = 619; -- Обьект не найден
+  ExpectedIntConstant   = 620; -- Ожидается целая константа
+  IncorrectFactor       = 621; -- Неправильный множитель
+  ExpressionIsEmpty     = 622; -- Выражение пустое
+  IncorrectExpression   = 623; -- Неправильное выражение
+  CannotConvet2Int      = 624; -- Ожидается целое значение
+  CannotConvert2AddrReg = 627; -- Ожидается адрес или регистр
+
+  ErrorAccessMemory     = 629; -- Ошибка доступ к памяти
+  ObjectIsNotRecord     = 630; -- Объект не является записью
+  ExpectedFieldName     = 631; -- Ожидается идентификатор поля записи
+  NilPointerDereference = 632; -- Разыменование NIL-указателя
+  InvalidArrayDesc      = 633; -- Неправильный дескриптор дин. массива
+
+  LoadingProgram        = 700; -- Загрузка программы
+  ReadErrorSectionTable = 701; -- Ошибка при чтении таблицы секций
+  ReadErrorNamesTable   = 702; -- Ошибка при чтении таблицы имен
+  ErrorInNamesTable     = 703; -- Ошибка в таблице имен
+  ErrorStickerNames     = 704; -- Неправильная наклейка конверта имен
+  NamesTableEmpty       = 705; -- Таблица имен не содержит ни одного имени
+  ErrorCRC_NamesTable   = 706; -- Неправильная контр. сумма таблицы имен
+  ReadErrorTypesTable   = 707; -- Ошибка при чтении таблицы типов
+  ErrorInTypesTable     = 708; -- Ошибка в таблице типов
+  ErrorStickerTypes     = 709; -- Неправильная наклейка конверта типов
+  ErrorCRC_TypesTable   = 710; -- Неправильная контр. сумма таблицы типов
+  ReadErrorSymbolsTable = 711; -- Ошибка при чтении таблицы обьектов
+  ErrorInRefFile        = 712; -- Ошибка в отладочной информации
+  ErrorStickerSymbols   = 713; -- Неправильная наклейка конверта обьктов
+  ErrorCRC_SymbolsTable = 714; -- Неправильная контр. сумма таблицы обьектов
+  REFfile_missing       = 715; -- Отсутствует файл с отладочной информацией
+  WrongDebugInfo        = 716; -- Ошибка при открытии файл с отладочной инф.
+  ReadErrorMagic        = 717; -- Ошибка при чтении идентификатора файла
+  UnknownCompilerType   = 718; -- Неизвестный тип компилятора
+  ABSfile_missing       = 719; -- Отсутствует загрузочный файл программы
+  OpenErrorABSfile      = 720; -- Ошибка при открытии загрузочного файла
+  InterpretErrorLoading = 721; -- Ошибка при загрузке интерпретатором
+  Invalid_abs_file      = 722; -- Ошибки при считывании или в структуре ABS
+  Overlapped_mods       = 723; -- Перекрываются (разные?) модули
+  LoadDescMashineFault  = 724; -- Ошибка при загрузке описания машины
+  ExecDebugInconsistency= 725; -- Несоответствие ключей для исполняемого файла и отладочной информации
+
+  ReadErrorCodeTable    = 728; -- Ошибка при чтении таблицы "строка-код"
+  ProgramOlderThanRef   = 729; -- Программа 'старше' чем ref-файл
+  RefOlderThanSource    = 730; -- Ref-файл 'старше' исходного текста модуля
+  DifferentTime         = 731; -- Время исх. текста не совпадает с ref
+
+  ErrorGetProgramInfo   = 732; 
+  ErrorCheckDebugInfo   = 733;
+  ProgramAlredyStarted  = 734;
+  ProgramNotFound       = 735;
+  CannotCreateProcess   = 736;
+  InvalidProgramHeader  = 737;
+
+  IncorrectIP           = 740;
+
+
+  -- Strings used in dialog windows
+  -- Window headers
+
+  Classes               = 801;
+  ModuleVariables       = 802;
+  Modules_              = 803;
+  CallStack             = 804;
+  Watches               = 805;
+  Breaks                = 806;
+  Segments_             = 807;
+  Registers             = 808;
+  Dump                  = 809;
+  Stack                 = 810;
+  Colors                = 811;
+  Patterns              = 812;
+  Options               = 813;
+  DeviceRegs            = 814;
+  Devices               = 815;
+  StructVar             = 816;
+  Error_header          = 817;
+  Warning_header        = 818;
+  Header_SetNewValue    = 819;
+
+  dlg_EnterLine            = 820;
+  dlg_EntryPoint           = 821;
+  dlg_EnterWatch           = 822;
+  dlg_EnterProgName        = 823;
+  dlg_EnterVariable        = 824;
+  dlg_EnterUptoAddr        = 825;
+  dlg_BreakpointDelay      = 826;
+  dlg_ExpressionBreakpoint = 827;
+  dlg_EnterRestartAddr     = 828;
+  Procedures               = 829;
+  Labels                   = 830;
+  Methods                  = 831;
+  Functions                = 832;
+  ModuleTypes_             = 833;
+  dlg_EnterTypeAlias       = 834;
+  Aliases                  = 835;
+
+  Information_header       = 839;
+  hdr_Counter              = 840;
+  hdr_Condition            = 841;
+  hdr_Pass_Left            = 842;
+  LocalVariables           = 843;
+  ParameterVariables       = 844;
+  GlobalVariables          = 845;
+
+  EmptyCondition           = 850;
+  BreakNotification        = 851;
+  ErrorInConfigFile        = 852;
+  ErrorInKbdFile           = 853;
+  ErrorLineOutOfBounds     = 854;
+  AboutHeader              = 855;
+
+  Cant_resolve              = 900;
+  Help_ListSections         = 901;
+  Help_Sections             = 902;
+  HelpFileNotFoundAtStartup = 903;
+  InvalidOption             = 904;
+  DisasmLine                = 905;
+  InputExpression           = 906;
+  InputLineNo               = 907;
+  BreakLineReadMemory       = 908;
+  BreakLineReadRegister     = 909;
+  BreakLineWriteMemory      = 910;
+  BreakLineWriteRegister    = 911;
+  BreakLineRelation         = 912;
+  Dump_WriteProtected       = 913;
+  HeaderStack               = 914;
+  InputAddress              = 915;
+  InputCondition            = 916;
+  HardwareAccessBreakLimit  = 917;
+  WrongExprInCurrentContext = 918;
+  CompUnload_BreakDisasbled = 919;
+  RTS_exception             = 920;
+  ExceptionAtStartup        = 921;
+
+  Host_unknown                   = 951;
+  Wrong_socket                   = 952;
+  Connection_not_established     = 953;
+  Wrong_identification           = 954;
+  Connection_already_established = 955;
+  Over_max_pending_connects      = 956;
+  Wrong_connection               = 957;
+  Unknown_transport              = 958;
+  Wrong_initialization_transport = 959;
+  DLL_transport_not_found        = 960;
+  Wrong_format_DLL_transport     = 961;
+  Something_error                = 962;
+
+  SomeInternalDebuggerError      = 999;
+
+
+ <* IF DEFINED(SCHERN_K26) AND SCHERN_K26 THEN *>
+  No_Fi_ID              =1000; (* Нет файла с исходными данными для ...     *)
+  Prob_Red_Fi           =1001; (* Проблемы с red файлом                     *)
+  Error_Fi_ID           =1002; (* Неверен формат записей с исходными данными *)
+  No_open_TID           =1003; (* Не открывается файл для записи текстов ИД  *)
+  No_open_ID_IDT        =1004; (* Не открывается файл c ИД (ID или IDT)      *)
+  No_read_ID_IDT        =1005; (* Не читается файл c ИД (ID или IDT)      *)
+  No_open_ID            =1006; (* Не открывается файл для записи информации о ИД  *)
+ <* END *>
+
+END MsgNo.
+

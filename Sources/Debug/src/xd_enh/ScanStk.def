@@ -1,0 +1,7 @@
+-- Сканирование стека вызовов
+
+DEFINITION MODULE ScanStk;
+
+PROCEDURE ScanCallStack;
+
+END ScanStk.

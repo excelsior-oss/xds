@@ -1,0 +1,9 @@
+-- Головной файл диалогового отладчика.
+-- Содержит начальную процедуру запуска диалогового отладчика
+
+DEFINITION MODULE Dlg_Main;
+
+PROCEDURE Start;
+PROCEDURE StartFromPack(str: ARRAY OF CHAR);
+
+END Dlg_Main.

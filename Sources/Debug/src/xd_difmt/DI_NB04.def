@@ -1,0 +1,15 @@
+-- Конвертор для формата NB04 (HLL) во внутренее представление
+
+DEFINITION MODULE DI_NB04;
+
+FROM DI_Types IMPORT ComNo, COMPONENT, RAW_DEBUG_INFO, PROCESS_DEBUGINFO_PROC;
+
+VAR
+  ExtendedFormat: BOOLEAN;
+
+PROCEDURE ProcessDebugInfo(com: ComNo; VAR Component: COMPONENT): CARDINAL;
+
+PROCEDURE ReadModules(com: ComNo; VAR Component: COMPONENT): CARDINAL;
+PROCEDURE BuildForMod(modno: CARDINAL; com: ComNo; VAR Component: COMPONENT);
+
+END DI_NB04.

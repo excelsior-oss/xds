@@ -1,0 +1,199 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7F5EDB7F-BDE1-4F7F-AD6F-FF77F2262F0A}</ProjectGuid>
+    <RootNamespace>xlink</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)workplace\</OutDir>
+    <IntDir>$(SolutionDir)ch\$(Configuration)\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)workplace\</OutDir>
+    <IntDir>$(SolutionDir)ch\$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/Zp1 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\minizip;$(ProjectDir)src\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;xos_WINNT;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <StackReserveSize>10485760</StackReserveSize>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/Zp1 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\minizip;$(ProjectDir)src\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;xos_WINNT;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <StackReserveSize>10485760</StackReserveSize>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\args.cpp" />
+    <ClCompile Include="src\dbg99.cpp" />
+    <ClCompile Include="src\dbgcv.cpp" />
+    <ClCompile Include="src\dbgedif.cpp" />
+    <ClCompile Include="src\dbghll.cpp" />
+    <ClCompile Include="src\debug.cpp" />
+    <ClCompile Include="src\efs.cpp" />
+    <ClCompile Include="src\idents.cpp" />
+    <ClCompile Include="src\implib.cpp" />
+    <ClCompile Include="src\link.cpp" />
+    <ClCompile Include="src\messages.cpp" />
+    <ClCompile Include="src\minizip\ioapi.c" />
+    <ClCompile Include="src\minizip\unzip.c" />
+    <ClCompile Include="src\parser.cpp" />
+    <ClCompile Include="src\rdntres.cpp" />
+    <ClCompile Include="src\rdos2res.cpp" />
+    <ClCompile Include="src\readcoff.cpp" />
+    <ClCompile Include="src\readdll.cpp" />
+    <ClCompile Include="src\readedf.cpp" />
+    <ClCompile Include="src\readeil.cpp" />
+    <ClCompile Include="src\readelf.cpp" />
+    <ClCompile Include="src\reader.cpp" />
+    <ClCompile Include="src\readomf.cpp" />
+    <ClCompile Include="src\readomf0.cpp" />
+    <ClCompile Include="src\readxomf.cpp" />
+    <ClCompile Include="src\struct.cpp" />
+    <ClCompile Include="src\typestable.cpp" />
+    <ClCompile Include="src\writeeil.cpp" />
+    <ClCompile Include="src\writeelf.cpp" />
+    <ClCompile Include="src\writelx.cpp" />
+    <ClCompile Include="src\writepe.cpp" />
+    <ClCompile Include="src\writer.cpp" />
+    <ClCompile Include="src\xdebug.cpp" />
+    <ClCompile Include="src\xmem.cpp" />
+    <ClCompile Include="src\xos.cpp" />
+    <ClCompile Include="src\xshell.cpp" />
+    <ClCompile Include="src\zlib\adler32.c" />
+    <ClCompile Include="src\zlib\compress.c" />
+    <ClCompile Include="src\zlib\crc32.c" />
+    <ClCompile Include="src\zlib\deflate.c" />
+    <ClCompile Include="src\zlib\gzio.c" />
+    <ClCompile Include="src\zlib\infback.c" />
+    <ClCompile Include="src\zlib\inffast.c" />
+    <ClCompile Include="src\zlib\inflate.c" />
+    <ClCompile Include="src\zlib\inftrees.c" />
+    <ClCompile Include="src\zlib\trees.c" />
+    <ClCompile Include="src\zlib\uncompr.c" />
+    <ClCompile Include="src\zlib\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\args.h" />
+    <ClInclude Include="src\cpb.h" />
+    <ClInclude Include="src\dbg99.h" />
+    <ClInclude Include="src\dbgcv.h" />
+    <ClInclude Include="src\dbgedif.h" />
+    <ClInclude Include="src\dbghll.h" />
+    <ClInclude Include="src\debug.h" />
+    <ClInclude Include="src\eil.h" />
+    <ClInclude Include="src\idents.h" />
+    <ClInclude Include="src\implib.h" />
+    <ClInclude Include="src\jet.h" />
+    <ClInclude Include="src\messages.h" />
+    <ClInclude Include="src\omf.h" />
+    <ClInclude Include="src\parser.h" />
+    <ClInclude Include="src\rdntres.h" />
+    <ClInclude Include="src\rdos2res.h" />
+    <ClInclude Include="src\readcoff.h" />
+    <ClInclude Include="src\readdll.h" />
+    <ClInclude Include="src\readedf.h" />
+    <ClInclude Include="src\readeil.h" />
+    <ClInclude Include="src\readelf.h" />
+    <ClInclude Include="src\reader.h" />
+    <ClInclude Include="src\readomf.h" />
+    <ClInclude Include="src\readomf0.h" />
+    <ClInclude Include="src\readxomf.h" />
+    <ClInclude Include="src\struct.h" />
+    <ClInclude Include="src\typestable.h" />
+    <ClInclude Include="src\writeeil.h" />
+    <ClInclude Include="src\writeelf.h" />
+    <ClInclude Include="src\writelx.h" />
+    <ClInclude Include="src\writepe.h" />
+    <ClInclude Include="src\writer.h" />
+    <ClInclude Include="src\xdebug.h" />
+    <ClInclude Include="src\xdefs.h" />
+    <ClInclude Include="src\xelf.h" />
+    <ClInclude Include="src\xlx.h" />
+    <ClInclude Include="src\xmem.h" />
+    <ClInclude Include="src\xomf.h" />
+    <ClInclude Include="src\xos.h" />
+    <ClInclude Include="src\xpe.h" />
+    <ClInclude Include="src\xshell.h" />
+    <ClInclude Include="src\zlib\crc32.h" />
+    <ClInclude Include="src\zlib\deflate.h" />
+    <ClInclude Include="src\zlib\inffast.h" />
+    <ClInclude Include="src\zlib\inffixed.h" />
+    <ClInclude Include="src\zlib\inflate.h" />
+    <ClInclude Include="src\zlib\inftrees.h" />
+    <ClInclude Include="src\zlib\trees.h" />
+    <ClInclude Include="src\zlib\zconf.h" />
+    <ClInclude Include="src\zlib\zconf.in.h" />
+    <ClInclude Include="src\zlib\zlib.h" />
+    <ClInclude Include="src\zlib\zutil.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

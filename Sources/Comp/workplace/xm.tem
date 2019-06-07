@@ -1,0 +1,252 @@
+!if not defined gui then
+  !new gui-
+!end
+!if not defined libname then
+  !new libname=
+!end
+!if not defined genlib then
+  !new genlib-
+!elsif genlib and (libname="") then
+  !if project#"" then
+    !set libname = $(project)
+  !else
+    !set libname = default
+  !end
+!end
+!if not defined dllname then
+  !new dllname=
+!end
+!if not defined gendll then
+  !new gendll-
+!elsif gendll and (dllname="") then
+  !if project#"" then
+    !set dllname = $(project)
+  !else
+    !set dllname = default
+  !end
+!end
+!if not defined exename then
+  !new exename=
+!end
+!if not genlib and not gendll and (exename="") and (project#"") then
+  !set exename = $(project)
+!end
+!if not defined usedll then
+  !new usedll-
+!end
+! "M\t= %s\n",mkfname#>mkfext
+! "XDSDIR\t= %s\n",xdsdir
+!if target_fs="UNIX" then
+  ! "INCL\t= $(XDSDIR)/include\n"
+!elsif (target_fs="UNC") or (target_fs="FATFS") then
+  ! "INCL\t= $(XDSDIR)\\include\n"
+!else
+  ! "INCL\t=\n"
+!end
+!if genlib then
+  ! "XDSLIB\t=\n"
+!elsif gendll or usedll then
+  ! "XDSLIB\t= %s\n","dllxds"#libext
+!else
+  ! "XDSLIB\t= %s\n","libxds"#libext
+!end
+
+!if defined topspeed and not genlib then
+  !if gendll or usedll then
+    ! "TSLIB\t= %s\n","dllts"#libext
+  !else
+    ! "TSLIB\t= %s\n","libts"#libext
+  !end
+!else
+  ! "TSLIB\t=\n"
+!end
+
+!if genlib then
+  ! "TARGET\t= %s\n",libname#>libext
+!elsif gendll then
+  ! "TARGET\t= %s\n",dllname#>dllext
+!elsif exename#"" then
+  ! "TARGET\t= %s\n",exename#>exeext
+!else
+  ! { main : "TARGET\t= %s\n",#>exeext }
+!end
+
+!if cc="Watcom" then
+  !set link = "wmake /f %s",mkfname#>mkfext
+  ! "CDEFS\t=\n"
+  ! 'CF\t= -s -d2 -mf -3s -fp3 -ze -zm -zq -omiler -s -fpi87 -I"$(INCL)"'
+  !if defined include and (include#"") then
+    ! " -I%s",include
+  !end
+  ! "\n"
+  ! "CC\t= @wcc386\n"
+  !new ccomp = @echo $*\n\t$$(CC) $$(CDEFS) $$(CF) -fo%s %s
+
+!elsif cc="MSVC" then
+  !set link = "nmake /nologo /f %s",mkfname#>mkfext
+  ! "CDEFS\t= /DX2C_alt_offs\n"
+  !if gendebug then
+    ! 'CF\t= /c /nologo /w /J /Zp%s /Zi /I"$(INCL)"',alignment
+  !else
+    ! 'CF\t= /c /nologo /w /J /Zp%s /I"$(INCL)"',alignment
+  !end
+  !if defined include and (include#"") then
+    ! " -I%s",include
+  !end
+  ! "\n"
+  !if gendll then
+    ! "GENDLL\t= /LD -DX2C_GEN_DLL\n"
+  !elsif defined usedll and usedll then
+    ! "GENDLL\t= -DX2C_GEN_DLL\n"
+  !else
+    ! "GENDLL\t= \n"
+  !end
+  ! "CC\t= @cl\n"
+  !if gencpp then
+    !new ccomp = $$(CC) $$(CDEFS) $$(CF) /Fo%s /Tp%s
+  !else
+    !new ccomp = $$(CC) $$(CDEFS) $$(CF) $$(GENDLL) /Fo%s /Tc%s
+  !end
+!elsif cc="Borland" then
+  !set link = "make -f%s",mkfname#>mkfext
+  ! "CDEFS\t=\n"
+  !if gendebug then
+    ! 'CF\t= -c -v -I"$(INCL)"'
+  !else
+    ! 'CF\t= -c -I"$(INCL)"'
+  !end
+  !if defined include and (include#"") then
+    ! " -I%s",include
+  !end
+  ! "\n"
+  !if gendll then
+    ! "GENDLL\t= -tWDE -DX2C_GEN_DLL\n"
+  !elsif defined usedll and usedll then
+    ! "GENDLL\t= -DX2C_GEN_DLL\n"
+  !else
+    ! "GENDLL\t= \n"
+  !end
+  ! "CC\t= @bcc32\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) $$(GENDLL) -o%s %s
+
+!else
+  !set link = "make -f %s",mkfname#>mkfext
+  ! "CFLAGS\t= -m32 -funsigned-char"
+  !if gendebug then
+    ! " -g"
+  !end
+  ! "\n"
+  ! if target_family="UNIX" then
+    ! "CDEFS\t= -D_unix\n"
+  !elsif (target_family="WIN32") or (target_family="OS2") then
+    ! "CDEFS\t= -D_msdos\n"
+  !else
+    ! "CDEFS\t=\n"
+  !end
+  ! "CC\t= gcc\n"
+  !new ccomp = $$(CC) $$(CFLAGS) $$(CDEFS) -I"$(INCL)" -c -o %s %s
+!end
+
+# ------------------ objects enumeration ------------------
+#                    -------------------
+
+!if cc="Watcom" then
+  ! "OBJ\t=\n"; { obj : "OBJ = $+$(OBJ)$- %s\n",# }
+!else
+  ! "OBJ\t="; { obj : " \\\n\t%s",# }
+  ! "\n"
+!end
+
+# ------------------- target make rules -------------------
+#                     -----------------
+
+! '$(TARGET) : $(OBJ) "$(XDSLIB)"\n'
+!if cc="Watcom" then
+  ! "\t@if exist xds.lnk @del xds.lnk\n"
+  ! "\t@%append xds.lnk sys nt\n"
+  ! "\t@%append xds.lnk op case\n"
+  ! "\t@%append xds.lnk op stack=%s\n",stacklimit
+  !if gui then
+    ! "\t@%append xds.lnk runtime windows\n"
+  !else
+    ! "\t@%append xds.lnk runtime console\n"
+  !end
+  ! "\t@%append xds.lnk lib kernel32.lib\n"
+  ! "\t@%append xds.lnk lib user32.lib\n"
+  ! "\t@%append xds.lnk lib gdi32.lib\n"
+  ! "\t@%append xds.lnk lib comdlg32.lib\n"
+  !if gendebug then
+  ! "\t@%append xds.lnk debug watcom all\n"
+  !end
+  ! { obj : "\t@%append xds.lnk file %s\n",# }
+  ! "\t@%append xds.lnk name '$(TARGET)'\n"
+  ! "\t@%append xds.lnk lib '$(XDSLIB)'\n"
+  !if defined topspeed then
+  ! "\t@%append xds.lnk lib '$(TSLIB)'\n"
+  !end
+  ! "\t@wlink @xds.lnk\n"
+  ! { res : "\t@wrc %s $(TARGET)\n",# }
+!elsif (cc="MSVC") and genlib then
+  ! "\t@lib /nologo /out:%s @<<\n",libname#>libext
+  ! "$(OBJ)\n<<\n"
+!elsif (cc="MSVC") and not genlib then
+  ! "\t@link.exe @<<\n"
+  ! "/nologo\n"
+  !if gendebug then
+    ! "/debug\n"
+    ! "/incremental:yes\n"
+  !else
+    ! "/release\n"
+    ! "/incremental:no\n"
+  !end
+  !if gui then
+    ! "/subsystem:windows\n"
+  !else
+    ! "/subsystem:console\n"
+  !end
+  ! "/machine:I386\n"
+  ! "/stack:%s\n",stacklimit
+  ! '/out:"$(TARGET)"\n'
+  ! "$(OBJ)\n"
+  ! '"$(XDSLIB)"\n'
+  !if defined topspeed then
+  ! '"$(TSLIB)"\n'
+  !end
+  ! "WINMM.LIB\n"
+  ! "USER32.lib\n"
+  ! "KERNEL32.lib\n"
+  ! "GDI32.lib\n"
+  ! "COMDLG32.lib\n"
+  ! { res : '"%s"\n',# }
+  ! "<<\n"
+!elsif cc="Borland" then
+  ! "\t@ilink32 @&&|\n"
+  !if gendebug then
+    ! "\t -v "
+  !else
+    ! "\t"
+  !end
+  !if gui then
+    ! "-aa "
+  !else
+    ! "-ap "
+  !end
+  !if gendll then
+    ! "-Tpd "
+  !else
+    ! "-Tpe "
+  !end
+  ! "+\n\t c0x32.obj $(OBJ), $(TARGET),, $(XDSLIB) $(TSLIB) cw32.lib import32.lib ,,"
+  ! { res : " %s",# }
+  ! "\n|\n"
+!else
+  ! '\t$(CC) $(CFLAGS) $(LDFLAGS) -o $(TARGET) $(OBJ) "$(XDSLIB)" "$(TSLIB)"\n'
+!end
+
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+! { c : { header : "%-24s : %s\n",^#>objext,#header } \
+  "%-24s : $(M) %s\n\t",#>objext,#; ccomp,#>objext,#; "\n\n" }
+
+# end of makefile

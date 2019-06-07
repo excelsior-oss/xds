@@ -1,0 +1,7 @@
+NAME            edt WINDOWAPI
+DESCRIPTION     "FSA creature (C) 1995 by *FSA & NHA Inc. "
+CODE            MOVEABLE
+DATA            MOVEABLE MULTIPLE
+STUB            "OS2STUB.EXE"
+STACKSIZE       32767
+HEAPSIZE        32767

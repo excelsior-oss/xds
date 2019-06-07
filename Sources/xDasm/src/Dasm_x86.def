@@ -1,0 +1,15 @@
+DEFINITION MODULE Dasm_x86;
+
+IMPORT kt := KrnTypes;
+
+-- get_prefix_only - получить только ПЕРВЫЙ префикс команды
+PROCEDURE Disasm (addr: kt.ADDRESS; curr: BOOLEAN; VAR asm, info: ARRAY OF CHAR; VAR len: CARDINAL; get_prefix_only := FALSE: BOOLEAN): BOOLEAN;
+
+PROCEDURE IsCall (addr: kt.ADDRESS): CARDINAL;
+
+PROCEDURE IsRet (addr: kt.ADDRESS): BOOLEAN;
+
+PROCEDURE IsJmpForDll (addr: kt.ADDRESS): kt.ADDRESS;
+
+
+END Dasm_x86.

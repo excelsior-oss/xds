@@ -1,0 +1,697 @@
+\chapter{Dynamic linking}
+\label{dll}
+
+The traditional way of linking programs, when all object modules are
+collected into a single executable, is called {\em static linking}, because
+all references between modules are resolved statically, at link time.
+This approach has certain disadvantages:
+
+\begin{itemize}
+\item The resulting program always contains all the code and data
+      that {\em may be required} during execution, and all that code and
+      data are loaded into memory when the program is started.
+      However, in a particular environment significant subsets of them
+      are {\em never used} and just waste memory space.
+\item When any of the object modules are modified, the entire
+      executable has to be relinked.
+\item If an application suite contains several executables,
+      each of them contains a copy of the run-time library.
+      Other code is often duplicated as well.
+\end{itemize}
+
+{\em Dynamic linking} allows several applications to use a single copy
+of an executable module (dynamic link library, or DLL). The external
+references to procedures and variables built into a DLL are resolved
+at load time or even at run time instead of link time.
+Applications may use these procedures and variables as though
+they were part of the applications' executable code.
+
+The major advantages of dynamic linking are:
+
+\begin{itemize}
+\item Memory requirements are reduced. A DLL is loaded into memory
+      only once, whereas more than one application may use a single DLL
+      at the moment, thus saving memory space.
+
+\item Application support and maintenance costs are lowered. If there was
+      a bug fix or a code improvement in a DLL, there is no need to
+      re-ship the entire application to customers.
+
+\item Application enhancement is simplified. If an
+      application uses DLLs to support different devices, file
+      formats, or languages, it is only necessary to provide an
+      additional DLL to add support for a new device, another file format,
+      or one more language.
+
+      Some applications, such as Netscape browsers, may be enhanced with
+      third-party plug-ins implemented as DLLs with a known interface.
+
+\item There is no restrictions on multi-language programming.
+      DLL procedures and variables
+      may be utilized by an application written in any programming
+      language, provided that the programming system supports calling and
+      naming conventions used in the DLL.
+
+\item Applications may control memory usage by loading DLLs on demand
+      and unloading them when they are no longer needed.
+
+\end{itemize}
+
+The Windows operating system makes heavy use of DLLs.
+For instance, system DLLs provide interfaces to the kernel and devices.
+
+\section{How does the dynamic linking work}
+\label{dll:overview}
+
+A dynamic link library has a table which contains names of entities (procedures
+and variables) which are {\em exported} --- made available to other executable
+components, along with the information about their location within the DLL.
+Table entries also have numbers associated with them --- so called
+{\em ordinal numbers}.
+
+In turn, an executable file (EXE or DLL) referencing the DLL contains,
+for each reference, a record with the DLL name and a name or an ordinal number of
+an exported entity. When the operating system loads the executable, it
+also loads all the DLLs it references, and tunes up the executable's code so that
+it will call DLL procedures and access DLL variables. This is called
+{\em load-time} dynamic linking.
+
+Alternatively, an application may explicitly load a DLL at run-time using
+an API call. Another call retrieves an address of a procedure or variable
+exported from the loaded DLL, given its name or ordinal number. This is called
+{\em run-time} dynamic linking.
+
+See \ref{dll:using} for more information on these two types of dynamic linking.
+
+\section{Quick start}
+
+If you want to separate one or more sets of modules from
+your existing application into DLLs, perform the following steps:
+
+\begin{enumerate}
+\item Determine the list of modules which will constitute the DLL.
+      Take into account that it is impossible to import entites from an executable
+      to a DLL (but quite possible from one DLL to another). % ??? cyclic import - possible?
+\item Move the source files for these modules to a separate directory.
+      It must differ from directories containing source files for
+      the executable and the other DLLs, if any.
+\item Create a project file for the DLL with the following settings:
+{\samepage
+\begin{verbatim}
+    -GENDLL+
+    -USEDLL+
+    -DLLEXPORT+
+    -IMPLIB-
+    -LOOKUP=*.mod|*.def|*.ob2=<dll source files directory>
+    !module module1
+    !module module2
+      .  .  .
+\end{verbatim}
+where \verb'module1', \verb'module2', etc. are the modules which has to be visible
+outside the DLL.
+} % \samepage
+\item Repeat the previous steps until you set up all DLLs.
+\item Add the following settings to the main project file:
+\begin{verbatim}
+    -USEDLL+
+    -IMPLIB-
+\end{verbatim}
+\item Remove all the object and symbol files of your application's modules.
+\item Build the DLL project(s).
+\item Build the main project.
+\item Run your application to make sure all things work.
+\end{enumerate}
+
+
+\section{Using dynamically linked run-time libraries}
+\label{dll:runtime}
+
+You may link the \XDS{} run-time library into your application
+either statically or dynamically. The \OERef{USEDLL} option controls
+which version of the run-time library is to be used.
+By default, this option is set OFF, causing the run-time library to
+be statically linked. With this setting, your application is linked
+and executed exactly as it was done with Native XDS-x86 v2.2x.
+
+If your application suite contains more than one EXE file, you may wish to
+use the dynamically linked version of the run-time library, in order to
+save disk space and memory.
+
+{\bf Note:} If your application itself is dynamically linked,
+it is essential to use the dynamically linked run-time library to ensure that
+all executable modules use the same unique instance of the run-time library
+data during execution.
+
+See Chapter \ref{redistr} for the run-time library redistribution rights.
+
+\section{Creating your own DLL}
+\label{dll:create}
+
+\subsection{Setting up the environment}
+\label{dll:create:env}
+
+{\bf
+For your dynamically linked application to function properly,
+it is essential to correctly set up the related compiler options,
+so please read this section carefully.
+}
+
+First of all, the \OERef{USEDLL} compiler option has to be set ON
+during compilation of each module, regardless of whether it
+will be linked into an EXE or a DLL, indicating that a
+\See{dynamically-linked version of the run-time library}{}{dll:runtime}
+is to be used.
+
+The \OERef{GENDLL} compiler option must be set ON during compilation
+of modules which are to be built into a DLL, and OFF for modules
+which will constitute the EXE file.
+
+The compiler stores the name of the DLL into which a
+module will be linked in that module's symbol file. This information may be used
+then for \See{linking without import libraries}{}{dll:using:load-time}.
+
+In the \See{COMPILE}{}{xc:modes:compile} and
+\See{MAKE}{}{xc:modes:make} modes, specify the target DLL name in the
+\OERef{DLLNAME} equation.
+In the \See{PROJECT mode}{}{xc:modes:project}, if \OERef{DLLNAME}
+is not set, the name of the project file is assumed.
+
+\begin{quote}{\footnotesize
+    {\bf Warning:} Under Windows NT/95, the compiler uses information
+    about DLL names when producing code for dynamically linked variables
+    access. If your program crashes or incorrectly behaves trying to access
+    such a variable, make sure that you comply with the above requirement.
+    You may need to remove all symbol files or use the
+    \See{ALL submode}{}{xc:modes:all}.
+    } % end \footnotesize
+\end{quote}
+
+Depending on whether you want to use \See{import libraries}{}{dll:using:load-time},
+you may also wish to specify the \OERef{IMPLIB} compiler option.
+Use the \OERef{DLLEXPORT} option to control which objects are exported from
+the DLL (see \ref{dll:create:export}).
+
+To summarize, if you invoke the compiler in the \See{COMPILE mode}{}{xc:modes:compile},
+you have to specify at least the following options on the command line:
+
+When compiling a DLL module:
+
+\verb'    -USEDLL+ -GENDLL+ -DLLNAME='{\it name of the DLL}
+
+When compiling an EXE module:
+
+\verb'    -USEDLL+ -GENDLL-'
+
+To allow the \See{MAKE mode}{}{xc:modes:make} to be used, you have to
+orgranize your source files and redirections as if you were using the
+\Ref{PROJECT mode}{xc:modes:project} (see below).
+
+If you prefer to use the compiler in the \See{PROJECT mode}{}{xc:modes:project},
+create a project file for each executable component (EXE or DLL).
+You have to place the {\em source files}, including \mt{}
+definition modules, belonging to different executable components
+into separate directories. Then, use \OERef{LOOKUP} directives
+in your project files to ensure that during processing of
+each project source files belonging to other projects are not
+visible to the compiler via redirections.
+
+\begin{quote}{\footnotesize
+    {\bf Warning:} If you fail to comply with the above requirement,
+    the make subsystem may include some object files into more than one
+    executable module. Also, wrong code may be produced by the compiler
+    for dynamically linked variables access in the Windows NT/95 environment.
+    } % end \footnotesize
+\end{quote}
+
+In the \Ref{PROJECT mode}{xc:modes:project}, if the \OERef{DLLNAME} equation was
+not set, the compiler substitutes the name of the project file (without path and extension,
+of course). So you do not have to care about this setting, as long as your DLLs
+are named after their project files.
+
+Thus, project files for your DLLs have to contain at least the following lines:
+
+\verb'    -LOOKUP=*.def|*.mod|*.ob2='{\it $<$this DLL sources directory$>$}\\
+\verb'    -USEDLL+'\\
+\verb'    -GENDLL+'\\
+\verb'    -DLLNAME='{\it $<$name of the DLL$>$}
+
+The last line is not required if the name of the DLL matches the project file name.
+
+Projects for EXE files must include the following lines:
+
+\verb'    -LOOKUP=*.def|*.mod|*.ob2='{\it $<$this EXE sources directory$>$}\\
+\verb'    -USEDLL+'\\
+\verb'    -GENDLL-'
+
+\subsection{Controlling export from a DLL}
+\label{dll:create:export}
+
+Any public identifier (procedure or variable) from the object files
+linked together to form the DLL may be made available
+(exported) to other executable modules\footnote{Under Windows NT/95,
+most compilers do not allow variables to be exported from DLLs. This
+is a nearly unique feature of \XDS{}.}.
+There are three ways to control which identifiers are to be exported:
+\begin{itemize}
+\item Using the \OERef{DLLEXPORT} compiler option, which affects generation
+      of export definition records in object modules. A linker collects
+      information from these records into the DLL export table.
+      \XDS{} compiler produces export records for exported variables and
+      procedures if \OERef{DLLEXPORT} is set ON.
+
+      This option may be specified in a project file, in a module header,
+      or even in-line, allowing you to precisely select objects to be exported
+      from the DLL:
+
+\begin{verbatim}
+    <* DLLEXPORT - *>
+    DEFINITION MODULE M;
+
+    PROCEDURE Internal;
+    (* This procedure is only visible inside the DLL. *)
+
+    <* DLLEXPORT+ *>
+    PROCEDURE Exported;
+    (* This procedure is available to other executables. *)
+    <* DLLEXPORT - *>
+
+    END M.
+\end{verbatim}
+
+      The compiler always produces export rtecords for automatically
+      generated entities, such as module intialization routines
+      ({\it module}\verb'_BEGIN') and global variables containing
+      descriptors of Oberon-2 types and modules.
+
+\item Using an export definition file (EDF), which contains
+      a list of public identifiers which are to be visible
+      outside the DLL. It also allows you to assign ordinal numbers to
+      that identifiers, and give them arbitrary external names
+      (i.e. names under which these procedures
+      and variables will be visible to other executable modules):
+
+\begin{verbatim}
+    LIBRARY MyDLL
+    DESCRIPTION 'My DLL'
+    EXPORTS
+        Exported=M_Exported @1
+        M_BEGIN             @2
+\end{verbatim}
+
+      Use the \LORef{DLL} linker option to pass the name of the
+      EDF:
+
+\verb'    xlink . . . /dll=mydll.edf'
+
+      You may switch to this method at any time.
+      Once you have built a DLL without an EDF, you may use the
+      \Ref{XDS Library Manager}{xlib} to produce it
+      (see \ref{xlib:modes:export}).
+      Next time you link the DLL, you may use this file,
+      or a modified version of it.
+
+% !!! What about automatically generated entities?
+
+\item Using the \LORef{EXPORT} linker option:
+
+\verb'    xlink . . . /EXPORT=Exported.1=M_Exported,M_BEGIN.2'
+
+      This method has the same capabilities as export definition files.
+\end{itemize}
+
+{\bf Note:} If you supply an EDF file containing an \See{EXPORT section}{}{link:EDF:syntax}
+to the XDS Linker, export definition records in object files will be ignored,
+so the \OERef{DLLEXPORT} option will have no effect. The export infomation supplied
+via the \LORef{EXPORT} linker option is always used, but if it conflicts
+with .EDF file settings, a warning will be issued, and .EDF file settings will be used.
+
+The advantages and disadvantages of the three methods are discussed below.
+
+Using the \OERef{DLLEXPORT} compiler option, you do not have to introduce an
+extra entity (export definition files) or care about linker options;
+export information is specified right in the source text,
+so it never goes out of sync, and export is performed
+transparently.
+However, in this case export can only be performed by name;
+ordinal numbers may change from one link to another, so clients
+of the DLL should not rely on ordinal numbers. You may not use name mapping:
+internal and external names are always the same.
+Finally, if you link any third-party object files or libraries not containing export
+definiton records into your DLL, you will not be able to export any entities
+from these files outside the DLL.
+
+EDF usage involves some extra work, but gives you full control
+on ordinal numbers assignment and mapping of internal
+names specified in object files to arbitrary external names.
+
+The \LORef{EXPORT} linker option is rarely used, as the same result
+may be achieved via EDF. You may, however, consider using it if your
+DLL exports just a few entities.
+
+In general, we would recommend to use \OERef{DLLEXPORT} during initial development
+of the DLL and switch to EDF before shipping, so that you will be able to
+update just the DLL without risk of compatibility problems.
+
+\subsection{DLL initialization and termination}
+\label{dll:create:initterm}
+
+The operating system transfers control to the DLL entry point right after
+it is loaded and right before it is unloaded, in order to enable the DLL to carry out
+the required initialization or cleanup\footnote{Under Windows NT/95, this also happens
+when a thread is about to be started or terminated in the application which uses the DLL.
+DLLs built with the XDS startup code ignore these calls.}.
+
+The default XDS DLL startup code performs all the actions required for the DLL
+to function properly in the XDS run-time environment.
+In addition, if there is a main module\footnote{A \mt{} program module or an \ot{} module
+compiled with the \OERef{MAIN} option set ON.} linked into the DLL,
+its initialization and finalization bodies will be
+called after the DLL is loaded and before it is unloaded, respectively.
+This feature provides a convenient way to add your own DLL initialization and
+termination code and also allows run-time linked DLLs to be properly initialized
+(see \ref{dll:using:run-time}).
+
+\section{Using your DLL}
+\label{dll:using}
+
+Once you have built a DLL, you may reference the code and data contained in it
+from an executable module or another DLL.
+
+There are two types of dynamic linking: load-time and run-time, briefly
+introduced in section \ref{dll:overview}.
+
+{\em Load-time dynamic linking} is similar to static linking in that
+you may reference procedures and variables in your source code regardless
+of whether they will reside in the same component (EXE or DLL) or not.
+Then you link the component which uses DLLs with an {\em import library},
+which contains no code or data but references to DLLs where the particular
+procedures or variables are located.
+The resulting executable module or DLL incorporates these references,
+which are resolved by the operating system when it loads your application.
+The referenced DLLs are loaded into memory and stay there until your
+application terminates.
+If the operating system fails to resolve any of the references, it
+stops loading the application and returns an error.
+
+{\em Run-time dynamic linking} involves explicit loading of DLLs using
+an operating system API call. Addresses of the procedures and variables
+in the loaded DLL may only be retrieved by their names via API calls,
+with no type checking. However, linking at run-time has certain advantages:
+
+\begin{itemize}
+\item DLLs may be loaded when they are needed; after the application
+      finishes using a DLL, it may unload that DLL and free some memory.
+\item Error recovery is possible. A missing or incorrect load-time DLL
+      prevents the application from being started by the operating system.
+      In case of run-time loading, the API call will return an error
+      value, enabling the application to analyze it and take an
+      appropriate action.
+\item Names of DLLs, procedures, and variables are not hard-coded into
+      the application and may be obtained from the registry,
+      a configuration file, or by prompting the user at run-time.
+      This, for instance, allows several DLLs with the same interface
+      but different functionality to co-exist in a single application.
+\item DLLs loaded at run-time may reside in any directory, whereas load-time
+      DLLs are located by the operating system in a certain set
+      of directories.
+\end{itemize}
+
+\subsection{Load-time dynamic linking}
+\label{dll:using:load-time}
+
+In \XDS{}, there are two ways to link with a DLL: one involves usage of import libraries,
+which may only be built on a separate step, while another is based on the XDS compiler
+ability to embed import definition sections in object files and thus is more convenient.
+However, in some cases, discussed below, import libraries have to be used. You may use
+both methods simultaneously.
+
+The \OERef{IMPLIB} option controls whether the currently compiled project
+may be linked without import libraries:
+
+\begin{itemize}
+\item If the \OERef{IMPLIB} option is set ON, the compiler expects that
+      import libraries for all DLLs used by the currently compiled source
+      will be available at link time. You have to use \Ref{XLIB}{xlib}
+      or another library manager to create the necessary import libraries
+      (see \ref{xlib:modes:import} and then specify their names to the linker.
+      If you are taking advantage of
+      \See{the XDS project subsystem}{}{xc:project},
+      you may list them in the project file using the
+      \Ref{{\tt !module} directive}{xc:project}, provided that
+      the \Ref{template file}{xc:template} has appropriate support.
+
+      In this case, import will be performed either
+      by name or by ordinal (see \ref{dll:overview}),
+      depending on how the import library was built.
+
+\item If the \OERef{IMPLIB} option is set OFF, the compiler uses information
+      from symbol files of the imported modules to create import definition
+      records in the output object files.
+      These sections will then be used by the linker to resolve references to
+      code and data contained in separate DLLs.
+
+      As symbol files do not contain ordinal numbers,
+      import can only be performed \See{{\em by name}}{}{dll:overview}.
+
+      This method requires that during creation of a symbol file the
+      compiler knew the name of the DLL into which
+      the correspondent object file was is linked (see \ref{dll:create:env}).
+      The compiler then uses that name in import definition records.
+\end{itemize}
+
+Importing by ordinal speeds up program load,
+but requires extra efforts to preserve ordinal numbers when the DLL is updated.
+Win32 API function ordinals differ even between ServicePaks.
+
+\subsection{Run-time dynamic linking}
+\label{dll:using:run-time}
+
+You may directly use Win32 API functions to handle the
+DLLs your application needs to load at run-time. You may also consider
+usage of the XDS run-time library calls to ensure portability.
+
+The library module \verb'dllRTS' provides means for loading and
+unloading DLLs, and obtaining addresses of procedures and data
+contained in loaded DLLs. Some other useful functions are available.
+
+If the DLL is linked at load-time, initialization and
+finalization of all modules exported from it and used by other
+load-time linked components is performed automatically as
+if it was linked statically. In case of run-time linking,
+the operating system only executes DLL startup code (see \ref{dll:create:initterm}).
+You have the following options:
+
+\begin{itemize}
+\item Leave the DLL modules uninitialized.
+\item After the DLL is loaded, retrieve the address of the initialization
+      routine of each module from which you plan to use procedures
+      or variables, and call it. These routines have type \verb'PROC' and their
+      names are formed as \verb'module_BEGIN':
+
+\begin{verbatim}
+    VAR
+      hmod: dllRTS.HMOD;
+      init: PROC;
+     .  .  .
+      hmod := dllRTS.LoadModule("MyDLL");
+      init := dllRTS.GetProcAdr(hmod, "MyModule_BEGIN");
+      init;
+     .  .  .
+\end{verbatim}
+
+\item Create a main module which imports all modules from the DLL and add it
+      to the DLL. This would also allow you to write your own
+      \See{DLL initialization and termination code}{}{dll:create:initterm}.
+\begin{verbatim}
+    MODULE MyDLLInitTerm;
+    IMPORT MyModule;
+      .  .  .
+    BEGIN
+      (* DLL initialization *)
+      .  .  .
+    FINALLY
+      (* DLL termination *)
+      .  .  .
+    END MyDLLInitTerm.
+\end{verbatim}
+\end{itemize}
+
+\section{DLLs intended for a foreign environment}
+\label{dll:foreign}
+
+If you develop a product which is a single DLL or a set of DLLs expected to be
+used by third-party applications (e.g. a Netscape plug-in or a REXX external
+function package), you have to ensure that the \mt{} and \ot{} modules which
+constitute your DLL(s) are initialized. See \ref{dll:create:initterm} and
+\ref{dll:using:run-time} for more information.
+
+You also have to specify a different calling and naming convention for the procedures
+exported from your DLL, which are to be called by a third-party application.
+See \ref{multilang:direct} for more information on interfacing to foreign languages.
+In general, unless your DLL will be used with a particular application,
+avoid using the \verb'"C"' convention, as it depends slightly on the \OERef{CC} equation
+setting, thus bounding your product to a particular C compiler.
+Instead, use \verb'"StdCall"' on Windows.
+
+If your product consists of exactly one DLL, you may wish to statically
+link it with the \XDS{} run-time library, so that you don't have to redistribute
+the dynamically linked version of the run-time library with your product.
+This is the only case when you may have the \OERef{USEDLL} option switched OFF
+while a DLL is built (\OERef{GENDLL} in ON).
+
+\ifcomment
+              DLL-support in the native XDS-compiler
+              ---------------------------------------
+
+    1. User level
+
+      1.1 New XDS entity - Export DeFinition file
+
+          Текстовый файл состоящий из разделов
+
+             DESCRIPTION text
+
+             LIBRARY     name
+
+             EXPORTS     name[=internal_name] [@ordinal]
+
+             ; comment
+
+          Позволяет описывать интерфейс DLL, переименовывать точки входа, а также
+          фиксировать нумерацию.
+
+      1.2 Tools ( linker, xlib, his )
+
+          linker
+          ------
+
+          Теперь умеет собирать DLL ( а не просто файл с расширением .dll как раньше )
+          в исполняемых форматах LX и PE ( возможен cross-linking ). Сборка может
+          осуществлятся с EDF-файлом.
+
+          xlib
+          ----
+
+          Умеет порождать библиотеки импорта и EDF-файлы по LX и PE DLL'ищам
+
+          his
+          ---
+
+          Работает в случае многокомпонентной программы тоже
+
+
+      1.3 DLL-version of the XDS RT
+
+          При указании опции -USEDLL+ будет использована DLL-версия XDS RT.
+          Указание опции USEDLL- приводит к тому, что RT будет влинковываться, а поведение
+          компилятора не будет отличаться от того, которое было до внесения DLL'ных возможностей.
+          В частности SYM-файл, порожденный с опцией GENDLL+ будет восприниматься корректно
+          ( если некий набор модулей оформлен и как LIB, и как DLL, нет нужды держать для них
+            различные версии SYM'ов ).
+
+            Имеется две XDS RT DLL : singlethread & multithread. Подцепление нужной
+          ( библиотеки импорта ) рулится опцией MULTITHREAD.
+
+
+      1.4 How to make DLL
+
+          Если в проекте указать опцию -GENDLL+, то соберется DLL, имя которой либо
+          совпадает с именем проекта, либо задается через эквшн dllname. Собирать
+          DLL в режиме "make" или компилировать по частям через "compile" возможно
+          только с эквшном dllname ( при этом на пользователе лежит отвественность за
+          соблюдение правила компилировать разные части одной DLL с одним и тем же
+          значением dllname ).
+
+          initialization/finalization
+          ---------------------------
+
+          Если в списке модулей проекта есть главный ( M2 - MODULE xx, O2 - <* +MAIN *> ),
+          то его BEGIN-часть становится инициализацией DLL, FINALLY-часть - финализацией.
+          Иниц-я зовется в случае присоединения к процессу, финал-я в случае отсоединения
+          от. Случаи thread attachment/detachment игнорируются.
+
+          data segment mode
+          -----------------
+
+          Для каждого процесса создается свой экземпляр сегмента данных ( MULTIPLE,
+          NONSHARED мода ).
+
+
+          export
+          ------
+          При указании в проекте опции -DLLEXPORT+ экспортируются интерфейсы модулей
+          целиком : все об'екты из DEFINITION'ов и *-помеченные из O2-модулей кроме
+          констант. Возможен выборочный экспорт: если в проекте указать -DLLEXPORT-,
+          а в модулях писать прагмы, то экспортироваться будут об'екты, описанные
+          между <* -DLLEXPORT+ *> и <* -DLLEXPORT- *>.
+
+
+          dll intented for a foreign environment
+          --------------------------------------
+
+          Если нужно собрать DLL и влинковать туда XDS RT, достаточно указать в проекте
+          опцию USEDLL-, однако все заботы относительно naming & calling conventions
+          ложатся на пользователя.
+          WARNING: Это единственный случай, при котором разрешается собирать DLL c
+          опцией USEDLL- !
+
+          Тот кто создает такую DLL должен позаботится о том, чтобы вызывались BEGIN-части
+          модулей, входящих в DLL. Варианта здесь два:
+
+            1) Добавить в DLL главный модуль ( если его там не было ) и написать список
+               импорта, включив туда все модули, входящие в DLL.
+
+            2) Самому ( в нужное время и в нужном месте ) вызвать процедуру, соответствующую
+               BEGIN-части модуля: ее имя получаетася из имени модуля путем добавления
+               постфикса "_BEGIN". Параметров она не имеет. Все такие процедуры всегда
+               экпортируются из DLL. Всю заботу о финализации модулей берет на себя XDS RT,
+               так что в этом направлении никаких специальных усилий предпринимать не нужно.
+
+
+      1.5 How to use DLL
+
+          Run-time dynalinking
+          --------------------
+
+             В библиотеку добавлен модуль dllRTS, позволяющий подгружать/выгружать
+          DLL, доставать из них адреса процедур и переменных. Кроме того, этот модуль
+          предоставляет некоторый сервис, доступный через API ( получить полный
+          путь по хэндлу, хэндл по имени ).
+             Если возникает необходимость того, чтобы BEGIN-части модулей вызывались
+          в момент загрузки DLL в run-time моде (через dllRTS), то нужно включить в DLL
+          главный модуль, а в нем написать IMPORT list_of_modules.
+
+
+          Load-time dynalinking
+          ---------------------
+
+             i.  with import libraries
+
+                 Компилировать DLL и EXE нужно с опцией IMPLIB+.
+                 После сотворения DLL'ины нужно напустить на нее xlib с целью
+                 порождения библиотеки импорта, после чего включить эту библиотеку
+                 в список модулей проекта того EXE'шника, который собирается
+                 использовать эту DLL. Если интерфейс DLL меняется, то библиотеку
+                 импорта нужно породить заново. В остальном использование модулей из DLL
+                 (внешне) ничем не отличается от использования модулей, влинковываемых
+                 в EXE.
+
+
+             ii. without import libraries
+
+                 Компилировать DLL и EXE нужно с опцией IMPLIB-.
+                 Все остальное получается само.
+
+                 WARNING: Если до того эта DLL собиралась с опцией IMPLIB+,
+                 нужно потереть все ее SYM'ы.
+
+
+             WARNING: по redirection'у (lookup'ам) проекта EXE'шника, не должны
+             находится OBJ-файлы от DLL'ей которые он использует. Возможно это не лучший
+             вариант, но на нем решили остановиться, т.к все остальное, что приходит в голову
+             еще более коряво по причинам внутреннего характера ( зависимость проектной ситемы
+             от back-end'а ).
+
+
+
+\fi

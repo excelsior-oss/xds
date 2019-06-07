@@ -1,0 +1,6 @@
+LIBRARY xd_dwrf
+
+EXPORTS
+  ProcessDebugInfo=DI_DWRF_ProcessDebugInfo  
+  ReadModules=DI_DWRF_ReadModules
+  BuildForMod=DI_DWRF_BuildForMod

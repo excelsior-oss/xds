@@ -1,0 +1,556 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] WinReg;
+
+(* WinReg.def
+
+Abstract:
+
+    This module contains the function prototypes and constant, type and
+    structure definitions for the Windows 32-Bit Registry API.
+
+--*)
+
+FROM WinDef IMPORT WCHAR, PVOID, PBYTE, PCBYTE, BOOL, LONG, DWORD, PDWORD,
+                   PSTR, PWSTR, PCSTR, PCWSTR, HANDLE;
+FROM WinNT IMPORT REG_OPTION_SET, REG_NOTIFY_SET, REG_TYPE,
+                  REG_DISPOSITION, REG_RESTORE_SET,
+                  SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, ACCESS_MASK;
+FROM WinBase IMPORT PSECURITY_ATTRIBUTES, FILETIME;
+IMPORT SYSTEM;
+
+
+(*
+** Requested Key access mask type.
+*)
+
+TYPE REGSAM = ACCESS_MASK;
+
+(*
+** Type definitions.
+*)
+
+TYPE  HKEY = POINTER TO RECORD END;
+     PHKEY = POINTER TO HKEY;
+
+(*
+** Reserved Key Handles.
+*)
+
+CONST HKEY_CLASSES_ROOT       = SYSTEM.CAST (HKEY, VAL (CARDINAL, 80000000h));
+      HKEY_CURRENT_USER       = SYSTEM.CAST (HKEY, VAL (CARDINAL, 80000001h));
+      HKEY_LOCAL_MACHINE      = SYSTEM.CAST (HKEY, VAL (CARDINAL, 80000002h));
+      HKEY_USERS              = SYSTEM.CAST (HKEY, VAL (CARDINAL, 80000003h));
+      HKEY_PERFORMANCE_DATA   = SYSTEM.CAST (HKEY, VAL (CARDINAL, 80000004h));
+      HKEY_CURRENT_CONFIG     = SYSTEM.CAST (HKEY, VAL (CARDINAL, 80000005h));
+      HKEY_DYN_DATA           = SYSTEM.CAST (HKEY, VAL (CARDINAL, 80000006h));
+
+
+CONST PROVIDER_KEEPS_VALUE_LENGTH = 1;
+
+TYPE VALCONTEXT = RECORD
+                         valuelen      : INTEGER; (* the total length of this value *)
+                         value_context : PVOID;   (* provider's context *)
+                         val_buff_ptr  : PVOID;   (* where in the ouput buffer the value is. *)
+                  END;
+    PVALCONTEXT = POINTER TO VALCONTEXT;
+
+TYPE PVALUEA = RECORD                              (* Provider supplied value/context. *)
+                      pv_valuename     : PSTR;     (* The value name pointer *)
+                      pv_valuelen      : INTEGER;
+                      pv_value_context : PVOID;
+                      pv_type          : REG_TYPE;
+               END;
+    PPVALUEA = POINTER TO PVALUEA;
+
+TYPE PVALUEW = RECORD
+                      pv_valuename     : PWSTR;
+                      pv_valuelen      : INTEGER;
+                      pv_value_context : PVOID;
+                      pv_type          : REG_TYPE;
+               END;
+    PPVALUEW = POINTER TO PVALUEW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE PVALUE  =  PVALUEW;
+      TYPE PPVALUE = PPVALUEW;
+<* ELSE *>
+      TYPE PVALUE  =  PVALUEA;
+      TYPE PPVALUE = PPVALUEA;
+<* END *>
+
+TYPE PQUERYHANDLER = PROCEDURE ["C"] (PVOID       (* keycontext   *),
+                                      PVALCONTEXT (* val_list     *),
+                                      DWORD       (* num_vals     *),
+                                      PVOID       (* outputbuffer *),
+                                      VAR DWORD   (* total_outlen *),
+                                      DWORD       (* input_blen   *)) : DWORD;
+
+TYPE REG_PROVIDER = RECORD
+                           pi_R0_1val     : PQUERYHANDLER;
+                           pi_R0_allvals  : PQUERYHANDLER;
+                           pi_R3_1val     : PQUERYHANDLER;
+                           pi_R3_allvals  : PQUERYHANDLER;
+                           pi_flags       : DWORD;    (* capability flags (none defined yet). *)
+                           pi_key_context : PVOID;
+                    END;
+        PPROVIDER = POINTER TO REG_PROVIDER;
+
+TYPE VALENTA = RECORD
+                      ve_valuename : PSTR;
+                      ve_valuelen  : DWORD;
+                      ve_valueptr  : DWORD;
+                      ve_type      : REG_TYPE;
+               END;
+
+    PVALENTA = POINTER TO VALENTA;
+
+TYPE VALENTW = RECORD
+                      ve_valuename : PWSTR;
+                      ve_valuelen  : DWORD;
+                      ve_valueptr  : DWORD;
+                      ve_type      : REG_TYPE;
+               END;
+
+    PVALENTW = POINTER TO VALENTW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  VALENT =  VALENTW;
+      TYPE PVALENT = PVALENTW;
+<* ELSE *>
+      TYPE  VALENT =  VALENTA;
+      TYPE PVALENT = PVALENTA;
+<* END *>
+
+(*
+** Default values for parameters that do not exist in the Win 3.1
+** compatible APIs.
+*)
+
+CONST WIN31_CLASS = NIL;
+
+(*
+** API Prototypes.
+*)
+
+PROCEDURE RegCloseKey (hKey : HKEY) : LONG;
+
+PROCEDURE RegConnectRegistryA (MachineName  : PCSTR; (* NIL *)
+                               hKey         : HKEY;
+                               VAR hkResult : HKEY) : LONG;
+
+PROCEDURE RegConnectRegistryW (MachineName  : PCWSTR; (* NIL *)
+                               hKey         : HKEY;
+                               VAR hkResult : HKEY) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegConnectRegistry = RegConnectRegistryW;
+<* ELSE *>
+      CONST RegConnectRegistry = RegConnectRegistryA;
+<* END *>
+
+PROCEDURE RegCreateKeyA (hKey        : HKEY;
+                         SubKey      : PCSTR; (* NIL *)
+                         VAR hResult : HKEY) : LONG;
+
+PROCEDURE RegCreateKeyW (hKey        : HKEY;
+                         SubKey      : PCWSTR; (* NIL *)
+                         VAR kResult : HKEY) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegCreateKey = RegCreateKeyW;
+<* ELSE *>
+      CONST RegCreateKey = RegCreateKeyA;
+<* END *>
+
+PROCEDURE RegCreateKeyExA (hKey                 : HKEY;
+                           SubKey               : ARRAY OF CHAR;
+                           Reserved             : DWORD;
+                           lpClass              : PCSTR; (* NIL *)
+                           dwOptions            : REG_OPTION_SET;
+                           samDesired           : REGSAM;
+                           lpSecurityAttributes : PSECURITY_ATTRIBUTES;
+                           VAR Result           : HKEY;
+                           VAR lpdwDisposition  : REG_DISPOSITION) : LONG;
+
+PROCEDURE RegCreateKeyExW (hKey                 : HKEY;
+                           SubKey               : ARRAY OF WCHAR;
+                           Reserved             : DWORD;
+                           lpClass              : PCWSTR; (* NIL *)
+                           dwOptions            : REG_OPTION_SET;
+                           samDesired           : REGSAM;
+                           lpSecurityAttributes : PSECURITY_ATTRIBUTES;
+                           VAR Result           : HKEY;
+                           VAR lpdwDisposition  : REG_DISPOSITION) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegCreateKeyEx = RegCreateKeyExW;
+<* ELSE *>
+      CONST RegCreateKeyEx = RegCreateKeyExA;
+<* END *>
+
+PROCEDURE RegDeleteKeyA (hKey : HKEY; SubKey : ARRAY OF CHAR)  : LONG;
+PROCEDURE RegDeleteKeyW (hKey : HKEY; SubKey : ARRAY OF WCHAR) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegDeleteKey = RegDeleteKeyW;
+<* ELSE *>
+      CONST RegDeleteKey = RegDeleteKeyA;
+<* END *>
+
+PROCEDURE RegDeleteValueA (hKey : HKEY; ValueName : PCSTR)  : LONG;  (* NIL *)
+PROCEDURE RegDeleteValueW (hKey : HKEY; ValueName : PCWSTR) : LONG;  (* NIL *)
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegDeleteValue = RegDeleteValueW;
+<* ELSE *>
+      CONST RegDeleteValue = RegDeleteValueA;
+<* END *>
+
+PROCEDURE RegEnumKeyA (hKey     : HKEY;
+                       dwIndex  : DWORD;
+                       VAR Name : ARRAY OF WCHAR;
+                       cbName   : DWORD) : LONG;
+
+PROCEDURE RegEnumKeyW (hKey     : HKEY;
+                       dwIndex  : DWORD;
+                       VAR Name : ARRAY OF WCHAR;
+                       cbName   : DWORD) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegEnumKey = RegEnumKeyW;
+<* ELSE *>
+      CONST RegEnumKey = RegEnumKeyA;
+<* END *>
+
+PROCEDURE RegEnumKeyExA (hKey                : HKEY;
+                         dwIndex             : DWORD;
+                         VAR Name            : ARRAY OF CHAR;
+                         VAR cbName          : DWORD;
+                         lpReserved          : PDWORD;
+                         VAR [NIL] Class     : ARRAY OF CHAR;
+                         VAR [NIL] cbClass   : DWORD;
+                         VAR ftLastWriteTime : FILETIME) : LONG;
+
+PROCEDURE RegEnumKeyExW (hKey                : HKEY;
+                         dwIndex             : DWORD;
+                         VAR Name            : ARRAY OF WCHAR;
+                         VAR cbName          : DWORD;
+                         lpReserved          : PDWORD;
+                         VAR [NIL] Class     : ARRAY OF WCHAR;
+                         VAR [NIL] cbClass   : DWORD;
+                         VAR ftLastWriteTime : FILETIME) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegEnumKeyEx = RegEnumKeyExW;
+<* ELSE *>
+      CONST RegEnumKeyEx = RegEnumKeyExA;
+<* END *>
+
+PROCEDURE RegEnumValueA (hKey             : HKEY;
+                         dwIndex          : DWORD;
+                         VAR ValueName    : ARRAY OF CHAR;
+                         VAR cbValueName  : DWORD;
+                         lpReserved       : PDWORD;
+                         VAR [NIL] Type   : REG_TYPE;
+                         lpData           : PBYTE;
+                         VAR [NIL] cbData : DWORD) : LONG;
+
+PROCEDURE RegEnumValueW (hKey             : HKEY;
+                         dwIndex          : DWORD;
+                         VAR ValueName    : ARRAY OF WCHAR;
+                         VAR cbValueName  : DWORD;
+                         lpReserved       : PDWORD;
+                         VAR [NIL] Type   : REG_TYPE;
+                         lpData           : PBYTE;
+                         VAR [NIL] cbData : DWORD) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegEnumValue = RegEnumValueW;
+<* ELSE *>
+      CONST RegEnumValue = RegEnumValueA;
+<* END *>
+
+PROCEDURE RegFlushKey (hKey : HKEY) : LONG;
+
+PROCEDURE RegGetKeySecurity (hKey                     : HKEY;
+                             SecurityInformation      : SECURITY_INFORMATION;
+                             SecurityDescriptor       : PSECURITY_DESCRIPTOR;
+                             VAR cbSecurityDescriptor : DWORD) : LONG;
+
+PROCEDURE RegLoadKeyA (hKey   : HKEY;
+                       SubKey : ARRAY OF CHAR;
+                       File   : ARRAY OF CHAR) : LONG;
+
+PROCEDURE RegLoadKeyW (hKey   : HKEY;
+                       SubKey : ARRAY OF WCHAR;
+                       File   : ARRAY OF WCHAR) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegLoadKey = RegLoadKeyW;
+<* ELSE *>
+      CONST RegLoadKey = RegLoadKeyA;
+<* END *>
+
+PROCEDURE RegNotifyChangeKeyValue (hKey           : HKEY;
+                                   bWatchSubtree  : BOOL;
+                                   dwNotifyFilter : REG_NOTIFY_SET;
+                                   hEvent         : HANDLE;
+                                   fAsynchronus   : BOOL) : LONG;
+
+PROCEDURE RegOpenKeyA (hKey         : HKEY;
+                       lpSubKey     : PCSTR; (* NIL *)
+                       VAR hkResult : HKEY) : LONG;
+
+PROCEDURE RegOpenKeyW (hKey         : HKEY;
+                       lpSubKey     : PCWSTR; (* NIL *)
+                       VAR hkResult : HKEY) : LONG;
+
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegOpenKey = RegOpenKeyW;
+<* ELSE *>
+      CONST RegOpenKey = RegOpenKeyA;
+<* END *>
+
+PROCEDURE RegOpenKeyExA (hKey         : HKEY;
+                         SubKey       : PCSTR;  (* NIL *)
+                         ulOptions    : DWORD;        (* reserved *)
+                         samDesired   : REGSAM;
+                         VAR hkResult : HKEY) : LONG;
+
+PROCEDURE RegOpenKeyExW (hKey         : HKEY;
+                         SubKey       : PCWSTR; (* NIL *)
+                         ulOptions    : DWORD;        (* reserved *)
+                         samDesired   : REGSAM;
+                         VAR hkResult : HKEY) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegOpenKeyEx = RegOpenKeyExW;
+<* ELSE *>
+      CONST RegOpenKeyEx = RegOpenKeyExA;
+<* END *>
+
+PROCEDURE RegQueryInfoKeyA (hKey                           : HKEY;
+                            VAR [NIL] Class                : ARRAY OF CHAR;
+                            VAR [NIL] cbClass              : DWORD;
+                            lpReserved                     : PDWORD;
+                            VAR [NIL] SubKeys              : DWORD;
+                            VAR [NIL] cbMaxSubKeyLen       : DWORD;
+                            VAR [NIL] cbMaxClassLen        : DWORD;
+                            VAR [NIL] cValues              : DWORD;
+                            VAR [NIL] cbMaxValueNameLen    : DWORD;
+                            VAR [NIL] cbMaxValueLen        : DWORD;
+                            VAR [NIL] cbSecurityDescriptor : DWORD;
+                            VAR [NIL] ftLastWriteTime      : FILETIME) : LONG;
+
+PROCEDURE RegQueryInfoKeyW (hKey                           : HKEY;
+                            VAR [NIL] Class                : ARRAY OF WCHAR;
+                            VAR [NIL] cbClass              : DWORD;
+                            lpReserved                     : PDWORD;
+                            VAR [NIL] SubKeys              : DWORD;
+                            VAR [NIL] cbMaxSubKeyLen       : DWORD;
+                            VAR [NIL] cbMaxClassLen        : DWORD;
+                            VAR [NIL] cValues              : DWORD;
+                            VAR [NIL] cbMaxValueNameLen    : DWORD;
+                            VAR [NIL] cbMaxValueLen        : DWORD;
+                            VAR [NIL] cbSecurityDescriptor : DWORD;
+                            VAR [NIL] ftLastWriteTime      : FILETIME) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegQueryInfoKey = RegQueryInfoKeyW;
+<* ELSE *>
+      CONST RegQueryInfoKey = RegQueryInfoKeyA;
+<* END *>
+
+PROCEDURE RegQueryValueA (hKey            : HKEY;
+                          SubKey          : PCSTR; (* NIL *)
+                          VAR [NIL] Value : ARRAY OF CHAR;
+                          VAR cbValue     : LONG)
+                                                  : LONG;
+
+PROCEDURE RegQueryValueW (hKey            : HKEY;
+                          SubKey          : PCWSTR; (* NIL *)
+                          VAR [NIL] Value : ARRAY OF WCHAR;
+                          VAR cbValue     : LONG)
+                                                  : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegQueryValue = RegQueryValueW;
+<* ELSE *>
+      CONST RegQueryValue = RegQueryValueA;
+<* END *>
+
+PROCEDURE RegQueryMultipleValuesA (hKey               : HKEY;
+                                   VAR val_list       : ARRAY OF VALENTA;
+                                   num_vals           : DWORD;
+                                   VAR [NIL] ValueBuf : ARRAY OF CHAR;
+                                   VAR dwTotsize      : DWORD)
+                                                               : LONG;
+
+PROCEDURE RegQueryMultipleValuesW (hKey               : HKEY;
+                                   VAR val_list       : ARRAY OF VALENTW;
+                                   num_vals           : DWORD;
+                                   VAR [NIL] ValueBuf : ARRAY OF WCHAR;
+                                   VAR dwTotsize      : DWORD)
+                                                               : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegQueryMultipleValues = RegQueryMultipleValuesW;
+<* ELSE *>
+      CONST RegQueryMultipleValues = RegQueryMultipleValuesA;
+<* END *>
+
+PROCEDURE RegQueryValueExA (hKey       : HKEY;
+                            ValueName  : ARRAY OF CHAR;
+                            lpReserved : PDWORD;
+                            VAR lpType : REG_TYPE;
+                            lpData     : PBYTE;
+                            VAR cbData : DWORD) : LONG;
+
+PROCEDURE RegQueryValueExW (hKey       : HKEY;
+                            ValueName  : ARRAY OF WCHAR;
+                            lpReserved : PDWORD;
+                            VAR lpType : REG_TYPE;
+                            lpData     : PBYTE;
+                            VAR cbData : DWORD) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegQueryValueEx = RegQueryValueExW;
+<* ELSE *>
+      CONST RegQueryValueEx = RegQueryValueExA;
+<* END *>
+
+PROCEDURE RegReplaceKeyA (hKey    : HKEY;
+                          SubKey  : PCWSTR; (* NIL *)
+                          NewFile : ARRAY OF CHAR;
+                          OldFile : ARRAY OF CHAR) : LONG;
+
+PROCEDURE RegReplaceKeyW (hKey    : HKEY;
+                          SubKey  : PCWSTR; (* NIL *)
+                          NewFile : ARRAY OF WCHAR;
+                          OldFile : ARRAY OF WCHAR) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegReplaceKey = RegReplaceKeyW;
+<* ELSE *>
+      CONST RegReplaceKey = RegReplaceKeyA;
+<* END *>
+
+PROCEDURE RegRestoreKeyA (hKey    : HKEY;
+                          File    : ARRAY OF CHAR;
+                          dwFlags : REG_RESTORE_SET) : LONG;
+
+PROCEDURE RegRestoreKeyW (hKey    : HKEY;
+                          File    : ARRAY OF WCHAR;
+                          dwFlags : REG_RESTORE_SET) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegRestoreKey = RegRestoreKeyW;
+<* ELSE *>
+      CONST RegRestoreKey = RegRestoreKeyA;
+<* END *>
+
+PROCEDURE RegSaveKeyA (hKey : HKEY;
+                       File : ARRAY OF CHAR;
+                       lpSecurityAttributes : PSECURITY_ATTRIBUTES) : LONG;
+
+PROCEDURE RegSaveKeyW (hKey : HKEY;
+                       File : ARRAY OF WCHAR;
+                       lpSecurityAttributes : PSECURITY_ATTRIBUTES) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegSaveKey = RegSaveKeyW;
+<* ELSE *>
+      CONST RegSaveKey = RegSaveKeyA;
+<* END *>
+
+PROCEDURE RegSetKeySecurity (hKey                : HKEY;
+                             SecurityInformation : SECURITY_INFORMATION;
+                             SecurityDescriptor  : PSECURITY_DESCRIPTOR) : LONG;
+
+PROCEDURE RegSetValueA (hKey   : HKEY;
+                        SubKey : PCSTR; (* NIL *)
+                        Type   : REG_TYPE;
+                        Data   : ARRAY OF CHAR;
+                        cbData : DWORD) : LONG;
+
+PROCEDURE RegSetValueW (hKey   : HKEY;
+                        SubKey : PCWSTR; (* NIL *)
+                        Type   : REG_TYPE;
+                        Data   : ARRAY OF WCHAR;
+                        cbData : DWORD) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegSetValue = RegSetValueW;
+<* ELSE *>
+      CONST RegSetValue = RegSetValueA;
+<* END *>
+
+PROCEDURE RegSetValueExA (hKey      : HKEY;
+                          ValueName : PSTR; (* NIL *)
+                          Reserved  : DWORD;
+                          dwType    : REG_TYPE;
+                          lpData    : PCBYTE;
+                          cbData    : DWORD) : LONG;
+
+PROCEDURE RegSetValueExW (hKey      : HKEY;
+                          ValueName : PWSTR; (* NIL *)
+                          Reserved  : DWORD;
+                          dwType    : REG_TYPE;
+                          lpData    : PCBYTE;
+                          cbData    : DWORD) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegSetValueEx = RegSetValueExW;
+<* ELSE *>
+      CONST RegSetValueEx = RegSetValueExA;
+<* END *>
+
+PROCEDURE RegUnLoadKeyA (hKey   : HKEY;
+                         SubKey : ARRAY OF CHAR) : LONG;
+
+PROCEDURE RegUnLoadKeyW (hKey   : HKEY;
+                         SubKey : ARRAY OF WCHAR) : LONG;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST RegUnLoadKey = RegUnLoadKeyW;
+<* ELSE *>
+      CONST RegUnLoadKey = RegUnLoadKeyA;
+<* END *>
+
+(*
+** Remoteable System Shutdown APIs
+*)
+
+PROCEDURE InitiateSystemShutdownA (MachineName          : PCSTR; (* NIL *)
+                                   Message              : PCSTR; (* NIL *)
+                                   dwTimeout            : DWORD;
+                                   bForceAppsClosed     : BOOL;
+                                   bRebootAfterShutdown : BOOL) : BOOL;
+
+PROCEDURE InitiateSystemShutdownW (MachineName          : PCWSTR; (* NIL *)
+                                   Message              : PCWSTR; (* NIL *)
+                                   dwTimeout            : DWORD;
+                                   bForceAppsClosed     : BOOL;
+                                   bRebootAfterShutdown : BOOL) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST InitiateSystemShutdown = InitiateSystemShutdownW;
+<* ELSE *>
+      CONST InitiateSystemShutdown = InitiateSystemShutdownA;
+<* END *>
+
+PROCEDURE AbortSystemShutdownA (MachineName   : PCSTR)  : BOOL;  (* NIL *)
+PROCEDURE AbortSystemShutdownW (lpMachineName : PCWSTR) : BOOL;  (* NIL *)
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST AbortSystemShutdown = AbortSystemShutdownW;
+<* ELSE *>
+      CONST AbortSystemShutdown = AbortSystemShutdownA;
+<* END *>
+
+END WinReg.

@@ -1,0 +1,613 @@
+(* vga.def  Feb 18  12:3:29  1999 *)
+(* Copyright (c) 1999, JSC XDS *)
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+(* Merged headers: vga.h, sys/types.h, sys/time.h *)
+
+DEFINITION MODULE ["C"] vga;
+
+IMPORT SYSTEM;
+
+(* VGAlib version 1.2 - (c) 1993 Tommy Frandsen
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it without any restrictions. This library is distributed
+ * in the hope that it will be useful, but without any warranty.
+ * Extended for svgalib by Harm Hanemaayer and Hartmut Schirmer
+ *)
+
+
+CONST 
+  TEXT             = 0;   (*  Compatible with VGAlib v1.2  *)
+  G320x200x16      = 1;
+  G640x200x16      = 2;
+  G640x350x16      = 3;
+  G640x480x16      = 4;
+  G320x200x256     = 5;
+  G320x240x256     = 6;
+  G320x400x256     = 7;
+  G360x480x256     = 8;
+  G640x480x2       = 9;
+  G640x480x256     = 10;
+  G800x600x256     = 11;
+  G1024x768x256    = 12;
+  G1280x1024x256   = 13;   (*  Additional modes.  *)
+  G320x200x32K     = 14;
+  G320x200x64K     = 15;
+  G320x200x16M     = 16;
+  G640x480x32K     = 17;
+  G640x480x64K     = 18;
+  G640x480x16M     = 19;
+  G800x600x32K     = 20;
+  G800x600x64K     = 21;
+  G800x600x16M     = 22;
+  G1024x768x32K    = 23;
+  G1024x768x64K    = 24;
+  G1024x768x16M    = 25;
+  G1280x1024x32K   = 26;
+  G1280x1024x64K   = 27;
+  G1280x1024x16M   = 28;
+  G800x600x16      = 29;
+  G1024x768x16     = 30;
+  G1280x1024x16    = 31;
+  G720x348x2       = 32;   (*  Hercules emulation mode  *)
+  G320x200x16M32   = 33;   (*  32-bit per pixel modes.  *)
+  G640x480x16M32   = 34;
+  G800x600x16M32   = 35;
+  G1024x768x16M32  = 36;
+  G1280x1024x16M32 = 37;
+
+
+(*  additional resolutions  *)
+
+
+CONST 
+  G1152x864x16     = 38;
+  G1152x864x256    = 39;
+  G1152x864x32K    = 40;
+  G1152x864x64K    = 41;
+  G1152x864x16M    = 42;
+  G1152x864x16M32  = 43;
+  G1600x1200x16    = 44;
+  G1600x1200x256   = 45;
+  G1600x1200x32K   = 46;
+  G1600x1200x64K   = 47;
+  G1600x1200x16M   = 48;
+  G1600x1200x16M32 = 49;
+  __GLASTMODE      = G1600x1200x16M32;
+
+
+PROCEDURE vga_setmode ( mode: INTEGER ): INTEGER;
+
+PROCEDURE vga_hasmode ( mode: INTEGER ): INTEGER;
+
+PROCEDURE vga_setflipchar ( c: INTEGER ): INTEGER;
+
+PROCEDURE vga_clear (): INTEGER;
+
+PROCEDURE vga_flip (): INTEGER;
+
+PROCEDURE vga_getxdim (): INTEGER;
+
+PROCEDURE vga_getydim (): INTEGER;
+
+PROCEDURE vga_getcolors (): INTEGER;
+
+PROCEDURE vga_setpalette ( index: INTEGER;
+                           red: INTEGER;
+                           green: INTEGER;
+                           blue: INTEGER ): INTEGER;
+
+PROCEDURE vga_getpalette ( index: INTEGER;
+                           VAR red: INTEGER;
+                           VAR green: INTEGER;
+                           VAR blue: INTEGER ): INTEGER;
+
+TYPE
+  PaletteVector = POINTER TO ARRAY OF INTEGER;
+
+PROCEDURE vga_setpalvec ( start: INTEGER;
+                          num: INTEGER;
+                          pal: PaletteVector ): INTEGER;
+
+PROCEDURE vga_getpalvec ( start: INTEGER;
+                          num: INTEGER;
+                          pal: PaletteVector ): INTEGER;
+
+PROCEDURE vga_screenoff (): INTEGER;
+
+PROCEDURE vga_screenon (): INTEGER;
+
+PROCEDURE vga_setcolor ( color: INTEGER ): INTEGER;
+
+PROCEDURE vga_drawpixel ( x: INTEGER;
+                          y: INTEGER ): INTEGER;
+
+PROCEDURE vga_drawline ( x1: INTEGER;
+                         y1: INTEGER;
+                         x2: INTEGER;
+                         y2: INTEGER ): INTEGER;
+
+TYPE 
+  ColorsVector = POINTER TO ARRAY OF SHORTCARD;
+
+PROCEDURE vga_drawscanline ( line: INTEGER; colors: ColorsVector ): INTEGER;
+
+PROCEDURE vga_drawscansegment ( colors: ColorsVector;
+                                x: INTEGER;
+                                y: INTEGER;
+                                length: INTEGER ): INTEGER;
+
+PROCEDURE vga_getpixel ( x: INTEGER;
+                         y: INTEGER ): INTEGER;
+
+(*  Added.  *)
+
+PROCEDURE vga_getscansegment ( colors: ColorsVector;
+                               x: INTEGER;
+                               y: INTEGER;
+                               length: INTEGER ): INTEGER;
+
+PROCEDURE vga_getch (): INTEGER;
+
+PROCEDURE vga_dumpregs (): INTEGER;
+
+(* Extensions to VGAlib v1.2: blit flags *)
+
+
+CONST 
+  HAVE_BITBLIT       = 1;
+  HAVE_FILLBLIT      = 2;
+  HAVE_IMAGEBLIT     = 4;
+  HAVE_HLINELISTBLIT = 8;
+  HAVE_BLITWAIT      = 16;
+
+
+(*  other flags  *)
+
+CONST 
+  HAVE_RWPAGE         = 1;   (* vga_setreadpage() / vga_setwritepage() available *)
+  IS_INTERLACED       = 2;   (* mode is interlaced *)
+  IS_MODEX            = 4;   (* ModeX style 256 colors *)
+  IS_DYNAMICMODE      = 8;   (* Dynamic defined mode *)
+  CAPABLE_LINEAR      = 16;  (* Can go to linear addressing mode. *)
+  IS_LINEAR           = 32;  (* Linear addressing enabled. *)
+  EXT_INFO_AVAILABLE  = 64;  (* Returned modeinfo contains valid extended fields *)
+  RGB_MISORDERED      = 128; (* Mach32 32bpp uses 0BGR instead of BGR0. *)
+
+
+(* As of this version 1.25 also used to signal if real RGB
+   (red first in memory) is used instead of BGR (Mach32 DAC 4) *)
+
+
+CONST 
+  HAVE_EXT_SET = 256;   (*  vga_ext_set() available  *)
+
+TYPE 
+  String = POINTER TO ARRAY OF CHAR;
+
+  SetAperturePage = PROCEDURE ( (* page *) INTEGER );
+
+  vga_modeinfo = RECORD
+    width            : INTEGER;
+    height           : INTEGER;
+    bytesperpixel    : INTEGER;
+    colors           : INTEGER;
+    linewidth        : INTEGER; -- scanline width in bytes
+    maxlogicalwidth  : INTEGER; -- maximum logical scanline width
+    startaddressrange: INTEGER; -- changeable bits set
+    maxpixels        : INTEGER; -- video memory / bytesperpixel
+    haveblit         : INTEGER; -- mask of blit functions available
+    flags            : INTEGER; -- other flags
+    (*  Extended fields:  *)
+    chiptype         : INTEGER; -- Chiptype detected
+    memory           : INTEGER; -- videomemory in KB
+    linewidth_unit   : INTEGER; -- Use only a multiple of this as parameter for
+                                -- set_logicalwidth and set_displaystart                                                                    *)
+    linear_aperture  : String;  -- points to mmap secondary mem aperture of card
+                                -- (NULL if unavailable)
+    aperture_size    : INTEGER; -- size of aperture in KB if size>=videomemory.
+                                -- 0 if unavail
+    set_aperture_page: SetAperturePage;
+    (*  if aperture_size<videomemory select a memory page  *)
+    extensions       : SYSTEM.ADDRESS; -- points to copy of eeprom for mach32
+    (* depends from actual driver/chiptype.. etc. *)
+  END;
+
+  vga_modeinfo_ptr = POINTER TO vga_modeinfo;
+
+PROCEDURE vga_getmodeinfo ( mode: INTEGER ): vga_modeinfo_ptr;
+
+PROCEDURE vga_getdefaultmode (): INTEGER;
+
+PROCEDURE vga_getcurrentmode (): INTEGER;
+
+PROCEDURE vga_getcurrentchipset (): INTEGER;
+
+PROCEDURE vga_getmodename ( mode: INTEGER ): String;
+
+PROCEDURE vga_getmodenumber ( name: ARRAY OF CHAR ): INTEGER;
+
+PROCEDURE vga_lastmodenumber (): INTEGER;
+
+CONST
+  GLASTMODE = vga_lastmodenumber;
+
+VAR 
+  graph_mem: SYSTEM.ADDRESS;
+
+PROCEDURE vga_getgraphmem (): SYSTEM.ADDRESS;
+
+PROCEDURE vga_setpage ( p: INTEGER );
+
+PROCEDURE vga_setreadpage ( p: INTEGER );
+
+PROCEDURE vga_setwritepage ( p: INTEGER );
+
+PROCEDURE vga_setlogicalwidth ( w: INTEGER );
+
+PROCEDURE vga_setdisplaystart ( a: INTEGER );
+
+PROCEDURE vga_waitretrace;
+
+PROCEDURE vga_claimvideomemory ( n: INTEGER ): INTEGER;
+
+PROCEDURE vga_disabledriverreport;
+
+PROCEDURE vga_setmodeX (): INTEGER;
+
+PROCEDURE vga_init (): INTEGER;
+
+(*  Used to return void in svgalib <= 1.12.  *)
+
+PROCEDURE vga_getmousetype (): INTEGER;
+
+PROCEDURE vga_getmonitortype (): INTEGER;
+
+PROCEDURE vga_setmousesupport ( s: INTEGER );
+
+PROCEDURE vga_lockvc;
+
+PROCEDURE vga_unlockvc;
+
+PROCEDURE vga_getkey (): INTEGER;
+
+PROCEDURE vga_oktowrite (): INTEGER;
+
+PROCEDURE vga_copytoplanar256 ( virtualp: SYSTEM.ADDRESS;
+                                pitch: INTEGER;
+                                voffset: INTEGER;
+                                vpitch: INTEGER;
+                                w: INTEGER;
+                                h: INTEGER );
+
+PROCEDURE vga_copytoplanar16 ( virtualp: SYSTEM.ADDRESS;
+                               pitch: INTEGER;
+                               voffset: INTEGER;
+                               vpitch: INTEGER;
+                               w: INTEGER;
+                               h: INTEGER );
+
+PROCEDURE vga_copytoplane ( virtualp: SYSTEM.ADDRESS;
+                            pitch: INTEGER;
+                            voffset: INTEGER;
+                            vpitch: INTEGER;
+                            w: INTEGER;
+                            h: INTEGER;
+                            plane: INTEGER );
+
+PROCEDURE vga_setlinearaddressing (): INTEGER;
+
+TYPE 
+  ShutdownRoutine = PROCEDURE;
+
+PROCEDURE vga_safety_fork ( shutdown_routine: ShutdownRoutine );
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  UNDEFINED - : INTEGER;
+  VGA       - : INTEGER;
+  ET4000    - : INTEGER;
+  CIRRUS    - : INTEGER;
+  TVGA8900  - : INTEGER;
+  OAK       - : INTEGER;
+  EGA       - : INTEGER;
+  S3        - : INTEGER;
+  ET3000    - : INTEGER;
+  MACH32    - : INTEGER;
+  GVGA6400  - : INTEGER;
+  ARK       - : INTEGER;
+  ATI       - : INTEGER;
+  ALI       - : INTEGER;
+  MACH64    - : INTEGER;
+  CHIPS     - : INTEGER;
+  APM       - : INTEGER;
+  NV3       - : INTEGER;
+  ET6000    - : INTEGER;
+  VESA      - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  UNDEFINED = 0;
+  VGA       = 1;
+  ET4000    = 2;
+  CIRRUS    = 3;
+  TVGA8900  = 4;
+  OAK       = 5;
+  EGA       = 6;
+  S3        = 7;
+  ET3000    = 8;
+  MACH32    = 9;
+  GVGA6400  = 10;
+  ARK       = 11;
+  ATI       = 12;
+  ALI       = 13;
+  MACH64    = 14;
+  CHIPS     = 15;
+  APM       = 16;
+  NV3       = 17;
+  ET6000    = 18;
+  VESA      = 19;
+
+<* END *>
+
+(*  Hor. sync:  *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  MON640_60   - : INTEGER;
+  MON800_56   - : INTEGER;
+  MON1024_43I - : INTEGER;
+  MON800_60   - : INTEGER;
+  MON1024_60  - : INTEGER;
+  MON1024_70  - : INTEGER;
+  MON1024_72  - : INTEGER;
+<* ELSE *>
+
+CONST 
+  MON640_60   = 0;   (*  31.5 KHz (standard VGA)  *)
+  MON800_56   = 1;   (*  35.1 KHz (old SVGA)  *)
+  MON1024_43I = 2;   (*  35.5 KHz (low-end SVGA, 8514)  *)
+  MON800_60   = 3;   (*  37.9 KHz (SVGA)  *)
+  MON1024_60  = 4;   (*  48.3 KHz (SVGA non-interlaced)  *)
+  MON1024_70  = 5;   (*  56.0 KHz (SVGA high frequency)  *)
+  MON1024_72  = 6;
+
+<* END *>
+
+PROCEDURE vga_setchipset ( c: INTEGER );
+
+PROCEDURE vga_setchipsetandfeatures ( c: INTEGER;
+                                      par1: INTEGER;
+                                      par2: INTEGER );
+
+PROCEDURE vga_gettextfont ( font: SYSTEM.ADDRESS );
+
+PROCEDURE vga_puttextfont ( font: SYSTEM.ADDRESS );
+
+PROCEDURE vga_settextmoderegs ( regs: SYSTEM.ADDRESS );
+
+PROCEDURE vga_gettextmoderegs ( regs: SYSTEM.ADDRESS );
+
+PROCEDURE vga_white (): INTEGER;
+
+PROCEDURE vga_setegacolor ( c: INTEGER ): INTEGER;
+
+PROCEDURE vga_setrgbcolor ( r: INTEGER;
+                            g: INTEGER;
+                            b: INTEGER ): INTEGER;
+
+PROCEDURE vga_bitblt ( srcaddr: INTEGER;
+                       destaddr: INTEGER;
+                       w: INTEGER;
+                       h: INTEGER;
+                       pitch: INTEGER );
+
+PROCEDURE vga_imageblt ( srcaddr: SYSTEM.ADDRESS;
+                         destaddr: INTEGER;
+                         w: INTEGER;
+                         h: INTEGER;
+                         pitch: INTEGER );
+
+PROCEDURE vga_fillblt ( destaddr: INTEGER;
+                        w: INTEGER;
+                        h: INTEGER;
+                        pitch: INTEGER;
+                        c: INTEGER );
+
+PROCEDURE vga_hlinelistblt ( ymin: INTEGER;
+                             n: INTEGER;
+                             VAR xmin: INTEGER;
+                             VAR xmax: INTEGER;
+                             pitch: INTEGER;
+                             c: INTEGER );
+
+PROCEDURE vga_blitwait;
+
+PROCEDURE vga_ext_set ( what: CARDINAL;
+                        SEQ args: SYSTEM.BYTE ): INTEGER;
+
+PROCEDURE vga_accel ( operation: CARDINAL;
+                      SEQ args: SYSTEM.BYTE ): INTEGER;
+
+(*  Valid values for what in vga_ext_set:  *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  VGA_EXT_AVAILABLE   - : INTEGER;
+  VGA_EXT_SET         - : INTEGER;
+  VGA_EXT_CLEAR       - : INTEGER;
+  VGA_EXT_RESET       - : INTEGER;
+  VGA_EXT_PAGE_OFFSET - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  VGA_EXT_AVAILABLE   = 0; (* supported flags  *)
+  VGA_EXT_SET         = 1; (* set flag(s)  *)
+  VGA_EXT_CLEAR       = 2; (* clear flag(s)  *)
+  VGA_EXT_RESET       = 3; (* set/clear flag(s)  *)
+  VGA_EXT_PAGE_OFFSET = 4; (* set an offset for all subsequent
+                              vga_set_page() calls  *)
+
+<* END *>
+
+(*  Like: vga_ext_set(VGA_EXT_PAGE_OFFSET, 42);            *)
+(*  returns the previous offset value.                     *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  VGA_EXT_FONT_SIZE - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  VGA_EXT_FONT_SIZE = 5;   (*  the (maximal) size of the font buffer  *)
+
+<* END *>
+
+(*  Valid params for VGA_EXT_AVAILABLE:  *)
+
+
+CONST 
+  VGA_AVAIL_SET          = 0; (* vga_ext_set sub funcs  *)
+  VGA_AVAIL_ACCEL        = 1; (* vga_accel sub funcs  *)
+  VGA_AVAIL_FLAGS        = 2; (* known flags for VGA_EXT_SET  *)
+  VGA_AVAIL_ROP          = 3; (* vga_accel ROP sub funcs  *)
+  VGA_AVAIL_TRANSPARENCY = 4; (* vga_accel TRANSPARENCY sub funcs  *)
+  VGA_AVAIL_ROPMODES     = 5; (* vga_accel ROP modes supported funcs  *)
+  VGA_AVAIL_TRANSMODES   = 6; (* vga_accel TRANSPARENCY modes supported  *)
+
+
+(*  Known flags to vga_ext_set()  *)
+
+CONST 
+  VGA_CLUT8 = 1;   (*  8 bit DAC entries  *)
+
+(*  Acceleration interface.  *)
+
+(*  Accel operations.  *)
+
+
+CONST 
+  ACCEL_FILLBOX          = 1;  (*  Simple solid fill.  *)
+  ACCEL_SCREENCOPY       = 2;  (*  Simple screen-to-screen BLT.  *)
+  ACCEL_PUTIMAGE         = 3;  (*  Straight image transfer.  *)
+  ACCEL_DRAWLINE         = 4;  (*  General line draw.  *)
+  ACCEL_SETFGCOLOR       = 5;  (*  Set foreground color.  *)
+  ACCEL_SETBGCOLOR       = 6;  (*  Set background color.  *)
+  ACCEL_SETTRANSPARENCY  = 7;  (*  Set transparency mode.  *)
+  ACCEL_SETRASTEROP      = 8;  (*  Set raster-operation.  *)
+  ACCEL_PUTBITMAP        = 9;  (*  Color-expand bitmap.  *)
+  ACCEL_SCREENCOPYBITMAP = 10; (*  Color-expand from screen.  *)
+  ACCEL_DRAWHLINELIST    = 11; (*  Draw horizontal spans.  *)
+  ACCEL_SETMODE          = 12; (*  Set blit strategy.  *)
+  ACCEL_SYNC             = 13; (*  Wait for blits to finish.  *)
+  ACCEL_SETOFFSET        = 14; (*  Set screen offset  *)
+  ACCEL_SCREENCOPYMONO   = 15; (*  Monochrome screen-to-screen BLT.  *)
+  ACCEL_POLYLINE         = 16; (*  Draw multiple lines.  *)
+  ACCEL_POLYHLINE        = 17; (*  Draw multiple horizontal spans.  *)
+  ACCEL_POLYFILLMODE     = 18; (*  Set polygon mode.  *)
+
+(*  Corresponding bitmask.  *)
+
+CONST 
+  ACCELFLAG_FILLBOX          = 1H;     (*  Simple solid fill.  *)
+  ACCELFLAG_SCREENCOPY       = 2H;     (*  Simple screen-to-screen BLT.  *)
+  ACCELFLAG_PUTIMAGE         = 4H;     (*  Straight image transfer.  *)
+  ACCELFLAG_DRAWLINE         = 8H;     (*  General line draw.  *)
+  ACCELFLAG_SETFGCOLOR       = 10H;    (*  Set foreground color.  *)
+  ACCELFLAG_SETBGCOLOR       = 20H;    (*  Set background color.  *)
+  ACCELFLAG_SETTRANSPARENCY  = 40H;    (*  Set transparency mode.  *)
+  ACCELFLAG_SETRASTEROP      = 80H;    (*  Set raster-operation.  *)
+  ACCELFLAG_PUTBITMAP        = 100H;   (*  Color-expand bitmap.  *)
+  ACCELFLAG_SCREENCOPYBITMAP = 200H;   (*  Color-exand from screen.  *)
+  ACCELFLAG_DRAWHLINELIST    = 400H;   (*  Draw horizontal spans.  *)
+  ACCELFLAG_SETMODE          = 800H;   (*  Set blit strategy.  *)
+  ACCELFLAG_SYNC             = 1000H;  (*  Wait for blits to finish.  *)
+  ACCELFLAG_SETOFFSET        = 2000H;  (*  Set screen offset  *)
+  ACCELFLAG_SCREENCOPYMONO   = 4000H;  (*  Monochrome screen-to-screen BLT.  *)
+  ACCELFLAG_POLYLINE         = 8000H;  (*  Draw multiple lines.  *)
+  ACCELFLAG_POLYHLINE        = 10000H; (*  Draw multiple horizontal spans.  *)
+  ACCELFLAG_POLYFILLMODE     = 20000H; (*  Set polygon mode.  *)
+
+(*  Mode for SetTransparency.  *)
+
+
+CONST 
+  DISABLE_TRANSPARENCY_COLOR  = 0;
+  ENABLE_TRANSPARENCY_COLOR   = 1;
+  DISABLE_BITMAP_TRANSPARENCY = 2;
+  ENABLE_BITMAP_TRANSPARENCY  = 3;
+
+
+(*  Flags for SetMode (accelerator interface).  *)
+
+CONST 
+  BLITS_SYNC          = 0;
+  BLITS_IN_BACKGROUND = 1H;
+
+
+(*  Raster ops.  *)
+
+CONST 
+  ROP_COPY   = 0;   (*  Straight copy.  *)
+  ROP_OR     = 1;   (*  Source OR destination.  *)
+  ROP_AND    = 2;   (*  Source AND destination.  *)
+  ROP_XOR    = 3;   (*  Source XOR destination.  *)
+  ROP_INVERT = 4;   (*  Invert destination.  *)
+
+(*  For the poly funcs  *)
+
+CONST 
+  ACCEL_START = 1;
+  ACCEL_END   = 2;
+
+(*
+ * wait for keypress, mousemove, I/O, timeout. cf. select (3) for details on
+ * all parameters execept which.
+ * NULL is a valid argument for any of the ptrs.
+ *)
+
+PROCEDURE vga_waitevent ( which: INTEGER;
+                          in: SYSTEM.ADDRESS;
+                          out: SYSTEM.ADDRESS;
+                          except: SYSTEM.ADDRESS;
+                          timeout: SYSTEM.ADDRESS ): INTEGER;
+
+(*
+ * valid values for what ( | is valid to combine them )
+ *)
+
+CONST 
+  VGA_MOUSEEVENT = 1;
+  VGA_KEYEVENT   = 2;
+
+(*
+ * return value >= has bits set for mouse/keyboard events detected.
+ * mouse and raw keyboard events are already handled and their bits removed
+ * from *in when vga_waitevent returns.
+ * VGA_KEYEVENT relates to vga_getch NOT vga_getkey.
+ * return values < 0 signal errors. In this case check errno.
+ *)
+
+(*  Background running  *)
+
+PROCEDURE vga_runinbackground ( stat: INTEGER; SEQ arg0: SYSTEM.BYTE );
+
+CONST 
+  VGA_GOTOBACK     = -1;
+  VGA_COMEFROMBACK = -2;
+
+PROCEDURE vga_runinbackground_version (): INTEGER;
+
+END vga.

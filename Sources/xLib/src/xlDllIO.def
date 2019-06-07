@@ -1,0 +1,58 @@
+(** Copyright (c) 1997 xTech Ltd, Russia. All Rights Reserved. *)
+(** XDS Librarian. "PE" and "LX" DLL export section parser. *)
+
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE xlDllIO; (* VitVit'n'Hady. 17.01.97 15:54 *)
+
+IMPORT RndFile, SYSTEM;
+
+TYPE
+  ChanId = RndFile.ChanId;
+
+
+TYPE
+  BYTE = SYSTEM.CARD8;
+  WORD = SYSTEM.CARD16;
+
+CONST (* results of functions *)
+  readOK       = 0;
+  readIO       = 1;
+  readNotExe   = 2;
+  readNotPE    = 3;
+  readBadExe   = 4;
+  readNoExport = 5;
+  readEndLXExp = 6; -- LX only
+  EOExport     = 7;
+
+TYPE
+  ExportEntry = RECORD
+    ordinal :INTEGER;
+    nameofs :CARDINAL;
+  END;
+
+(* LX parser uses only nameDll & nameOfs fields *)
+  PEExportDesc = RECORD
+    nameDll :CARDINAL;  -- DLL's name offset
+    ordBase :CARDINAL;
+    funcs   :INTEGER;
+    names   :INTEGER;   (* actual number of functions to be imported *)
+    nameOfs :CARDINAL;  -- < name, ordinal > offset in the case LX
+    ordOfs  :CARDINAL;
+    rvaOfs  :CARDINAL;
+    adjust  :CARDINAL;
+  END;
+
+
+PROCEDURE ReadName ( cid :ChanId; ofs :CARDINAL; VAR buf :ARRAY OF CHAR; VAR len :INTEGER) :INTEGER;
+
+
+PROCEDURE OpenExport (cid :ChanId; VAR desc :PEExportDesc ) :INTEGER;
+
+(* LX parser doesn't use the "no" parameter *)
+PROCEDURE NextEntry (     cid  :ChanId;
+                      VAR desc :PEExportDesc;
+                          no   :INTEGER;
+                      VAR res  :ExportEntry   ) :INTEGER;
+
+END xlDllIO.

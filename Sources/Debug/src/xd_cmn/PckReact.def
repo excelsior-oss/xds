@@ -1,0 +1,88 @@
+-- Содержит процедуры, реализующие реакции на происходящие события
+-- в программе: исключительные ситуации, точки останова, установку
+-- и снятие остановов пакетного отладчика.
+
+DEFINITION MODULE PckReact;
+
+IMPORT kt  := KrnTypes;
+
+IMPORT brk := Breaks;
+IMPORT eve := Events;
+IMPORT erc := ExeReact;
+
+IMPORT xStr;
+
+IMPORT pt  := PckTypes;
+
+
+(* Проверка, нужен ли режим Step *)
+PROCEDURE NeedToStepMode (): BOOLEAN;
+
+(* Удаление останова по номеру *)
+PROCEDURE DelBreak (N: CARDINAL) : BOOLEAN;
+
+(* Поиск рекции по номеру *)
+PROCEDURE FindBreak (        N   : CARDINAL;
+                     VAR Event   : eve.EVENT_TYPE;
+                     VAR React   : erc.PREACTION;
+                     VAR BreakPos: CARDINAL): BOOLEAN;
+
+
+TYPE
+  (* Данные для реакции на исключительную ситуацию в программе *)
+  PEXCEPTION = POINTER TO EXCEPTION;
+  EXCEPTION  = RECORD
+                 Description : pt.BREAK_DESCRIPTION;
+                 Exception_ID: eve.EXCEPTION_ID;
+               END;
+
+(* Поиск реакции на исключительную ситуацию в программе *)
+(* идентификатору исключительной ситуации               *)
+PROCEDURE FindException (Exception_ID: eve.EXCEPTION_ID): BOOLEAN;
+
+(* Реакция на исключительную ситуацию в программе *)
+PROCEDURE SetExceptionReaction (data: erc.DATA);
+
+
+TYPE
+  (* Данные для реакции на исполнение команды Call *)
+  PCALL = POINTER TO CALL;
+  CALL  = RECORD
+            Description: pt.BREAK_DESCRIPTION;
+            Address    : kt.ADDRESS;
+            Exactly    : BOOLEAN;
+          END;
+
+(* Реакция на исполнение команды Call *)
+PROCEDURE Call (data: erc.DATA);
+
+
+TYPE
+  (* Данные для реакции на исполнение команды Ret *)
+  PRETURN = POINTER TO DRETURN;
+  DRETURN = RECORD
+             Description: pt.BREAK_DESCRIPTION;
+             Count      : CARDINAL;
+           END;
+
+(* Реакция на исполнение команды Ret *)
+PROCEDURE Return (data: erc.DATA);
+
+
+(* Поиск реакции на доступ *)
+PROCEDURE FindAccess (Access: brk.ACCESS_BREAK): BOOLEAN;
+
+
+TYPE
+  PCOMP = POINTER TO COMP;
+  COMP  = RECORD
+            Description: pt.BREAK_DESCRIPTION;
+            Action     : pt.MODE_FLAGS;
+            CompName   : xStr.String;
+          END;
+
+PROCEDURE CompProcessing (data: erc.DATA);
+
+END PckReact.
+
+

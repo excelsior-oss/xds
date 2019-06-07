@@ -1,0 +1,29 @@
+-- Описание структур данных для хранения информации о расставленных
+-- остановах для диалогового отладчика
+-- Добавление и поиск остановов; обработчик окна остановов
+-- Обработчик диалогового окна добавления останова по доступу
+
+DEFINITION MODULE DlgBreak;
+
+FROM KrnTypes IMPORT ADDRESS;
+FROM Events   IMPORT ACCESS_TYPE;
+
+IMPORT dlt := DlgTypes;
+
+PROCEDURE FindBreakPos(com, mod, ln: CARDINAL): CARDINAL;
+
+PROCEDURE FindBreakPosByAddr(addr: ADDRESS): CARDINAL;
+
+PROCEDURE RefreshBreaks;
+
+PROCEDURE WriteBreaks (out: dlt.OUT_PROC);
+
+
+<* IF DEST_XDS THEN *>
+
+PROCEDURE SetAccessAttr (location: ARRAY OF CHAR; len: CARDINAL);
+PROCEDURE CreateNewAccessBreak(access_type: ACCESS_TYPE; Addr: ADDRESS; len: CARDINAL): BOOLEAN;
+
+<* END *>
+
+END DlgBreak.

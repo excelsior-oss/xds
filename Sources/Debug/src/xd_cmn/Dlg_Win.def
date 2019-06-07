@@ -1,0 +1,92 @@
+-- Модуль организует систему окон. Содержит процедуры для
+-- регистрации окон, открытия, закрытия, установки заголовка,
+-- обработчиков, других атрибутов окон. Позволяет получить
+-- всю необходимую информацию об окне.
+
+DEFINITION MODULE Dlg_Win;
+
+IMPORT sys := SYSTEM;
+
+IMPORT crt := CRT;
+IMPORT eve := DlgEvent;
+IMPORT dlt := DlgTypes;
+
+TYPE
+  HWND = dlt.HWND;
+
+CONST
+  Invalid_H = dlt.Invalid_H;
+
+PROCEDURE IsValid (hwnd: HWND): BOOLEAN;
+
+
+VAR
+  ActiveWindow: HWND;
+
+TYPE
+  WND_PROC = PROCEDURE(HWND,eve.MSG);
+
+PROCEDURE RegisterWindow(hndl: WND_PROC; amem: CARDINAL): HWND;
+          (* amem: pазмеp ассоцииpуемой с новым окном памяти *)
+
+PROCEDURE FindOpened (hwnd: HWND; hndl: WND_PROC): CARDINAL;
+PROCEDURE FindClosed (hwnd: HWND; hndl: WND_PROC): CARDINAL;
+
+PROCEDURE Rise(win: HWND);
+PROCEDURE ActiveToTail;
+PROCEDURE PopupLast;
+
+PROCEDURE GetAMPtr(hwnd: HWND): sys.ADDRESS;
+(* получить указатель на ассоцииpуемую память по HWND *)
+
+PROCEDURE ExcludeFromList (hwnd: HWND);
+
+PROCEDURE GetPair(hwnd: HWND): HWND;
+PROCEDURE SetPair(hwnd: HWND; pair: HWND);
+
+PROCEDURE GetHandler(hwnd: HWND): WND_PROC;
+
+PROCEDURE GetWindowSize(hwnd: HWND): crt.SZ;
+PROCEDURE SetWindowSize(hwnd: HWND;size: crt.SZ);
+
+PROCEDURE Visible(hwnd: HWND): BOOLEAN;
+PROCEDURE Hide(hwnd: HWND);
+PROCEDURE UnHide(hwnd: HWND);
+
+PROCEDURE IsModal(hwnd: HWND): BOOLEAN;
+PROCEDURE SetModal(hwnd: HWND);
+
+PROCEDURE IsMovable(hwnd: HWND): BOOLEAN;
+PROCEDURE SetMovable(hwnd: HWND);
+
+PROCEDURE IsResizableX(hwnd: HWND): BOOLEAN;
+PROCEDURE IsResizableY(hwnd: HWND): BOOLEAN;
+PROCEDURE SetResizable(hwnd: HWND; X,Y: BOOLEAN);
+
+PROCEDURE IsSwitchable(hwnd: HWND): BOOLEAN;
+PROCEDURE SetSwitchable(hwnd: HWND);
+
+PROCEDURE IsSearchable(hwnd: HWND): BOOLEAN;
+PROCEDURE SetSearchable(hwnd: HWND);
+
+PROCEDURE GetHeader(hwnd: HWND; VAR str: ARRAY OF CHAR);
+PROCEDURE SetHeader(hwnd: HWND; no: CARDINAL);
+PROCEDURE SetHeaderByStr(hwnd: HWND; str: ARRAY OF CHAR);
+
+
+PROCEDURE GetPrevious (hwnd: HWND): HWND; (* кто был пpедыдлущим активным окном? *)
+
+PROCEDURE GetMouse (msg: eve.MSG; VAR x, y: CARDINAL): BOOLEAN;
+PROCEDURE GetRelMouse (hwnd: HWND; msg: eve.MSG; VAR x, y: CARDINAL): BOOLEAN;
+
+
+TYPE
+  ITERATOR = PROCEDURE(HWND);
+
+PROCEDURE IterateForVisible(action: ITERATOR);
+
+PROCEDURE WinDispatchMsg(msg: eve.MSG): BOOLEAN;
+
+PROCEDURE InitWindowsList (offs: CARDINAL);
+
+END Dlg_Win.

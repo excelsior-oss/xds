@@ -1,0 +1,1026 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] WinNLS;
+
+(****************************************************************************
+*                                                                           *
+* WinNLS.def -- NLS procedure declarations, constant definitions and macros *
+*                                                                           *
+* Copyright (c) 1991-1995, Microsoft Corp. All rights reserved.             *
+*                                                                           *
+****************************************************************************)
+
+FROM WinDef IMPORT BOOL, UINT, WORD, DWORD, BYTE, PCHAR, PBOOL, PWORD,
+            WCHAR, PSTR, PWSTR, PCSTR, PCWSTR, STRING, WSTRING;
+
+FROM WinNT   IMPORT LCID, LANGID;
+FROM WinBase IMPORT PSYSTEMTIME;
+
+(****************************************************************************
+* Constants
+*
+* Define all constants for the NLS component here.
+****************************************************************************)
+
+
+(*
+ *  String Length Maximums.
+ *)
+
+CONST MAX_LEADBYTES        = 12;             (* 5 ranges, 2 bytes ea., 0 term. *)
+      MAX_DEFAULTCHAR      = 2;              (* single or double byte *)
+
+
+(*
+ *  MBCS and Unicode Translation Flags.
+ *)
+
+(* Flags for MultiByteToWideChar function *)
+
+TYPE MULTIBYTE_ENUM = (MB__PRECOMPOSED,        (* 0 - use precomposed chars *)
+                       MB__COMPOSITE,          (* 1 - use composite chars *)
+                       MB__USEGLYPHCHARS,      (* 2 - use glyph chars, not ctrl chars *)
+                       MB__ERR_INVALID_CHARS); (* 3 - error for invalid chars *)
+     MULTIBYTE_SET = SET OF MULTIBYTE_ENUM;
+
+CONST MB_PRECOMPOSED       = MULTIBYTE_SET {MB__PRECOMPOSED};       (* 00000001h *)
+      MB_COMPOSITE         = MULTIBYTE_SET {MB__COMPOSITE};         (* 00000002h *)
+      MB_USEGLYPHCHARS     = MULTIBYTE_SET {MB__USEGLYPHCHARS};     (* 00000004h *)
+      MB_ERR_INVALID_CHARS = MULTIBYTE_SET {MB__ERR_INVALID_CHARS}; (* 00000008h *)
+
+
+(* WideCharToMultiByte flags *)
+
+TYPE WC_ENUM = (WC__0, WC__1,
+                WC__2, WC__3,
+                WC__DISCARDNS,       (* 4 - discard non-spacing chars *)
+                WC__SEPCHARS,        (* 5 - generate separate chars *)
+                WC__DEFAULTCHAR,     (* 6 - replace w/ default char *)
+                WC__7,
+                WC__DEFAULTCHECK,    (* 8 - check for default char *)
+                WC__COMPOSITECHECK); (* 9 - convert composite to precomposed *)
+
+     WC_SET = SET OF WC_ENUM;
+
+CONST WC_DEFAULTCHECK   = WC_SET {WC__DEFAULTCHECK  }; (* 00000100h *)
+      WC_COMPOSITECHECK = WC_SET {WC__COMPOSITECHECK}; (* 00000200h *)
+      WC_DISCARDNS      = WC_SET {WC__DISCARDNS     }; (* 00000010h *)
+      WC_SEPCHARS       = WC_SET {WC__SEPCHARS      }; (* 00000020h *)
+      WC_DEFAULTCHAR    = WC_SET {WC__DEFAULTCHAR   }; (* 00000040h *)
+
+(*
+ *  Character Type Flags.
+ *)
+
+TYPE CT_ENUM = (CT__CTYPE1,  (* 0 - ctype 1 information *)
+                CT__CTYPE2,  (* 1 - ctype 2 information *)
+                CT__CTYPE3); (* 2 - ctype 3 information *)
+
+     CT_SET = SET OF CT_ENUM;
+
+CONST CT_CTYPE1 = CT_SET {CT__CTYPE1}; (* 00000001h *)
+      CT_CTYPE2 = CT_SET {CT__CTYPE2}; (* 00000002h *)
+      CT_CTYPE3 = CT_SET {CT__CTYPE3}; (* 00000004h *)
+
+(*
+ *  CType 1 Flag Bits.
+ *)
+
+CONST C1_UPPER             = 0001h;         (* upper case *)
+      C1_LOWER             = 0002h;         (* lower case *)
+      C1_DIGIT             = 0004h;         (* decimal digits *)
+      C1_SPACE             = 0008h;         (* spacing characters *)
+      C1_PUNCT             = 0010h;         (* punctuation characters *)
+      C1_CNTRL             = 0020h;         (* control characters *)
+      C1_BLANK             = 0040h;         (* blank characters *)
+      C1_XDIGIT            = 0080h;         (* other digits *)
+      C1_ALPHA             = 0100h;         (* any linguistic character *)
+
+(*
+ *  CType 2 Flag Bits.
+ *)
+      C2_LEFTTORIGHT       = 0001h;         (* left to right *)
+      C2_RIGHTTOLEFT       = 0002h;         (* right to left *)
+
+      C2_EUROPENUMBER      = 0003h;         (* European number, digit *)
+      C2_EUROPESEPARATOR   = 0004h;         (* European numeric separator *)
+      C2_EUROPETERMINATOR  = 0005h;         (* European numeric terminator *)
+      C2_ARABICNUMBER      = 0006h;         (* Arabic number *)
+      C2_COMMONSEPARATOR   = 0007h;         (* common numeric separator *)
+
+      C2_BLOCKSEPARATOR    = 0008h;         (* block separator *)
+      C2_SEGMENTSEPARATOR  = 0009h;         (* segment separator *)
+      C2_WHITESPACE        = 000Ah;         (* white space *)
+      C2_OTHERNEUTRAL      = 000Bh;         (* other neutrals *)
+
+      C2_NOTAPPLICABLE     = 0000h;         (* no implicit directionality *)
+
+(*
+ *  CType 3 Flag Bits.
+ *)
+
+      C3_NONSPACING        = 0001h;         (* nonspacing character *)
+      C3_DIACRITIC         = 0002h;         (* diacritic mark *)
+      C3_VOWELMARK         = 0004h;         (* vowel mark *)
+      C3_SYMBOL            = 0008h;         (* symbols *)
+
+      C3_KATAKANA          = 0010h;         (* katakana character *)
+      C3_HIRAGANA          = 0020h;         (* hiragana character *)
+      C3_HALFWIDTH         = 0040h;         (* half width character *)
+      C3_FULLWIDTH         = 0080h;         (* full width character *)
+      C3_IDEOGRAPH         = 0100h;         (* ideographic character *)
+      C3_KASHIDA           = 0200h;         (* Arabic kashida character *)
+      C3_LEXICAL           = 0400h;         (* lexical character *)
+
+      C3_ALPHA             = 8000h;         (* any linguistic char (C1_ALPHA) *)
+
+      C3_NOTAPPLICABLE     = 0000h;         (* ctype 3 is not applicable *)
+
+(*
+ *  String Flags.
+ *)
+
+TYPE SFLAGS_ENUM = (SFLAGS__0,  SFLAGS__1,  SFLAGS__2,  SFLAGS__3,
+                    SFLAGS__4,  SFLAGS__5,  SFLAGS__6,  SFLAGS__7,
+                    SFLAGS__8,  SFLAGS__9,  SFLAGS__10, SFLAGS__11,
+                    SFLAGS__12, SFLAGS__13, SFLAGS__14, SFLAGS__15,
+                    SFLAGS__16, SFLAGS__17, SFLAGS__18, SFLAGS__19,
+                    SFLAGS__20, SFLAGS__21, SFLAGS__22, SFLAGS__23);
+
+     SFLAGS_SET = SET OF SFLAGS_ENUM;
+
+CONST NORM__IGNORECASE     = SFLAGS__0;  (* ignore case *)
+      NORM__IGNORENONSPACE = SFLAGS__1;  (* ignore nonspacing chars *)
+      NORM__IGNORESYMBOLS  = SFLAGS__2;  (* ignore symbols *)
+      NORM__IGNOREKANATYPE = SFLAGS__16; (* ignore kanatype *)
+      NORM__IGNOREWIDTH    = SFLAGS__17; (* ignore width *)
+
+TYPE NORM_SET = SFLAGS_SET;
+
+CONST NORM_IGNORECASE     = NORM_SET {NORM__IGNORECASE    }; (* 00000001h *)
+      NORM_IGNORENONSPACE = NORM_SET {NORM__IGNORENONSPACE}; (* 00000002h *)
+      NORM_IGNORESYMBOLS  = NORM_SET {NORM__IGNORESYMBOLS }; (* 00000004h *)
+      NORM_IGNOREKANATYPE = NORM_SET {NORM__IGNOREKANATYPE}; (* 00010000h *)
+      NORM_IGNOREWIDTH    = NORM_SET {NORM__IGNOREWIDTH   }; (* 00020000h *)
+
+(* Locale Independent Mapping Flags. *) 
+
+TYPE MAP_ENUM = (MAP__0, MAP__1,
+                 MAP__2, MAP__3,
+                 MAP__FOLDCZONE,   (* 4 - fold compatibility zone chars *)
+                 MAP__PRECOMPOSED, (* 5 - convert to precomposed chars *)
+                 MAP__COMPOSITE,   (* 6 - convert to composite chars *)
+                 MAP__FOLDDIGITS); (* 7 - all digits to ASCII 0-9 *)
+
+     MAP_SET = SET OF MAP_ENUM;
+
+CONST MAP_FOLDCZONE   = MAP_SET {MAP__FOLDCZONE  }; (* 00000010h *)
+      MAP_PRECOMPOSED = MAP_SET {MAP__PRECOMPOSED}; (* 00000020h *)
+      MAP_COMPOSITE   = MAP_SET {MAP__COMPOSITE  }; (* 00000040h *)
+      MAP_FOLDDIGITS  = MAP_SET {MAP__FOLDDIGITS }; (* 00000080h *)
+
+(*
+ *  Locale Dependent Mapping Flags.
+ *)
+
+CONST LCMAP__LOWERCASE = SFLAGS__8;   (* lower case letters *)
+      LCMAP__UPPERCASE = SFLAGS__9;   (* upper case letters *)
+      LCMAP__SORTKEY   = SFLAGS__10;  (* WC sort key (normalize) *)
+      LCMAP__BYTEREV   = SFLAGS__11;  (* byte reversal *)
+
+      LCMAP__HIRAGANA  = SFLAGS__20;  (* map katakana to hiragana *)
+      LCMAP__KATAKANA  = SFLAGS__21;  (* map hiragana to katakana *)
+      LCMAP__HALFWIDTH = SFLAGS__22;  (* map double byte to single byte *)
+      LCMAP__FULLWIDTH = SFLAGS__23;  (* map single byte to double byte *)
+
+CONST LCMAP_LOWERCASE         = SFLAGS_SET {LCMAP__LOWERCASE}; (* 00000100h *)
+      LCMAP_UPPERCASE         = SFLAGS_SET {LCMAP__UPPERCASE}; (* 00000200h *)
+      LCMAP_SORTKEY           = SFLAGS_SET {LCMAP__SORTKEY  }; (* 00000400h *)
+      LCMAP_BYTEREV           = SFLAGS_SET {LCMAP__BYTEREV  }; (* 00000800h *)
+
+      LCMAP_HIRAGANA          = SFLAGS_SET {LCMAP__HIRAGANA }; (* 00100000h *)
+      LCMAP_KATAKANA          = SFLAGS_SET {LCMAP__KATAKANA }; (* 00200000h *)
+      LCMAP_HALFWIDTH         = SFLAGS_SET {LCMAP__HALFWIDTH}; (* 00400000h *)
+      LCMAP_FULLWIDTH         = SFLAGS_SET {LCMAP__FULLWIDTH}; (* 00800000h *)
+
+
+
+(*
+ *  Locale Enumeration Flags.
+ *)
+
+TYPE LCID_ENUM_TYPE = (LCID_0,
+                       LCID_INSTALLED,  (* 00000001h - installed locale ids *)
+                       LCID_SUPPORTED); (* 00000002h - supported locale ids *)
+
+(*
+ *  Code Page Enumeration Flags.
+ *)
+
+TYPE CP_ENUM_TYPE = (CP_0,
+                     CP_INSTALLED,  (* 00000001h - installed code page ids *)
+                     CP_SUPPORTED); (* 00000002h - supported code page ids *)
+
+
+(*
+ *  Sorting Flags.
+ *
+ *    WORD Sort:    culturally correct sort
+ *                  hyphen and apostrophe are special cased
+ *                  example: "coop" and "co-op" will sort together in a list
+ *
+ *                        co_op     <-------  underscore (symbol)
+ *                        coat
+ *                        comb
+ *                        coop
+ *                        co-op     <-------  hyphen (punctuation)
+ *                        cork
+ *                        went
+ *                        were
+ *                        we're     <-------  apostrophe (punctuation)
+ *
+ *
+ *    STRING Sort:  hyphen and apostrophe will sort with all other symbols
+ *
+ *                        co-op     <-------  hyphen (punctuation)
+ *                        co_op     <-------  underscore (symbol)
+ *                        coat
+ *                        comb
+ *                        coop
+ *                        cork
+ *                        we're     <-------  apostrophe (punctuation)
+ *                        went
+ *                        were
+ *)
+
+
+
+CONST SORT__STRINGSORT = SFLAGS__12; (* use string sort method *)
+
+CONST SORT_STRINGSORT = SFLAGS_SET {SORT__STRINGSORT}; (* 00001000h *)
+
+
+(*
+ *  Code Page Default Values.
+ *)
+
+CONST CP_ACP               = 0;              (* default to ANSI code page *)
+      CP_OEMCP             = 1;              (* default to OEM  code page *)
+      CP_MACCP             = 2;              (* default to MAC  code page *)
+
+(*
+ *  Country Codes.
+ *)
+
+CONST CTRY_DEFAULT                     = 0;
+
+      CTRY_AUSTRALIA                   = 61;      (* Australia *)
+      CTRY_AUSTRIA                     = 43;      (* Austria *)
+      CTRY_BELGIUM                     = 32;      (* Belgium *)
+      CTRY_BRAZIL                      = 55;      (* Brazil *)
+      CTRY_BULGARIA                    = 359;     (* Bulgaria *)
+      CTRY_CANADA                      = 2;       (* Canada *)
+      CTRY_CROATIA                     = 385;     (* Croatia *)
+      CTRY_CZECH                       = 42;      (* Czech Republic *)
+      CTRY_DENMARK                     = 45;      (* Denmark *)
+      CTRY_FINLAND                     = 358;     (* Finland *)
+      CTRY_FRANCE                      = 33;      (* France *)
+      CTRY_GERMANY                     = 49;      (* Germany *)
+      CTRY_GREECE                      = 30;      (* Greece *)
+      CTRY_HONG_KONG                   = 852;     (* Hong Kong *)
+      CTRY_HUNGARY                     = 36;      (* Hungary *)
+      CTRY_ICELAND                     = 354;     (* Iceland *)
+      CTRY_IRELAND                     = 353;     (* Ireland *)
+      CTRY_ITALY                       = 39;      (* Italy *)
+      CTRY_JAPAN                       = 81;      (* Japan *)
+      CTRY_MEXICO                      = 52;      (* Mexico *)
+      CTRY_NETHERLANDS                 = 31;      (* Netherlands *)
+      CTRY_NEW_ZEALAND                 = 64;      (* New Zealand *)
+      CTRY_NORWAY                      = 47;      (* Norway *)
+      CTRY_POLAND                      = 48;      (* Poland *)
+      CTRY_PORTUGAL                    = 351;     (* Portugal *)
+      CTRY_PRCHINA                     = 86;      (* Peoples' Republic of China *)
+      CTRY_ROMANIA                     = 40;      (* Romania *)
+      CTRY_RUSSIA                      = 7;       (* Russia *)
+      CTRY_SINGAPORE                   = 65;      (* Singapore *)
+      CTRY_SLOVAK                      = 42;      (* Slovak Republic *)
+      CTRY_SLOVENIA                    = 386;     (* Slovenia *)
+      CTRY_SOUTH_KOREA                 = 82;      (* South Korea *)
+      CTRY_SPAIN                       = 34;      (* Spain *)
+      CTRY_SWEDEN                      = 46;      (* Sweden *)
+      CTRY_SWITZERLAND                 = 41;      (* Switzerland *)
+      CTRY_TAIWAN                      = 886;     (* Taiwan *)
+      CTRY_TURKEY                      = 90;      (* Turkey *)
+      CTRY_UNITED_KINGDOM              = 44;      (* United Kingdom *)
+      CTRY_UNITED_STATES               = 1;       (* United States *)
+
+
+(*
+ *  Locale Types.
+ *
+ *  These types are used for the GetLocaleInfoW NLS API routine.
+ *
+ *  LOCALE_NOUSEROVERRIDE is also used in GetTimeFormatW and GetDateFormatW.
+ *
+ *  LOCALE_USE_CP_ACP is used in many of the A (Ansi) apis that need to do
+ *  string translation.
+ *)
+
+
+CONST LOCALE_NOUSEROVERRIDE       = 80000000h;   (* do not use user overrides *)
+      LOCALE_USE_CP_ACP           = 40000000h;   (* use the system ACP *)
+
+      LOCALE_ILANGUAGE            = 00000001h;   (* language id *)
+      LOCALE_SLANGUAGE            = 00000002h;   (* localized name of language *)
+      LOCALE_SENGLANGUAGE         = 00001001h;   (* English name of language *)
+      LOCALE_SABBREVLANGNAME      = 00000003h;   (* abbreviated language name *)
+      LOCALE_SNATIVELANGNAME      = 00000004h;   (* native name of language *)
+      LOCALE_ICOUNTRY             = 00000005h;   (* country code *)
+      LOCALE_SCOUNTRY             = 00000006h;   (* localized name of country *)
+      LOCALE_SENGCOUNTRY          = 00001002h;   (* English name of country *)
+      LOCALE_SABBREVCTRYNAME      = 00000007h;   (* abbreviated country name *)
+      LOCALE_SNATIVECTRYNAME      = 00000008h;   (* native name of country *)
+      LOCALE_IDEFAULTLANGUAGE     = 00000009h;   (* default language id *)
+      LOCALE_IDEFAULTCOUNTRY      = 0000000Ah;   (* default country code *)
+      LOCALE_IDEFAULTCODEPAGE     = 0000000Bh;   (* default oem code page *)
+      LOCALE_IDEFAULTANSICODEPAGE = 00001004h;   (* default ansi code page *)
+
+      LOCALE_SLIST                = 0000000Ch;   (* list item separator *)
+      LOCALE_IMEASURE             = 0000000Dh;   (* 0 = metric, 1 = US *)
+
+      LOCALE_SDECIMAL             = 0000000Eh;   (* decimal separator *)
+      LOCALE_STHOUSAND            = 0000000Fh;   (* thousand separator *)
+      LOCALE_SGROUPING            = 00000010h;   (* digit grouping *)
+      LOCALE_IDIGITS              = 00000011h;   (* number of fractional digits *)
+      LOCALE_ILZERO               = 00000012h;   (* leading zeros for decimal *)
+      LOCALE_INEGNUMBER           = 00001010h;   (* negative number mode *)
+      LOCALE_SNATIVEDIGITS        = 00000013h;   (* native ascii 0-9 *)
+
+      LOCALE_SCURRENCY            = 00000014h;   (* local monetary symbol *)
+      LOCALE_SINTLSYMBOL          = 00000015h;   (* intl monetary symbol *)
+      LOCALE_SMONDECIMALSEP       = 00000016h;   (* monetary decimal separator *)
+      LOCALE_SMONTHOUSANDSEP      = 00000017h;   (* monetary thousand separator *)
+      LOCALE_SMONGROUPING         = 00000018h;   (* monetary grouping *)
+      LOCALE_ICURRDIGITS          = 00000019h;   (* # local monetary digits *)
+      LOCALE_IINTLCURRDIGITS      = 0000001Ah;   (* # intl monetary digits *)
+      LOCALE_ICURRENCY            = 0000001Bh;   (* positive currency mode *)
+      LOCALE_INEGCURR             = 0000001Ch;   (* negative currency mode *)
+
+      LOCALE_SDATE                = 0000001Dh;   (* date separator *)
+      LOCALE_STIME                = 0000001Eh;   (* time separator *)
+      LOCALE_SSHORTDATE           = 0000001Fh;   (* short date format string *)
+      LOCALE_SLONGDATE            = 00000020h;   (* long date format string *)
+      LOCALE_STIMEFORMAT          = 00001003h;   (* time format string *)
+      LOCALE_IDATE                = 00000021h;   (* short date format ordering *)
+      LOCALE_ILDATE               = 00000022h;   (* long date format ordering *)
+      LOCALE_ITIME                = 00000023h;   (* time format specifier *)
+      LOCALE_ITIMEMARKPOSN        = 00001005h;   (* time marker position *)
+      LOCALE_ICENTURY             = 00000024h;   (* century format specifier (short date) *)
+      LOCALE_ITLZERO              = 00000025h;   (* leading zeros in time field *)
+      LOCALE_IDAYLZERO            = 00000026h;   (* leading zeros in day field (short date) *)
+      LOCALE_IMONLZERO            = 00000027h;   (* leading zeros in month field (short date) *)
+      LOCALE_S1159                = 00000028h;   (* AM designator *)
+      LOCALE_S2359                = 00000029h;   (* PM designator *)
+
+      LOCALE_ICALENDARTYPE        = 00001009h;   (* type of calendar specifier *)
+      LOCALE_IOPTIONALCALENDAR    = 0000100Bh;   (* additional calendar types specifier *)
+      LOCALE_IFIRSTDAYOFWEEK      = 0000100Ch;   (* first day of week specifier *)
+      LOCALE_IFIRSTWEEKOFYEAR     = 0000100Dh;   (* first week of year specifier *)
+
+      LOCALE_SDAYNAME1            = 0000002Ah;   (* long name for Monday *)
+      LOCALE_SDAYNAME2            = 0000002Bh;   (* long name for Tuesday *)
+      LOCALE_SDAYNAME3            = 0000002Ch;   (* long name for Wednesday *)
+      LOCALE_SDAYNAME4            = 0000002Dh;   (* long name for Thursday *)
+      LOCALE_SDAYNAME5            = 0000002Eh;   (* long name for Friday *)
+      LOCALE_SDAYNAME6            = 0000002Fh;   (* long name for Saturday *)
+      LOCALE_SDAYNAME7            = 00000030h;   (* long name for Sunday *)
+      LOCALE_SABBREVDAYNAME1      = 00000031h;   (* abbreviated name for Monday *)
+      LOCALE_SABBREVDAYNAME2      = 00000032h;   (* abbreviated name for Tuesday *)
+      LOCALE_SABBREVDAYNAME3      = 00000033h;   (* abbreviated name for Wednesday *)
+      LOCALE_SABBREVDAYNAME4      = 00000034h;   (* abbreviated name for Thursday *)
+      LOCALE_SABBREVDAYNAME5      = 00000035h;   (* abbreviated name for Friday *)
+      LOCALE_SABBREVDAYNAME6      = 00000036h;   (* abbreviated name for Saturday *)
+      LOCALE_SABBREVDAYNAME7      = 00000037h;   (* abbreviated name for Sunday *)
+      LOCALE_SMONTHNAME1          = 00000038h;   (* long name for January *)
+      LOCALE_SMONTHNAME2          = 00000039h;   (* long name for February *)
+      LOCALE_SMONTHNAME3          = 0000003Ah;   (* long name for March *)
+      LOCALE_SMONTHNAME4          = 0000003Bh;   (* long name for April *)
+      LOCALE_SMONTHNAME5          = 0000003Ch;   (* long name for May *)
+      LOCALE_SMONTHNAME6          = 0000003Dh;   (* long name for June *)
+      LOCALE_SMONTHNAME7          = 0000003Eh;   (* long name for July *)
+      LOCALE_SMONTHNAME8          = 0000003Fh;   (* long name for August *)
+      LOCALE_SMONTHNAME9          = 00000040h;   (* long name for September *)
+      LOCALE_SMONTHNAME10         = 00000041h;   (* long name for October *)
+      LOCALE_SMONTHNAME11         = 00000042h;   (* long name for November *)
+      LOCALE_SMONTHNAME12         = 00000043h;   (* long name for December *)
+      LOCALE_SMONTHNAME13         = 0000100Eh;   (* long name for 13th month (if exists) *)
+      LOCALE_SABBREVMONTHNAME1    = 00000044h;   (* abbreviated name for January *)
+      LOCALE_SABBREVMONTHNAME2    = 00000045h;   (* abbreviated name for February *)
+      LOCALE_SABBREVMONTHNAME3    = 00000046h;   (* abbreviated name for March *)
+      LOCALE_SABBREVMONTHNAME4    = 00000047h;   (* abbreviated name for April *)
+      LOCALE_SABBREVMONTHNAME5    = 00000048h;   (* abbreviated name for May *)
+      LOCALE_SABBREVMONTHNAME6    = 00000049h;   (* abbreviated name for June *)
+      LOCALE_SABBREVMONTHNAME7    = 0000004Ah;   (* abbreviated name for July *)
+      LOCALE_SABBREVMONTHNAME8    = 0000004Bh;   (* abbreviated name for August *)
+      LOCALE_SABBREVMONTHNAME9    = 0000004Ch;   (* abbreviated name for September *)
+      LOCALE_SABBREVMONTHNAME10   = 0000004Dh;   (* abbreviated name for October *)
+      LOCALE_SABBREVMONTHNAME11   = 0000004Eh;   (* abbreviated name for November *)
+      LOCALE_SABBREVMONTHNAME12   = 0000004Fh;   (* abbreviated name for December *)
+      LOCALE_SABBREVMONTHNAME13   = 0000100Fh;   (* abbreviated name for 13th month (if exists) *)
+
+      LOCALE_SPOSITIVESIGN        = 00000050h;   (* positive sign *)
+      LOCALE_SNEGATIVESIGN        = 00000051h;   (* negative sign *)
+      LOCALE_IPOSSIGNPOSN         = 00000052h;   (* positive sign position *)
+      LOCALE_INEGSIGNPOSN         = 00000053h;   (* negative sign position *)
+      LOCALE_IPOSSYMPRECEDES      = 00000054h;   (* mon sym precedes pos amt *)
+      LOCALE_IPOSSEPBYSPACE       = 00000055h;   (* mon sym sep by space from pos amt *)
+      LOCALE_INEGSYMPRECEDES      = 00000056h;   (* mon sym precedes neg amt *)
+      LOCALE_INEGSEPBYSPACE       = 00000057h;   (* mon sym sep by space from neg amt *)
+
+      LOCALE_FONTSIGNATURE        = 00000058h; (* font signature *)
+
+
+(*
+ *  Time Flags for GetTimeFormatW.
+ *)
+
+TYPE TIME_ENUM = (TIME__NOMINUTESORSECONDS, (* 0 - do not use minutes or seconds *)
+                  TIME__NOSECONDS,          (* 1 - do not use seconds *)
+                  TIME__NOTIMEMARKER,       (* 2 - do not use time marker *)
+                  TIME__FORCE24HOURFORMAT); (* 3 - always use 24 hour format *)
+
+     TIME_SET = SET OF TIME_ENUM;
+
+CONST TIME_NOMINUTESORSECONDS = TIME_SET {TIME__NOMINUTESORSECONDS}; (* 00000001h *)
+      TIME_NOSECONDS          = TIME_SET {TIME__NOSECONDS         }; (* 00000002h *)
+      TIME_NOTIMEMARKER       = TIME_SET {TIME__NOTIMEMARKER      }; (* 00000004h *)
+      TIME_FORCE24HOURFORMAT  = TIME_SET {TIME__FORCE24HOURFORMAT }; (* 00000008h *)
+
+(*
+ *  Date Flags for GetDateFormatW.
+ *)
+
+TYPE DATE_ENUM = (DATE__SHORTDATE,         (* 0 - use short date picture *)
+                  DATE__LONGDATE,          (* 1 - use long date picture *)
+                  DATE__USE_ALT_CALENDAR); (* 2 - use alternate calendar (if any) *)
+
+     DATE_SET = SET OF DATE_ENUM;
+
+CONST DATE_SHORTDATE        = DATE_SET {DATE__SHORTDATE       }; (* 00000001h *)
+      DATE_LONGDATE         = DATE_SET {DATE__LONGDATE        }; (* 00000002h *)
+      DATE_USE_ALT_CALENDAR = DATE_SET {DATE__USE_ALT_CALENDAR}; (* 00000004h *)
+
+
+(*
+ *  Calendar Types.
+ *
+ *  These types are used for the GetALTCalendarInfoW NLS API routine.
+ *)
+
+CONST CAL_ICALINTVALUE           = 00000001h;   (* calendar type *)
+      CAL_SCALNAME               = 00000002h;   (* native name of calendar *)
+      CAL_IYEAROFFSETRANGE       = 00000003h;   (* starting years of eras *)
+      CAL_SERASTRING             = 00000004h;   (* era name for IYearOffsetRanges *)
+      CAL_SSHORTDATE             = 00000005h;   (* short date format string *)
+      CAL_SLONGDATE              = 00000006h;   (* long date format string *)
+      CAL_SDAYNAME1              = 00000007h;   (* native name for Monday *)
+      CAL_SDAYNAME2              = 00000008h;   (* native name for Tuesday *)
+      CAL_SDAYNAME3              = 00000009h;   (* native name for Wednesday *)
+      CAL_SDAYNAME4              = 0000000ah;   (* native name for Thursday *)
+      CAL_SDAYNAME5              = 0000000bh;   (* native name for Friday *)
+      CAL_SDAYNAME6              = 0000000ch;   (* native name for Saturday *)
+      CAL_SDAYNAME7              = 0000000dh;   (* native name for Sunday *)
+      CAL_SABBREVDAYNAME1        = 0000000eh;   (* abbreviated name for Monday *)
+      CAL_SABBREVDAYNAME2        = 0000000fh;   (* abbreviated name for Tuesday *)
+      CAL_SABBREVDAYNAME3        = 00000010h;   (* abbreviated name for Wednesday *)
+      CAL_SABBREVDAYNAME4        = 00000011h;   (* abbreviated name for Thursday *)
+      CAL_SABBREVDAYNAME5        = 00000012h;   (* abbreviated name for Friday *)
+      CAL_SABBREVDAYNAME6        = 00000013h;   (* abbreviated name for Saturday *)
+      CAL_SABBREVDAYNAME7        = 00000014h;   (* abbreviated name for Sunday *)
+      CAL_SMONTHNAME1            = 00000015h;   (* native name for January *)
+      CAL_SMONTHNAME2            = 00000016h;   (* native name for February *)
+      CAL_SMONTHNAME3            = 00000017h;   (* native name for March *)
+      CAL_SMONTHNAME4            = 00000018h;   (* native name for April *)
+      CAL_SMONTHNAME5            = 00000019h;   (* native name for May *)
+      CAL_SMONTHNAME6            = 0000001ah;   (* native name for June *)
+      CAL_SMONTHNAME7            = 0000001bh;   (* native name for July *)
+      CAL_SMONTHNAME8            = 0000001ch;   (* native name for August *)
+      CAL_SMONTHNAME9            = 0000001dh;   (* native name for September *)
+      CAL_SMONTHNAME10           = 0000001eh;   (* native name for October *)
+      CAL_SMONTHNAME11           = 0000001fh;   (* native name for November *)
+      CAL_SMONTHNAME12           = 00000020h;   (* native name for December *)
+      CAL_SMONTHNAME13           = 00000021h;   (* native name for 13th month (if any) *)
+      CAL_SABBREVMONTHNAME1      = 00000022h;   (* abbreviated name for January *)
+      CAL_SABBREVMONTHNAME2      = 00000023h;   (* abbreviated name for February *)
+      CAL_SABBREVMONTHNAME3      = 00000024h;   (* abbreviated name for March *)
+      CAL_SABBREVMONTHNAME4      = 00000025h;   (* abbreviated name for April *)
+      CAL_SABBREVMONTHNAME5      = 00000026h;   (* abbreviated name for May *)
+      CAL_SABBREVMONTHNAME6      = 00000027h;   (* abbreviated name for June *)
+      CAL_SABBREVMONTHNAME7      = 00000028h;   (* abbreviated name for July *)
+      CAL_SABBREVMONTHNAME8      = 00000029h;   (* abbreviated name for August *)
+      CAL_SABBREVMONTHNAME9      = 0000002ah;   (* abbreviated name for September *)
+      CAL_SABBREVMONTHNAME10     = 0000002bh;   (* abbreviated name for October *)
+      CAL_SABBREVMONTHNAME11     = 0000002ch;   (* abbreviated name for November *)
+      CAL_SABBREVMONTHNAME12     = 0000002dh;   (* abbreviated name for December *)
+      CAL_SABBREVMONTHNAME13     = 0000002eh;   (* abbreviated name for 13th month (if any) *)
+
+
+(*
+ *  Calendar Enumeration Value.
+ *)
+
+CONST ENUM_ALL_CALENDARS = 0ffffffffh;   (* enumerate all calendars *)
+
+
+(*
+ *  Calendar ID Values.
+ *)
+
+CONST CAL_GREGORIAN    = 1;         (* Gregorian (localized) calendar *)
+      CAL_GREGORIAN_US = 2;         (* Gregorian (U.S.) calendar *)
+      CAL_JAPAN        = 3;         (* Japanese Emperor Era calendar *)
+      CAL_TAIWAN       = 4;         (* Republic of China Era calendar *)
+      CAL_KOREA        = 5;         (* Korean Tangun Era calendar *)
+
+
+(***************************************************************************
+*
+*    Define all types for the NLS component here.
+*
+***************************************************************************)
+
+(*
+ *  Locale type constant.
+ *)
+
+TYPE LCTYPE = DWORD;
+
+(*
+ *  Calendar type constant.
+ *)
+
+TYPE CALTYPE = DWORD;
+
+(*
+ *  Calendar ID.
+ *)
+
+TYPE CALID = DWORD;
+
+
+(*
+ *  CP Info.
+ *)
+
+TYPE CPINFO = RECORD
+                     MaxCharSize : UINT;                                (* max length (bytes) of a char *)
+                     DefaultChar : ARRAY [0..MAX_DEFAULTCHAR-1] OF BYTE; (* default character *)
+                     LeadByte    : ARRAY [0..MAX_LEADBYTES-1]   OF BYTE; (* lead byte ranges *)
+              END;
+    PCPINFO = POINTER TO CPINFO;
+
+
+(*
+ *  Number format.
+ *)
+
+TYPE NUMBERFMTA =
+     RECORD
+          NumDigits     : UINT;         (* number of decimal digits *)
+          LeadingZero   : UINT;         (* if leading zero in decimal fields *)
+          Grouping      : UINT;         (* group size left of decimal *)
+          lpDecimalSep  : PSTR;         (* ptr to decimal separator string *)
+          lpThousandSep : PSTR;         (* ptr to thousand separator string *)
+          NegativeOrder : UINT;         (* negative number ordering *)
+     END;
+     PNUMBERFMTA = POINTER TO NUMBERFMTA;
+    PCNUMBERFMTA = POINTER TO NUMBERFMTA;
+
+TYPE NUMBERFMTW =
+     RECORD
+            NumDigits     : UINT;       (* number of decimal digits *)
+            LeadingZero   : UINT;       (* if leading zero in decimal fields *)
+            Grouping      : UINT;       (* group size left of decimal *)
+            lpDecimalSep  : PWSTR;      (* ptr to decimal separator string *)
+            lpThousandSep : PWSTR;      (* ptr to thousand separator string *)
+            NegativeOrder : UINT;       (* negative number ordering *)
+     END;
+     PNUMBERFMTW = POINTER TO NUMBERFMTW;
+    PCNUMBERFMTW = POINTER TO NUMBERFMTW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE NUMBERFMT  = NUMBERFMTW;
+      TYPE PNUMBERFMT = PNUMBERFMTW;
+<* ELSE *>
+      TYPE NUMBERFMT  = NUMBERFMTA;
+      TYPE PNUMBERFMT = PNUMBERFMTA;
+<* END *>
+
+(*
+ *  Currency format.
+ *)
+
+TYPE CURRENCYFMTA =
+     RECORD
+            NumDigits        : UINT;    (* number of decimal digits *)
+            LeadingZero      : UINT;    (* if leading zero in decimal fields *)
+            Grouping         : UINT;    (* group size left of decimal *)
+            lpDecimalSep     : PSTR;    (* ptr to decimal separator string *)
+            lpThousandSep    : PSTR;    (* ptr to thousand separator string *)
+            NegativeOrder    : UINT;    (* negative currency ordering *)
+            PositiveOrder    : UINT;    (* positive currency ordering *)
+            lpCurrencySymbol : PSTR;    (* ptr to currency symbol string *)
+     END;
+     PCURRENCYFMTA = POINTER TO CURRENCYFMTA;
+    PCCURRENCYFMTA = POINTER TO CURRENCYFMTA;
+
+TYPE CURRENCYFMTW =
+     RECORD
+            NumDigits        : UINT;    (* number of decimal digits *)
+            LeadingZero      : UINT;    (* if leading zero in decimal fields *)
+            Grouping         : UINT;    (* group size left of decimal *)
+            lpDecimalSep     : PWSTR;   (* ptr to decimal separator string *)
+            lpThousandSep    : PWSTR;   (* ptr to thousand separator string *)
+            NegativeOrder    : UINT;    (* negative currency ordering *)
+            PositiveOrder    : UINT;    (* positive currency ordering *)
+            lpCurrencySymbol : PWSTR;   (* ptr to currency symbol string *)
+     END;
+     PCURRENCYFMTW = POINTER TO CURRENCYFMTW;
+    PCCURRENCYFMTW = POINTER TO CURRENCYFMTW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  CURRENCYFMT =  CURRENCYFMTW;
+      TYPE PCURRENCYFMT = PCURRENCYFMTW;
+<* ELSE *>
+      TYPE  CURRENCYFMT =  CURRENCYFMTA;
+      TYPE PCURRENCYFMT = PCURRENCYFMTA;
+<* END *>
+
+
+(*
+ *  Enumeration function constants.
+ *)
+
+TYPE LOCALE_ENUMPROCA   = PROCEDURE (PSTR) : BOOL;
+     CODEPAGE_ENUMPROCA = PROCEDURE (PSTR) : BOOL;
+     DATEFMT_ENUMPROCA  = PROCEDURE (PSTR) : BOOL;
+     TIMEFMT_ENUMPROCA  = PROCEDURE (PSTR) : BOOL;
+     CALINFO_ENUMPROCA  = PROCEDURE (PSTR) : BOOL;
+
+TYPE LOCALE_ENUMPROCW   = PROCEDURE (PWSTR) : BOOL;
+     CODEPAGE_ENUMPROCW = PROCEDURE (PWSTR) : BOOL;
+     DATEFMT_ENUMPROCW  = PROCEDURE (PWSTR) : BOOL;
+     TIMEFMT_ENUMPROCW  = PROCEDURE (PWSTR) : BOOL;
+     CALINFO_ENUMPROCW  = PROCEDURE (PWSTR) : BOOL;
+
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE LOCALE_ENUMPROC    = LOCALE_ENUMPROCW;
+           CODEPAGE_ENUMPROC  = CODEPAGE_ENUMPROCW;
+           DATEFMT_ENUMPROC   = DATEFMT_ENUMPROCW;
+           TIMEFMT_ENUMPROC   = TIMEFMT_ENUMPROCW;
+           CALINFO_ENUMPROC   = CALINFO_ENUMPROCW;
+<* ELSE *>
+      TYPE LOCALE_ENUMPROC    = LOCALE_ENUMPROCA;
+           CODEPAGE_ENUMPROC  = CODEPAGE_ENUMPROCA;
+           DATEFMT_ENUMPROC   = DATEFMT_ENUMPROCA;
+           TIMEFMT_ENUMPROC   = TIMEFMT_ENUMPROCA;
+           CALINFO_ENUMPROC   = CALINFO_ENUMPROCA;
+<* END *>
+
+
+(***************************************************************************
+* Function Prototypes
+*
+* Only prototypes for the NLS APIs should go here.
+****************************************************************************)
+
+(*
+ *  Code Page Dependent APIs.
+ *)
+
+PROCEDURE IsValidCodePage(CodePage : UINT) : BOOL;
+
+PROCEDURE GetACP () : BOOL;
+PROCEDURE GetOEMCP (): UINT;
+
+PROCEDURE GetCPInfo(CodePage : UINT; VAR lpCPInfo : CPINFO) : BOOL;
+
+PROCEDURE IsDBCSLeadByte (TestChar : BYTE) : BOOL;
+
+PROCEDURE IsDBCSLeadByteEx (CodePage : UINT; TestChar : BYTE) : BOOL;
+
+PROCEDURE MultiByteToWideChar (CodePage        : UINT;
+                               dwFlags         : MULTIBYTE_SET;
+                               MultiByteStr    : ARRAY OF CHAR;
+                               cchMultiByte    : INTEGER;
+                               VAR WideCharStr : ARRAY OF WCHAR;
+                               cchWideChar     : INTEGER) : INTEGER ;
+
+PROCEDURE WideCharToMultiByte (CodePage          : UINT;
+                               dwFlags           : WC_SET;
+                               WideCharStr       : ARRAY OF WCHAR;
+                               cchWideChar       : INTEGER;
+                               VAR MultiByteStr  : ARRAY OF CHAR;
+                               cchMultiByte      : INTEGER;
+                               lpDefaultChar     : PCHAR;
+                               lpUsedDefaultChar : PBOOL) : INTEGER;
+
+(*
+ *  Locale Dependent APIs.
+ *)
+
+PROCEDURE CompareStringA (Locale     : LCID;
+                          dwCmpFlags : SFLAGS_SET;
+                          String1    : ARRAY OF CHAR;
+                          cchCount1  : INTEGER;
+                          String2    : ARRAY OF CHAR;
+                          cchCount2  : INTEGER) : INTEGER;
+
+PROCEDURE CompareStringW (Locale     : LCID;
+                          dwCmpFlags : SFLAGS_SET;
+                          String1    : ARRAY OF WCHAR;
+                          cchCount1  : INTEGER;
+                          String2    : ARRAY OF WCHAR;
+                          cchCount2  : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST CompareString = CompareStringW;
+<* ELSE *>
+      CONST CompareString = CompareStringA;
+<* END *>
+
+PROCEDURE LCMapStringA (Locale      : LCID;
+                        MapFlags    : SFLAGS_SET;
+                        SrcStr      : ARRAY OF CHAR;
+                        cchSrc      : INTEGER;
+                        VAR DestStr : ARRAY OF CHAR;
+                        cchDest     : INTEGER) : INTEGER;
+
+PROCEDURE LCMapStringW (Locale      : LCID;
+                        MapFlags    : SFLAGS_SET;
+                        SrcStr      : ARRAY OF WCHAR;
+                        cchSrc      : INTEGER;
+                        VAR DestStr : ARRAY OF WCHAR;
+                        cchDest     : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST LCMapString = LCMapStringW;
+<* ELSE *>
+      CONST LCMapString = LCMapStringA;
+<* END *>
+
+PROCEDURE GetLocaleInfoA (Locale   : LCID;
+                          LCType   : LCTYPE;
+                          LCData   : PSTR;
+                          cchData  : INTEGER) : INTEGER;
+
+PROCEDURE GetLocaleInfoW (Locale   : LCID;
+                          LCType   : LCTYPE;
+                          lpLCData : PWSTR;
+                          cchData  : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetLocaleInfo  = GetLocaleInfoW;
+<* ELSE *>
+      CONST GetLocaleInfo  = GetLocaleInfoA;
+<* END *>
+
+PROCEDURE SetLocaleInfoA (Locale : LCID;
+                          LCType : LCTYPE;
+                          LCData : ARRAY OF CHAR) : BOOL;
+
+PROCEDURE SetLocaleInfoW (Locale : LCID;
+                          LCType : LCTYPE;
+                          LCData : ARRAY OF WCHAR) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST SetLocaleInfo = SetLocaleInfoW;
+<* ELSE *>
+      CONST SetLocaleInfo  = SetLocaleInfoA;
+<* END *>
+
+PROCEDURE GetTimeFormatA (Locale    : LCID;
+                          Flags     : TIME_SET;
+                          lpTime    : PSYSTEMTIME; (* IN NIL *)
+                          lpFormat  : PCSTR;
+                          lpTimeStr : PSTR;
+                          cchTime   : INTEGER) : INTEGER;
+
+PROCEDURE GetTimeFormatW (Locale    : LCID;
+                          Flags     : TIME_SET;
+                          lpTime    : PSYSTEMTIME; (* IN NIL *)
+                          lpFormat  : PCWSTR;
+                          lpTimeStr : PWSTR;
+                          cchTime   : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetTimeFormat = GetTimeFormatW;
+<* ELSE *>
+      CONST GetTimeFormat = GetTimeFormatA;
+<* END *>
+
+PROCEDURE GetDateFormatA (Locale    : LCID;
+                          Flags     : DATE_SET;
+                          lpTime    : PSYSTEMTIME; (* IN NIL *)
+                          lpFormat  : PCSTR;
+                          lpDateStr : PSTR;
+                          cchDate   : INTEGER) : INTEGER;
+
+PROCEDURE GetDateFormatW (Locale    : LCID;
+                          Flags     : TIME_SET;
+                          lpTime    : PSYSTEMTIME; (* IN NIL *)
+                          lpFormat  : PCWSTR;
+                          lpDateStr : PWSTR;
+                          cchDate   : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetDateFormat = GetDateFormatW;
+<* ELSE *>
+      CONST GetDateFormat = GetDateFormatA;
+<* END *>
+
+PROCEDURE GetNumberFormatA (Locale    : LCID;
+                            dwFlags   : DWORD;
+                            Value     : ARRAY OF CHAR;
+                            Format    : PCNUMBERFMTA;
+                            NumberStr : PSTR;
+                            cchNumber : INTEGER) : INTEGER;
+
+PROCEDURE GetNumberFormatW (Locale    : LCID;
+                            dwFlags   : DWORD;
+                            Value     : ARRAY OF WCHAR;
+                            Format    : PCNUMBERFMTW;
+                            NumberStr : PWSTR;
+                            cchNumber : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetNumberFormat = GetNumberFormatW;
+<* ELSE *>
+      CONST GetNumberFormat = GetNumberFormatA;
+<* END *>
+
+PROCEDURE GetCurrencyFormatA (Locale      : LCID;
+                              dwFlags     : DWORD;
+                              Value       : ARRAY OF CHAR;
+                              Format      : PCCURRENCYFMTA;
+                              CurrencyStr : PSTR;
+                              cchCurrency : INTEGER) : INTEGER;
+
+PROCEDURE GetCurrencyFormatW (Locale      : LCID;
+                              dwFlags     : DWORD;
+                              Value       : ARRAY OF WCHAR;
+                              Format      : PCCURRENCYFMTW;
+                              CurrencyStr : PWSTR;
+                              cchCurrency : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetCurrencyFormat = GetCurrencyFormatW;
+<* ELSE *>
+      CONST GetCurrencyFormat = GetCurrencyFormatA;
+<* END *>
+
+PROCEDURE EnumCalendarInfoA (pCalInfoEnumProc : CALINFO_ENUMPROCA;
+                             Locale   : LCID;
+                             Calendar : CALID;
+                             CalType  : CALTYPE) : BOOL;
+
+PROCEDURE EnumCalendarInfoW (CalInfoEnumProc : CALINFO_ENUMPROCW;
+                             Locale   : LCID;
+                             Calendar : CALID;
+                             CalType  : CALTYPE) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST EnumCalendarInfo = EnumCalendarInfoW;
+<* ELSE *>
+      CONST EnumCalendarInfo = EnumCalendarInfoA;
+<* END *>
+
+PROCEDURE EnumTimeFormatsA (TimeFmtEnumProc : TIMEFMT_ENUMPROCA;
+                            Locale    : LCID;
+                            dwFlags   : DWORD) : BOOL;
+
+PROCEDURE EnumTimeFormatsW (TimeFmtEnumProc : TIMEFMT_ENUMPROCW;
+                            Locale    : LCID;
+                            dwFlags   : DWORD) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST EnumTimeFormats = EnumTimeFormatsW;
+<* ELSE *>
+      CONST EnumTimeFormats = EnumTimeFormatsA;
+<* END *>
+
+PROCEDURE EnumDateFormatsA (DateFmtEnumProc : DATEFMT_ENUMPROCA;
+                            Locale  : LCID;
+                            Flags   : DATE_SET) : BOOL;
+
+PROCEDURE EnumDateFormatsW (DateFmtEnumProc : DATEFMT_ENUMPROCW;
+                            Locale : LCID;
+                            Flags  : DATE_SET) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST EnumDateFormats = EnumDateFormatsW;
+<* ELSE *>
+      CONST EnumDateFormats = EnumDateFormatsA;
+<* END *>
+
+PROCEDURE IsValidLocale (Locale : LCID; Flags : LCID_ENUM_TYPE) : BOOL;
+PROCEDURE ConvertDefaultLocale (Locale : LCID) : LCID;
+PROCEDURE GetThreadLocale () : LCID;
+PROCEDURE SetThreadLocale (Locale : LCID) : BOOL;
+PROCEDURE GetSystemDefaultLangID () : LANGID;
+PROCEDURE GetUserDefaultLangID   () : LANGID;
+PROCEDURE GetSystemDefaultLCID   () : LCID;
+PROCEDURE GetUserDefaultLCID     () : LCID;
+
+(*
+ *  Locale Independent APIs.
+ *)
+
+PROCEDURE GetStringTypeExA (Locale     : LCID;
+                            dwInfoType : CT_SET;
+                            lpSrcStr   : ARRAY OF CHAR;
+                            cchSrc     : INTEGER;
+                            lpCharType : PWORD) : BOOL;
+
+PROCEDURE GetStringTypeExW (Locale     : LCID;
+                            dwInfoType : CT_SET;
+                            lpSrcStr   : ARRAY OF WCHAR;
+                            cchSrc     : INTEGER;
+                            lpCharType : PWORD) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetStringTypeEx = GetStringTypeExW;
+<* ELSE *>
+      CONST GetStringTypeEx = GetStringTypeExA;
+<* END *>
+
+(*
+ *  NOTE: The parameters for GetStringTypeA and GetStringTypeW are
+ *        NOT the same.  The W version was shipped in NT 3.1.  The
+ *        A version was then shipped in 16-bit OLE with the wrong
+ *        parameters (ported from Win95).  To be compatible, we
+ *        must break the relationship between the A and W versions
+ *        of GetStringType.  There will be NO function call for the
+ *        generic GetStringType.
+ *
+ *        GetStringTypeEx (above) should be used instead.
+ *)
+
+PROCEDURE GetStringTypeA (Locale     : LCID;
+                          dwInfoType : CT_SET;
+                          lpSrcStr   : ARRAY OF CHAR;
+                          cchSrc     : INTEGER;
+                          lpCharType : PWORD) : BOOL;
+
+PROCEDURE GetStringTypeW (dwInfoType : CT_SET;
+                          lpSrcStr   : ARRAY OF WCHAR;
+                          cchSrc     : INTEGER;
+                          lpCharType : PWORD) : BOOL;
+
+PROCEDURE FoldStringA (dwMapFlags : MAP_SET;
+                       SrcStr     : ARRAY OF CHAR;
+                       cchSrc     : INTEGER;
+                       DestStr    : PSTR;
+                       cchDest    : INTEGER) : INTEGER;
+
+PROCEDURE FoldStringW (dwMapFlags : MAP_SET;
+                       SrcStr     : ARRAY OF WCHAR;
+                       cchSrc     : INTEGER;
+                       DestStr    : PWSTR;
+                       cchDest    : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST FoldString = FoldStringW;
+<* ELSE *>
+      CONST FoldString = FoldStringA;
+<* END *>
+
+PROCEDURE EnumSystemLocalesA (LocaleEnumProc : LOCALE_ENUMPROCA;
+                              Flags : LCID_ENUM_TYPE) : BOOL;
+
+PROCEDURE EnumSystemLocalesW (LocaleEnumProc : LOCALE_ENUMPROCW;
+                              Flags : LCID_ENUM_TYPE) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST EnumSystemLocales = EnumSystemLocalesW;
+<* ELSE *>
+      CONST EnumSystemLocales = EnumSystemLocalesA;
+<* END *>
+
+PROCEDURE EnumSystemCodePagesA (CodePageEnumProc : CODEPAGE_ENUMPROCA;
+                                Flags : CP_ENUM_TYPE) : BOOL;
+
+PROCEDURE EnumSystemCodePagesW (CodePageEnumProc : CODEPAGE_ENUMPROCW;
+                                Flags : CP_ENUM_TYPE) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST EnumSystemCodePages = EnumSystemCodePagesW;
+<* ELSE *>
+      CONST EnumSystemCodePages = EnumSystemCodePagesA;
+<* END *>
+
+END WinNLS.

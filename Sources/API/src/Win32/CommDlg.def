@@ -1,0 +1,935 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] CommDlg;
+
+(************************************************************************
+*                                                                       *
+*   Commdlg.def -- This module defines the 32-Bit Common Dialog APIs    *
+*                                                                       *
+************************************************************************)
+
+IMPORT SYSTEM;
+FROM WinDef  IMPORT BOOL, UINT, WCHAR, WORD, DWORD, SHORT, ULONG, LONG, PVOID, WPARAM, LPARAM,
+                    PSTR, PCSTR, PWSTR, PCWSTR, STRING, WSTRING, RESOURCESTRA, RESOURCESTRW,
+                    HWND, HINSTANCE, HGLOBAL, HDC, COLORREF, POINT, RECT;
+FROM WinUser IMPORT WM_USER, NMHDR;
+FROM WinGDI  IMPORT PLOGFONTA, PLOGFONTW;
+
+<* PUSH *> <* ALIGNMENT = "1" *>
+
+
+(* ----------------- Open / Save As Dialog Box --------------------------- *)
+
+TYPE OFN_ENUM = (OFN__READONLY,              (*  0 *)
+                 OFN__OVERWRITEPROMPT,       (*  1 *)
+                 OFN__HIDEREADONLY,          (*  2 *)
+                 OFN__NOCHANGEDIR,           (*  3 *)
+                 OFN__SHOWHELP,              (*  4 *)
+                 OFN__ENABLEHOOK,            (*  5 *)
+                 OFN__ENABLETEMPLATE,        (*  6 *)
+                 OFN__ENABLETEMPLATEHANDLE,  (*  7 *)
+                 OFN__NOVALIDATE,            (*  8 *)
+                 OFN__ALLOWMULTISELECT,      (*  9 *)
+                 OFN__EXTENSIONDIFFERENT,    (* 10 *)
+                 OFN__PATHMUSTEXIST,         (* 11 *)
+                 OFN__FILEMUSTEXIST,         (* 12 *)
+                 OFN__CREATEPROMPT,          (* 13 *)
+                 OFN__SHAREAWARE,            (* 14 *)
+                 OFN__NOREADONLYRETURN,      (* 15 *)
+                 OFN__NOTESTFILECREATE,      (* 16 *)
+                 OFN__NONETWORKBUTTON,       (* 17 *)
+                 OFN__NOLONGNAMES,           (* 18 *)
+                 OFN__EXPLORER,              (* 19 *)   (* new look commdlg *)
+                 OFN__NODEREFERENCELINKS,    (* 20 *)
+                 OFN__LONGNAMES              (* 21 *)   (* force long names for 3.x modules *)
+      );
+      OFN_SET = SET OF OFN_ENUM;
+
+CONST OFN_READONLY             = OFN_SET {OFN__READONLY             }; (* 0x00000001 *)
+      OFN_OVERWRITEPROMPT      = OFN_SET {OFN__OVERWRITEPROMPT      }; (* 0x00000002 *)
+      OFN_HIDEREADONLY         = OFN_SET {OFN__HIDEREADONLY         }; (* 0x00000004 *)
+      OFN_NOCHANGEDIR          = OFN_SET {OFN__NOCHANGEDIR          }; (* 0x00000008 *)
+      OFN_SHOWHELP             = OFN_SET {OFN__SHOWHELP             }; (* 0x00000010 *)
+      OFN_ENABLEHOOK           = OFN_SET {OFN__ENABLEHOOK           }; (* 0x00000020 *)
+      OFN_ENABLETEMPLATE       = OFN_SET {OFN__ENABLETEMPLATE       }; (* 0x00000040 *)
+      OFN_ENABLETEMPLATEHANDLE = OFN_SET {OFN__ENABLETEMPLATEHANDLE }; (* 0x00000080 *)
+      OFN_NOVALIDATE           = OFN_SET {OFN__NOVALIDATE           }; (* 0x00000100 *)
+      OFN_ALLOWMULTISELECT     = OFN_SET {OFN__ALLOWMULTISELECT     }; (* 0x00000200 *)
+      OFN_EXTENSIONDIFFERENT   = OFN_SET {OFN__EXTENSIONDIFFERENT   }; (* 0x00000400 *)
+      OFN_PATHMUSTEXIST        = OFN_SET {OFN__PATHMUSTEXIST        }; (* 0x00000800 *)
+      OFN_FILEMUSTEXIST        = OFN_SET {OFN__FILEMUSTEXIST        }; (* 0x00001000 *)
+      OFN_CREATEPROMPT         = OFN_SET {OFN__CREATEPROMPT         }; (* 0x00002000 *)
+      OFN_SHAREAWARE           = OFN_SET {OFN__SHAREAWARE           }; (* 0x00004000 *)
+      OFN_NOREADONLYRETURN     = OFN_SET {OFN__NOREADONLYRETURN     }; (* 0x00008000 *)
+      OFN_NOTESTFILECREATE     = OFN_SET {OFN__NOTESTFILECREATE     }; (* 0x00010000 *)
+      OFN_NONETWORKBUTTON      = OFN_SET {OFN__NONETWORKBUTTON      }; (* 0x00020000 *)
+      OFN_NOLONGNAMES          = OFN_SET {OFN__NOLONGNAMES          }; (* 0x00040000 *)
+      OFN_EXPLORER             = OFN_SET {OFN__EXPLORER             }; (* 0x00080000 *)
+      OFN_NODEREFERENCELINKS   = OFN_SET {OFN__NODEREFERENCELINKS   }; (* 0x00100000 *)
+      OFN_LONGNAMES            = OFN_SET {OFN__LONGNAMES            }; (* 0x00200000 *)
+
+(* Return values for the registered message sent to the hook function
+** when a sharing violation occurs.  OFN_SHAREFALLTHROUGH allows the
+** filename to be accepted, OFN_SHARENOWARN rejects the name but puts
+** up no warning (returned when the app has already put up a warning
+** message), and OFN_SHAREWARN puts up the default warning message
+** for sharing violations.
+**
+** Note:  Undefined return values map to OFN_SHAREWARN, but are
+**        reserved for future use.
+*)
+
+CONST OFN_SHAREFALLTHROUGH = 2;
+      OFN_SHARENOWARN      = 1;
+      OFN_SHAREWARN        = 0;
+
+TYPE OFNHOOKPROC = PROCEDURE (HWND, UINT, WPARAM, LPARAM) : UINT;
+
+TYPE OPENFILENAMEA = RECORD
+                            lStructSize       : DWORD;
+                            hwndOwner         : HWND;
+                            hInstance         : HINSTANCE;
+                            lpstrFilter       : PCSTR;
+                            lpstrCustomFilter : PSTR;
+                            nMaxCustFilter    : DWORD;
+                            nFilterIndex      : DWORD;
+                            lpstrFile         : PSTR;
+                            nMaxFile          : DWORD;
+                            lpstrFileTitle    : PSTR;
+                            nMaxFileTitle     : DWORD;
+                            lpstrInitialDir   : PCSTR;
+                            lpstrTitle        : PCSTR;
+                            Flags             : OFN_SET;
+                            nFileOffset       : WORD;
+                            nFileExtension    : WORD;
+                            lpstrDefExt       : PCSTR;
+                            lCustData         : LPARAM;
+                            lpfnHook          : OFNHOOKPROC;
+                            lpTemplateName    : PCSTR;
+                     END;
+    POPENFILENAMEA = POINTER TO OPENFILENAMEA;
+
+TYPE OPENFILENAMEW = RECORD
+                            lStructSize       : DWORD;
+                            hwndOwner         : HWND;
+                            hInstance         : HINSTANCE;
+                            lpstrFilter       : PCWSTR;
+                            lpstrCustomFilter : PWSTR;
+                            nMaxCustFilter    : DWORD;
+                            nFilterIndex      : DWORD;
+                            lpstrFile         : PWSTR;
+                            nMaxFile          : DWORD;
+                            lpstrFileTitle    : PWSTR;
+                            nMaxFileTitle     : DWORD;
+                            lpstrInitialDir   : PCWSTR;
+                            lpstrTitle        : PCWSTR;
+                            Flags             : OFN_SET;
+                            nFileOffset       : WORD;
+                            nFileExtension    : WORD;
+                            lpstrDefExt       : PCWSTR;
+                            lCustData         : LPARAM;
+                            lpfnHook          : OFNHOOKPROC;
+                            lpTemplateName    : PCWSTR;
+                     END;
+     POPENFILENAMEW = POINTER TO OPENFILENAMEW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  OPENFILENAME =  OPENFILENAMEW;
+      TYPE POPENFILENAME = POPENFILENAMEW;
+<* ELSE *>
+      TYPE  OPENFILENAME =  OPENFILENAMEA;
+      TYPE POPENFILENAME = POPENFILENAMEA;
+<* END *>
+
+PROCEDURE GetOpenFileNameA (VAR ofn : OPENFILENAMEA) : BOOL;
+PROCEDURE GetOpenFileNameW (VAR ofn : OPENFILENAMEW) : BOOL;
+
+PROCEDURE GetSaveFileNameA (VAR ofn : OPENFILENAMEA) : BOOL;
+PROCEDURE GetSaveFileNameW (VAR ofn : OPENFILENAMEW) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetOpenFileName = GetOpenFileNameW;
+            GetSaveFileName = GetSaveFileNameW;
+<* ELSE *>
+      CONST GetOpenFileName = GetOpenFileNameA;
+            GetSaveFileName = GetSaveFileNameA;
+<* END *>
+
+PROCEDURE GetFileTitleA (File : STRING; Title : PSTR;
+                         BufLen : WORD) : SHORT;
+
+PROCEDURE GetFileTitleW (File : WSTRING; Title : PWSTR;
+                         BufLen : WORD) : SHORT;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST GetFileTitle = GetFileTitleW;
+<* ELSE *>
+      CONST GetFileTitle = GetFileTitleA;
+<* END *>
+
+
+(* Structure used for all OpenFileName notifications *)
+
+TYPE OFNOTIFYA = RECORD
+                        hdr     : NMHDR;
+                        lpOFN   : POPENFILENAMEA;
+                        pszFile : PSTR;           (* May be NULL *)
+                 END;
+    POFNOTIFYA = POINTER TO OFNOTIFYA;
+
+TYPE OFNOTIFYW = RECORD
+                        hdr     : NMHDR;
+                        lpOFN   : POPENFILENAMEW;
+                        pszFile : PWSTR;          (* May be NULL *)
+                 END;
+    POFNOTIFYW = POINTER TO OFNOTIFYW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  OFNOTIFY =  OFNOTIFYW;
+      TYPE POFNOTIFY = POFNOTIFYW;
+<* ELSE *>
+      TYPE  OFNOTIFY =  OFNOTIFYA;
+      TYPE POFNOTIFY = POFNOTIFYA;
+<* END *>
+
+
+CONST CDN_FIRST = SYSTEM.CAST (ULONG, 0 - VAL (LONG, 601));
+      CDN_LAST  = SYSTEM.CAST (ULONG, 0 - VAL (LONG, 699));
+
+(* Notifications when Open or Save dialog status changes *)
+
+CONST CDN_INITDONE       = CDN_FIRST - 0;
+      CDN_SELCHANGE      = CDN_FIRST - 1;
+      CDN_FOLDERCHANGE   = CDN_FIRST - 2;
+      CDN_SHAREVIOLATION = CDN_FIRST - 3;
+      CDN_HELP           = CDN_FIRST - 4;
+      CDN_FILEOK         = CDN_FIRST - 5;
+      CDN_TYPECHANGE     = CDN_FIRST - 6;
+
+CONST CDM_FIRST          = WM_USER + 100;
+      CDM_LAST           = WM_USER + 200;
+
+(* Messages to query information from the Open or Save dialogs *)
+
+(* lParam = pointer to text buffer that gets filled in
+** wParam = max number of characters of the text buffer (including NULL)
+** return = < 0 if error; number of characters needed (including NULL)
+*)
+
+CONST CDM_GETSPEC = CDM_FIRST + 0;
+
+PROCEDURE CommDlg_OpenSave_GetSpecA (hdlg : HWND; psz : PSTR;   cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_GetSpecW (hdlg : HWND; psz : PWSTR;  cbmax : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST CommDlg_OpenSave_GetSpec = CommDlg_OpenSave_GetSpecW;
+<* ELSE *>
+      CONST CommDlg_OpenSave_GetSpec = CommDlg_OpenSave_GetSpecA;
+<* END *>
+
+
+(* lParam = pointer to text buffer that gets filled in
+** wParam = max number of characters of the text buffer (including NULL)
+** return = < 0 if error; number of characters needed (including NULL)
+*)
+
+CONST CDM_GETFILEPATH = CDM_FIRST + 1;
+
+PROCEDURE CommDlg_OpenSave_GetFilePathA (hdlg : HWND; psz : PSTR;   cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_GetFilePathW (hdlg : HWND; psz : PWSTR;  cbmax : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST CommDlg_OpenSave_GetFilePath = CommDlg_OpenSave_GetFilePathW;
+<* ELSE *>
+      CONST CommDlg_OpenSave_GetFilePath = CommDlg_OpenSave_GetFilePathA;
+<* END *>
+
+(* lParam = pointer to text buffer that gets filled in
+** wParam = max number of characters of the text buffer (including NULL)
+** return = < 0 if error; number of characters needed (including NULL)
+*)
+
+CONST CDM_GETFOLDERPATH = CDM_FIRST + 2;
+
+PROCEDURE CommDlg_OpenSave_GetFolderPathA (hdlg : HWND; psz : PSTR;  cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_GetFolderPathW (hdlg : HWND; psz : PWSTR; cbmax : INTEGER) : INTEGER;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST CommDlg_OpenSave_GetFolderPath = CommDlg_OpenSave_GetFolderPathW;
+<* ELSE *>
+      CONST CommDlg_OpenSave_GetFolderPath = CommDlg_OpenSave_GetFolderPathA;
+<* END *>
+
+
+(* lParam = pointer to ITEMIDLIST buffer that gets filled in
+** wParam = size of the ITEMIDLIST buffer
+** return = < 0 if error; length of buffer needed
+*)
+
+CONST CDM_GETFOLDERIDLIST = CDM_FIRST + 3;
+
+PROCEDURE CommDlg_OpenSave_GetFolderIDList (hdlg : HWND; pidl : PVOID; cbmax : INTEGER) : INTEGER;
+
+(* lParam = pointer to a string
+** wParam = ID of control to change
+** return = not used
+*)
+
+CONST CDM_SETCONTROLTEXT = CDM_FIRST + 4;
+
+PROCEDURE CommDlg_OpenSave_SetControlText  (hdlg : HWND; id : INTEGER; text : PSTR) : INTEGER;
+
+(* lParam = not used
+** wParam = ID of control to change
+** return = not used
+*)
+
+CONST CDM_HIDECONTROL = CDM_FIRST + 5;
+
+PROCEDURE CommDlg_OpenSave_HideControl (hdlg : HWND; id : INTEGER);
+
+(* lParam = pointer to default extension (no dot)
+** wParam = not used
+** return = not used
+*)
+
+CONST CDM_SETDEFEXT = CDM_FIRST + 6;
+
+PROCEDURE CommDlg_OpenSave_SetDefExt (hdlg : HWND; ext : PSTR);
+
+(* ----------------- Choose color dialog box ----------------------------- *)
+
+TYPE CCHOOKPROC = PROCEDURE (HWND, UINT, WPARAM, LPARAM) : UINT;
+
+TYPE CCDLG_ENUM = (CC__RGBINIT,             (* 0 *)
+                   CC__FULLOPEN,            (* 1 *)
+                   CC__PREVENTFULLOPEN,     (* 2 *)
+                   CC__SHOWHELP,            (* 3 *)
+                   CC__ENABLEHOOK,          (* 4 *)
+                   CC__ENABLETEMPLATE,      (* 5 *)
+                   CC__ENABLETEMPLATEHANDLE,(* 6 *)
+                   CC__SOLIDCOLOR,          (* 7 *)
+                   CC__ANYCOLOR             (* 8 *)
+                  );
+     CCDLG_SET = SET OF CCDLG_ENUM;
+
+CONST CCDLG_RGBINIT              = CCDLG_SET {CC__RGBINIT             }; (* 0x00000001 *)
+      CCDLG_FULLOPEN             = CCDLG_SET {CC__FULLOPEN            }; (* 0x00000002 *)
+      CCDLG_PREVENTFULLOPEN      = CCDLG_SET {CC__PREVENTFULLOPEN     }; (* 0x00000004 *)
+      CCDLG_SHOWHELP             = CCDLG_SET {CC__SHOWHELP            }; (* 0x00000008 *)
+      CCDLG_ENABLEHOOK           = CCDLG_SET {CC__ENABLEHOOK          }; (* 0x00000010 *)
+      CCDLG_ENABLETEMPLATE       = CCDLG_SET {CC__ENABLETEMPLATE      }; (* 0x00000020 *)
+      CCDLG_ENABLETEMPLATEHANDLE = CCDLG_SET {CC__ENABLETEMPLATEHANDLE}; (* 0x00000040 *)
+      CCDLG_SOLODCOLOR           = CCDLG_SET {CC__SOLIDCOLOR          }; (* 0x00000080 *)
+      CCDLG_ANYCOLOR             = CCDLG_SET {CC__ANYCOLOR            }; (* 0x00000100 *)
+
+TYPE CUSTCOLORS  = ARRAY [0..15] OF COLORREF;
+     PCUSTCOLORS = POINTER TO CUSTCOLORS;
+
+TYPE CHOOSECOLORA = RECORD
+                           lStructSize    : DWORD;
+                           hwndOwner      : HWND;
+                           hInstance      : HWND;
+                           rgbResult      : COLORREF;
+                           lpCustColors   : PCUSTCOLORS;
+                           Flags          : CCDLG_SET;
+                           lCustData      : LPARAM;
+                           lpfnHook       : CCHOOKPROC;
+                           lpTemplateName : RESOURCESTRA;
+                    END;
+    PCHOOSECOLORA = POINTER TO CHOOSECOLORA;
+
+TYPE CHOOSECOLORW = RECORD
+                           lStructSize    : DWORD;
+                           hwndOwner      : HWND;
+                           hInstance      : HWND;
+                           rgbResult      : COLORREF;
+                           lpCustColors   : PCUSTCOLORS;
+                           Flags          : CCDLG_SET;
+                           lCustData      : LPARAM;
+                           lpfnHook       : CCHOOKPROC;
+                           lpTemplateName : RESOURCESTRW;
+                    END;
+    PCHOOSECOLORW = POINTER TO CHOOSECOLORW;
+
+<* IF DEFINED (UNICODE) THEN *>
+TYPE  CHOOSECOLOR =  CHOOSECOLORW;
+TYPE PCHOOSECOLOR = PCHOOSECOLORW;
+<* ELSE *>
+TYPE  CHOOSECOLOR =  CHOOSECOLORA;
+TYPE PCHOOSECOLOR = PCHOOSECOLORA;
+<* END *>
+
+PROCEDURE ChooseColorA (VAR ChooseColorStruct : CHOOSECOLORA) : BOOL;
+PROCEDURE ChooseColorW (VAR ChooseColorStruct : CHOOSECOLORW) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ChooseColor = ChooseColorW;
+<* ELSE *>
+      CONST ChooseColor = ChooseColorA;
+<* END *>
+
+(* ----------------- Find and Replace dialog box ------------------------- *)
+
+TYPE FRHOOKPROC = PROCEDURE (HWND, UINT, WPARAM, LPARAM) : UINT;
+
+TYPE FR_ENUM = (FR__DOWN,                 (*  0 *)
+                FR__WHOLEWORD,            (*  1 *)
+                FR__MATCHCASE,            (*  2 *)
+                FR__FINDNEXT,             (*  3 *)
+                FR__REPLACE,              (*  4 *)
+                FR__REPLACEALL,           (*  5 *)
+                FR__DIALOGTERM,           (*  6 *)
+                FR__SHOWHELP,             (*  7 *)
+                FR__ENABLEHOOK,           (*  8 *)
+                FR__ENABLETEMPLATE,       (*  9 *)
+                FR__NOUPDOWN,             (* 10 *)
+                FR__NOMATCHCASE,          (* 11 *)
+                FR__NOWHOLEWORD,          (* 12 *)
+                FR__ENABLETEMPLATEHANDLE, (* 13 *)
+                FR__HIDEUPDOWN,           (* 14 *)
+                FR__HIDEMATCHCASE,        (* 15 *)
+                FR__HIDEWHOLEWORD);       (* 16 *)
+     FR_SET = SET OF FR_ENUM;
+
+CONST
+   FR_DOWN                 = FR_SET {FR__DOWN                }; (* 0x00000001 *)
+   FR_WHOLEWORD            = FR_SET {FR__WHOLEWORD           }; (* 0x00000002 *)
+   FR_MATCHCASE            = FR_SET {FR__MATCHCASE           }; (* 0x00000004 *)
+   FR_FINDNEXT             = FR_SET {FR__FINDNEXT            }; (* 0x00000008 *)
+   FR_REPLACE              = FR_SET {FR__REPLACE             }; (* 0x00000010 *)
+   FR_REPLACEALL           = FR_SET {FR__REPLACEALL          }; (* 0x00000020 *)
+   FR_DIALOGTERM           = FR_SET {FR__DIALOGTERM          }; (* 0x00000040 *)
+   FR_SHOWHELP             = FR_SET {FR__SHOWHELP            }; (* 0x00000080 *)
+   FR_ENABLEHOOK           = FR_SET {FR__ENABLEHOOK          }; (* 0x00000100 *)
+   FR_ENABLETEMPLATE       = FR_SET {FR__ENABLETEMPLATE      }; (* 0x00000200 *)
+   FR_NOUPDOWN             = FR_SET {FR__NOUPDOWN            }; (* 0x00000400 *)
+   FR_NOMATCHCASE          = FR_SET {FR__NOMATCHCASE         }; (* 0x00000800 *)
+   FR_NOWHOLEWORD          = FR_SET {FR__NOWHOLEWORD         }; (* 0x00001000 *)
+   FR_ENABLETEMPLATEHANDLE = FR_SET {FR__ENABLETEMPLATEHANDLE}; (* 0x00002000 *)
+   FR_HIDEUPDOWN           = FR_SET {FR__HIDEUPDOWN          }; (* 0x00004000 *)
+   FR_HIDEMATCHCASE        = FR_SET {FR__HIDEMATCHCASE       }; (* 0x00008000 *)
+   FR_HIDEWHOLEWORD        = FR_SET {FR__HIDEWHOLEWORD       }; (* 0x00010000 *)
+
+TYPE FINDREPLACEA =
+     RECORD
+           lStructSize      : DWORD;        (* size of this struct 0x20     *)
+           hwndOwner        : HWND;         (* handle to owner's window     *)
+           hInstance        : HINSTANCE;    (* instance handle of.EXE that
+                                               contains cust. dlg. template *)
+           Flags            : FR_SET;       (* one or more of the FR_??     *)
+           lpstrFindWhat    : PSTR;         (* ptr. to search string        *)
+           lpstrReplaceWith : PSTR;         (* ptr. to replace string       *)
+           wFindWhatLen     : WORD;         (* size of find buffer          *)
+           wReplaceWithLen  : WORD;         (* size of replace buffer       *)
+           lCustData        : LPARAM;       (* data passed to hook fn.      *)
+           lpfnHook         : FRHOOKPROC;   (* ptr. to hook fn. or NULL     *)
+           lpTemplateName   : RESOURCESTRA; (* custom template name         *)
+     END;
+     PFINDREPLACEA = POINTER TO FINDREPLACEA;
+
+TYPE FINDREPLACEW =
+     RECORD
+           lStructSize      : DWORD;        (* size of this struct 0x20     *)
+           hwndOwner        : HWND;         (* handle to owner's window     *)
+           hInstance        : HINSTANCE;    (* instance handle of.EXE that
+                                               contains cust. dlg. template *)
+           Flags            : FR_SET;       (* one or more of the FR_??     *)
+           lpstrFindWhat    : PWSTR;        (* ptr. to search string        *)
+           lpstrReplaceWith : PWSTR;        (* ptr. to replace string       *)
+           wFindWhatLen     : WORD;         (* size of find buffer          *)
+           wReplaceWithLen  : WORD;         (* size of replace buffer       *)
+           lCustData        : LPARAM;       (* data passed to hook fn.      *)
+           lpfnHook         : FRHOOKPROC;   (* ptr. to hook fn. or NULL     *)
+           lpTemplateName   : RESOURCESTRW; (* custom template name         *)
+     END;
+     PFINDREPLACEW = POINTER TO FINDREPLACEW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  FINDREPLACE =  FINDREPLACEW;
+      TYPE PFINDREPLACE = PFINDREPLACEW;
+<* ELSE *>
+      TYPE  FINDREPLACE =  FINDREPLACEA;
+      TYPE PFINDREPLACE = PFINDREPLACEA;
+<* END *>
+
+
+PROCEDURE FindTextA (VAR FindStruct : FINDREPLACEA) : HWND;
+PROCEDURE FindTextW (VAR FindStruct : FINDREPLACEW) : HWND;
+
+PROCEDURE ReplaceTextA (VAR FindStruct : FINDREPLACEA) : HWND;
+PROCEDURE ReplaceTextW (VAR FindStruct : FINDREPLACEA) : HWND;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST FindText = FindTextW;
+            ReplaceText = ReplaceTextW;
+<* ELSE *>
+      CONST FindText = FindTextA;
+            ReplaceText = ReplaceTextA;
+<* END *>
+
+(* ----------------- Choose Font dialog box ------------------------------ *)
+
+TYPE CFHOOKPROC = PROCEDURE (HWND, UINT, WPARAM, LPARAM) : UINT;
+
+TYPE CF_ENUM = (CF__SCREENFONTS,           (*  0 *)
+                CF__PRINTERFONTS,          (*  1 *)
+                CF__SHOWHELP,              (*  2 *)
+                CF__ENABLEHOOK,            (*  3 *)
+                CF__ENABLETEMPLATE,        (*  4 *)
+                CF__ENABLETEMPLATEHANDLE,  (*  5 *)
+                CF__INITTOLOGFONTSTRUCT,   (*  6 *)
+                CF__USESTYLE,              (*  7 *)
+                CF__EFFECTS,               (*  8 *)
+                CF__APPLY,                 (*  9 *)
+                CF__ANSIONLY,              (* 10 *)
+                CF__NOVECTORFONTS,         (* 11 *)
+                CF__NOSIMULATIONS,         (* 12 *)
+                CF__LIMITSIZE,             (* 13 *)
+                CF__FIXEDPITCHONLY,        (* 14 *)
+                CF__WYSIWYG,               (* 15 *)
+                CF__FORCEFONTEXIST,        (* 16 *)
+                CF__SCALABLEONLY,          (* 17 *)
+                CF__TTONLY,                (* 18 *)
+                CF__NOFACESEL,             (* 19 *)
+                CF__NOSTYLESEL,            (* 20 *)
+                CF__NOSIZESEL,             (* 21 *)
+                CF__SELECTSCRIPT,          (* 22 *)
+                CF__NOSCRIPTSEL,           (* 23 *)
+                CF__NOVERTFONTS);          (* 24 *)
+
+     CF_SET = SET OF CF_ENUM;
+
+CONST CF_SCREENFONTS          = CF_SET {CF__SCREENFONTS         }; (* 0x00000001L *)
+      CF_PRINTERFONTS         = CF_SET {CF__PRINTERFONTS        }; (* 0x00000002L *)
+      CF_BOTH                 = CF_SCREENFONTS + CF_PRINTERFONTS;
+      CF_SHOWHELP             = CF_SET {CF__SHOWHELP            }; (* 0x00000004L *)
+      CF_ENABLEHOOK           = CF_SET {CF__ENABLEHOOK          }; (* 0x00000008L *)
+      CF_ENABLETEMPLATE       = CF_SET {CF__ENABLETEMPLATE      }; (* 0x00000010L *)
+      CF_ENABLETEMPLATEHANDLE = CF_SET {CF__ENABLETEMPLATEHANDLE}; (* 0x00000020L *)
+      CF_INITTOLOGFONTSTRUCT  = CF_SET {CF__INITTOLOGFONTSTRUCT }; (* 0x00000040L *)
+      CF_USESTYLE             = CF_SET {CF__USESTYLE            }; (* 0x00000080L *)
+      CF_EFFECTS              = CF_SET {CF__EFFECTS             }; (* 0x00000100L *)
+      CF_APPLY                = CF_SET {CF__APPLY               }; (* 0x00000200L *)
+      CF_ANSIONLY             = CF_SET {CF__ANSIONLY            }; (* 0x00000400L *)
+      CF_SCRIPTSONLY          = CF_ANSIONLY;
+      CF_NOVECTORFONTS        = CF_SET {CF__NOVECTORFONTS       }; (* 0x00000800L *)
+      CF_NOOEMFONTS           = CF_NOVECTORFONTS;
+      CF_NOSIMULATIONS        = CF_SET {CF__NOSIMULATIONS       }; (* 0x00001000L *)
+      CF_LIMITSIZE            = CF_SET {CF__LIMITSIZE           }; (* 0x00002000L *)
+      CF_FIXEDPITCHONLY       = CF_SET {CF__FIXEDPITCHONLY      }; (* 0x00004000L *)
+      CF_WYSIWYG              = CF_SET {CF__WYSIWYG             }; (* 0x00008000L // must also have CF__SCREENFONTS & CF__PRINTERFONTS *)
+      CF_FORCEFONTEXIST       = CF_SET {CF__FORCEFONTEXIST      }; (* 0x00010000L *)
+      CF_SCALABLEONLY         = CF_SET {CF__SCALABLEONLY        }; (* 0x00020000L *)
+      CF_TTONLY               = CF_SET {CF__TTONLY              }; (* 0x00040000L *)
+      CF_NOFACESEL            = CF_SET {CF__NOFACESEL           }; (* 0x00080000L *)
+      CF_NOSTYLESEL           = CF_SET {CF__NOSTYLESEL          }; (* 0x00100000L *)
+      CF_NOSIZESEL            = CF_SET {CF__NOSIZESEL           }; (* 0x00200000L *)
+      CF_SELECTSCRIPT         = CF_SET {CF__SELECTSCRIPT        }; (* 0x00400000L *)
+      CF_NOSCRIPTSEL          = CF_SET {CF__NOSCRIPTSEL         }; (* 0x00800000L *)
+      CF_NOVERTFONTS          = CF_SET {CF__NOVERTFONTS         }; (* 0x01000000L *)
+
+
+TYPE CHOOSEFONTA =
+RECORD
+   lStructSize    : DWORD;
+   hwndOwner      : HWND;          (* caller's window handle               *)
+   hDC            : HDC;           (* printer DC/IC or NULL                *)
+   lpLogFont      : PLOGFONTA;     (* ptr. to a LOGFONT struct             *)
+   iPointSize     : INTEGER;       (* 10 * size in points of selected font *)
+   Flags          : CF_SET;        (* enum. type flags                     *)
+   rgbColors      : COLORREF;      (* returned text color                  *)
+   lCustData      : LPARAM;        (* data passed to hook fn.              *)
+   lpfnHook       : CFHOOKPROC;    (* ptr. to hook function                *)
+   lpTemplateName : RESOURCESTRA;  (* custom template name                 *)
+   hInstance      : HINSTANCE;     (* instance handle of.EXE that
+                                      contains cust. dlg. template         *)
+   lpszStyle      : PSTR;          (* return the style field here
+                                      must be LF_FACESIZE or bigger        *)
+   nFontType      : WORD;          (* same value reported to the EnumFonts
+                                        call back with the extra FONTTYPE_
+                                        bits added                         *)
+   ___MISSING_ALIGNMENT__ : WORD;
+   nSizeMin       : INTEGER;       (* minimum pt size allowed &            *)
+   nSizeMax       : INTEGER;       (* max pt size allowed if
+                                      CF_LIMITSIZE is used                 *)
+END;
+
+TYPE CHOOSEFONTW =
+RECORD
+   lStructSize    : DWORD;
+   hwndOwner      : HWND;          (* caller's window handle               *)
+   hDC            : HDC;           (* printer DC/IC or NULL                *)
+   lpLogFont      : PLOGFONTW;     (* ptr. to a LOGFONT struct             *)
+   iPointSize     : INTEGER;       (* 10 * size in points of selected font *)
+   Flags          : CF_SET;        (* enum. type flags                     *)
+   rgbColors      : COLORREF;      (* returned text color                  *)
+   lCustData      : LPARAM;        (* data passed to hook fn.              *)
+   lpfnHook       : CFHOOKPROC;    (* ptr. to hook function                *)
+   lpTemplateName : RESOURCESTRW;  (* custom template name                 *)
+   hInstance      : HINSTANCE;     (* instance handle of.EXE that
+                                      contains cust. dlg. template         *)
+   lpszStyle      : PWSTR;         (* return the style field here
+                                      must be LF_FACESIZE or bigger        *)
+   nFontType      : WORD;          (* same value reported to the EnumFonts
+                                        call back with the extra FONTTYPE_
+                                        bits added                         *)
+   ___MISSING_ALIGNMENT__ : WORD;
+   nSizeMin       : INTEGER;       (* minimum pt size allowed &            *)
+   nSizeMax       : INTEGER;       (* max pt size allowed if
+                                        CF_LIMITSIZE is used               *)
+END;
+
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE CHOOSEFONT = CHOOSEFONTW;
+<* ELSE  *>
+      TYPE CHOOSEFONT = CHOOSEFONTA;
+<* END *>
+
+PROCEDURE ChooseFontA (VAR ChooseFontStruct : CHOOSEFONTA) : BOOL;
+PROCEDURE ChooseFontW (VAR ChooseFontStruct : CHOOSEFONTW) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST ChooseFont = ChooseFontW;
+<* ELSE  *>
+      CONST ChooseFont = ChooseFontA;
+<* END *>
+
+CONST WM_CHOOSEFONT_GETLOGFONT = WM_USER + 1;
+      WM_CHOOSEFONT_SETLOGFONT = WM_USER + 101;
+      WM_CHOOSEFONT_SETFLAGS   = WM_USER + 102;
+
+(* ----------------------------------------------------------------------- *)
+
+(* strings used to obtain unique window message for communication
+   between dialog and caller
+*)
+
+CONST LBSELCHSTRINGA  = "commdlg_LBSelChangedNotify";
+      SHAREVISTRINGA  = "commdlg_ShareViolation";
+      FILEOKSTRINGA   = "commdlg_FileNameOK";
+      COLOROKSTRINGA  = "commdlg_ColorOK";
+      SETRGBSTRINGA   = "commdlg_SetRGBColor";
+      HELPMSGSTRINGA  = "commdlg_help";
+      FINDMSGSTRINGA  = "commdlg_FindReplace";
+
+      TYPE WARR_LBSELCHSTRING  = ARRAY [0..LEN (LBSELCHSTRINGA)-1] OF WCHAR;
+      TYPE WARR_SHAREVISTRING  = ARRAY [0..LEN (SHAREVISTRINGA)-1] OF WCHAR;
+      TYPE WARR_FILEOKSTRING   = ARRAY [0..LEN (FILEOKSTRINGA )-1] OF WCHAR;
+      TYPE WARR_COLOROKSTRING  = ARRAY [0..LEN (COLOROKSTRINGA)-1] OF WCHAR;
+      TYPE WARR_SETRGBSTRING   = ARRAY [0..LEN (SETRGBSTRINGA )-1] OF WCHAR;
+      TYPE WARR_HELPMSGSTRING  = ARRAY [0..LEN (HELPMSGSTRINGA)-1] OF WCHAR;
+      TYPE WARR_FINDMSGSTRING  = ARRAY [0..LEN (FINDMSGSTRINGA)-1] OF WCHAR;
+
+CONST LBSELCHSTRINGW  = WARR_LBSELCHSTRING {ORD('c'),ORD('o'),ORD('m'),ORD('m'),
+                                            ORD('d'),ORD('l'),ORD('g'),ORD('_'),
+                                            ORD('L'),ORD('B'),ORD('S'),ORD('e'),
+                                            ORD('l'),ORD('C'),ORD('h'),ORD('a'),
+                                            ORD('n'),ORD('g'),ORD('e'),ORD('d'),
+                                            ORD('N'),ORD('o'),ORD('t'),ORD('i'),
+                                            ORD('f'),ORD('y'),0};
+      SHAREVISTRINGW  = WARR_SHAREVISTRING {ORD('c'),ORD('o'),ORD('m'),ORD('m'),
+                                            ORD('d'),ORD('l'),ORD('g'),ORD('_'),
+                                            ORD('S'),ORD('h'),ORD('a'),ORD('r'),
+                                            ORD('e'),ORD('V'),ORD('i'),ORD('o'),
+                                            ORD('l'),ORD('a'),ORD('t'),ORD('i'),
+                                            ORD('o'),ORD('n'),0};
+      FILEOKSTRINGW   = WARR_FILEOKSTRING  {ORD('c'),ORD('o'),ORD('m'),ORD('m'),
+                                            ORD('d'),ORD('l'),ORD('g'),ORD('_'),
+                                            ORD('F'),ORD('i'),ORD('l'),ORD('e'),
+                                            ORD('N'),ORD('a'),ORD('m'),ORD('e'),
+                                            ORD('O'),ORD('K'),0};
+      COLOROKSTRINGW  = WARR_COLOROKSTRING {ORD('c'),ORD('o'),ORD('m'),ORD('m'),
+                                            ORD('d'),ORD('l'),ORD('g'),ORD('_'),
+                                            ORD('C'),ORD('o'),ORD('l'),ORD('o'),
+                                            ORD('r'),ORD('O'),ORD('K'),0};
+      SETRGBSTRINGW   = WARR_SETRGBSTRING  {ORD('c'),ORD('o'),ORD('m'),ORD('m'),
+                                            ORD('d'),ORD('l'),ORD('g'),ORD('_'),
+                                            ORD('S'),ORD('e'),ORD('t'),ORD('R'),
+                                            ORD('G'),ORD('B'),ORD('C'),ORD('o'),
+                                            ORD('l'),ORD('o'),ORD('r'),0};
+      HELPMSGSTRINGW  = WARR_HELPMSGSTRING {ORD('c'),ORD('o'),ORD('m'),ORD('m'),
+                                            ORD('d'),ORD('l'),ORD('g'),ORD('_'),
+                                            ORD('h'),ORD('e'),ORD('l'),ORD('p'),0};
+      FINDMSGSTRINGW  = WARR_FINDMSGSTRING {ORD('c'),ORD('o'),ORD('m'),ORD('m'),
+                                            ORD('d'),ORD('l'),ORD('g'),ORD('_'),
+                                            ORD('F'),ORD('i'),ORD('n'),ORD('d'),
+                                            ORD('R'),ORD('e'),ORD('p'),ORD('l'),
+                                            ORD('a'),ORD('c'),ORD('e'),0};
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST LBSELCHSTRING = LBSELCHSTRINGW;
+            SHAREVISTRING = SHAREVISTRINGW;
+            FILEOKSTRING  = FILEOKSTRINGW;
+            COLOROKSTRING = COLOROKSTRINGW;
+            SETRGBSTRING  = SETRGBSTRINGW;
+            HELPMSGSTRING = HELPMSGSTRINGW;
+            FINDMSGSTRING = FINDMSGSTRINGW;
+<* ELSE *>
+      CONST LBSELCHSTRING = LBSELCHSTRINGA;
+            SHAREVISTRING = SHAREVISTRINGA;
+            FILEOKSTRING  = FILEOKSTRINGA;
+            COLOROKSTRING = COLOROKSTRINGA;
+            SETRGBSTRING  = SETRGBSTRINGA;
+            HELPMSGSTRING = HELPMSGSTRINGA;
+            FINDMSGSTRING = FINDMSGSTRINGA;
+<* END *>
+
+(* ----------------------------------------------------------------------- *)
+
+(* HIWORD values for lParam of commdlg_LBSelChangeNotify message *)
+
+CONST CD_LBSELNOITEMS = -1;
+      CD_LBSELCHANGE  =  0;
+      CD_LBSELSUB     =  1;
+      CD_LBSELADD     =  2;
+
+
+(* ----------------- Print dialog box ------------------------------------ *)
+
+TYPE PRINTHOOKPROC = PROCEDURE (HWND, UINT, WPARAM, LPARAM) : UINT;
+TYPE SETUPHOOKPROC = PROCEDURE (HWND, UINT, WPARAM, LPARAM) : UINT;
+
+TYPE PD_ENUM = (PD__SELECTION,                  (*  0 *)
+                PD__PAGENUMS,                   (*  1 *)
+                PD__NOSELECTION,                (*  2 *)
+                PD__NOPAGENUMS,                 (*  3 *)
+                PD__COLLATE,                    (*  4 *)
+                PD__PRINTTOFILE,                (*  5 *)
+                PD__PRINTSETUP,                 (*  6 *)
+                PD__NOWARNING,                  (*  7 *)
+                PD__RETURNDC,                   (*  8 *)
+                PD__RETURNIC,                   (*  9 *)
+                PD__RETURNDEFAULT,              (* 10 *)
+                PD__SHOWHELP,                   (* 11 *)
+                PD__ENABLEPRINTHOOK,            (* 12 *)
+                PD__ENABLESETUPHOOK,            (* 13 *)
+                PD__ENABLEPRINTTEMPLATE,        (* 14 *)
+                PD__ENABLESETUPTEMPLATE,        (* 15 *)
+                PD__ENABLEPRINTTEMPLATEHANDLE,  (* 16 *)
+                PD__ENABLESETUPTEMPLATEHANDLE,  (* 17 *)
+                PD__USEDEVMODECOPIES,           (* 18 *)
+                PD__DISABLEPRINTTOFILE,         (* 19 *)
+                PD__HIDEPRINTTOFILE,            (* 20 *)
+                PD__NONETWORKBUTTON);           (* 21 *)
+      PD_SET = SET OF PD_ENUM;
+CONST
+ PD_ALLPAGES                  = PD_SET {};                              (* 0x00000000 *)
+ PD_SELECTION                 = PD_SET {PD__SELECTION};                 (* 0x00000001 *)
+ PD_PAGENUMS                  = PD_SET {PD__PAGENUMS};                  (* 0x00000002 *)
+ PD_NOSELECTION               = PD_SET {PD__NOSELECTION};               (* 0x00000004 *)
+ PD_NOPAGENUMS                = PD_SET {PD__NOPAGENUMS};                (* 0x00000008 *)
+ PD_COLLATE                   = PD_SET {PD__COLLATE};                   (* 0x00000010 *)
+ PD_PRINTTOFILE               = PD_SET {PD__PRINTTOFILE};               (* 0x00000020 *)
+ PD_PRINTSETUP                = PD_SET {PD__PRINTSETUP};                (* 0x00000040 *)
+ PD_NOWARNING                 = PD_SET {PD__NOWARNING};                 (* 0x00000080 *)
+ PD_RETURNDC                  = PD_SET {PD__RETURNDC};                  (* 0x00000100 *)
+ PD_RETURNIC                  = PD_SET {PD__RETURNIC};                  (* 0x00000200 *)
+ PD_RETURNDEFAULT             = PD_SET {PD__RETURNDEFAULT};             (* 0x00000400 *)
+ PD_SHOWHELP                  = PD_SET {PD__SHOWHELP};                  (* 0x00000800 *)
+ PD_ENABLEPRINTHOOK           = PD_SET {PD__ENABLEPRINTHOOK};           (* 0x00001000 *)
+ PD_ENABLESETUPHOOK           = PD_SET {PD__ENABLESETUPHOOK};           (* 0x00002000 *)
+ PD_ENABLEPRINTTEMPLATE       = PD_SET {PD__ENABLEPRINTTEMPLATE};       (* 0x00004000 *)
+ PD_ENABLESETUPTEMPLATE       = PD_SET {PD__ENABLESETUPTEMPLATE};       (* 0x00008000 *)
+ PD_ENABLEPRINTTEMPLATEHANDLE = PD_SET {PD__ENABLEPRINTTEMPLATEHANDLE}; (* 0x00010000 *)
+ PD_ENABLESETUPTEMPLATEHANDLE = PD_SET {PD__ENABLESETUPTEMPLATEHANDLE}; (* 0x00020000 *)
+ PD_USEDEVMODECOPIES          = PD_SET {PD__USEDEVMODECOPIES};          (* 0x00040000 *)
+ PD_USEDEVMODECOPIESANDCOLLATE= PD_USEDEVMODECOPIES;                    (* 0x00040000 *)
+ PD_DISABLEPRINTTOFILE        = PD_SET {PD__DISABLEPRINTTOFILE};        (* 0x00080000 *)
+ PD_HIDEPRINTTOFILE           = PD_SET {PD__HIDEPRINTTOFILE};           (* 0x00100000 *)
+ PD_NONETWORKBUTTON           = PD_SET {PD__NONETWORKBUTTON};           (* 0x00200000 *)
+
+TYPE PRINTDLGA = RECORD
+                        lStructSize         : DWORD;
+                        hwndOwner           : HWND;
+                        hDevMode            : HGLOBAL;
+                        hDevNames           : HGLOBAL;
+                        hDC                 : HDC;
+                        Flags               : PD_SET;
+                        nFromPage           : WORD;
+                        nToPage             : WORD;
+                        nMinPage            : WORD;
+                        nMaxPage            : WORD;
+                        nCopies             : WORD;
+                        hInstance           : HINSTANCE;
+                        lCustData           : LPARAM;
+                        lpfnPrintHook       : PRINTHOOKPROC;
+                        lpfnSetupHook       : SETUPHOOKPROC;
+                        lpPrintTemplateName : RESOURCESTRA;
+                        lpSetupTemplateName : RESOURCESTRA;
+                        hPrintTemplate      : HGLOBAL;
+                        hSetupTemplate      : HGLOBAL;
+                 END;
+    PPRINTDLGA = POINTER TO PRINTDLGA;
+
+TYPE PRINTDLGW = RECORD
+                        lStructSize         : DWORD;
+                        hwndOwner           : HWND;
+                        hDevMode            : HGLOBAL;
+                        hDevNames           : HGLOBAL;
+                        hDC                 : HDC;
+                        Flags               : PD_SET;
+                        nFromPage           : WORD;
+                        nToPage             : WORD;
+                        nMinPage            : WORD;
+                        nMaxPage            : WORD;
+                        nCopies             : WORD;
+                        hInstance           : HINSTANCE;
+                        lCustData           : LPARAM;
+                        lpfnPrintHook       : PRINTHOOKPROC;
+                        lpfnSetupHook       : SETUPHOOKPROC;
+                        lpPrintTemplateName : RESOURCESTRW;
+                        lpSetupTemplateName : RESOURCESTRW;
+                        hPrintTemplate      : HGLOBAL;
+                        hSetupTemplate      : HGLOBAL;
+                 END;
+    PPRINTDLGW = POINTER TO PRINTDLGW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  PRINTDLG =  PRINTDLGW;
+      TYPE PPRINTDLG = PPRINTDLGW;
+<* ELSE *>
+      TYPE  PRINTDLG =  PRINTDLGA;
+      TYPE PPRINTDLG = PPRINTDLGA;
+<* END *>
+
+PROCEDURE PrintDlgA (VAR PrintStruct : PRINTDLGA) : BOOL;
+PROCEDURE PrintDlgW (VAR PrintStruct : PRINTDLGW) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST PrintDlg = PrintDlgW;
+<* ELSE *>
+      CONST PrintDlg = PrintDlgA;
+<* END *>
+
+TYPE DEVNAMES = RECORD
+                       wDriverOffset : WORD;
+                       wDeviceOffset : WORD;
+                       wOutputOffset : WORD;
+                       wDefault      : WORD;
+                END;
+     PDEVNAMES = POINTER TO DEVNAMES;
+
+CONST DN_DEFAULTPRN = 1;
+
+(* ----------------------------------------------------------------------- *)
+
+PROCEDURE CommDlgExtendedError () : DWORD;
+
+(* ----------------- Page setup dialog box ------------------------------- *)
+
+TYPE PSD_ENUM = (PSD__MINMARGINS,                    (*  0 - use caller's *)
+                 PSD__MARGINS,                       (*  1 - use caller's *)
+                 PSD__INTHOUSANDTHSOFINCHES,         (*  2 - 2nd of 4 possible *)
+                 PSD__INHUNDREDTHSOFMILLIMETERS,     (*  3 - 3rd of 4 possible *)
+                 PSD__DISABLEMARGINS,                (*  4 *)
+                 PSD__DISABLEPRINTER,                (*  5 *)
+                 PSD__6,
+
+                 PSD__NOWARNING,                     (*  7 - must be same as PD_* *)
+                 PSD__DISABLEORIENTATION,            (*  8 *)
+                 PSD__DISABLEPAPER,                  (*  9 *)
+                 PSD__RETURNDEFAULT,                 (* 10 - must be same as PD_* *)
+                 PSD__SHOWHELP,                      (* 11 - must be same as PD_* *)
+                 PSD__12,
+                 PSD__ENABLEPAGESETUPHOOK,           (* 13 - must be same as PD_* *)
+                 PSD__14,
+                 PSD__ENABLEPAGESETUPTEMPLATE,       (* 15 - must be same as PD_* *)
+                 PSD__16,
+                 PSD__ENABLEPAGESETUPTEMPLATEHANDLE, (* 17 - must be same as PD_* *)
+                 PSD__ENABLEPAGEPAINTHOOK,           (* 18 *)
+                 PSD__DISABLEPAGEPAINTING);          (* 19 *)
+
+     PSD_SET = SET OF PSD_ENUM;
+
+CONST PSD_DEFAULTMINMARGINS             = PSD_SET {}; (* 0x00000000 - default (printer's) *)
+      PSD_INWININIINTLMEASURE           = PSD_SET {}; (* 0x00000000 - 1st of 4 possible *)
+
+      PSD_MINMARGINS                    = PSD_SET {PSD__MINMARGINS                    }; (* 0x00000001 - use caller's *)
+      PSD_MARGINS                       = PSD_SET {PSD__MARGINS                       }; (* 0x00000002 - use caller's *)
+      PSD_INTHOUSANDTHSOFINCHES         = PSD_SET {PSD__INTHOUSANDTHSOFINCHES         }; (* 0x00000004 - 2nd of 4 possible *)
+      PSD_INHUNDREDTHSOFMILLIMETERS     = PSD_SET {PSD__INHUNDREDTHSOFMILLIMETERS     }; (* 0x00000008 - 3rd of 4 possible *)
+      PSD_DISABLEMARGINS                = PSD_SET {PSD__DISABLEMARGINS                }; (* 0x00000010 *)
+      PSD_DISABLEPRINTER                = PSD_SET {PSD__DISABLEPRINTER                }; (* 0x00000020 *)
+      PSD_NOWARNING                     = PSD_SET {PSD__NOWARNING                     }; (* 0x00000080 - must be same as PD_* *)
+      PSD_DISABLEORIENTATION            = PSD_SET {PSD__DISABLEORIENTATION            }; (* 0x00000100 *)
+      PSD_RETURNDEFAULT                 = PSD_SET {PSD__RETURNDEFAULT                 }; (* 0x00000400 - must be same as PD_* *)
+      PSD_DISABLEPAPER                  = PSD_SET {PSD__DISABLEPAPER                  }; (* 0x00000200 *)
+      PSD_SHOWHELP                      = PSD_SET {PSD__SHOWHELP                      }; (* 0x00000800 - must be same as PD_* *)
+      PSD_ENABLEPAGESETUPHOOK           = PSD_SET {PSD__ENABLEPAGESETUPHOOK           }; (* 0x00002000 - must be same as PD_* *)
+      PSD_ENABLEPAGESETUPTEMPLATE       = PSD_SET {PSD__ENABLEPAGESETUPTEMPLATE       }; (* 0x00008000 - must be same as PD_* *)
+      PSD_ENABLEPAGESETUPTEMPLATEHANDLE = PSD_SET {PSD__ENABLEPAGESETUPTEMPLATEHANDLE }; (* 0x00020000 - must be same as PD_* *)
+      PSD_ENABLEPAGEPAINTHOOK           = PSD_SET {PSD__ENABLEPAGEPAINTHOOK           }; (* 0x00040000 *)
+      PSD_DISABLEPAGEPAINTING           = PSD_SET {PSD__DISABLEPAGEPAINTING           }; (* 0x00080000 *)
+
+CONST WM_PSD_PAGESETUPDLG   = WM_USER;
+      WM_PSD_FULLPAGERECT   = WM_USER+1;
+      WM_PSD_MINMARGINRECT  = WM_USER+2;
+      WM_PSD_MARGINRECT     = WM_USER+3;
+      WM_PSD_GREEKTEXTRECT  = WM_USER+4;
+      WM_PSD_ENVSTAMPRECT   = WM_USER+5;
+      WM_PSD_YAFULLPAGERECT = WM_USER+6;
+
+TYPE PAGEPAINTHOOK = PROCEDURE (HWND, UINT, WPARAM, LPARAM) : UINT;
+TYPE PAGESETUPHOOK = PROCEDURE (HWND, UINT, WPARAM, LPARAM) : UINT;
+
+TYPE PAGESETUPDLGA = RECORD
+                            lStructSize             : DWORD;
+                            hwndOwner               : HWND;
+                            hDevMode                : HGLOBAL;
+                            hDevNames               : HGLOBAL;
+                            Flags                   : PSD_SET;
+                            ptPaperSize             : POINT;
+                            rtMinMargin             : RECT;
+                            rtMargin                : RECT;
+                            hInstance               : HINSTANCE;
+                            lCustData               : LPARAM;
+                            lpfnPageSetupHook       : PAGESETUPHOOK;
+                            lpfnPagePaintHook       : PAGEPAINTHOOK;
+                            lpPageSetupTemplateName : PCSTR;
+                            hPageSetupTemplate      : HGLOBAL;
+                     END;
+    PPAGESETUPDLGA = POINTER TO PAGESETUPDLGA;
+
+TYPE PAGESETUPDLGW = RECORD
+                            lStructSize             : DWORD;
+                            hwndOwner               : HWND;
+                            hDevMode                : HGLOBAL;
+                            hDevNames               : HGLOBAL;
+                            Flags                   : PSD_SET;
+                            ptPaperSize             : POINT;
+                            rtMinMargin             : RECT;
+                            rtMargin                : RECT;
+                            hInstance               : HINSTANCE;
+                            lCustData               : LPARAM;
+                            lpfnPageSetupHook       : PAGESETUPHOOK;
+                            lpfnPagePaintHook       : PAGEPAINTHOOK;
+                            lpPageSetupTemplateName : PCSTR;
+                            hPageSetupTemplate      : HGLOBAL;
+                     END;
+    PPAGESETUPDLGW = POINTER TO PAGESETUPDLGW;
+
+<* IF DEFINED (UNICODE) THEN *>
+      TYPE  PAGESETUPDLG =  PAGESETUPDLGW;
+      TYPE PPAGESETUPDLG = PPAGESETUPDLGW;
+<* ELSE *>
+      TYPE  PAGESETUPDLG =  PAGESETUPDLGA;
+      TYPE PPAGESETUPDLG = PPAGESETUPDLGA;
+<* END *>
+
+PROCEDURE PageSetupDlgA (VAR d : PAGESETUPDLGA) : BOOL;
+PROCEDURE PageSetupDlgW (VAR d : PAGESETUPDLGW) : BOOL;
+
+<* IF DEFINED (UNICODE) THEN *>
+      CONST PageSetupDlg = PageSetupDlgW;
+<* ELSE *>
+      CONST PageSetupDlg = PageSetupDlgA;
+<* END *>
+
+<* POP *> (* back to alignment 8 *)
+
+END CommDlg.

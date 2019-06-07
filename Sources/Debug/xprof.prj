@@ -1,0 +1,133 @@
+% Project file for xProf trace execution utility
+% modes are: enduser, work
+
+!if not defined trialversion then
+  !new trialversion-
+!end
+
+!if not defined mode then
+  -mode := work
+!end
+
+!if not defined placement then
+  !if (mode="enduser") then
+    -placement := release
+  !else
+    -placement := current
+  !end
+!end
+
+-m2extensions+
+-o2extensions-
+-m2addtypes+
+
+-gcthreshold =  96000000
+-heaplimit = 96000000
+
+-compilerheap = 320000000
+
+-implib-
+-usedll+
+-gendll-
+-dllexport-
+
+-TARGET_VAX:-
+-TARGET_x86:+
+-TARGET_m68k:-
+
+-ONLY_REMOTE:+
+
+-DEST_XDS:+
+-DEST_K26:-
+
+-DEST_XDASM:-
+
+-SCHERN_K26:-
+
+!if not defined xd_batch_included then
+  -xd_batch_included:+
+!end
+
+!if not defined xd_batch_dlg_cmd then
+  -xd_batch_dlg_cmd:-
+!end
+
+
+% ======================================================
+% Files lookup settings
+% ======================================================
+-m2cmpsym+
+-changesym+
+-makefile+
+-longname+
+
+% output settings
+-mkfname = xprof
+
+-lookup = *.exe = $!/workplace
+-lookup = *.dll = $!/workplace
+
+-lookup = *.lnk = ch
+-lookup = *.obj = ch
+-lookup = *.sym = sym
+
+% Source lookup settings
+-lookup = *.def = $!\src\profiler; $!\src\xd_cmn; $!\src\xd_enh; $!\src\xd_rmt;
+-lookup = *.mod = $!\src\profiler; $!\src\xd_cmn; $!\src\xd_enh; $!\src\xd_rmt;
+!if    TARGET_x86  then
+  -lookup = *.def = $!\src\xd_386;
+  -lookup = *.mod = $!\src\xd_386;
+!elsif TARGET_m68k then
+  -lookup = *.def = $!\src\xd_m68k;
+  -lookup = *.mod = $!\src\xd_m68k;
+!end
+!if env_target = "x86nt" then
+  -lookup = *.def = $!\src\xd_386\win32;
+  -lookup = *.mod = $!\src\xd_386\win32;
+!elsif env_target = "x86os2" then
+  -lookup = *.def = $!\src\xd_386\os2;
+  -lookup = *.mod = $!\src\xd_386\os2;
+!end
+!if DEST_XDS  then
+  -lookup = *.def = $!\src\xd_rts;
+!end
+
+% Runtime checks and debug settings
+!if mode="enduser" then
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex-
+  -checkdindex-
+  -checkrange-
+  -checkset-
+  -checknil-
+  -checkproc-
+  -ioverflow-
+  -coverflow-
+  -foverflow-
+
+  -xd_debug:-
+
+!elsif mode="work" then
+
+  -gendebug+
+  -lineno+
+  -genhistory+
+  -assert+
+  -checkindex+
+  -checkdindex+
+  -checkrange+
+  -checkset+
+  -checknil+
+  -checkproc+
+  -ioverflow+
+  -coverflow+
+  -foverflow+
+
+  -dbgfmt = HLL
+  -xd_debug:+
+!end
+
+!module xprof.mod

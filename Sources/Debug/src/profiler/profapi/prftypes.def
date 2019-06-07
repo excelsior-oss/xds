@@ -1,0 +1,214 @@
+-- Содержит описания типов, используемых профилировщиком
+-- и визуализаторами данных профилирования
+
+DEFINITION MODULE PrfTypes;
+
+<* ALIGNMENT = "1" *>
+
+IMPORT SYSTEM;
+
+IMPORT dt := DI_Types;
+IMPORT kt := KrnTypes;
+
+IMPORT Int64;
+
+
+CONST
+  IDENTKEY = "XDS Profiler";
+  VERSION  = "1.0";
+
+  TRACE_FILE_EXT = "xpt";
+
+
+TYPE
+  UTILITY = ( TRACE_EXECUTION
+            , TRACE_MEMORY
+            , TRACE_CALLS_PROFILE );
+
+  INDEX = dt.INDEX;
+
+  OBJNO = SYSTEM.CARD8;
+
+  NAME  = ARRAY [0..255] OF CHAR;
+
+  PROFDATA  = RECORD
+    pure_dur_lo       : SYSTEM.CARD32;
+    pure_dur_hi       : SYSTEM.CARD32;
+    dirty_dur_lo      : SYSTEM.CARD32;
+    dirty_dur_hi      : SYSTEM.CARD32;
+    total_entry_count : SYSTEM.CARD32;
+    norec_entry_count : SYSTEM.CARD32;
+  END;
+
+  COMP = RECORD
+           Index: INDEX;
+           Name : NAME;
+           Begin: kt.ADDRESS;
+           End  : kt.ADDRESS;
+         END;
+
+  PACOMP = POINTER TO ARRAY OF COMP;
+
+  COMPS = RECORD
+            Comps: PACOMP;
+            Count: CARDINAL;
+          END;
+
+  SNAPSHOT = RECORD
+               Index : INDEX;
+               Object: OBJNO;
+               Offset: CARDINAL;
+             END;
+
+  PASNAPSHOT = POINTER TO ARRAY OF SNAPSHOT;
+
+  SNAPSHOTS = RECORD
+                Snapshots: PASNAPSHOT;
+                Count    : CARDINAL;
+              END;
+
+  MEM_USED = RECORD
+               Index : INDEX;
+               Object: OBJNO;
+               Offset: CARDINAL;
+               Size  : CARDINAL;
+               Addr  : kt.ADDRESS;
+             END;
+
+  PAMEM_USED = POINTER TO ARRAY OF MEM_USED;
+
+  MEM_USED_STR = RECORD
+                   MemUsed: PAMEM_USED;
+                   Count  : CARDINAL;
+                 END;
+
+  MEM_TRACE_RESULT = RECORD
+                       alloc_max_total : CARDINAL;
+                       alloc_max_size  : CARDINAL;
+                       alloc_mem       : CARDINAL;
+                       alloc_count     : CARDINAL;
+                       dealloc_count   : CARDINAL;
+                       dealloc_mem     : CARDINAL;
+                     END;
+
+ <* PUSH *>
+ <* ALIGNMENT = "4" *>
+
+  TCALL = RECORD
+            ComNo: dt.ComNo;
+            Addr : kt.ADDRESS;
+            Num  : CARDINAL;
+          END;
+
+  PTCALL = POINTER TO ARRAY OF TCALL;
+
+  TCALLS = RECORD
+             Calls : PTCALL;
+             Count : CARDINAL;
+           END;
+
+  TPROC = RECORD
+            Name : NAME;
+            Data : PROFDATA;
+            Calls: TCALLS;
+          END;
+
+  PTPROC = POINTER TO ARRAY OF TPROC;
+
+  TPROCS = RECORD
+             Procs : PTPROC;
+             Count : CARDINAL;
+           END;
+
+  TMODULE = RECORD
+              Index : INDEX;
+              Name  : NAME;
+              Procs : TPROCS;
+            END;
+
+  PTMODULE = POINTER TO ARRAY OF TMODULE;
+
+  TMODULES = RECORD
+               Modules : PTMODULE;
+               Count   : CARDINAL;
+             END;
+
+  TIME = Int64.INT64;
+
+
+  RPROCEDURE = RECORD
+                 Proc  : dt.OBJECT;
+                 CASE : UTILITY OF
+                 | TRACE_EXECUTION
+                 , TRACE_MEMORY:
+                   PCount: CARDINAL;
+                 | TRACE_CALLS_PROFILE:
+                   Data: PROFDATA;
+                   Calls: TCALLS;
+                 END;
+               END;
+
+  PAPROCEDURES = POINTER TO ARRAY OF RPROCEDURE;
+
+  PROCEDURES = RECORD
+                 Proc : PAPROCEDURES;
+                 Count: CARDINAL;
+               END;
+
+  PALINES = POINTER TO ARRAY OF CARDINAL;
+
+  RMODULE = RECORD
+              MCount     : CARDINAL;
+              Procedures : PROCEDURES;
+              Lines      : PALINES;
+            END;
+
+  PAMODULES = POINTER TO ARRAY OF RMODULE;
+
+  PAPUBLIC = POINTER TO ARRAY OF CARDINAL;
+
+  RCOMPONENT = RECORD
+                 ComName : NAME;
+                 Modules : PAMODULES;
+                 CASE : UTILITY OF
+                 | TRACE_EXECUTION
+                 , TRACE_MEMORY:
+                   CCount  : CARDINAL;
+                   Unknown : CARDINAL;
+                   Publics : PAPUBLIC;
+                 | TRACE_CALLS_PROFILE:
+                   Base : kt.ADDRESS;
+                 END;
+               END;
+
+  PACOMPONENT = POINTER TO ARRAY OF RCOMPONENT;
+
+  COMPONENTS = RECORD
+                 Components: PACOMPONENT;
+                 Count     : CARDINAL;
+               END;
+
+ <* POP *>
+
+
+  PROF_MODE = ( mode_none
+              , mode_min
+              , mode_std
+              , mode_full
+              );
+
+
+CONST
+  -- LoadDebugInfo return code
+  Error                       =  0; -- Error
+  OpenErrorProfilerData       = -1; -- Error opening profiler trace file
+  ReadErrorProfilerData       = -2; -- Error reading profiler trace file
+  ReadDebugInfo               = -3; -- Error reading debugging information
+  WrongFormatProfilerData     = -4; -- Wrong format of profiler trace file
+  IsNot_XDS_ProfilerTraceFile = -5; -- Is not XDS profiler trace file
+  ErrorWriteProtocol          = -6; -- Error write protocol file
+
+
+  EMPTY_PROFDATA = PROFDATA {0, 0, 0, 0, 0, 0};
+
+END PrfTypes.

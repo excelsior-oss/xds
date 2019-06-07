@@ -1,0 +1,10 @@
+DEFINITION MODULE Dlg_Log;
+
+IMPORT sys := SYSTEM;
+
+IMPORT act := Dlg_Acts;
+
+
+PROCEDURE SaveToLog (action: act.ACTION; SEQ args: sys.BYTE);
+
+END Dlg_Log.

@@ -1,0 +1,39 @@
+# Static files to be copied into external workspace 
+# Target must be relative to the root of an external workplace
+# Note: target subfolder must end with symbol "\" 
+# <mode> ::= "" | "work" | "release"
+
+# <source>                      <target>        <mode>
+src\isodef\*.def                 def\iso\
+src\syslib\*.def                 def\iso\
+src\pimlib\*.def                 def\pim\
+
+# <source>                      <target>        <mode>
+src\ulib\*.def                   def\xds\
+
+# <source>                      <target>        <mode>
+src\os\POSIX\POSIXIOChan.def     def\xds\
+src\os\w95\Win32IOChan.def       def\xds\
+src\os\w95\Win32Processes.def    def\xds\
+
+# <source>                      <target>        <mode>
+src\lib\XEXCEPTIONS.def          def\xds\
+src\lib\xFilePos.def             def\xds\
+src\lib\XIOChan.def              def\xds\
+src\lib\XProcesses.def           def\xds\
+
+# <source>                      <target>        <mode>
+src\vterm\*.def                  def\Win32\
+
+# <source>                      <target>        <mode>
+src\TSlibs\BiosIO.def            def\ts\
+src\TSlibs\FIO.def               def\ts\
+src\TSlibs\FIOR.def              def\ts\
+src\TSlibs\Graph.def             def\ts\
+src\TSlibs\IO.def                def\ts\
+src\TSlibs\Lib.def               def\ts\
+src\TSlibs\MATHLIB.def           def\ts\
+src\TSlibs\MsMouse.def           def\ts\
+src\TSlibs\ShtHeap.def           def\ts\
+src\TSlibs\SysErr.def            def\ts\
+src\TSlibs\Window.mod            def\ts\

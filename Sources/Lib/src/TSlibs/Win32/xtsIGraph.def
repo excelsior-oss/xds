@@ -1,0 +1,37 @@
+(* Copyright (C) 1998 XDS Ltd *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE xtsIGraph;
+
+IMPORT W := Windows;
+
+(* DO NOT IMPORT TS-modules !!!!!!!!!!!!! *)
+
+TYPE
+  ExtraWinProcT = PROCEDURE ["StdCall"] ((* hWnd:  *) W.HWND,
+                                         (* msg:   *) W.UINT,
+                                         (* wParam:*) W.WPARAM,
+                                         (* lParam:*) W.LPARAM ) :W.LRESULT;
+
+<* +VOLATILE *>
+
+VAR
+  proc    : ExtraWinProcT;
+  fGrMode : BOOLEAN;
+
+(* an additional window procedure for the Graph window;
+   it will be called from the standard window procedure before
+   the message processing.
+*)
+
+  hConsoleInput :W.HANDLE;  -- standard console input
+
+(*
+   all modules reading from the console input should use the handle
+   rather than obtain it from the system; it's needed to implement 
+   console reading from the Graph-window
+*)
+
+END xtsIGraph.

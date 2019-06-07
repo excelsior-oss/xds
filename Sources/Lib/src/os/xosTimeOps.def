@@ -1,0 +1,16 @@
+(* (c) xTech 1997. All Rights Reserved *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE ["C"] xosTimeOps; (* Hady, 2 Sep 1997 *)
+
+IMPORT xlibOS, SYSTEM;
+
+PROCEDURE X2C_TimeCompare(tl,tr: xlibOS.X2C_TimeStruct): SYSTEM.INT32;
+PROCEDURE X2C_TimeDayInt(fr,to: xlibOS.X2C_TimeStruct): SYSTEM.CARD32;
+PROCEDURE X2C_TimeSecInt(fr,to: xlibOS.X2C_TimeStruct): SYSTEM.CARD32;
+PROCEDURE X2C_TimeDayAdd(st: xlibOS.X2C_TimeStruct; days: SYSTEM.CARD32;
+                    VAR res: xlibOS.X2C_TimeStruct);
+PROCEDURE X2C_TimeSecAdd(st: xlibOS.X2C_TimeStruct; secs: SYSTEM.CARD32;
+                    VAR res: xlibOS.X2C_TimeStruct);
+PROCEDURE X2C_TimeDayNum(year,mon,day: SYSTEM.CARD32): SYSTEM.CARD32;
+
+END xosTimeOps.

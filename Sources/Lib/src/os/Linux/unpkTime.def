@@ -1,0 +1,10 @@
+(* Copyright (c) 2002 Excelsior LLC. All Rights Reserved. *)
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE ["C"] unpkTime;
+
+IMPORT time, xlibOS;
+
+PROCEDURE X2C_UnpackTime(t : time.time_t; VAR res: xlibOS.X2C_TimeStruct);
+
+END unpkTime.

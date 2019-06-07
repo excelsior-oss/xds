@@ -1,0 +1,474 @@
+(* vgagl.def  Feb 18  12:3:30  1999 *)
+(* Copyright (c) 1999, JSC XDS *)
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: vgagl.h *)
+
+DEFINITION MODULE ["C"] vgagl;
+
+IMPORT SYSTEM, vga;
+
+(*  Graphics Library headerfile  *)
+
+(*  Graphics context  *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  CONTEXT_VIRTUAL                  - : INTEGER;
+  CONTEXT_PAGED                    - : INTEGER;
+  CONTEXT_LINEAR                   - : INTEGER;
+  CONTEXT_MODEX                    - : INTEGER;
+  CONTEXT_PLANAR16                 - : INTEGER;
+  MODEFLAG_PAGEFLIPPING_CAPABLE    - : INTEGER;
+  MODEFLAG_TRIPLEBUFFERING_CAPABLE - : INTEGER;
+  MODEFLAG_PAGEFLIPPING_ENABLED    - : INTEGER;
+  MODEFLAG_TRIPLEBUFFERING_ENABLED - : INTEGER;
+  MODEFLAG_FLIPPAGE_BANKALIGNED    - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  CONTEXT_VIRTUAL                  = 0H;
+  CONTEXT_PAGED                    = 1H;
+  CONTEXT_LINEAR                   = 2H;
+  CONTEXT_MODEX                    = 3H;
+  CONTEXT_PLANAR16                 = 4H;
+  MODEFLAG_PAGEFLIPPING_CAPABLE    = 1H;
+  MODEFLAG_TRIPLEBUFFERING_CAPABLE = 2H;
+  MODEFLAG_PAGEFLIPPING_ENABLED    = 4H;
+  MODEFLAG_TRIPLEBUFFERING_ENABLED = 8H;
+  MODEFLAG_FLIPPAGE_BANKALIGNED    = 10H;
+
+<* END *>
+
+(*
+ * The next two can never occur together, thus we use the same flag
+ * (as svgalib does).
+ *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  MODEFLAG_32BPP_SHIFT8   - : INTEGER;
+  MODEFLAG_24BPP_REVERSED - : INTEGER;
+
+<* ELSE *>
+
+CONST 
+  MODEFLAG_32BPP_SHIFT8   = 20H;
+  MODEFLAG_24BPP_REVERSED = 20H;
+
+<* END *>
+
+TYPE 
+  SetPixelFunc   = PROCEDURE ( INTEGER,
+                               INTEGER,
+                               INTEGER );
+
+  GetPixelFunc   = PROCEDURE ( INTEGER,
+                               INTEGER ): INTEGER;
+
+  HLineFunc      = PROCEDURE ( INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER );
+
+  FillBoxFunc    = PROCEDURE ( INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER );
+
+  PutBoxFunc     = PROCEDURE ( INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               SYSTEM.ADDRESS,
+                               INTEGER );
+
+  GetBoxFunc     = PROCEDURE ( INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               SYSTEM.ADDRESS,
+                               INTEGER );
+
+  PutBoxMaskFunc = PROCEDURE ( INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               SYSTEM.ADDRESS );
+
+  PutBoxPartFunc = PROCEDURE ( INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               SYSTEM.ADDRESS,
+                               INTEGER,
+                               INTEGER );
+
+  GetBoxPartFunc = PROCEDURE ( INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               SYSTEM.ADDRESS,
+                               INTEGER,
+                               INTEGER );
+
+  CopyBoxFunc    = PROCEDURE ( INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER,
+                               INTEGER );
+
+  framebufferfunctions = RECORD
+    driver_setpixel_func  : SetPixelFunc;
+    driver_getpixel_func  : GetPixelFunc;
+    driver_hline_func     : HLineFunc;
+    driver_fillbox_func   : FillBoxFunc;
+    driver_putbox_func    : PutBoxFunc;
+    driver_getbox_func    : GetBoxFunc;
+    driver_putboxmask_func: PutBoxMaskFunc;
+    driver_putboxpart_func: PutBoxPartFunc;
+    driver_getboxpart_func: GetBoxPartFunc;
+    driver_copybox_func   : CopyBoxFunc;
+  END;
+
+  GraphicsContext = RECORD
+    modetype     : SHORTCARD;      (* virtual, paged, linear, mode X *)
+    modeflags    : SHORTCARD;      (* or planar16 *)
+    dummy        : SHORTCARD;
+    flippage     : SHORTCARD;
+    width        : INTEGER;        (* width in pixels *)
+    height       : INTEGER;        (* height in pixels *)
+    bytesperpixel: INTEGER;        (* bytes per pixel (1, 2, 3, or 4) *)
+    colors       : INTEGER;        (* number of colors *)
+    bitsperpixel : INTEGER;        (* bits per pixel (8, 15, 16 or 24) *)
+    bytewidth    : INTEGER;        (* length of a scanline in bytes *)
+    vbuf         : SYSTEM.ADDRESS; (* address of framebuffer *)
+    clip         : INTEGER;        (* clipping enabled? *)
+    clipx1       : INTEGER;        (* top-left coordinate of clip window *)
+    clipy1       : INTEGER;
+    clipx2       : INTEGER;        (* bottom-right coordinate of clip window *)
+    clipy2       : INTEGER;
+    ff           : framebufferfunctions;
+  END;
+
+VAR 
+  currentcontext: GraphicsContext;
+
+(* XDS: these procedures corresponds to a macro. *)
+
+<* IF  __GEN_C__ THEN *>
+
+PROCEDURE BYTESPERPIXEL (): INTEGER;
+PROCEDURE BYTEWIDTH (): INTEGER;
+PROCEDURE WIDTH (): INTEGER;
+PROCEDURE HEIGHT (): INTEGER;
+PROCEDURE VBUF (): SYSTEM.ADDRESS;
+PROCEDURE MODETYPE (): SHORTCARD;
+PROCEDURE MODEFLAGS (): SHORTCARD;
+PROCEDURE BITSPERPIXEL (): INTEGER;
+PROCEDURE COLORS (): INTEGER;
+PROCEDURE __clip (): INTEGER;
+PROCEDURE __clipx1 (): INTEGER;
+PROCEDURE __clipy1 (): INTEGER;
+PROCEDURE __clipx2 (): INTEGER;
+PROCEDURE __clipy2 (): INTEGER;
+
+<* ELSE *>
+
+PROCEDURE / BYTESPERPIXEL (): INTEGER;
+PROCEDURE / BYTEWIDTH (): INTEGER;
+PROCEDURE / WIDTH (): INTEGER;
+PROCEDURE / HEIGHT (): INTEGER;
+PROCEDURE / VBUF (): SYSTEM.ADDRESS;
+PROCEDURE / MODETYPE (): SHORTCARD;
+PROCEDURE / MODEFLAGS (): SHORTCARD;
+PROCEDURE / BITSPERPIXEL (): INTEGER;
+PROCEDURE / COLORS (): INTEGER;
+PROCEDURE / __clip (): INTEGER;
+PROCEDURE / __clipx1 (): INTEGER;
+PROCEDURE / __clipy1 (): INTEGER;
+PROCEDURE / __clipx2 (): INTEGER;
+PROCEDURE / __clipy2 (): INTEGER;
+
+<* END *>
+
+(*  Configuration  *)
+
+PROCEDURE gl_setcontextvga ( m: INTEGER ): INTEGER;
+
+PROCEDURE gl_setcontextvgavirtual ( m: INTEGER ): INTEGER;
+
+PROCEDURE gl_setcontextvirtual ( w: INTEGER; h: INTEGER; bpp: INTEGER;
+                                 bitspp: INTEGER; vbuf: SYSTEM.ADDRESS );
+
+PROCEDURE gl_setcontextwidth ( w: INTEGER );
+
+PROCEDURE gl_setcontextheight ( h: INTEGER );
+
+TYPE 
+  GraphicsContextPtr = POINTER TO GraphicsContext;
+
+PROCEDURE gl_allocatecontext (): GraphicsContextPtr;
+
+PROCEDURE gl_setcontext ( VAR gc: GraphicsContext );
+
+PROCEDURE gl_getcontext ( VAR gc: GraphicsContext );
+
+PROCEDURE gl_freecontext ( VAR gc: GraphicsContext );
+
+(*  Line drawing  *)
+PROCEDURE gl_setpixel ( x: INTEGER;
+                        y: INTEGER;
+                        c: INTEGER );
+
+PROCEDURE gl_setpixelrgb ( x: INTEGER;
+                           y: INTEGER;
+                           r: INTEGER;
+                           g: INTEGER;
+                           b: INTEGER );
+
+PROCEDURE gl_getpixel ( x: INTEGER;
+                        y: INTEGER ): INTEGER;
+
+PROCEDURE gl_getpixelrgb ( x: INTEGER;
+                           y: INTEGER;
+                           VAR r: INTEGER;
+                           VAR g: INTEGER;
+                           VAR b: INTEGER );
+
+PROCEDURE gl_rgbcolor ( r: INTEGER;
+                        g: INTEGER;
+                        b: INTEGER ): INTEGER;
+
+PROCEDURE gl_hline ( x1: INTEGER;
+                     y : INTEGER;
+                     x2: INTEGER;
+                     c : INTEGER );
+
+PROCEDURE gl_line ( x1: INTEGER;
+                    y1: INTEGER;
+                    x2: INTEGER;
+                    y2: INTEGER;
+                    c : INTEGER );
+
+PROCEDURE gl_circle ( x: INTEGER;
+                      y: INTEGER;
+                      r: INTEGER;
+                      c: INTEGER );
+
+(*  Box (bitmap) functions  *)
+
+PROCEDURE gl_fillbox ( x: INTEGER;
+                       y: INTEGER;
+                       w: INTEGER;
+                       h: INTEGER;
+                       c: INTEGER );
+
+PROCEDURE gl_getbox ( x: INTEGER;
+                      y: INTEGER;
+                      w: INTEGER;
+                      h: INTEGER;
+                      dp: SYSTEM.ADDRESS );
+
+PROCEDURE gl_putbox ( x: INTEGER;
+                      y: INTEGER;
+                      w: INTEGER;
+                      h: INTEGER;
+                      dp: SYSTEM.ADDRESS );
+
+PROCEDURE gl_putboxpart ( x: INTEGER;
+                          y: INTEGER;
+                          w: INTEGER;
+                          h: INTEGER;
+                          bw: INTEGER;
+                          bh: INTEGER;
+                          b: SYSTEM.ADDRESS;
+                          xo: INTEGER;
+                          yo: INTEGER );
+
+PROCEDURE gl_putboxmask ( x: INTEGER;
+                          y: INTEGER;
+                          w: INTEGER;
+                          h: INTEGER;
+                          dp: SYSTEM.ADDRESS );
+
+PROCEDURE gl_copybox ( x1: INTEGER;
+                       y1: INTEGER;
+                       w: INTEGER;
+                       h: INTEGER;
+                       x2: INTEGER;
+                       y2: INTEGER );
+
+PROCEDURE gl_copyboxtocontext ( x1: INTEGER;
+                                y1: INTEGER;
+                                w: INTEGER;
+                                h: INTEGER;
+                                VAR gc: GraphicsContext;
+                                x2: INTEGER;
+                                y2: INTEGER );
+
+PROCEDURE gl_copyboxfromcontext ( VAR gc: GraphicsContext;
+                                  x1: INTEGER;
+                                  y1: INTEGER;
+                                  w: INTEGER;
+                                  h: INTEGER;
+                                  x2: INTEGER;
+                                  y2: INTEGER );
+
+(*  The following functions only work in 256-color modes:  *)
+
+PROCEDURE gl_compileboxmask ( w: INTEGER;
+                              h: INTEGER;
+                              sdp: SYSTEM.ADDRESS;
+                              ddp: SYSTEM.ADDRESS );
+
+PROCEDURE gl_compiledboxmasksize ( w: INTEGER;
+                                   h: INTEGER;
+                                   sdp: SYSTEM.ADDRESS ): INTEGER;
+
+PROCEDURE gl_putboxmaskcompiled ( x: INTEGER;
+                                  y: INTEGER;
+                                  w: INTEGER;
+                                  h: INTEGER;
+                                  dp: SYSTEM.ADDRESS );
+
+(*  Miscellaneous  *)
+
+PROCEDURE gl_clearscreen ( c: INTEGER );
+
+PROCEDURE gl_scalebox ( w1: INTEGER;
+                        h1: INTEGER;
+                        sb: SYSTEM.ADDRESS;
+                        w2: INTEGER;
+                        h2: INTEGER;
+                        db: SYSTEM.ADDRESS );
+
+PROCEDURE gl_setdisplaystart ( x: INTEGER;
+                               y: INTEGER );
+
+PROCEDURE gl_enableclipping;
+
+PROCEDURE gl_setclippingwindow ( x1: INTEGER;
+                                 y1: INTEGER;
+                                 x2: INTEGER;
+                                 y2: INTEGER );
+
+PROCEDURE gl_disableclipping;
+
+(*  Screen buffering  *)
+
+PROCEDURE gl_copyscreen ( VAR gc: GraphicsContext );
+
+PROCEDURE gl_setscreenoffset ( o: INTEGER );
+
+PROCEDURE gl_enablepageflipping ( VAR gc: GraphicsContext ): INTEGER;
+
+(*  Text  *)
+(*  Writemode flags.  *)
+
+<* IF  __GEN_C__ THEN *>
+
+VAR 
+  WRITEMODE_OVERWRITE - : INTEGER;
+  WRITEMODE_MASKED    - : INTEGER;
+  FONT_EXPANDED       - : INTEGER;
+  FONT_COMPRESSED     - : INTEGER;
+<* ELSE *>
+
+CONST 
+  WRITEMODE_OVERWRITE = 0;
+  WRITEMODE_MASKED    = 1;
+  FONT_EXPANDED       = 0;
+  FONT_COMPRESSED     = 2;
+
+<* END *>
+
+PROCEDURE gl_expandfont ( fw: INTEGER;
+                          fh: INTEGER;
+                          c: INTEGER;
+                          sfdp: SYSTEM.ADDRESS;
+                          dfdp: SYSTEM.ADDRESS );
+
+PROCEDURE gl_setfont ( fw: INTEGER;
+                       fh: INTEGER;
+                       fdp: SYSTEM.ADDRESS );
+
+PROCEDURE gl_colorfont ( fw: INTEGER;
+                         fh: INTEGER;
+                         c: INTEGER;
+                         fdp: SYSTEM.ADDRESS );
+
+PROCEDURE gl_setwritemode ( wm: INTEGER );
+
+PROCEDURE gl_write ( x: INTEGER;
+                     y: INTEGER;
+                     s: ARRAY OF CHAR );
+
+PROCEDURE gl_writen ( x: INTEGER;
+                      y: INTEGER;
+                      n: INTEGER;
+                      s: ARRAY OF CHAR );
+
+PROCEDURE gl_setfontcolors ( bg: INTEGER;
+                             fg: INTEGER );
+
+(*  gl_printf is only available in ELF libraries!!  *)
+
+PROCEDURE gl_printf ( x: INTEGER;
+                      y: INTEGER;
+                      fmt: ARRAY OF CHAR;
+                      SEQ args: SYSTEM.BYTE ): INTEGER;
+
+VAR 
+  gl_font8x8: SYSTEM.ADDRESS;   (*  compressed 8x8 font  *)
+
+(*  256-color Palette  *)
+
+TYPE 
+  Color = RECORD
+    red  : SHORTCARD;    (*  6-bit values  *)
+    green: SHORTCARD;
+    blue : SHORTCARD;
+  END;
+
+  Palette = RECORD
+    color: ARRAY [0..256-1] OF Color;
+  END;
+
+PROCEDURE gl_setpalettecolor ( c: INTEGER;
+                               r: INTEGER;
+                               b: INTEGER;
+                               g: INTEGER );
+
+PROCEDURE gl_getpalettecolor ( c: INTEGER;
+                               VAR r: INTEGER;
+                               VAR b: INTEGER;
+                               VAR g: INTEGER );
+
+PROCEDURE gl_setpalettecolors ( s: INTEGER;
+                                n: INTEGER;
+                                dp: SYSTEM.ADDRESS );
+
+PROCEDURE gl_getpalettecolors ( s: INTEGER;
+                                n: INTEGER;
+                                dp: SYSTEM.ADDRESS );
+
+PROCEDURE gl_setpalette ( p: SYSTEM.ADDRESS );
+
+PROCEDURE gl_getpalette ( p: SYSTEM.ADDRESS );
+
+PROCEDURE gl_setrgbpalette;
+
+END vgagl.

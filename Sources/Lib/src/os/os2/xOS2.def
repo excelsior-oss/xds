@@ -1,0 +1,1296 @@
+(* Copyright (c) xTech 1995.  All Rights Reserved *)
+(*
+ * Interface of XDS RTS and libraries to OS/2.
+ *)
+<* +M2EXTENSIONS *>
+<* ALIGNMENT = "4" *>
+
+DEFINITION MODULE ["SysCall"] xOS2;
+
+IMPORT  SYSTEM;
+
+
+CONST APIENTRY    = "SysCall"; -- for APIENTRY
+CONST EXPENTRY    = "SysCall"; -- for EXPENTRY...
+
+
+TYPE APIRET   = SYSTEM.CARD32;      -- unsigned long
+TYPE APIRET16 = SYSTEM.CARD16;      -- unsigned short
+TYPE APIRET32 = SYSTEM.CARD32;      -- unsigned long
+
+TYPE SHANDLE  = SYSTEM.CARD16;      -- unsigned short
+TYPE LHANDLE  = SYSTEM.CARD32;      -- unsigned long
+
+CONST NULLHANDLE  = LHANDLE(0);
+CONST NULLSHANDLE = LHANDLE(0);
+
+
+
+--TYPE CHAR    = CHAR;          (* ch  *)
+TYPE SHORT     = SYSTEM.INT16;  (* s   *)
+TYPE LONG      = SYSTEM.INT32;  (* l   *)
+TYPE INT       = SYSTEM.int;    (* i   *)
+
+(* INC *)
+
+TYPE UCHAR       = CHAR;           (* uch *)
+TYPE USHORT      = SYSTEM.CARD16;  (* us  *)
+TYPE ULONG       = SYSTEM.CARD32;  (* ul  *)
+
+TYPE UINT     = SYSTEM.unsigned;(* ui  *)
+
+TYPE BYTE        = SYSTEM.CARD8;    (* b   *)
+
+--TYPE PSZ         = POINTER TO CHAR;
+TYPE NPSZ        = POINTER TO CHAR;
+
+TYPE PCH         = POINTER TO CHAR;
+TYPE NPCH        = POINTER TO CHAR;
+TYPE PCSZ        = POINTER TO CHAR;
+TYPE PPCSZ       = POINTER TO PCSZ;
+
+(*
+    Declarations below are interpreted in M2/O2 as
+    pointers, original C typedefs _PFN and _NPFN are never used.
+
+    Original:
+
+    typedef int ( APIENTRY _PFN)  ();
+    typedef _PFN    *PFN;
+    typedef int ( APIENTRY _NPFN)  ();
+    typedef _NPFN   *NPFN;
+*)
+
+TYPE PFN  = PROCEDURE [APIENTRY] (): INT;
+TYPE NPFN = PROCEDURE [APIENTRY] (): INT;
+
+TYPE PBYTE       = POINTER TO BYTE;
+TYPE NPBYTE      = POINTER TO BYTE;
+
+TYPE PCHAR       = POINTER TO CHAR;
+TYPE PPCHAR      = POINTER TO PCHAR;
+TYPE PSHORT      = POINTER TO SHORT;
+TYPE PLONG       = POINTER TO LONG;
+
+TYPE PINT     = POINTER TO INT;
+
+TYPE PUCHAR      = POINTER TO UCHAR;
+TYPE PUSHORT     = POINTER TO USHORT;
+TYPE PULONG      = POINTER TO ULONG;
+
+TYPE PUINT    = POINTER TO UINT;
+
+TYPE PVOID       = SYSTEM.ADDRESS;
+TYPE PPVOID      = POINTER TO PVOID;
+
+TYPE BOOL        = BOOLEAN;
+TYPE PBOOL       = POINTER TO BOOL;
+
+TYPE BOOL32      = BOOL;
+TYPE PBOOL32     = PBOOL;
+
+
+(*** Common DOS types *)
+
+TYPE HMODULE = LHANDLE;        (* hmod *)
+TYPE PID     = LHANDLE;        (* pid  *)
+TYPE TID     = LHANDLE;        (* tid  *)
+
+
+
+TYPE
+  CARD32  = SYSTEM.CARD32;
+  INT32   = SYSTEM.INT32 ;
+  CARD8   = SYSTEM.CARD8 ;
+  HFILE   = LHANDLE      ;
+  HDIR    = LHANDLE      ;
+
+CONST
+  STDIN          = 0;
+  STDOUT         = 1;
+  STDERR         = 2;
+
+TYPE
+  TYPEPREFIX   = BOOLEAN;
+
+CONST (* DOSRESs *)
+  ok             = 0;
+  not_found      = 2;
+  no_path        = 3;
+  too_many_files = 4;
+  denied_access  = 5;
+  invalid_handle = 6;
+  file_exists    = 80;
+  open_faild     = 110;
+
+CONST (* DosOpen() actions *)
+  FILE_EXISTED    = 0001H;
+  FILE_CREATED    = 0002H;
+  FILE_TRUNCATED  = 0003H;
+
+CONST (* DosFindFirst/Next Directory handle types *)
+  HDIR_SYSTEM     =  1;    (* Use system handle (1) *)
+  HDIR_CREATE     = -1;    (* Allocate a new, unused handle *)
+
+CONST (* DosOpen/DosQFHandState/DosQueryFileInfo et al file attributes;
+         also known as Dos File Mode bits...
+      *)
+  FILE_NORMAL     = 0000H;
+  FILE_READONLY   = 0001H;
+  FILE_HIDDEN     = 0002H;
+  FILE_SYSTEM     = 0004H;
+  FILE_DIRECTORY  = 0010H;
+  FILE_ARCHIVED   = 0020H;
+(*
+  EA Info Levels & Find First/Next
+  =========================================
+  API's: DosFindFirst, DosQueryFileInfo, DosQueryPathInfo, DosSetFileInfo,
+         DosSetPathInfo
+*)
+
+CONST (* File info levels *)
+  FIL_STANDARD        = 1;    (* Info level 1, standard file info *)
+  FIL_QUERYEASIZE     = 2;    (* Level 2, return Full EA size *)
+  FIL_QUERYEASFROMLIST= 3;    (* Level 3, return requested EA's *)
+
+(*** Path name string delimiters ***)
+
+CONST
+
+  (*************************************************************************
+   * CCHMAXPATH is the maximum fully qualified path name length including  *
+   * the drive letter, colon, backslashes and terminating NULL.            *
+   *************************************************************************)
+  CCHMAXPATH = 260;
+
+  (*************************************************************************
+   * CCHMAXPATHCOMP is the maximum individual path component name length   *
+   * including a terminating NULL.                                         *
+   *************************************************************************)
+  CCHMAXPATHCOMP = 256;
+
+TYPE (* File time and date types *)
+  FTIME   = SYSTEM.CARD16;            (* hhhh hmmm mmms ssss *)
+  FDATE   = SYSTEM.CARD16;            (* yyyy yyym mmmd dddd *)
+
+<* ALIGNMENT = "2" *>
+  FILEFINDBUF3       = RECORD
+    CASE               : TYPEPREFIX OF
+    | FALSE            :
+      NextEntryOffset  : CARD32;
+      CreationDate     : FDATE;
+      CreationTime     : FTIME;
+      LastAccessDate   : FDATE;
+      LastAccessTime   : FTIME;
+      LastWriteDate    : FDATE;
+      LastWriteTime    : FTIME;
+      FileSize         : CARD32;
+      FileAllocSize    : CARD32;
+      FileAttr         : CARD32;
+      NameLen          : CARD8;
+      Name             : ARRAY [0..CCHMAXPATHCOMP-1] OF CHAR;
+    | TRUE             :
+      oNextEntryOffset : CARD32;
+      fdateCreation    : FDATE;
+      ftimeCreation    : FTIME;
+      fdateLastAccess  : FDATE;
+      ftimeLastAccess  : FTIME;
+      fdateLastWrite   : FDATE;
+      ftimeLastWrite   : FTIME;
+      cbFile           : CARD32;
+      cbFileAlloc      : CARD32;
+      attrFile         : CARD32;
+      cchName          : CARD8;
+      achName          : ARRAY [0..CCHMAXPATHCOMP-1] OF CHAR;
+    END;
+    filler             : ARRAY [0..2] OF SYSTEM.BYTE;
+  END;
+<* ALIGNMENT = "4" *>
+  TYPE FILESTATUS3 = RECORD    (* fsts3 *)
+    fdateCreation:      FDATE  ;
+    ftimeCreation:      FTIME  ;
+    fdateLastAccess:    FDATE  ;
+    ftimeLastAccess:    FTIME  ;
+    fdateLastWrite:     FDATE  ;
+    ftimeLastWrite:     FTIME  ;
+    cbFile:             ULONG  ;
+    cbFileAlloc:        ULONG  ;
+    attrFile:           ULONG  ;
+  END;
+  TYPE PSZ = POINTER TO ARRAY [0..0] OF CHAR;
+
+(*************************************************************************
+  File Functions
+*************************************************************************)
+
+PROCEDURE ["SysCall"] DosClose
+( FileHandle       : HFILE
+)                  : APIRET;
+
+PROCEDURE ["SysCall"] DosFindFirst
+( FileName          : PSZ;                        (* ARRAY OF CHAR *)
+  VAR DirHandle     : HDIR;
+  Attribute         : CARD32;
+  ResultBuf         : SYSTEM.ADDRESS;      (* ARRAY OF SYSTEM.BYTE *)
+  ResultBufLen      : CARD32;
+  VAR SearchCount   : CARD32;
+  FileInfoLevel     : CARD32
+)                   : APIRET;
+
+PROCEDURE ["SysCall"] DosOpen
+( FileName         : PSZ;                         (* ARRAY OF CHAR *)
+  VAR FileHandle   : HFILE;
+  VAR ActionTaken  : CARD32;
+  FileSize         : CARD32;
+  FileAttribute    : CARD32;    (* see DosFindFirst Attribute *)
+  OpenFlag         : BITSET;
+  OpenMode         : BITSET;
+  EABuf            : SYSTEM.ADDRESS
+)                  : APIRET;
+
+PROCEDURE ["SysCall"] DosResetBuffer
+( FileHandle       : HFILE
+)                  : APIRET;
+
+PROCEDURE ["SysCall"] DosDelete
+( FileName         : PSZ                         (* ARRAY OF CHAR *)
+)                  : APIRET;
+
+PROCEDURE ["SysCall"] DosMove
+( OldPathName      : PSZ;                        (* ARRAY OF CHAR *)
+  NewPathName      : PSZ                        (* ARRAY OF CHAR *)
+)                  : APIRET;
+
+CONST (* DosSetFilePtr() file position codes *)
+  FILE_BEGIN      = 0000H; (* Move relative to beginning of file *)
+  FILE_CURRENT    = 0001H; (* Move relative to current fptr position *)
+  FILE_END        = 0002H; (* Move relative to end of file *)
+
+  (*        applies if file already exists    xxxx *)
+  FAIL_IF_EXISTS    = { };  (* ---- ---- ---- 0000 *)
+  OPEN_IF_EXISTS    = {0};  (* ---- ---- ---- 0001 *)
+  REPLACE_IF_EXISTS = {1};  (* ---- ---- ---- 0010 *)
+
+  (*     applies if file does not exist  xxxx      *)
+  FAIL_IF_NEW       = { };  (* ---- ---- 0000 ---- *)
+  CREATE_IF_NEW     = {4};  (* ---- ---- 0001 ---- *)
+
+CONST (* DosOpen/DosSetFHandState flags *)
+  OPEN_ACCESS_READONLY        =  { };   (* ---- ---- ---- -000 *)
+  OPEN_ACCESS_WRITEONLY       =  {0};   (* ---- ---- ---- -001 *)
+  OPEN_ACCESS_READWRITE       =  {1};   (* ---- ---- ---- -010 *)
+  OPEN_SHARE_DENYREADWRITE    =  {4};   (* ---- ---- -001 ---- *)
+  OPEN_SHARE_DENYWRITE        =  {5};   (* ---- ---- -010 ---- *)
+  OPEN_SHARE_DENYREAD         =  {4,5}; (* ---- ---- -011 ---- *)
+  OPEN_SHARE_DENYNONE         =  {6};   (* ---- ---- -100 ---- *)
+
+  FLAG_NOINHERIT        =  0080H;  (* ---- ---- 1--- ---- *)
+  FLAG_NO_LOCALITY      =  0000H;  (* ---- -000 ---- ---- *)
+  FLAG_SEQUENTIAL       =  0100H;  (* ---- -001 ---- ---- *)
+  FLAG_RANDOM           =  0200H;  (* ---- -010 ---- ---- *)
+  FLAG_RANDOMSEQUENTIAL =  0300H;  (* ---- -011 ---- ---- *)
+  FLAG_NO_CACHE         =  1000H;  (* ---1 ---- ---- ---- *)
+  FLAG_FAIL_ON_ERROR    =  2000H;  (* --1- ---- ---- ---- *)
+  FLAG_WRITE_THROUGH    =  4000H;  (* -1-- ---- ---- ---- *)
+  FLAG_DASD             =  8000H;  (* 1--- ---- ---- ---- *)
+  FLAG_NONSPOOLED       = 40000H;
+
+PROCEDURE ["SysCall"] DosSetFilePtr
+( file        : HFILE;
+  distance    : INT32;
+  move_type   : CARD32;
+  VAR new_pos : CARD32
+)             : APIRET;
+
+PROCEDURE ["SysCall"] DosSetFileSize
+( file        : HFILE;
+  size        : CARD32
+)             : APIRET;
+
+PROCEDURE ["SysCall"] DosRead
+( file       : HFILE;
+  buf_adr    : SYSTEM.ADDRESS;
+  buf_len    : CARDINAL;
+  VAR rd_len : CARDINAL
+)            : APIRET;
+
+PROCEDURE ["SysCall"] DosWrite
+( file       : HFILE;
+  buf_adr    : SYSTEM.ADDRESS;
+  buf_len    : CARDINAL;
+  VAR wr_len : CARDINAL
+)            : APIRET;
+
+        (* DosQueryHType() constants *)
+CONST   (* Handle classes (low 8 bits of Handle Type) *)
+  FHT_DISKFILE         = {};    (* Disk file handle *)
+  FHT_CHRDEV           = {0};   (* Character device handle *)
+  FHT_PIPE             = {1};   (* Pipe handle *)
+
+CONST   (* Handle bits (high 8 bits of Handle Type) *)
+  FHB_DSKREMOTE        = {15};   (* Remote disk *)
+  FHB_CHRDEVREMOTE     = {15};   (* Remote character device *)
+  FHB_PIPEREMOTE       = {15};   (* Remote pipe *)
+
+PROCEDURE ["SysCall"] DosQueryHType
+( hFile    : HFILE;
+  VAR Type : BITSET;
+  VAR Attr : CARD32
+)          : APIRET;
+
+PROCEDURE DosQueryPathInfo(szPathName  : PSZ
+                          ;ulInfoLevel : CARD32
+                          ;pInfoBuf    : SYSTEM.ADDRESS
+                          ;cbInfoBuf   : CARD32
+                          ): APIRET;
+
+(* Time management *)
+
+TYPE
+  DATETIME = RECORD
+    hours      : SYSTEM.CARD8;
+    minutes    : SYSTEM.CARD8;
+    seconds    : SYSTEM.CARD8;
+    hundredths : SYSTEM.CARD8;
+    day        : SYSTEM.CARD8;
+    month      : SYSTEM.CARD8;
+    year       : SYSTEM.CARD16;
+    timezone   : SYSTEM.INT16;
+    weekday    : SYSTEM.CARD8;
+    filler     : SYSTEM.BYTE;
+  END;
+
+PROCEDURE ["SysCall"] DosGetDateTime
+( VAR DateTime        : DATETIME
+)                     : APIRET;
+
+PROCEDURE ["SysCall"] DosSetDateTime
+( VAR DateTime        : DATETIME
+)                     : APIRET;
+
+
+CONST (* for DosExit ActionCode *)
+  EXIT_THREAD  = 0;
+  EXIT_PROCESS = 1;
+
+PROCEDURE ["SysCall"] DosExit
+( ActionCode        : CARD32;
+  ResultCode        : CARD32
+);
+
+
+CONST (* Access protection *)
+  PAG_READ        = {0};  (* 00000001H  read access                     *)
+  PAG_WRITE       = {1};  (* 00000002H  write access                    *)
+  PAG_EXECUTE     = {2};  (* 00000004H  execute access                  *)
+
+CONST (* Commit *)
+  PAG_COMMIT      = {4};  (* 00000010H  commit storage                  *)
+
+CONST (* DosSubSet() flags *)
+  DOSSUB_INIT       = 01H;          (* initialize memory object for     *)
+                                    (* suballocation                    *)
+  DOSSUB_GROW       = 02H;          (* increase size of memory pool     *)
+                                    (* for suballocation                *)
+  DOSSUB_SPARSE_OBJ = 04H;          (* indicator for DosSub to          *)
+                                    (* manage the commitment of         *)
+                                    (* pages spanned by the memory      *)
+                                    (* pool                             *)
+  DOSSUB_SERIALIZE  = 08H;          (* indicates that access to the     *)
+                                    (* memory pool is to be             *)
+                                    (* serialized by DosSub             *)
+CONST (* Allocation type returned from DosQueryMem() *)
+  PAG_SHARED        = {13};  (*  00002000H  shared object                  *)
+  PAG_FREE          = {14};  (*  00004000H  pages are free                 *)
+  PAG_BASE          = {16};  (*  00010000H  first page in object           *)
+
+PROCEDURE ["SysCall"] DosQueryMem
+( BaseAddress            : SYSTEM.ADDRESS;
+  VAR RegionSize         : CARD32;
+  VAR AllocationFlags    : BITSET
+)                        : APIRET;
+
+PROCEDURE ["SysCall"] DosAllocMem
+( VAR BaseAddress        : SYSTEM.ADDRESS;
+  ObjectSize             : CARD32;
+  AllocationFlags        : BITSET
+)                        : APIRET;
+
+PROCEDURE ["SysCall"] DosFreeMem
+( BaseAddress            : SYSTEM.ADDRESS
+)                        : APIRET;
+
+PROCEDURE ["SysCall"] DosSetMem
+( BaseAddress            : SYSTEM.ADDRESS;
+  RegionSize             : CARD32;
+  AttributeFlags         : CARD32
+)                        : APIRET;
+
+PROCEDURE ["SysCall"] DosSubAllocMem
+( Offset                 : SYSTEM.ADDRESS;
+  VAR BlockOffset        : SYSTEM.ADDRESS;
+  Size                   : CARD32
+)                        : APIRET;
+
+PROCEDURE ["SysCall"] DosSubFreeMem
+( Offset                 : SYSTEM.ADDRESS;
+  BlockOffset            : SYSTEM.ADDRESS;
+  Size                   : CARD32
+)                        : APIRET;
+
+PROCEDURE ["SysCall"] DosSubSetMem
+( Offset                 : SYSTEM.ADDRESS;
+  Flags                  : CARD32;
+  Size                   : CARD32
+)                        : APIRET;
+
+PROCEDURE ["SysCall"] DosSubUnsetMem
+( Offset                 : SYSTEM.ADDRESS
+)                        : APIRET;
+
+CONST (* User Exception Handler Return Codes *)
+  XCPT_CONTINUE_SEARCH    =  00000000H;     (* exception not handled   *)
+  XCPT_CONTINUE_EXECUTION = 0FFFFFFFFH;     (* exception handled       *)
+  XCPT_CONTINUE_STOP      =  00716668H;     (* exception handled by    *)
+                                            (* debugger (VIA DosDebug) *)
+
+CONST (* HandlerFlags values (see ExceptionReportRecord) *)
+      (* The user may only set (but not clear) the EH_NONCONTINUABLE flag. *)
+      (* All other flags are set by the system. *)
+  EH_NONCONTINUABLE = 1H;          (* Noncontinuable exception *)
+  EH_UNWINDING      = 2H;          (* Unwind is in progress *)
+  EH_EXIT_UNWIND    = 4H;          (* Exit unwind is in progress *)
+  EH_STACK_INVALID  = 8H;          (* Stack out of limits or unaligned *)
+  EH_NESTED_CALL    = 10H;         (* Nested exception handler call *)
+
+
+CONST (* Unwind all exception handlers (see DosUnwindException API) *)
+  UNWIND_ALL        = 0;
+
+
+(*
+ *   Exception values are 32 bit values layed out as follows:
+ *
+ *   3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
+ *   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ *   +---+-+-------------------------+-------------------------------+
+ *   |Sev|C|       Facility          |               Code            |
+ *   +---+-+-------------------------+-------------------------------+
+ *
+ *   where
+ *
+ *       Sev - is the severity code
+ *           00 - Success
+ *           01 - Informational
+ *           10 - Warning
+ *           11 - Error
+ *
+ *       C - is the Customer code flag
+ *
+ *       Facility - is the facility code
+ *
+ *       Code - is the facility's status code
+ *
+ *   Exceptions specific to OS/2 2.0 (e.g. XCPT_SIGNAL) will be marked
+ *   with a facility code of 1.
+ *
+ *   System defined exceptions have a facility code of zero.
+ *
+ *   Each exception may also have several pieces of additional information.
+ *   These are stored in the ExceptionInfo fields of the
+ *   ExceptionReportRecord. They are documented here with the exceptions
+ *   only for ease of reference.
+ *)
+
+CONST
+  XCPT_FATAL_EXCEPTION = 0C0000000H;
+  XCPT_SEVERITY_CODE   = 0C0000000H;
+  XCPT_CUSTOMER_CODE   =  20000000H;
+  XCPT_FACILITY_CODE   =  1FFF0000H;
+  XCPT_EXCEPTION_CODE  =  0000FFFFH;
+
+  (* Violation flags in ExceptionInfo *)
+  XCPT_UNKNOWN_ACCESS  =  00000000H;    (* Unknown access *)
+  XCPT_READ_ACCESS     =  00000001H;    (* Read access    *)
+  XCPT_WRITE_ACCESS    =  00000002H;    (* Write access   *)
+  XCPT_EXECUTE_ACCESS  =  00000004H;    (* Execute access *)
+  XCPT_SPACE_ACCESS    =  00000008H;    (* Address space access *)
+  XCPT_LIMIT_ACCESS    =  00000010H;    (* Address space limit violation *)
+  XCPT_DATA_UNKNOWN    = 0FFFFFFFFH;
+
+  (* Signal numbers for XCPT_SIGNAL *)
+  XCPT_SIGNAL_INTR     = 1;
+  XCPT_SIGNAL_KILLPROC = 3;
+  XCPT_SIGNAL_BREAK    = 4;
+
+  (* Portable non-fatal software generated exceptions   *)
+  (* ExceptionInfo[ 0 ] - Access Code: XCPT_READ_ACCESS *)
+  (* ExceptionInfo[ 1 ] - FaultAddr                     *)
+  XCPT_GUARD_PAGE_VIOLATION  = 80000001H;
+
+  XCPT_UNABLE_TO_GROW_STACK  = 80010001H;
+
+  (* Portable fatal hardware generated exceptions *)
+  XCPT_DATATYPE_MISALIGNMENT = 0C000009EH;
+    (* ExceptionInfo[ 0 ] - Access Code:      *)
+    (*   XCPT_READ_ACCESS                     *)
+    (*   XCPT_WRITE_ACCESS                    *)
+    (* ExceptionInfo[ 1 ] - Alignment         *)
+    (* ExceptionInfo[ 2 ] - FaultAddr         *)
+
+  XCPT_BREAKPOINT            = 0C000009FH;
+  XCPT_SINGLE_STEP           = 0C00000A0H;
+  XCPT_ACCESS_VIOLATION      = 0C0000005H;
+    (* ExceptionInfo[ 0 ] - Access Code:      *)
+    (*   XCPT_READ_ACCESS                     *)
+    (*   XCPT_WRITE_ACCESS                    *)
+    (*   XCPT_SPACE_ACCESS                    *)
+    (*   XCPT_LIMIT_ACCESS                    *)
+    (*   XCPT_UNKNOWN_ACCESS                  *)
+    (* ExceptionInfo[ 1 ] - FaultAddr         *)
+    (*   (XCPT_READ_ACCESS/XCPT_WRITE_ACCESS) *)
+    (*   Selector  (XCPT_SPACE_ACCESS)        *)
+    (*   -1        (XCPT_LIMIT_ACCESS)        *)
+
+  XCPT_ILLEGAL_INSTRUCTION      = 0C000001CH;
+  XCPT_FLOAT_DENORMAL_OPERAND   = 0C0000094H;
+  XCPT_FLOAT_DIVIDE_BY_ZERO     = 0C0000095H;
+  XCPT_FLOAT_INEXACT_RESULT     = 0C0000096H;
+  XCPT_FLOAT_INVALID_OPERATION  = 0C0000097H;
+  XCPT_FLOAT_OVERFLOW           = 0C0000098H;
+  XCPT_FLOAT_STACK_CHECK        = 0C0000099H;
+  XCPT_FLOAT_UNDERFLOW          = 0C000009AH;
+  XCPT_INTEGER_DIVIDE_BY_ZERO   = 0C000009BH;
+  XCPT_INTEGER_OVERFLOW         = 0C000009CH;
+  XCPT_PRIVILEGED_INSTRUCTION   = 0C000009DH;
+
+  (* Portable fatal software generated exceptions *)
+  XCPT_IN_PAGE_ERROR            = 0C0000006H;
+    (* ExceptionInfo[ 0 ] - FaultAddr *)
+  XCPT_PROCESS_TERMINATE        = 0C0010001H;
+  XCPT_ASYNC_PROCESS_TERMINATE  = 0C0010002H;
+    (* ExceptionInfo[ 0 ] - TID of 'terminator' thread *)
+  XCPT_NONCONTINUABLE_EXCEPTION = 0C0000024H;
+  XCPT_INVALID_DISPOSITION      = 0C0000025H;
+
+  (* Non-portable fatal exceptions *)
+  XCPT_INVALID_LOCK_SEQUENCE    = 0C000001DH;
+  XCPT_ARRAY_BOUNDS_EXCEEDED    = 0C0000093H;
+  XCPT_B1NPX_ERRATA_02          = 0C0010004H;
+
+  (* Misc exceptions *)
+  XCPT_UNWIND                   = 0C0000026H;
+  XCPT_BAD_STACK                = 0C0000027H;
+  XCPT_INVALID_UNWIND_TARGET    = 0C0000028H;
+
+  (* Signal Exceptions *)
+  XCPT_SIGNAL                   = 0C0010003H;
+    (* ExceptionInfo[ 0 ] - Signal Number *)
+
+
+(*
+ * ContextRecord
+ *
+ * This is the machine specific register contents for the thread
+ * at the time of the exception. Note that only the register sets
+ * specified by ContextFlags contain valid data. Conversely, only
+ * registers specified in ContextFlags will be restored if an exception
+ * is handled.
+ *)
+
+
+CONST
+  (* The following flags control the contents of the CONTEXT structure. *)
+
+  CONTEXT_CONTROL        = {0}; --000000001H;    (* SS:ESP, CS:EIP, EFLAGS,   *)
+                                                 (* EBP                       *)
+  CONTEXT_INTEGER        = {1}; --000000002H;    (* EAX, EBX, ECX, EDX, ESI,  *)
+                                                 (* EDI                       *)
+  CONTEXT_SEGMENTS       = {2}; --000000004H;    (* DS, ES, FS, GS            *)
+  CONTEXT_FLOATING_POINT = {3}; --000000008H;    (* numeric coprocessor state *)
+
+  CONTEXT_FULL           = ( CONTEXT_CONTROL  + CONTEXT_INTEGER        +
+                             CONTEXT_SEGMENTS + CONTEXT_FLOATING_POINT
+                           );
+
+
+TYPE (* coprocessor stack register element *)
+<* ALIGNMENT = "1" *>
+  FPREG     = RECORD
+    CASE      : TYPEPREFIX OF
+    | TRUE    :
+      losig   : CARD32;
+      hisig   : CARD32;
+      signexp : SYSTEM.CARD16;
+    | FALSE   :
+      LoSig   : CARD32;
+      HiSig   : CARD32;
+      SignExp : SYSTEM.CARD16;
+    END;      END;
+<* ALIGNMENT = "4" *>
+
+  PFPREG    = POINTER TO FPREG;
+
+TYPE
+  CONTEXTRECORD  = RECORD
+    (*
+     * The flags values within this flag control the contents of
+     * a ContextRecord.
+     *
+     * If the ContextRecord is used as an input parameter, then
+     * for each portion of the ContextRecord controlled by a flag
+     * whose value is set, it is assumed that that portion of the
+     * ContextRecord contains valid context. If the ContextRecord
+     * is being used to modify a thread's context, then only that
+     * portion of the thread's context will be modified.
+     *
+     * If the ContextRecord is used as an Input/Output parameter to
+     * capture the context of a thread, then only those portions of the
+     * thread's context corresponding to set flags will be returned.
+     *)
+    ContextFlags   : BITSET;
+    CASE           : TYPEPREFIX OF
+    | FALSE        :
+      (*
+       *   This section is specified/returned if
+       *   ContextFlags * CONTEXT_FLOATING_POINT # {}
+       *)
+      env          : ARRAY [0..6] OF CARD32;
+      stack        : ARRAY [0..7] OF FPREG;
+      (*
+       *   This section is specified/returned if
+       *   ContextFlags * CONTEXT_SEGMENT # {}
+       *)
+      SegGs        : CARD32;
+      SegFs        : CARD32;
+      SegEs        : CARD32;
+      SegDs        : CARD32;
+      (*
+       *   This section is specified/returned if
+       *   ContextFlags * CONTEXT_INTEGER # {}
+       *)
+      RegEdi       : CARD32;
+      RegEsi       : CARD32;
+      RegEax       : CARD32;
+      RegEbx       : CARD32;
+      RegEcx       : CARD32;
+      RegEdx       : CARD32;
+      (*
+       * This section is specified/returned if
+       *   ContextFlags * CONTEXT_CONTROL # {}
+       *)
+      RegEbp       : CARD32;
+      RegEip       : CARD32;
+      SegCs        : CARD32;
+      EFlags       : CARD32;
+      RegEsp       : CARD32;
+      SegSs        : CARD32;
+    | TRUE         :
+      ctx_env      : ARRAY [0..6] OF CARD32;
+      ctx_stack    : ARRAY [0..7] OF FPREG;
+      ctx_SegGs    : CARD32;
+      ctx_SegFs    : CARD32;
+      ctx_SegEs    : CARD32;
+      ctx_SegDs    : CARD32;
+      ctx_RegEdi   : CARD32;
+      ctx_RegEsi   : CARD32;
+      ctx_RegEax   : CARD32;
+      ctx_RegEbx   : CARD32;
+      ctx_RegEcx   : CARD32;
+      ctx_RegEdx   : CARD32;
+      ctx_RegEbp   : CARD32;
+      ctx_RegEip   : CARD32;
+      ctx_SegCs    : CARD32;
+      ctx_EFlags   : CARD32;
+      ctx_RegEsp   : CARD32;
+      ctx_SegSs    : CARD32;
+    END;           END;
+  PCONTEXTRECORD = POINTER TO CONTEXTRECORD;
+
+
+TYPE
+(*
+ * ExceptionReportRecord
+ *
+ * This structure contains machine independant information about an
+ * exception/unwind. No system exception will ever have more than
+ * EXCEPTION_MAXIMUM_PARAMETERS parameters. User exceptions are not
+ * bound to this limit.
+ *)
+
+CONST
+  EXCEPTION_MAXIMUM_PARAMETERS = 4;  (* Enough for all system exceptions. *)
+
+TYPE
+  PEXCEPTIONREPORTRECORD = POINTER TO EXCEPTIONREPORTRECORD;
+
+  EXCEPTIONREPORTRECORD  = RECORD
+    ExceptionNum           : CARD32; (* exception number *)
+    CASE                   : TYPEPREFIX OF
+    | FALSE                :
+      HandlerFlags         : CARD32;
+    | TRUE                 :
+      fHandlerFlags        : CARD32;
+    END;
+    NestedExceptionReportRecord : PEXCEPTIONREPORTRECORD;
+    ExceptionAddress       : SYSTEM.ADDRESS;
+    CASE                   : TYPEPREFIX OF
+    | FALSE                :
+      ParametersSize       : CARD32; (* Size of Exception Specific Info *)
+    | TRUE                 :
+      cParameters          : CARD32; (* Size of Exception Specific Info *)
+    END;
+    ExceptionInfo          : ARRAY [0..EXCEPTION_MAXIMUM_PARAMETERS-1]
+                             OF CARD32; (* Exception Specfic Info *)
+                           END;
+
+TYPE
+(*
+ * ExceptionRegistrationRecord
+ *
+ * These are linked together to form a chain of exception handlers that
+ * will be dispatched to upon receipt of an exception.
+ *
+ *)
+TYPE
+  PEXCEPTIONREGISTRATIONRECORD = POINTER TO EXCEPTIONREGISTRATIONRECORD;
+
+  ERR = PROCEDURE ["C"]
+  ( PEXCEPTIONREPORTRECORD,
+    PEXCEPTIONREGISTRATIONRECORD,
+    PCONTEXTRECORD,
+    SYSTEM.ADDRESS
+  );
+
+  EXCEPTIONREGISTRATIONRECORD = RECORD
+    prev_structure   : PEXCEPTIONREGISTRATIONRECORD;
+    ExceptionHandler : ERR;
+  END;
+
+
+PROCEDURE ["SysCall"] DosSetExceptionHandler
+( VAR ERegRec               : EXCEPTIONREGISTRATIONRECORD
+)                           : APIRET;
+
+PROCEDURE ["SysCall"] DosUnsetExceptionHandler
+( VAR ERegRec               : EXCEPTIONREGISTRATIONRECORD
+)                           : APIRET;
+
+(* ---- P r o g r a m   E x e c u t i o n ---- *)
+
+TYPE (* ReturnCodes for DosWaitChild, DosExecPgm *)
+  RESULTCODES = RECORD
+    codeTerminate   : ULONG;
+    codeResult      : ULONG;
+  END;
+
+CONST (* codeTerminate values (also passed to ExitList routines) *)
+  TC_EXIT           = 0;
+  TC_HARDERROR      = 1;
+  TC_TRAP           = 2;
+  TC_KILLPROCESS    = 3;
+  TC_EXCEPTION      = 4;
+
+CONST (* DosExecPgm ExecFlags *)
+  EXEC_SYNC          = 0;
+  EXEC_ASYNC         = 1;
+  EXEC_ASYNCRESULT   = 2;
+  EXEC_TRACE         = 3;
+  EXEC_BACKGROUND    = 4;
+  EXEC_LOAD          = 5;
+  EXEC_ASYNCRESULTDB = 6;
+
+PROCEDURE ["SysCall"] DosExecPgm
+( VAR ObjNameBuf    : ARRAY OF CHAR;
+  ObjNameBufL       : CARDINAL;
+  ExecFlags         : CARDINAL;
+  ArgPointer        : SYSTEM.ADDRESS;
+  EnvPointer        : SYSTEM.ADDRESS;
+  VAR ReturnCodes   : RESULTCODES;
+  PgmPointer        : SYSTEM.ADDRESS    -- ARRAY OF CHAR
+)                   : APIRET;
+
+(* --- K e y b o a r d  h a n d l i n g  --- *)
+
+
+TYPE
+  HKBD   = SYSTEM.CARD16;
+  PHKBD  = POINTER TO HKBD;
+
+CONST
+  IO_WAIT   =  0;
+  IO_NOWAIT =  1;
+
+   (* KBDKEYINFO structure, for KbdCharIn and KbdPeek *)
+   <* ALIGNMENT = "2" *>
+
+   TYPE KBDKEYINFO = RECORD     (* kbci *)
+      chChar:          UCHAR ;
+      chScan:          UCHAR ;
+      fbStatus:        UCHAR ;
+      bNlsShift:       UCHAR ;
+      fsState:         USHORT;
+      time:            ULONG ;
+   END;
+   TYPE PKBDKEYINFO = POINTER TO KBDKEYINFO;
+
+   PROCEDURE KbdCharIn(VAR kbci : KBDKEYINFO
+                      ;fWait    : USHORT
+                      ;hkbd     : HKBD
+                      ): APIRET16;
+
+   PROCEDURE KbdPeek(VAR kbci : KBDKEYINFO
+                    ;hkbd     : HKBD
+                    ): APIRET16;
+
+  PROCEDURE KbdFlushBuffer(hkbd : HKBD): APIRET16;
+
+
+(* ----------------------------  T h r e a d s ------------------------------- *)
+
+   <* ALIGNMENT = "4" *>
+
+   (*** General services *)
+   PROCEDURE DosBeep(freq : ULONG
+                    ;dur  : ULONG
+                    ): APIRET;
+
+
+(* ------------- Include file: .\hm\bsetib.hm ------------- *)
+(*      SCCSID = @(#)bsetib.h   6.9 92/03/15 *)
+(***************************************************************************\
+*
+* Module Name: BSETIB.H
+*
+* OS/2 Thread Information Block Include File
+*
+* Copyright (c) 1989, 1992  IBM Corporation
+* Copyright (c) 1989  Microsoft Corporation
+*
+*****************************************************************************)
+
+(*
+ *      Thread Information Block (TIB)
+ *)
+
+TYPE tib2_s = RECORD
+       tib2_ultid:        ULONG;   (* Thread I.D. *)
+       tib2_ulpri:        ULONG;   (* Thread priority *)
+       tib2_version:      ULONG;   (* Version number for this structure *)
+       tib2_usMCCount:    USHORT;  (* Must Complete count *)
+       tib2_fMCForceFlag: USHORT;  (* Must Complete force flag *)
+END;
+
+TYPE TIB2  = tib2_s;
+TYPE PTIB2 = POINTER TO TIB2;
+
+TYPE tib_s = RECORD                   (* TIB Thread Information Block *)
+        tib_pexchain:    PVOID;       (* Head of exception handler chain *)
+        tib_pstack:      PVOID;       (* Pointer to base of stack *)
+        tib_pstacklimit: PVOID;       (* Pointer to end of stack *)
+        tib_ptib2:       PTIB2;       (* Pointer to system specific TIB *)
+        tib_version:     ULONG;       (* Version number for this TIB structure *)
+        tib_ordinal:     ULONG;       (* Thread ordinal number        *)
+END;
+
+
+TYPE tib_t = tib_s;
+TYPE TIB   = tib_s;
+TYPE PTIB  = POINTER TO tib_s;
+
+
+(*
+ *      Process Information Block (PIB)
+ *)
+
+
+TYPE pib_s = RECORD                         (* PIB Process Information Block *)
+       pib_ulpid:    ULONG;          (* Process I.D. *)
+       pib_ulppid:   ULONG;          (* Parent process I.D. *)
+       pib_hmte:     ULONG;          (* Program (.EXE) module handle *)
+       pib_pchcmd:   PCHAR;          (* Command line pointer *)
+       pib_pchenv:   PCHAR;          (* Environment pointer *)
+       pib_flstatus: ULONG;          (* Process' status bits *)
+       pib_ultype:   ULONG;          (* Process' type code *)
+END;
+
+
+TYPE pib_t  = pib_s;
+TYPE PIB    = pib_s;
+TYPE PPIB   = POINTER TO pib_s;
+
+(***************************** End of file ************************************)
+
+(* ------------- End of file:  .\hm\bsetib.hm ------------- *)
+
+   TYPE PFNTHREAD = PROCEDURE [APIENTRY] (ULONG);
+
+   PROCEDURE DosCreateThread(VAR tid : TID
+                            ;pfn     : PFNTHREAD
+                            ;param   : ULONG
+                            ;flag    : ULONG
+                            ;cbStack : ULONG
+                            ): APIRET;
+
+   PROCEDURE DosResumeThread(tid : TID): APIRET;
+
+   PROCEDURE DosSuspendThread(tid : TID): APIRET;
+
+   TYPE PPTIB = POINTER TO PTIB;
+   TYPE PPPIB = POINTER TO PPIB;
+   PROCEDURE DosGetInfoBlocks(VAR ptib : PTIB
+                             ;VAR ppib : PPIB
+                             ): APIRET;
+
+   PROCEDURE DosKillThread(tid : TID): APIRET;
+
+   PROCEDURE DosAllocThreadLocalMemory(cb    : ULONG
+                                      ;VAR p : PULONG
+                                      ): APIRET;
+
+   PROCEDURE DosFreeThreadLocalMemory(p : PULONG): APIRET;
+
+   (* Action code values *)
+
+   CONST DCWA_PROCESS      = 0;
+   CONST DCWA_PROCESSTREE  = 1;
+
+   (* Wait option values *)
+
+   CONST DCWW_WAIT         = 0;
+   CONST DCWW_NOWAIT       = 1;
+
+(* Thread Flags for DosCreateThread options 59468 *)
+
+CONST CREATE_READY       = 0;                   (* defect 65437  *)
+CONST CREATE_SUSPENDED   = 1;
+CONST STACK_SPARSE       = 0;
+CONST STACK_COMMITTED    = 2;
+
+   TYPE PRESULTCODES = POINTER TO RESULTCODES;
+
+   PROCEDURE DosWaitChild(action  : ULONG
+                         ;option  : ULONG
+                         ;VAR res : RESULTCODES
+                         ;VAR pid : PID
+                         ;waitpid : PID
+                         ): APIRET;
+
+   CONST DosCwait = DosWaitChild;
+
+   PROCEDURE DosWaitThread(VAR tid : TID
+                          ;option  : ULONG
+                          ): APIRET;
+
+   PROCEDURE DosSleep(msec : ULONG): APIRET;
+
+(***ET+ uDB -   User's Debug Buffer structure
+ *
+ *      A pointer to a uDB is the sole parameter to DosDebug.  It
+ *      contains all the information required for each DosDebug
+ *      command.
+ *
+ *)
+
+TYPE uDB_t = RECORD   (* uDB *)
+  Pid:       SYSTEM.CARD32;       (* Debuggee Process id          *)
+  Tid:       SYSTEM.CARD32;       (* Debuggee Thread id           *)
+  Cmd:       SYSTEM.INT32;        (* Command or Notification      *)
+  Value:     SYSTEM.INT32;        (* Generic Data Value           *)
+  Addr:      SYSTEM.CARD32;       (* Debuggee Address             *)
+  Buffer:    SYSTEM.CARD32;       (* Debugger Buffer Address      *)
+  Len:       SYSTEM.CARD32;       (* Length of Range              *)
+  Index:     SYSTEM.CARD32;       (* Generic Identifier Index     *)
+  MTE:       SYSTEM.CARD32;       (* Module Table Entry Handle    *)
+  EAX:       SYSTEM.CARD32;       (* Register Set                 *)
+  ECX:       SYSTEM.CARD32;
+  EDX:       SYSTEM.CARD32;
+  EBX:       SYSTEM.CARD32;
+  ESP:       SYSTEM.CARD32;
+  EBP:       SYSTEM.CARD32;
+  ESI:       SYSTEM.CARD32;
+  EDI:       SYSTEM.CARD32;
+  EFlags:    SYSTEM.CARD32;
+  EIP:       SYSTEM.CARD32;
+  CSLim:     SYSTEM.CARD32;
+  CSBase:    SYSTEM.CARD32;
+  CSAcc:     CHAR;
+  CSAtr:     CHAR;
+  CS:        SYSTEM.CARD16;
+  DSLim:     SYSTEM.CARD32;
+  DSBase:    SYSTEM.CARD32;
+  DSAcc:     CHAR;
+  DSAtr:     CHAR;
+  DS:        SYSTEM.CARD16;
+  ESLim:     SYSTEM.CARD32;
+  ESBase:    SYSTEM.CARD32;
+  ESAcc:     CHAR;
+  ESAtr:     CHAR;
+  ES:        SYSTEM.CARD16;
+  FSLim:     SYSTEM.CARD32;
+  FSBase:    SYSTEM.CARD32;
+  FSAcc:     CHAR;
+  FSAtr:     CHAR  ;
+  FS:        SYSTEM.CARD16;
+  GSLim:     SYSTEM.CARD32;
+  GSBase:    SYSTEM.CARD32;
+  GSAcc:     CHAR;
+  GSAtr:     CHAR;
+  GS:        SYSTEM.CARD16;
+  SSLim:     SYSTEM.CARD32;
+  SSBase:    SYSTEM.CARD32;
+  SSAcc:     CHAR;
+  SSAtr:     CHAR;
+  SS:        SYSTEM.CARD16;
+END;
+
+(***EK+ DBG_C - DosDebug Command Numbers
+ *
+ *      These numbers are placed in the Cmd field of the uDB on
+ *      entry to DosDebug.
+ *
+ *      These numbers identify which command DosDebug is requested
+ *      to perform.
+ *
+ *)
+
+CONST DBG_C_Null            =  0;       (* Null                         *)
+CONST DBG_C_ReadMem         =  1;       (* Read Word                    *)
+CONST DBG_C_ReadMem_I       =  1;       (* Read Word                    *)
+CONST DBG_C_ReadMem_D       =  2;       (* Read Word (same as 1)        *)
+CONST DBG_C_ReadReg         =  3;       (* Read Register Set            *)
+CONST DBG_C_WriteMem        =  4;       (* Write Word                   *)
+CONST DBG_C_WriteMem_I      =  4;       (* Write Word                   *)
+CONST DBG_C_WriteMem_D      =  5;       (* Write Word (same as 4)       *)
+CONST DBG_C_WriteReg        =  6;       (* Write Register Set           *)
+CONST DBG_C_Go              =  7;       (* Go                           *)
+CONST DBG_C_Term            =  8;       (* Terminate                    *)
+CONST DBG_C_SStep           =  9;       (* Single Step                  *)
+CONST DBG_C_Stop            =  10;      (* Stop                         *)
+CONST DBG_C_Freeze          =  11;      (* Freeze Thread                *)
+CONST DBG_C_Resume          =  12;      (* Resume Thread                *)
+CONST DBG_C_NumToAddr       =  13;      (* Object Number to Address     *)
+CONST DBG_C_ReadCoRegs      =  14;      (* Read Coprocessor Registers   *)
+CONST DBG_C_WriteCoRegs     =  15;      (* Write Coprocessor Registers  *)
+                                        (* 16 is reserved               *)
+CONST DBG_C_ThrdStat        =  17;      (* Get Thread Status            *)
+CONST DBG_C_MapROAlias      =  18;      (* Map read-only alias          *)
+CONST DBG_C_MapRWAlias      =  19;      (* Map read-write alias         *)
+CONST DBG_C_UnMapAlias      =  20;      (* Unmap Alias                  *)
+CONST DBG_C_Connect         =  21;      (* Connect to Debuggee          *)
+CONST DBG_C_ReadMemBuf      =  22;      (* Read Memory Buffer           *)
+CONST DBG_C_WriteMemBuf     =  23;      (* Write Memory Buffer          *)
+CONST DBG_C_SetWatch        =  24;      (* Set Watchpoint               *)
+CONST DBG_C_ClearWatch      =  25;      (* Clear Watchpoint             *)
+CONST DBG_C_RangeStep       =  26;      (* Range Step                   *)
+CONST DBG_C_Continue        =  27;      (* Continue after an Exception  *)
+CONST DBG_C_AddrToObject    =  28;      (* Address to Object            *)
+CONST DBG_C_XchgOpcode      =  29;      (* Exchange opcode and go       *)
+CONST DBG_C_LinToSel        =  30;      (* 32 to 16 conversion      A001*)
+CONST DBG_C_SelToLin        =  31;      (* 16 to 32 conversion      A001*)
+
+   PROCEDURE DosDebug(pdbgbuf : PVOID): APIRET;
+
+
+
+   TYPE PFNEXITLIST = PROCEDURE [APIENTRY] (ULONG);
+
+   PROCEDURE DosEnterCritSec(): APIRET;
+
+   PROCEDURE DosExitCritSec(): APIRET;
+
+   PROCEDURE DosExitList(ordercode : ULONG
+                        ;pfn       : PFNEXITLIST
+                        ): APIRET;
+
+   (* DosExitList functions *)
+
+   CONST EXLST_ADD         = 1;
+   CONST EXLST_REMOVE      = 2;
+   CONST EXLST_EXIT        = 3;
+
+
+
+   PROCEDURE DosSetPriority(scope   : ULONG
+                           ;ulclass : ULONG
+                           ;delta   : LONG
+                           ;PorTid  : ULONG
+                           ): APIRET;
+
+   CONST DosSetPrty = DosSetPriority;
+
+   (* Priority scopes *)
+
+   CONST PRTYS_PROCESS     = 0;
+   CONST PRTYS_PROCESSTREE = 1;
+   CONST PRTYS_THREAD      = 2;
+
+   (* Priority classes *)
+
+   CONST PRTYC_NOCHANGE    = 0;
+   CONST PRTYC_IDLETIME    = 1;
+   CONST PRTYC_REGULAR     = 2;
+   CONST PRTYC_TIMECRITICAL= 3;
+   CONST PRTYC_FOREGROUNDSERVER =4;
+
+   (* Priority deltas *)
+
+   CONST PRTYD_MINIMUM    = -31;
+   CONST PRTYD_MAXIMUM    =  31;
+
+   PROCEDURE DosKillProcess(action : ULONG
+                           ;pid    : PID
+                           ): APIRET;
+
+   CONST DKP_PROCESSTREE  =  0;
+   CONST DKP_PROCESS      =  1;
+
+
+
+  (* ----------------------------  32-bit Semaphore Support -------------------------   *)
+
+   (* Semaphore Attributes *)
+
+   CONST DC_SEM_SHARED  = 001H;   (* DosCreateMutex; DosCreateEvent; and     *)
+                                  (*   DosCreateMuxWait use it to indicate   *)
+                                  (*   whether the semaphore is shared or    *)
+                                  (*   private when the PSZ is null          *)
+   CONST DCMW_WAIT_ANY  = 002H;   (* DosCreateMuxWait option for wait on any *)
+                                  (*   event/mutex to occur                  *)
+   CONST DCMW_WAIT_ALL  = 004H;   (* DosCreateMuxWait option for wait on all *)
+                                  (*   events/mutexs to occur                *)
+
+   CONST SEM_INDEFINITE_WAIT   =  0FFFFFFFFH;
+   CONST SEM_IMMEDIATE_RETURN  =  0;
+
+   TYPE HSEM  = SYSTEM.ADDRESS;
+   TYPE PHSEM = POINTER TO HSEM;
+
+   TYPE SEMRECORD = RECORD     (* psr *)
+      hsemCur:     HSEM        ;
+      ulUser:      ULONG       ;
+   END;
+   TYPE PSEMRECORD = POINTER TO SEMRECORD;
+
+
+
+   TYPE  HEV  = ULONG;             (* hev *)
+   TYPE  PHEV = POINTER TO HEV;
+
+   TYPE  HMTX  = ULONG;            (* hmtx *)
+   TYPE  PHMTX = POINTER TO HMTX;
+   TYPE  HMUX  = ULONG;            (* hmux *)
+   TYPE  PHMUX = POINTER TO HMUX;
+
+   PROCEDURE DosCreateEventSem(szName  : PCHAR
+                              ;VAR hev : HEV
+                              ;flAttr  : ULONG
+                              ;fState  : BOOL32
+                              ): APIRET;
+
+   PROCEDURE DosOpenEventSem(szName  : PCHAR
+                            ;VAR hev : HEV
+                            ): APIRET;
+
+   PROCEDURE DosCloseEventSem(hev : HEV): APIRET;
+
+   PROCEDURE DosResetEventSem(hev          : HEV
+                             ;VAR ulPostCt : ULONG
+                             ): APIRET;
+
+   PROCEDURE DosPostEventSem(hev : HEV): APIRET;
+
+   PROCEDURE DosWaitEventSem(hev       : HEV
+                            ;ulTimeout : ULONG
+                            ): APIRET;
+
+   PROCEDURE DosQueryEventSem(hev          : HEV
+                             ;VAR ulPostCt : ULONG
+                             ): APIRET;
+
+   PROCEDURE DosCreateMutexSem(szName   : PCHAR
+                              ;VAR hmtx : HMTX
+                              ;flAttr   : ULONG
+                              ;fState   : BOOL32
+                              ): APIRET;
+
+   PROCEDURE DosOpenMutexSem(szName   : PCHAR
+                            ;VAR hmtx : HMTX
+                            ): APIRET;
+
+   PROCEDURE DosCloseMutexSem(hmtx : HMTX): APIRET;
+
+   PROCEDURE DosRequestMutexSem(hmtx      : HMTX
+                               ;ulTimeout : ULONG
+                               ): APIRET;
+
+   PROCEDURE DosReleaseMutexSem(hmtx : HMTX): APIRET;
+
+   PROCEDURE DosQueryMutexSem(hmtx        : HMTX
+                             ;VAR pid     : PID
+                             ;VAR tid     : TID
+                             ;VAR ulCount : ULONG
+                             ): APIRET;
+
+   PROCEDURE DosCreateMuxWaitSem(szName   : PCHAR
+                                ;VAR hmux : HMUX
+                                ;cSemRec  : ULONG
+                                ;aSemRec  : ARRAY OF SEMRECORD
+                                ;flAttr   : ULONG
+                                ): APIRET;
+
+   PROCEDURE DosOpenMuxWaitSem(szName   : PCHAR
+                              ;VAR hmux : HMUX
+                              ): APIRET;
+
+   PROCEDURE DosCloseMuxWaitSem(hmux : HMUX): APIRET;
+
+   PROCEDURE DosWaitMuxWaitSem(hmux       : HMUX
+                              ;ulTimeout  : ULONG
+                              ;VAR ulUser : ULONG
+                              ): APIRET;
+
+   PROCEDURE DosAddMuxWaitSem(hmux       : HMUX
+                             ;VAR SemRec : SEMRECORD
+                             ): APIRET;
+
+   PROCEDURE DosDeleteMuxWaitSem(hmux : HMUX
+                                ;hSem : HSEM
+                                ): APIRET;
+
+   PROCEDURE DosQueryMuxWaitSem(hmux        : HMUX
+                               ;VAR cSemRec : ULONG
+                               ;VAR SemRec  : ARRAY OF SEMRECORD
+                               ;VAR flAttr  : ULONG
+                               ): APIRET;
+
+
+(* ---- P r o g r a m   E n v i r o n m e n t  ---- *)
+
+  PROCEDURE  DosScanEnv ( EnvVarName        : PCHAR; -- patched due to compiler bug
+                          VAR ResPointer    : SYSTEM.ADDRESS
+                        )                   : APIRET;
+
+
+(* -------------------------- E r r o r   c o d e s  -----------------------------*)
+
+CONST
+  NO_ERROR                = 0;
+  ERROR_NOT_ENOUGH_MEMORY = 8;
+  ERROR_INVALID_PARAMETER = 87;
+  ERROR_ALREADY_POSTED    = 299;
+  ERROR_TIMEOUT           = 640;
+
+
+
+  PROCEDURE DosQueryModuleHandle( szModname : ARRAY OF CHAR;
+                                  VAR hmod  : HMODULE
+                                ): APIRET;
+
+
+   PROCEDURE DosQueryModuleName (   hmod : HMODULE;
+                                  cbName : ULONG;
+                                  VAR ch : ARRAY OF CHAR
+                                ): APIRET;
+
+END xOS2.

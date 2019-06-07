@@ -1,0 +1,167 @@
+M       = xdr.mkf
+
+TARGET  = xdr.o
+
+CC	= cc68k -DCPU=MC68040 -I/home/alexs/vxWorks/vw/h -O -fno-builtin -m68040 -nostdinc -c
+
+
+
+# ------------------ objects enumeration ------------------
+#                    -------------------
+
+OBJ= \
+      obj/xdrInit.o \
+      obj/xdrTargetAgent.o \
+      obj/xdrTAHooks.o \
+      obj/xdrKernel.o \
+      obj/xdrClient.o \
+      obj/xdrMemoryManager.o \
+      obj/xdrMessages.o \
+      obj/xdrAssert.o \
+      obj/xdrCfg.o \
+      obj/xdrIO.o \
+      obj/xdrTransports.o \
+      obj/xdrTransportTCP.o
+
+# ------------------- target make rules -------------------
+#                     -----------------
+
+$(TARGET): $(OBJ)
+	ld68k -o $(TARGET) -r $(OBJ)
+
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+obj/xdrInit.o: src/xdrIncl.h
+obj/xdrInit.o: src/xdrTrace.h
+obj/xdrInit.o: src/xdrInit.h
+obj/xdrInit.o: src/xdrTransports.h
+obj/xdrInit.o: src/xdrKernel.h
+obj/xdrInit.o: src/xdrCfg.h
+obj/xdrInit.o: src/xdrInit.c
+	$(CC) src/xdrInit.c -o obj/xdrInit.o
+
+obj/xdrKernel.o: src/xdrIncl.h
+obj/xdrKernel.o: src/xdrTrace.h
+obj/xdrKernel.o: src/xdrTypes.h
+obj/xdrKernel.o: src/xdrAssert.h
+obj/xdrKernel.o: src/xdrInit.h
+obj/xdrKernel.o: src/xdrTransports.h
+obj/xdrKernel.o: src/xdrKernel.h
+obj/xdrKernel.o: src/xdrMessages.h
+obj/xdrKernel.o: src/xdrMagic.h
+obj/xdrKernel.o: src/xdrTargetAgent.h
+obj/xdrKernel.o: src/xdrKernel.c
+	$(CC) src/xdrKernel.c -o obj/xdrKernel.o
+
+obj/xdrMemoryManager.o: src/xdrIncl.h
+obj/xdrMemoryManager.o: src/xdrTrace.h
+obj/xdrMemoryManager.o: src/xdrMemoryManager.h
+obj/xdrMemoryManager.o: src/xdrMemoryManager.c
+	$(CC) src/xdrMemoryManager.c -o obj/xdrMemoryManager.o
+
+obj/xdrMessages.o: src/xdrIncl.h
+obj/xdrMessages.o: src/xdrTrace.h
+obj/xdrMessages.o: src/xdrTypes.h
+obj/xdrMessages.o: src/xdrAssert.h
+obj/xdrMessages.o: src/xdrMagic.h
+obj/xdrMessages.o: src/xdrTransports.h
+obj/xdrMessages.o: src/xdrMemoryManager.h
+obj/xdrMessages.o: src/xdrMessages.h
+obj/xdrMessages.o: src/xdrMessages.c
+	$(CC) src/xdrMessages.c -o obj/xdrMessages.o
+
+obj/xdrAssert.o: src/xdrIncl.h
+obj/xdrAssert.o: src/xdrTrace.h
+obj/xdrAssert.o: src/xdrAssert.h
+obj/xdrAssert.o: src/xdrAssert.c
+	$(CC) src/xdrAssert.c -o obj/xdrAssert.o
+
+obj/xdrCfg.o: src/xdrIncl.h
+obj/xdrCfg.o: src/xdrTrace.h
+obj/xdrCfg.o: src/xdrTypes.h
+obj/xdrCfg.o: src/xdrAssert.h
+obj/xdrCfg.o: src/xdrCfg.h
+obj/xdrCfg.o: src/xdrCfg.c
+	$(CC) src/xdrCfg.c -o obj/xdrCfg.o
+
+obj/xdrIO.o: src/xdrIncl.h
+obj/xdrIO.o: src/xdrTrace.h
+obj/xdrIO.o: src/xdrTypes.h
+obj/xdrIO.o: src/xdrKernelTypes.h
+obj/xdrIO.o: src/xdrAssert.h
+obj/xdrIO.o: src/xdrTransports.h
+obj/xdrIO.o: src/xdrIO.h
+obj/xdrIO.o: src/xdrIO.c
+	$(CC) src/xdrIO.c -o obj/xdrIO.o
+
+obj/xdrTargetAgent.o: src/xdrIncl.h
+obj/xdrTargetAgent.o: src/xdrTrace.h
+obj/xdrTargetAgent.o: src/xdrInit.h
+obj/xdrTargetAgent.o: src/xdrAssert.h
+obj/xdrTargetAgent.o: src/xdrTypes.h
+obj/xdrTargetAgent.o: src/xdrKernelTypes.h
+obj/xdrTargetAgent.o: src/xdrMessages.h
+obj/xdrTargetAgent.o: src/xdrMemoryManager.h
+obj/xdrTargetAgent.o: src/xdrTAHooks.h
+obj/xdrTargetAgent.o: src/xdrTargetAgent.h
+obj/xdrTargetAgent.o: src/xdrTargetAgent.c
+	$(CC) src/xdrTargetAgent.c -o obj/xdrTargetAgent.o
+
+obj/xdrTAHooks.o: src/xdrIncl.h
+obj/xdrTAHooks.o: src/xdrTrace.h
+obj/xdrTAHooks.o: src/xdrTypes.h
+obj/xdrTAHooks.o: src/xdrMessages.h
+obj/xdrTAHooks.o: src/xdrTAHooks.h
+obj/xdrTAHooks.o: src/xdrTAHooks.c
+	$(CC) src/xdrTAHooks.c -o obj/xdrTAHooks.o
+
+obj/xdrClient.o: src/xdrIncl.h
+obj/xdrClient.o: src/xdrTrace.h
+obj/xdrClient.o: src/xdrTypes.h
+obj/xdrClient.o: src/xdrKernelTypes.h
+obj/xdrClient.o: src/xdrAssert.h
+obj/xdrClient.o: src/xdrMagic.h
+obj/xdrClient.o: src/xdrMessages.h
+obj/xdrClient.o: src/xdrMemoryManager.h
+obj/xdrClient.o: src/xdrTransports.h
+obj/xdrClient.o: src/xdrKernel.h
+obj/xdrClient.o: src/xdrCfg.h
+obj/xdrClient.o: src/xdrIO.h
+obj/xdrClient.o: src/xdrClient.h
+obj/xdrClient.o: src/xdrClient.c
+	$(CC) src/xdrClient.c -o obj/xdrClient.o
+
+obj/xdrTransportTCP.o: src/xdrIncl.h
+obj/xdrTransportTCP.o: src/xdrTrace.h
+obj/xdrTransportTCP.o: src/xdrTypes.h
+obj/xdrTransportTCP.o: src/xdrAssert.h
+obj/xdrTransportTCP.o: src/xdrInit.h
+obj/xdrTransportTCP.o: src/xdrTransports.h
+obj/xdrTransportTCP.o: src/xdrTransportTCP.h
+obj/xdrTransportTCP.o: src/xdrTransportTCP.c
+	$(CC) src/xdrTransportTCP.c -o obj/xdrTransportTCP.o
+
+obj/xdrTransports.o: src/xdrIncl.h
+obj/xdrTransports.o: src/xdrTrace.h
+obj/xdrTransports.o: src/xdrTypes.h
+obj/xdrTransports.o: src/xdrAssert.h
+obj/xdrTransports.o: src/xdrMagic.h
+obj/xdrTransports.o: src/xdrKernel.h
+obj/xdrTransports.o: src/xdrMemoryManager.h
+obj/xdrTransports.o: src/xdrTransports.h
+obj/xdrTransports.o: src/xdrTransportTCP.h
+obj/xdrTransports.o: src/xdrTransports.c
+	$(CC) src/xdrTransports.c -o obj/xdrTransports.o
+
+# Pattern
+#obj/xdr.o: src/xdrIncl.h
+#obj/xdr.o: src/xdrTrace.h
+#obj/xdr.o: src/xdrInit.h
+#obj/xdr.o: src/xdrTransports.h
+#obj/xdr.o: src/xdrKernel.h
+#obj/xdr.o: src/xdrCfg.h
+#obj/xdr.o: src/xdrInit.c
+#	$(CC) src/xdr.c -o obj/xdr.o
+
+# end of makefile

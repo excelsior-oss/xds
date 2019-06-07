@@ -1,0 +1,112 @@
+<* +M2EXTENSIONS *>
+<* IF ~ DEFINED(__GEN_VAX__)  THEN *>  <* NEW __GEN_VAX__- *>   <* END *>
+--------------------------------------------------------------------------------
+--                        Excelsior XDS Test Coverage
+--                          (c) 2006, Excelsior Ltd.
+--
+-- Module:       xtcsOS
+-- Author:       Lvov Konstantin
+-- Modified By:
+-- Created:      06-Nov-2006
+-- Purpose:      Interface of Test Coverage Run-Time to underlying OS.
+-- Comment:
+-- Synonym:      os
+--------------------------------------------------------------------------------
+DEFINITION MODULE ["C"] xtcsOS;
+
+FROM SYSTEM  IMPORT  int, CARD32, BYTE;
+
+IMPORT  SYSTEM, xmRTS, xlibOS;
+
+<* IF __GEN_C__ THEN *>
+IMPORT  xPOSIX;
+<* ELSIF __GEN_X86__ THEN *>
+IMPORT Printf;
+<* ELSIF __GEN_VAX__ THEN *>
+IMPORT  xPOSIX;
+<* END *>
+
+--------------------------------------------------------------------------------
+-- Support of debugging and testing 
+--------------------------------------------------------------------------------
+<* IF __GEN_C__ THEN *>
+CONST
+  -- PROCEDURE / printf (format: ARRAY OF CHAR; SEQ x: BYTE): int;
+  printf ["C"] = xPOSIX.printf;
+
+<* ELSIF __GEN_X86__ THEN *>
+CONST
+  printf ["Modula"] = Printf.printf;
+
+<* ELSIF __GEN_VAX__ THEN *>
+CONST
+  printf  = xPOSIX.printf;
+  sprintf = xPOSIX.sprintf;
+
+<* ELSE *>
+PROCEDURE / printf (format: ARRAY OF CHAR; SEQ x: BYTE): int;
+
+<* END *>
+
+--------------------------------------------------------------------------------
+-- Access to environment
+--------------------------------------------------------------------------------
+PROCEDURE / X2C_EnvString (name: xmRTS.X2C_pCHAR; buf: xmRTS.X2C_pCHAR; blen: SYSTEM.CARD32);
+PROCEDURE / X2C_GetProgramName(): xmRTS.X2C_pCHAR;
+
+--------------------------------------------------------------------------------
+-- Heap memory operations
+--------------------------------------------------------------------------------
+PROCEDURE / X2C_malloc (size: CARD32): SYSTEM.ADDRESS;
+PROCEDURE / X2C_free (adr: SYSTEM.ADDRESS; size: CARD32);
+
+
+--------------------------------------------------------------------------------
+-- Output to stdout
+--------------------------------------------------------------------------------
+PROCEDURE / X2C_StdOutS (str: ARRAY OF CHAR; width: CARD32);
+PROCEDURE / X2C_StdOutD (num: CARD32; w: CARD32);
+PROCEDURE / X2C_StdOutN (); (* NewLine *)
+
+PROCEDURE / X2C_DecToStr(VAR s: ARRAY OF CHAR; VAR pos: CARD32; no: CARD32);
+PROCEDURE / X2C_HexToStr(VAR s: ARRAY OF CHAR; VAR pos: CARD32; no: CARD32);
+
+
+--------------------------------------------------------------------------------
+-- File operations
+--------------------------------------------------------------------------------
+TYPE
+  X2C_OSFILE; (* or something else suitable *)
+
+-- Returns TRUE, if file "fname" exists.
+PROCEDURE / X2C_Exists (fname: xmRTS.X2C_pCHAR): BOOLEAN;
+
+PROCEDURE / X2C_Remove (fname: xmRTS.X2C_pCHAR): SYSTEM.int;
+PROCEDURE / X2C_Rename (oldname, newname: xmRTS.X2C_pCHAR): SYSTEM.int;
+
+PROCEDURE / X2C_FileOpenRead (VAR f: X2C_OSFILE; name: ARRAY OF CHAR): int;
+PROCEDURE / X2C_FileOpenWrite(VAR f: X2C_OSFILE; name: ARRAY OF CHAR): int;
+PROCEDURE / X2C_FileClose (f: X2C_OSFILE): int;
+
+PROCEDURE / X2C_FileRead (f: X2C_OSFILE; buf: SYSTEM.ADDRESS; VAR len: CARD32): int;
+PROCEDURE / X2C_FileWrite(f: X2C_OSFILE; buf: SYSTEM.ADDRESS; VAR len: CARD32): int;
+
+
+--------------------------------------------------------------------------------
+-- Termination 
+--------------------------------------------------------------------------------
+PROCEDURE / X2C_atexit (proc: xmRTS.X2C_EXIT_PROC);
+
+
+--------------------------------------------------------------------------------
+-- Time operations 
+--------------------------------------------------------------------------------
+TYPE
+  X2C_TimeStruct = xlibOS.X2C_TimeStruct;
+
+PROCEDURE / X2C_GetTime (VAR t: X2C_TimeStruct);
+PROCEDURE / X2C_TimeSecAdd( st: X2C_TimeStruct; secs: SYSTEM.CARD32
+                          ; VAR res: X2C_TimeStruct);
+
+
+END xtcsOS.

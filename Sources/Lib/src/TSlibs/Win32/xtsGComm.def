@@ -1,0 +1,135 @@
+(* Copyright (C) 1996,98 XDS Ltd. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] xtsGComm;
+
+IMPORT W := Windows;
+
+CONST
+  _mxPolyNodes = 100;
+  _mxTextChars = 256;
+
+  _mxNColor    = 1024;
+
+TYPE
+  GObj = (
+
+          point, getimg,                    -- read mode operations
+
+          setLnStyle, setHatch, mapAllcol,  -- single call functions   
+ 
+          clip, cancelClip, setBkC, setBkMix, --\ 
+          
+          plot,
+          rect, line,
+          ellip, poly,                            -- double call functions
+          flood,
+          arc, pie,
+          text, rtext, cursor,
+          putimg, delimg                      --/
+         );
+
+CONST
+  rmodeB      = point;
+  rmodeE      = getimg;
+  
+  singleCallB = setLnStyle;
+  singleCallE = mapAllcol;
+  
+
+TYPE
+  tGObj = RECORD
+            CASE obj :GObj OF
+                                     
+              |setLnStyle: lnStyle         :LONGINT;           
+
+              |setHatch:   htStyle         :LONGINT;
+
+              |setBkC:     bkColor         :LONGCARD;
+              
+              |setBkMix:   bkMix           :W.BKMODE_ENUM;
+
+              |line:       lineX1, lineY1,
+                           lineX2, lineY2  :CARDINAL;
+                           lineColor       :CARDINAL;
+     
+
+              |rect:       rRect         :W.RECT;
+                           rColor        :LONGCARD;
+                           rFill         :BOOLEAN;
+
+
+              | plot,
+                point:     pointX, pointY :CARDINAL;
+                           pColor         :LONGCARD;
+
+
+              | ellip:     eX1, eY1,
+                           eX2, eY2       :LONGCARD;
+                           eColor         :LONGCARD;
+                           eFill          :BOOLEAN;
+                           
+              | poly:    polyColor      :LONGCARD;
+                         polyFill       :BOOLEAN;
+                         polyN          :LONGCARD;
+                         polyNodes      :ARRAY [0.._mxPolyNodes-1] OF W.POINT;
+
+              | flood:   seedpX,
+                         seedpY         :CARDINAL;
+                         floodColor     :LONGCARD;
+                         boundColor     :LONGCARD;
+
+              |clip:     region         :W.RECT;
+
+
+              |arc:      arcR           :W.RECT;
+                         arcXStart,
+                         arcYStart,
+                         arcXEnd,
+                         arcYEnd        :INTEGER;                        
+                         arcColor       :LONGCARD;
+
+              |pie:      pieR           :W.RECT;
+              
+                         pieXStart,
+                         pieYStart,
+                         pieXEnd,
+                         pieYEnd        :INTEGER;                        
+                         pieFill        :BOOLEAN; 
+                         pieColor       :LONGCARD;
+
+              |getimg:   imgArea        :W.RECT;
+                         rimgHandle     :W.HBITMAP;
+
+              |putimg:   imgLCorn       :W.SIZEL;
+                         imgHandle      :W.HBITMAP;
+                         imgMode        :LONGCARD;
+
+              |delimg:   delImgHandle   :W.HBITMAP;
+
+
+              |rtext:    rtxPos         :W.SIZEL;
+                         rtxColor       :LONGCARD;
+                         rtxText        :ARRAY [0.._mxTextChars] OF CHAR;
+
+              |cursor:   cursorArea     :W.RECT;
+       
+              | text :   txPos          :W.SIZEL;
+                         txColor,
+                         txBgr          :LONGCARD;
+                         txFontXd,
+                         txFontYd,
+                         txfontDescend  :LONGCARD;
+
+                         txText         :ARRAY [0.._mxTextChars] OF CHAR;
+
+
+            END;
+                         numc2map       :LONGCARD;
+                         curPalette     :ARRAY [0.._mxNColor] OF LONGCARD;
+          END;
+
+
+END xtsGComm.

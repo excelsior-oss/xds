@@ -1,0 +1,41 @@
+(* Copyright (c) xTech 1992,96.  All Rights Reserved *)
+<* +M2EXTENSIONS *>
+<* IF __GEN_C__ THEN *>
+<* +NOHEADER *>
+<* END *>
+DEFINITION MODULE ["C"] xosFS; (* Hady. 31.05.96 17:18 *)
+
+IMPORT  SYSTEM, xmRTS;
+
+TYPE
+  X2C_pCHAR = xmRTS.X2C_pCHAR;
+  CARD32 = SYSTEM.CARD32;
+  int = SYSTEM.int;
+
+PROCEDURE X2C_Exists(fname: X2C_pCHAR): BOOLEAN;
+(* Returns TRUE, if file "fname" exists. *)
+
+PROCEDURE X2C_ModifyTime(fname: X2C_pCHAR;
+                        VAR time: CARD32;
+                      VAR exists: BOOLEAN);
+(* Returns file modification time *)
+
+PROCEDURE X2C_SetFileTime(fname: X2C_pCHAR;
+                          time: CARD32);
+(* Sets file modification time *)
+
+PROCEDURE X2C_Remove(fname: X2C_pCHAR): int;
+PROCEDURE X2C_Rename(oldname, newname: X2C_pCHAR): int;
+
+PROCEDURE X2C_FullName(full: X2C_pCHAR; len: SYSTEM.CARD32; name: X2C_pCHAR);
+(* Determines the full pathname for file name and stores it into the buffer
+   of length len pointed to by full.
+*)
+
+PROCEDURE X2C_GetDrive(VAR drive: CHAR): SYSTEM.INT32;
+PROCEDURE X2C_SetDrive(drive: CHAR): SYSTEM.INT32;
+PROCEDURE X2C_GetDriveCDNameLength(drive: CHAR; VAR len: SYSTEM.CARD32): SYSTEM.INT32;
+PROCEDURE X2C_GetDriveCDName(drive: CHAR; dir: xmRTS.X2C_pCHAR; len: SYSTEM.CARD32): SYSTEM.INT32;
+PROCEDURE X2C_GetLabel(drive: CHAR; label: xmRTS.X2C_pCHAR; len: SYSTEM.CARD32): SYSTEM.INT32;
+
+END xosFS.

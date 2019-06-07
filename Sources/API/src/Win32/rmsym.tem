@@ -1,0 +1,2 @@
+rem This script removes all Win32 symbol files
+! { def : "del %s\n", #>"sym"}

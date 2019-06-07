@@ -1,0 +1,675 @@
+% !!! M2/O2 and GC (if a program contains O2 module)
+% !!! Review Interfacing to C (it rlates to SysCall etc. as well)
+%
+
+\chapter{Multilanguage programming}\label{multilang}
+\index{multilanguage programming}
+
+\xds{} allows you to mix \mt{}, \ot{}, C, and Assembler
+modules, libraries, and object files in one project.
+
+\section{Modula-2 and Oberon-2}\label{multilang:m2o2}
+\index{multilanguage programming!Modula-2/Oberon-2}
+
+It is not necessary to notify the compiler of using \mt{}
+objects in \ot{} module and vice versa. The compiler will detect
+the language automatically when processing symbol files on
+\verb'IMPORT' clause.
+
+\subsection{Basic types}
+
+In \ot{} the basic types have the same length on all platforms. In
+\mt{} the size of types {\tt INTEGER}, {\tt CARDINAL} and {\tt
+BITSET} may be different and depends on the value of the
+\OERef{M2BASE16} option. The following table summarizes the correspondence
+between the basic types.
+\begin{center}
+\begin{tabular}{lcccc}
+\bf Type & \bf Size & \bf \ot{} & \multicolumn{2}{c|}{\bf Modula-2}     \\
+         &      &              & \tt M2BASE16+ & \tt M2BASE16-   \\ \hline
+integer  & 8    & \tt SHORTINT &     ---       &     ---      \\
+integer  & 16   & \tt INTEGER  & \tt INTEGER   &     ---      \\
+integer  & 32   & \tt LONGINT  &     ---       & \tt INTEGER  \\
+cardinal & 8    &     ---      &     ---       &     ---      \\
+cardinal & 16   &     ---      & \tt CARDINAL  &     ---      \\
+cardinal & 32   &     ---      &     ---       & \tt CARDINAL \\
+bitset   & 16   &     ---      & \tt BITSET    &     ---      \\
+bitset   & 32   & \tt SET      &     ---       & \tt BITSET
+\end{tabular}
+\end{center}
+
+The system types {\tt INT} and {\tt CARD} correspond to
+\mt{} {\tt INTEGER} and {\tt CARDINAL} types respectively.
+We recommend to use {\tt INT} and {\tt CARD} in \ot{} when importing \mt{}
+modules. For example, if the procedure {\tt Foo} is defined
+in the \mt{} definition module \verb'M' as
+\begin{verbatim}
+    DEFINITION MODULE M;
+
+    PROCEDURE Foo(VAR x: INTEGER);
+
+    END M.
+\end{verbatim}
+its portable usage in \ot{} is as follows:
+\begin{verbatim}
+    VAR x: SYSTEM.INT;
+       .  .  .
+      M.Foo(x);
+\end{verbatim}
+
+\subsection{Data structures}
+
+\xds{} allows any \mt{} data structures to be used in \ot{}
+modules, even those that can not be defined in \ot{} (e.g.
+variant records, range types, set types, enumerations, etc).
+
+However, usage of \mt{} types in \ot{} and vice versa is
+restricted. Whenever possible \xds{} tries to produce the correct
+code. If a correct translation is impossible, an error
+is reported:
+\begin{itemize}
+\item
+  a \mt{} record field type cannot be of an \ot{} pointer, record
+  or array type;
+\item
+  a \mt{} pointer to an \ot{} record cannot  be  used  in  specific
+  \ot{} constructs (type-bound procedures, type guards, etc);
+\item
+   an opaque type can not be defined as an Oberon pointer.
+\end{itemize}
+
+Standard procedures \verb'NEW' and \verb'DISPOSE' are always applied according to
+the language of a parameter's type. For example, for the following
+declarations in an \ot{} module:
+\begin{verbatim}
+    TYPE
+      Rec = RECORD END;
+      MP  = POINTER ["Modula"] TO Rec; (* Modula pointer *)
+      OP  = POINTER TO Rec;     (* Oberon pointer *)
+    VAR
+      m: MP;
+      o: OP;
+\end{verbatim}
+the call \verb|NEW(m)| will be treated as a call to the \mt{}
+default {\tt ALLOCATE}, while \verb|NEW(o)| will be treated as
+a call of the standard \ot{} run-time routine.
+See also \ref{multilang:direct}.
+
+Implicit memory deallocation (garbage collection) is applied to \ot{}
+objects only. If a variable of a \mt{} pointer type is declared in
+an \ot{} module, it shall be deallocated explicitly.
+
+\paragraph{Example: Using the Modula data type in Oberon}
+\begin{verbatim}
+    (* Modula-2*) DEFINITION MODULE m2;
+    TYPE
+      Rec = RECORD  (* a record with variant parts *)
+        CASE tag: BOOLEAN OF
+          |TRUE:  i: INTEGER;
+          |FALSE: r: REAL;
+        END;
+      END;
+      Ptr = POINTER TO Rec;
+
+    VAR
+      r: Rec;
+      p: Ptr;
+
+    PROCEDURE Foo(VAR r: Rec);
+
+    END m2.
+
+    (* Oberon-2 *) MODULE o2;
+
+    IMPORT m2; (* import of a Modula-2 module *)
+
+    VAR
+      r: m2.Rec;  (* using the Modula-2 record type *)
+      p: m2.Ptr;  (* using the Modula-2 pointer type *)
+      x: POINTER TO m2.Rec;
+
+    BEGIN
+      NEW(p);     (* Modula-2 default ALLOCATE *)
+      NEW(x);     (* Oberon-2 NEW *)
+      m2.Foo(r);
+      m2.Foo(p^);
+      m2.Foo(x^);
+    END o2.
+\end{verbatim}
+
+\subsection{Garbage collection}
+
+It is important to remember that \mt{} and \ot{} have different
+approaches to memory utilization. When a program contains both
+\mt{} and \ot{} modules, garbage collection is used.
+See \ref{rts:mm} for more information.
+
+%--------------------------------------------------------------
+
+\section{Direct language specification}\label{multilang:direct}
+\index{multilanguage programming!language specification}
+\index{C interface!language specification}
+
+The compiler must know the implementation language of a
+module to take into account different semantics of different
+languages and to produce correct code.
+
+In some cases, it is necessary for a procedure or data type to be
+implemented according to the rules of a language other than that
+of the whole module. In \xds{}, it is possible to explicitly
+specify the language of a type or object. {\em Direct language
+specification \index{DLS}(DLS)} is allowed either if
+language extensions are enabled or if the module \verb'SYSTEM' is imported.
+
+In a record, pointer, or procedure type declaration, or in a procedure declaration,
+the desired language (or, more precisely, the way in which that
+declaration is treated by the compiler) can be specified as \verb'"[" language "]"'
+immediately following the keyword \verb'RECORD', \verb'POINTER',
+or \verb'PROCEDURE'. \verb'language' can be a string or integer constant
+expression\footnote{We recommend to use strings, integer values are
+preserved for backward compatibility.}:
+\begin{center}
+\begin{tabular}{lll}
+\bf Convention & \bf String    & \bf Integer \\
+\hline
+Oberon-2       & \tt "Oberon"  & \tt 0       \\
+Modula-2       & \tt "Modula"  & \tt 1       \\
+C              & \tt "C"       & \tt 2       \\
+Pascal         & \tt "Pascal"  & \tt 5       \\
+Win32 API      & \tt "StdCall" & \tt 7       \\
+OS/2 API       & \tt "SysCall" & \tt 8       \\
+\end{tabular}
+\end{center}
+
+Examples:
+
+\verb'    TYPE'\\
+\verb'      UntracedPtr = POINTER ["Modula"] TO Rec;'
+
+Here {\tt UntracedPtr} is defined as a \mt{} pointer, hence all variables
+of that type will not be traced by garbage collector.
+
+\verb'    PROCEDURE ["C"] sig_handler (id : SYSTEM.int);'\\
+\verb'     .  .  .'\\
+\verb'      signal.signal(signal.SYSSEGV, sig_handler);'\\
+
+Here \verb'sig_handler' has C calling and naming conventions, so it
+can be installed as a signal handler into C run-time support.
+
+A direct language specification clause placed after a name of a field,
+constant, type, or variable points out that the name of the object
+will be treated according to the rules of the specified
+language.
+\begin{verbatim}
+    TYPE
+      Rec ["C"] = RECORD
+        name ["C"]: INTEGER;
+      END;
+
+    CONST pi ["C"] = 3.14159;
+
+    VAR buffer[]["C"]: POINTER TO INTEGER;
+\end{verbatim}
+{\bf Note:} In ISO \mt{}, an absolute address may be specified
+for a variable after its name in square brackets, so
+the empty brackets are required in the last line.
+
+A procedure name is treated according to the language of
+its declaration, so in the following declaration:
+
+\verb'    PROCEDURE ["C"] Foo;'
+
+both the procedure type and the procedure name are treated
+according to the C language rules.
+{\bf Note:} If you are using a C++ compiler, the {\tt Foo}
+function should be declared with C name mangling style.
+Consult your C++ manuals for further information.
+                                                         
+The compiler option \OERef{SYSTEMFLAGEXT} enables extended syntax 
+of direct language specification.  Language string, "{\tt Volatile}" 
+specification and absolute address can be specified in the same clause, 
+separated by the a comma.  See section \ref{m2:ext:volatile} for details. 
+
+
+%----------------------------------------------------------------
+
+\section{Interfacing to C}\label{multilang:C}
+\index{multilanguage programming!interface to C}
+\index{C interface}
+
+Special efforts were made in \XDS{} to provide convenient
+interface to other languages, primarily to the C language.
+The main goal is to allow direct usage of existing C libraries and
+APIs in \mt{}/\ot{} programs.
+
+
+\subsection{Foreign definition module}
+\label{multilang:foreigndefmod}
+\index{multilanguage programming!foreign definition module}
+\index{C interface!foreign definition module}
+
+A \See{direct language specification}{}{multilang:direct}
+clause may appear immediately after keywords \verb'DEFINITION'
+\verb'MODULE'. The effect is that all objects defined in
+that module are translated according to the specified
+language rules, thus making unnecessary direct language
+specifications for each object.
+
+Several options are often used in foreign definition modules.
+\ifgenc
+See \ref{maptoc:opt:foreign} for the
+description of options used to create a foreign definition module.
+\fi
+
+\Example
+\begin{verbatim}
+    <*+ M2EXTENSIONS *>
+    <*+ CSTDLIB *>      (* C standard library *)
+    <*+ NOHEADER *>     (* we already have header file *)
+    DEFINITION MODULE ["C"] string;
+
+    IMPORT SYSTEM;
+
+    PROCEDURE strlen(s: ARRAY OF CHAR): SYSTEM.size_t;
+    PROCEDURE strcmp(s1: ARRAY OF CHAR;
+                     s2: ARRAY OF CHAR): SYSTEM.int;
+    END string.
+\end{verbatim}
+
+Take the following considerations into account when designing
+your own foreign definition module:
+\begin{itemize}
+\item
+        If you are developing an interface to an existing header file,
+        use the {\bf NOHEADER} option to disable generation of the header
+        file.  This option is meaningful for translators only.
+\item
+        If the header file is a standard header file, use the
+        {\bf CSTDLIB} option. This option is meaningful for the translators
+        only.
+\item
+        Use the special \verb'SYSTEM' types {\tt int}, {\tt unsigned},
+        \verb|size_t|, and {\tt void} for corresponding
+        C types.
+\item
+        \xds{} compilers use relaxed type compatibility rules
+        for foreign entities. See \ref{multilang:relax} for
+        more information.
+
+\end{itemize}
+\ifgenc
+Definition modules for ANSI C libraries ({\tt stdio.def},
+{\tt string.def}, etc) can be used as tutorial examples.
+\fi
+
+\subsection{External procedures specification}
+\label{multilang:extproc}
+\index{multilanguage programming!external procedures}
+\index{C interface!external procedures}
+
+In some cases, it may be desirable not to write a foreign
+definition module but to use some C or API functions directly.
+\xds{} compilers allow a function to be declared as external.
+
+The declaration of an external procedure consists of a procedure
+header only. The procedure name in the header is prefixed by the
+symbol \verb|"/"|.
+
+\verb'    PROCEDURE ["C"] / putchar(ch: SYSTEM.int): SYSTEM.int;'
+
+
+\subsection{External variables specification}
+\label{multilang:extvar}
+\index{multilanguage programming!external variables}
+\index{C interface!external variables}
+
+In some cases, it may be desirable not to write a foreign
+definition module but to use some C or API functions directly.
+\xds{} compilers allow a variable to be declared as external.
+
+The variable name of an external variable is prefixed by the
+symbol \verb|"/"|. 
+
+As a rule, a \See{direct language specification}{}{multilang:direct} 
+clause is placed after external variable name to point out that the name 
+of the variable will be treated according to the rules of the specified 
+language.
+
+\verb'    VAR / buffer []["C"]: POINTER TO INTEGER;'
+
+
+
+%------------------------------------------------------------------
+
+\section{Relaxation of compatibility rules}
+\label{multilang:relax}
+
+The compiler performs all semantic checks for an object or type
+according to its language specification. Any object declared as that
+of \mt{} or \ot{} is subject to \mt{} or \ot{} compatibility rules
+respectively.  The compiler uses relaxed compatibility rules for
+objects and types declared as \verb'"C"', \verb'"Pascal"',
+\verb'"StdCall"', and \verb'"SysCall"'.
+
+\subsection{Assignment compatibility}
+
+Two pointer type objects are considered assignment compatible, if
+
+\begin{itemize}
+\item they are of the same \mt{} or \ot{} type.
+\item at least one of their types is declared as
+      \verb'"C"', \verb'"Pascal"', \verb'"StdCall"', or \verb'"SysCall"',
+      and their {\it base types} are the same.
+\end{itemize}
+
+\begin{verbatim}
+    VAR
+      x: POINTER TO T;
+      y: POINTER TO T;
+      z: POINTER ["C"] TO T;
+    BEGIN
+      x := y;       -- error
+      y := z;       -- ok
+      z := y;       -- ok
+\end{verbatim}
+
+\subsection{Parameter compatibility}
+\label{multilang:parmcomp}
+
+For procedures declared as \verb'"C"', \verb'"Pascal"',
+\verb'"StdCall"', or \verb'"SysCall"', the
+type compatibility rules for parameters are significantly relaxed:
+
+If a formal value parameter is of the type declared as \verb'POINTER TO T',
+the actual parameter can be of any of the following types:
+
+\begin{itemize}
+\item the same type (the only case for regular \mt{}/\ot{}
+      procedures);
+\item another type declared as \verb'POINTER TO T'.
+\item any array type which elements are of type {\tt T}.
+      In this case the address of the first array element is passed,
+      as it is done in C.
+\item the type {\tt T} itself, if {\tt T} is a record type.
+      In this case the address of the actual parameter is passed.
+\end{itemize}
+
+If a formal parameter is an open array of type \verb'T',
+the actual parameter can be of any of the following types:
+
+\begin{itemize}
+\item an (open) array of type \verb'T' (the only case for regular \mt{}/\ot{}
+      procedures);
+\item type \'verb'T' itself (if \OERef{M2EXTENSIONS}\iftopspeed or \OERef{TOPSPEED}\fi
+      option is set ON);
+\item any type declared as \verb'POINTER TO T'.
+\end{itemize}
+
+This relaxation, in conjunction with the
+\See{{\tt SYSTEM.REF} function procedure}{}{m2:sysfunc:nonstandard},
+simplifies \mt{}/\ot{} calls to C libraries and the target operating
+system API, preserving the advantages of the type checking mechanism
+provided by that languages.
+
+\Example
+\begin{verbatim}
+    TYPE
+      Str = POINTER TO CHAR;
+      Rec = RECORD ... END;
+      Ptr = POINTER TO Rec;
+
+    PROCEDURE ["C"] Foo(s: Str); ... END Foo;
+    PROCEDURE ["C"] Bar(p: Ptr);  ... END Bar;
+    PROCEDURE ["C"] FooBar(a: ARRAY OF CHAR);  ... END FooBar;
+
+    VAR
+      s: Str;
+      a: ARRAY [0..5] OF CHAR;
+      p: POINTER TO ARRAY OF CHAR;
+      R: Rec;
+      A: ARRAY [0..20] OF REC;
+      P: POINTER TO REC;
+
+      Foo(s);    (* allowed - the same type *)
+      Foo(a);    (* allowed for the "C" procedure *)
+      Foo(p^);   (* allowed for the "C" procedure *)
+      Bar(R);    (* the same as Bar(SYSTEM.REF(R)); *)
+      Bar(A);    (* allowed for the "C" procedure *)
+      Bar(P);    (* allowed for the "C" procedure *)
+      FooBar(s); (* allowed for the "C" procedure *)
+\end{verbatim}
+
+\subsection{Ignoring function result}
+\index{C interface!using C functions}
+
+It is a standard practice in C programming to ignore the result of
+a function call. Some standard library functions are designed
+taking that practice into account. E.g. the string copy
+function accepts the destination string as a variable parameter (in
+terms of \mt{}) and returns a pointer to it:
+
+\verb'    extern char *strcpy(char *, const char *);'
+
+In many cases, the result of the {\tt strcpy} function call is ignored.
+
+In \xds{}, it is possible to ignore results of functions
+defined as \verb'"C"', \verb'"Pascal"', \verb'"StdCall"', or \verb'"SysCall"'.
+Thus, the function {\tt strcpy} defined in the \verb'string.def'
+foreign definition module as
+
+\verb'    PROCEDURE ["C"] strcpy(VAR d: ARRAY OF CHAR;'\\
+\verb'                               s: ARRAY OF CHAR): ADDRESS;'
+
+can be used as a proper procedure or as function procedure:
+
+\verb'    strcpy(d,s);'\\
+\verb'    ptr:=strcpy(d,s);'
+
+% This section has to be included if and only if gencode is true.
+\ifgencode
+
+% !!! DS_EQ_SS - throw away?
+
+\section{Configuring XDS for a C Compiler}\label{multilang:ccomp}
+
+% CC equation: WATCOM/SYMANTEC/BORLAND/MSVC/OS2SYSCALL
+%       options: GENCPREF, DS_NEQ_SS, ONECODESEG
+
+Different C compilers have different naming and calling conventions.
+If you use C functions or libraries in your projects,
+you have to specify your C compiler using the \OERef{CC} equation in
+order to have all C functions to be called in a way compatible with
+that compiler. The compiler also sets the default values of some
+other options and equations according to the value of the \OERef{CC} equation.
+\iflinux \else See \ref{multilang:ccomp:opt}. \fi % this section not included for Linux
+
+\iflinux
+  For Linux \XDS{} supports the GCC (ELF) compiler. Therefore, the \OERef{CC}
+  equation has to be set to \verb'"GCC"', written in any case. If the equation value
+  is not set, \verb'"GCC"' is assumed by default.
+\fi
+
+\ifwinnt
+  For Windows NT and Windows 95 \XDS{} supports the MSVC++ and Watcom
+  (stack convention) compilers. The corresponding values of the \OERef{CC}
+  equation are \verb'"MSVC"' and \verb'"WATCOM"', written in any case.
+  If the equation is not set, the compiler will assume \verb'"WATCOM"'
+  by default. Add the line
+
+  \verb'    -cc=Watcom'
+
+  or
+
+  \verb'    -cc=MSVC'
+
+  to your configuration file.
+\fi
+
+Alignment of data structures is controlled by the \OERef{ALIGNMENT} equation.
+
+\iflinux
+  {\bf ATTENTION!} Libraries included in \XDS{} distribution are built via
+  GCC. Since GCC usually produces aligned code, the \OERef{ALIGNMENT} equation
+  has to be set to 4. Setting it to other values may cause unpredictable results.
+  Don't change it unless you exactly know what you are doing!
+\fi
+
+Names in an object file produced by a C compiler may have leading
+underscore. If you are going to use C modules and libraries, you have to
+force \XDS{} to use the same naming rules. To do this, turn the
+\OERef{GENCPREF} option ON in the foreign definition modules:
+
+\verb'    <* +GENCPREF *>' \\
+\verb'    DEFINTION MODULE ["C"] stdio;'
+
+\iflinux
+Since GCC (ELF) produces no underscore prefixes you should not turn this option
+ON.
+\fi
+
+\ifcomment !!!
+See {\tt samples.txt} from \XDS{} on-line documentation for more
+information.
+\fi
+
+\subsection{Possible problems}
+
+To use a C function or a data type from \mt{} or \ot{} you have
+to express its type in one of these languages. Usually
+it is done in a foreign definition module (See \ref{multilang:C}).
+The current version of \XDS{} does not support
+all calling conventions, so direct usage of some functions
+is not possible, namely:
+\begin{itemize}
+\item functions with a parameter of a structured type, passed by value,
+      e.g.:
+
+\verb'    void foo(struct MyStruct s);'
+
+\item functions that return structured types, e.g.:
+
+\verb'    struct MyStruct foo(void)'
+
+\item C functions with Pascal calling convention that return
+      a real type.
+
+\iflinux \else % not Linux
+\item functions that are compiled with non-stack calling conventions.
+      {\bf Note:} stack calling conventions shall be set for
+      Watcom using "-3s", "-4s", or "-5s" option.
+\fi
+\end{itemize}
+
+\iflinux \else % not Linux
+  \XDS{} does not support usage of data structures with
+  non-standard alignments. If the \OERef{ALIGNMENT} equation is set
+  to {\em n}, use the option "-zp{\em n}" for Watcom C and
+  "-Zp{\em n}" for MSVC.
+\fi
+
+Both \mt{} and C/C++ have exception handling and finalization
+facilities.  Unpredictable results may occur
+if you try to utilize that facilities from both languages in one program.
+
+\iflinux \else % not Linux
+\subsection{Using an unsupported compiler}
+
+\XDS{} does not support all available C compilers.
+You can use additional configuration options (See \ref{multilang:ccomp:opt})
+to adapt \XDS{} to your C compiler.
+The \OERef{DEFLIBS} option should be switched off in that case.
+
+It may be necessary to make some changes in the run-time support
+or to build a special version of the library for a particular C compiler.
+It can be done under terms of a special support program.
+
+\subsection{Additional configuration options}\label{multilang:ccomp:opt}
+
+The following options can be used to adapt \XDS{} to an unsupported
+C compiler. We recommend to use these options with care.
+
+\begin{itemize}
+\ifcomment
+\item[DS\_NEQ\_SS] \index{DS\_NEQ\_SS@{\bf DS\_NEQ\_SS}} \mbox{}
+
+        If the option is ON, the compiler assumes that DS register
+        is not equal to SS register.
+\fi
+
+\item The \OERef{GENCPREF} option controls whether the compiler should precede
+      all external names in object files with an underscore prefix (ON),
+      or leave them unchanged (OFF).
+
+\item The \OERef{ONECODESEG} option controls whether the compiler should
+      produce a single code segment for all code of a module (ON),
+      or a separate code segment for each procedure (OFF).
+\end{itemize}
+
+The table below shows the default values of these options for the supported
+C compilers:
+\begin{center}
+\begin{tabular}{lcc} \
+\OERef{CC} setting & \tt WATCOM & \tt  MSVC    \\
+\hline
+\ifcomment
+        DS\_NEQ\_SS &   ?    &    ?      \\
+\fi
+\OERef{GENCPREF}    &   OFF  &    ON     \\
+\OERef{ONECODESEG}  &   OFF  &    ON
+\end{tabular}
+\end{center}
+\fi % not Linux
+
+\fi % not gencode
+
+\ifcomment % ------------------------------------------------------
+%!!!!
+
+\section{Interfacing to other languages}
+\index{multilanguage programming!other languages}
+
+Although \xds{} compiles to ANSI C, it is possible to use {Pascal} and
+{FORTRAN} libraries from \mt{}/\ot{} sources.
+
+Most C compilers can recognize the special keyword {\tt pascal}
+(and/or {\tt fortran}), immediately preceding a C function name.
+
+\begin{verbatim}
+void pascal PrintScreen (void);
+/* pascal function declaration */
+\end{verbatim}
+
+The naming and parameter passing conventions are different in
+C and in {Pascal}/{FORTRAN}, and therefore a special keyword is necessary.
+If your C compiler supports the foreign library interface, you can use
+{Pascal}/{FORTRAN} procedures, variables, data types, etc. in the
+same way as C objects.
+
+To do it, you should first create the corresponding C header file if it
+does not exist. Consult your C compiler documentation for details.
+
+After this, a Modula-2 definition module should be created.
+Special keywords such as {\tt pascal}, {\tt far}, {\tt volatile} may
+be omitted in the definition module.
+Compile this definition file with the {\bf NOHEADER}
+option to produce a symbol file.
+
+Having the Pascal declaration
+\begin{verbatim}
+  function Foo(p: real): real;
+\end{verbatim}
+the respective C header file line should be
+\begin{verbatim}
+  float pascal far Foo(float p);
+\end{verbatim}
+
+and the definition file
+\begin{verbatim}
+<*+ NOHEADER *>
+DEFINITION MODULE [2] Pascals;
+
+  PROCEDURE Foo(p: REAL): REAL;
+END Pascals.
+\end{verbatim}
+
+\fi % comment -----------------------------------------------------

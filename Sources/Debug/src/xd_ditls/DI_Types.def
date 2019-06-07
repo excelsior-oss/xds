@@ -1,0 +1,809 @@
+-- Описание всех используемых типов во внутреннем универсальном
+-- представлении отладочной информации: компонент, модулей,
+-- типов, обьектов, таблиц соответствия кода и текста модуля.
+
+DEFINITION MODULE DI_Types;
+
+<* ALIGNMENT = "1" *>
+
+IMPORT sys := SYSTEM;
+
+IMPORT kt  := KrnTypes;
+IMPORT txt := Texts;
+IMPORT Ud  := Unidata;
+IMPORT xs  := xStr;
+
+
+TYPE
+  NAME = Ud.IMAGE_REF;
+
+CONST
+  Empty_Name = NAME (0);
+  Invalid_Name = NAME (Ud.Invalid_Ref);
+
+
+TYPE
+  (* Ключ доступа *)
+  KEY_INDEX = CARDINAL;
+  KEY       = POINTER TO ARRAY OF KEY_INDEX;
+
+  (* Таблица соответствия кода и текста модуля. *)
+  CLTABLE = RECORD
+              Line: CARDINAL;   (* Номер строки исходного текста *)
+              Addr: kt.ADDRESS; (* Абсолютный адрес              *)
+            END;
+
+  (* Ключи по коду и по строкам таблицы "код-строка" *)
+  PACLTABLE = POINTER TO ARRAY OF CLTABLE;
+
+  CODELINETABLE = RECORD
+                    CLTable     : PACLTABLE; (* Таблица соответствия кода и текста *)
+                    KCLTableAddr: KEY;       (* Ключ, упорядоченный по адресам     *)
+                    KCLTableLine: KEY;       (* Ключ, упорядоченный по строкам     *)
+                  END;
+
+CONST
+  EmptyCodeLineTable = CODELINETABLE{ NIL, NIL, NIL };
+
+
+
+TYPE
+  (* Информация о сегменте *)
+  SEGMENT = RECORD
+              Name    : NAME;        (* Имя сегмента          *)
+              Number  : CARDINAL;    (* Номер сегмента        *)
+              Begin   : kt.ADDRESS;  (* Адрес начала сегмента *)
+              Sz      : CARDINAL;    (* Длина секции в байтах *)
+              Attribs : kt.ATTRIBS;  (* Атрибуты сегмента     *)
+            END;
+
+  PASEGMENT = POINTER TO ARRAY OF SEGMENT;
+
+  (* Информация о сегментах для общего ключа по секциям для поиска *)
+  GSEGMENT = RECORD
+               ModNo: CARDINAL;
+               Begin: kt.ADDRESS; (* Адрес начала группы сегментов   *)
+               End  : CARDINAL;   (* Адрес конца группы сегментов    *)
+             END;
+
+  PAGSEGMENT = POINTER TO ARRAY OF GSEGMENT;
+
+
+CONST
+  EMPTY_SEGMENT = SEGMENT { Invalid_Name
+                          , MAX(CARDINAL)
+                          , kt.ADDRESS(MAX(CARDINAL))
+                          , MAX(CARDINAL)
+                          , kt.ATTRIBS {}};
+
+TYPE
+  R_TAG  = sys.CARD8;     (* Tag               *)
+  R_NAME = NAME;          (* Ссылка на имя     *)
+  R_TYPE = sys.CARD32;    (* Ссылка на тип     *)
+  T_LEN  = sys.CARD16;    (* Длина             *)
+  R_REG  = sys.CARD16;    (* Ссылка на регистр *)
+
+
+TYPE
+  (* Таблицы типов и обьектов *)
+  DUMP = POINTER TO ARRAY OF sys.CARD8;
+
+
+TYPE
+  (* Локальные обьекты, указывается первый обьект в индексе, всего *)
+  (* таких обьектов. Ссылки на ключ KObject модуля.                *)
+  NESTED_OBJECTS = RECORD
+                     LocalIndex : sys.CARD16; -- индекс в ключе
+                     VarPos     : sys.CARD16; -- индекс переменных
+                     VarQuan    : sys.CARD16; -- переменные
+                     ParamPos   : sys.CARD16; -- индекс параметров
+                     ParamQuan  : sys.CARD16; -- параметры
+                     ProcPos    : sys.CARD16; -- индекс процедур
+                     ProcQuan   : sys.CARD16; -- процедуры
+                   END;
+
+  PNESTED_OBJECTS = POINTER TO NESTED_OBJECTS;
+
+CONST
+  EmptyNestedObjects = NESTED_OBJECTS{ 0, 0, 0, 0, 0, 0, 0};
+
+
+TYPE
+  (* Представление обьектов *)
+
+  (* Определение типов обьектов *)
+  SYM_TAG = ( Sy_Proc       (* procedure         *)
+            , Sy_Var        (* variable          *)
+            , Sy_Register   (* register variable *)
+            , Sy_Relative   (* relative variable *)
+            , Sy_End_Block  (* end of block      *)
+            );
+
+  SYM_TYPE_ID = ( st_original
+                , st_mixed
+                , st_byte
+                , st_word
+                , st_dword
+                , st_card8
+                , st_card16
+                , st_card32
+                , st_int8
+                , st_int16
+                , st_int32
+                , st_char
+                , st_unsigned
+                , st_signed
+                , st_hex
+                , st_oct
+                , st_bin
+                , st_dereference
+                , st_inside
+                );
+
+  SYM_DATA_VAR = RECORD
+                   Address: kt.ADDRESS;
+                 END;
+
+  SYM_DATA_PROC = RECORD
+                    Address       : kt.ADDRESS;
+                    Length        : sys.CARD32;
+                    Begin         : kt.ADDRESS;
+                    End           : kt.ADDRESS;
+                    HasFrame      : BOOLEAN;
+                    FrameSize     : CARDINAL;
+                    NestedObjects : NESTED_OBJECTS; (* Вложенные обьекты                  *)
+                  END;
+
+  SYM_ATTRIB_VALUE = ( SA_Param, SA_Reference, SA_ReadOnly );
+  SYM_ATTRIB       = SET OF SYM_ATTRIB_VALUE;
+
+  SYM_DATA_REGISTER = RECORD
+                   RegNo : R_REG;
+                   Attrib: SYM_ATTRIB;
+                 END;
+
+  SYM_DATA_RELATIVE = RECORD
+                   RegNo   : R_REG;
+                   Relative: LONGINT;
+                   Attrib  : SYM_ATTRIB;
+                 END;
+
+  RAW_OBJECT = RECORD
+                 ParentScope: sys.CARD16; -- контекст
+                 Name : R_NAME;
+                 Type : R_TYPE;
+                 ST_ID: SYM_TYPE_ID;
+                 CASE Tag: SYM_TAG OF
+                 | Sy_Proc:       (* procedure *)
+                   DataProc:SYM_DATA_PROC;
+                 | Sy_Var:        (* variable  *)
+                   DataVar: SYM_DATA_VAR;
+                 | Sy_Register:   (* register variable *)
+                   DataReg: SYM_DATA_REGISTER;
+                 | Sy_Relative:   (* relative variable *)
+                   DataRel: SYM_DATA_RELATIVE;
+                 | Sy_End_Block:  (* end of block      *)
+                 END;
+               END;
+
+ PRAW_OBJECT = POINTER TO RAW_OBJECT;
+
+ PARAW_OBJECT = POINTER TO ARRAY OF RAW_OBJECT;
+
+ RAW_OBJECTS = RECORD
+                  RawObjects : PARAW_OBJECT;
+                  Count      : CARDINAL;
+                END;
+CONST
+  EmptyRawObjects = RAW_OBJECTS{ NIL, 0};
+
+
+TYPE
+  (* Обьекты модуля: процедуры, в том числе и локальные, *)
+  (* переменные, в том числе и локальные                 *)
+  (* KObjects указывает на начало обьектов               *)
+  OBJECTS = RECORD
+              RawObjects   : RAW_OBJECTS;    (* Обьекты           *)
+              KObjects     : KEY;            (* Ключ по обьектам  *)
+              KObjName     : KEY;            (* Лекс. ключ        *)
+              KObjAddr     : KEY;            (* Ключ по адресам   *)
+              NestedObjects: NESTED_OBJECTS; (* Вложенные обьекты                  *)
+            END;
+
+  POBJECTS = POINTER TO OBJECTS;
+
+CONST
+  EmptyObjects = OBJECTS{ EmptyRawObjects, NIL, NIL, NIL, EmptyNestedObjects};
+
+
+
+TYPE
+  MODULE_TYPES = RECORD
+                   Sorted     : BOOLEAN;      (* Ключ по именам отсортирован        *)
+                   KTName     : KEY;          (* Лексикограф.ключ                   *)
+                   KTQuantity : CARDINAL;     (* Количество именованных типов       *)
+                 END;
+
+CONST
+  EmptyModuleTypes = MODULE_TYPES{ FALSE, NIL, 0 };
+
+
+TYPE
+  PUBLIC = RECORD
+             code: BOOLEAN;
+             name: NAME;
+             addr: kt.ADDRESS;
+             len : CARDINAL;
+           END;
+
+  PAPUBLIC = POINTER TO ARRAY OF PUBLIC;
+
+  PUBLICS = RECORD
+              Publics: PAPUBLIC;
+              Count  : CARDINAL;
+              KPAddr : KEY;
+              KPName : KEY;
+            END;
+CONST
+  EmptyPublics = PUBLICS{ NIL, 0 , NIL, NIL};
+
+
+
+TYPE
+  RENUM = RECORD
+            Name : NAME;
+            Value: CARDINAL;
+          END;
+
+  PARENUM = POINTER TO ARRAY OF RENUM;
+
+  ENUMERATIONS = RECORD
+                   Enums : PARENUM;
+                   Count : CARDINAL;
+                   KEName: KEY;
+                 END;
+
+CONST
+  EmptyEnumerations = ENUMERATIONS{ NIL, 0, NIL };
+
+
+TYPE
+  (* Идентификаторы типа модуля *)
+  LANGUAGE = ( Lng_Unknown
+             , Lng_Asm
+             , Lng_M2
+             , Lng_O2
+             , Lng_Java
+             , Lng_C
+             , Lng_CPP );
+
+  (* Наиболее вероятные расширения имен файлов, содержашие *)
+  (* исходные тексты модулей на различных языках           *)
+  LANG_EXT_TABLE = ARRAY LANGUAGE OF ARRAY [0..7] OF CHAR;
+
+CONST
+  LangExtTable = LANG_EXT_TABLE { ""
+                               <* IF DEST_K26 THEN *>
+                                , "MAR"
+                               <* ELSE *>
+                                , "ASM"
+                               <* END *>
+                                , "MOD"
+                                , "OB2"
+                                , "JAVA"
+                                , "C"
+                                , "CPP" };
+
+
+TYPE
+  (* Информация о модуле *)
+  Module = RECORD
+             ModuleName    : NAME;           (* Имя модуля                         *)
+             HasInfo       : BOOLEAN;        (* Есть ли отладочная информация      *)
+             Active        : BOOLEAN;        (* Признак активности модуля          *)
+             SourceName    : NAME;           (* Имя исходного модуля               *)
+             TryRead       : BOOLEAN;        (* Была ли попытка открыть текст      *)
+             Text          : txt.TEXT;       (* Текст исходного модуля             *)
+             Language      : LANGUAGE;       (* Идентификатор типа модуля          *)
+             ModifyTime    : LONGCARD;       (* Время модификации, секунды         *)
+             Segments      : PASEGMENT;      (* Информация о сегментах             *)
+             CLTable       : CODELINETABLE;  (* Таблица соответствия кода и текста *)
+             ModuleTypes   : MODULE_TYPES;   (* Именованные типы модуля            *)
+             ModuleObjects : OBJECTS;        (* Все обьекты модуля                 *)
+             Enumerations  : ENUMERATIONS;   (* Идентификаторы перечислимых типов  *)
+             -- Для инкрементальных форматов
+             DebugInfoReference: xs.STRING;  -- Описание отладочной информации
+             DebugInfoProcessed: BOOLEAN;    -- Отладочная информация прочитана
+           END;
+
+  (* Информация о модулях *)
+  PAModule = POINTER TO ARRAY OF Module;
+
+CONST
+  EmptyModule  = Module{ 0, FALSE, FALSE, 0, FALSE
+                       , NIL, Lng_Unknown, 0, NIL
+                       , EmptyCodeLineTable
+                       , EmptyModuleTypes
+                       , EmptyObjects
+                       , EmptyEnumerations
+                       , NIL, FALSE };
+
+
+
+TYPE
+  INDEX = sys.CARD16;
+
+CONST
+  Invalid_Index = MAX(INDEX);
+
+
+TYPE
+  (* Номер компоненты, нумерация компонент [0..MaxComNo] *)
+  ComNo = CARDINAL;
+
+CONST
+  Invalid_Component = MAX(CARDINAL);
+
+
+TYPE
+  (* Номер модуля, нумерация модулей [1..LastModuleNo] *)
+  (* Номер модуля глобальных объектов - 0              *)
+  ModNo = CARDINAL;
+
+CONST
+  Invalid_Module = MAX(CARDINAL);
+  (* модуля с таким номером не существует *)
+  (* используется для признака ошибки     *)
+
+  Fake_Module = Invalid_Module-1;
+  (* модуля с таким номером не существует                    *)
+  (* используется для доступа к модулю глобальных объектов *)
+
+
+TYPE
+  (* Номер строки модуля, нумерация с нуля *)
+  LineNo = CARDINAL;
+
+CONST
+  Invalid_Line = MAX(CARDINAL);
+  (* строки модуля с таким номером не существует *)
+  (* используется для признака ошибки            *)
+
+
+TYPE
+  POS = RECORD
+          ComN: ComNo;
+          ModN: ComNo;
+        END;
+
+CONST
+  Invalid_Position = POS{Invalid_Component, Invalid_Module};
+
+
+TYPE
+  (* Переменная, метка, процедура представляется как ОБЬЕКТ *)
+  OBJECT = RECORD             (* Ссылка на обьект         *)
+              com : ComNo;    (* Номер компоненты         *)
+              mod : ModNo;    (* Номер модуля             *)
+              rec : CARDINAL; (* Номер в таблице объектов *)
+            END;
+
+CONST
+  (* Признак неправильного обьекта *)
+  Invalid_Object = OBJECT{ MAX(CARDINAL), MAX(CARDINAL), MAX(CARDINAL) };
+
+
+
+
+TYPE
+ PTYPE = R_TYPE;
+
+
+CONST
+  (* Используется как признак неправильного типа *)
+   Invalid_Type = PTYPE(MAX(CARDINAL));
+
+
+TYPE
+  RPROCBEGIN = RECORD
+                 Proc     : OBJECT;
+                 ProcBegin: kt.ADDRESS;
+                 OpCode   : sys.CARD8;
+                 Active   : BOOLEAN;
+               END;
+
+  PAPROCBEGIN = POINTER TO ARRAY OF RPROCBEGIN;
+
+
+TYPE
+  RAW_DEBUG_INFO         = POINTER ["C"] TO ARRAY OF sys.CARD8;
+
+  PROCESS_DEBUGINFO_PROC = PROCEDURE (ComNo, VAR COMPONENT): CARDINAL;
+  BUILD_FOR_MOD          = PROCEDURE (CARDINAL, CARDINAL, VAR COMPONENT);
+
+
+  DEBUG_INFO = RECORD
+                 LastModule   : CARDINAL;       (* Количество загруженных модулей       *)
+                 Modules      : PAModule;       (* Информация о модулях                 *)
+                 KModules     : KEY;            (* Лексикографический ключ по модулям   *)
+                 GlobalObjects: OBJECTS;        (* Все обьекты компоненты               *)
+                 Publics      : PUBLICS;        (* Паблики                              *)
+                 KGSegments   : PAGSEGMENT;     (* Ключ по группам сегментов программы  *)
+                 ProcBeginAddr: PAPROCBEGIN;    (* Procedures begin internal breakpoint *)
+                 Language     : LANGUAGE;       (* Идентификатор языка дял компиненты   *)
+                 (* вычисляется по модулям, причем в порядке Java, Modula, Oberon       *)
+               END;
+
+
+ CONST
+  EmptyDebugInfo = DEBUG_INFO { 0, NIL, NIL
+                              , EmptyObjects
+                              , EmptyPublics
+                              , NIL, NIL
+                              , Lng_Unknown };
+
+TYPE
+  COMPONENT = RECORD
+                Index      : sys.CARD32;
+                Name       : NAME;
+                IsLoadTime : BOOLEAN;
+                EI         : kt.EXEC_INFO;
+                DI         : DEBUG_INFO;
+                raw        : RAW_DEBUG_INFO;
+              END;
+
+
+CONST
+   EmptyComponent = COMPONENT { 0, 0 , FALSE
+                             , kt.EmptyExecInfo
+                             , EmptyDebugInfo
+                             , NIL };
+
+
+TYPE
+  PACOMPONENT = POINTER TO ARRAY OF COMPONENT;
+
+  COMPONENTS = RECORD
+                Components: PACOMPONENT;
+                Count     : CARDINAL;
+              END;
+
+
+
+TYPE
+  (* Определние типов типов *)
+  TYPE_TAG = ( T_Void
+             , Byte
+             , Boolean
+             , Char
+             , Int
+             , Card
+             , Real
+             , Complex
+             , Address
+             , Range
+             , Enum
+             , Pointer
+             , Reference
+             , Class
+             , Set
+             , Procedure
+             , Array
+             , Array_of
+             , Record
+             , OpenArray
+             );
+
+  PTAG         = POINTER TO TYPE_TAG;
+
+  TYPE_TAG_SET = SET OF TYPE_TAG;
+
+  TYPE_TAG_NAME = ARRAY [0..15] OF CHAR;
+
+  TYPE_TAG_NAMES = ARRAY TYPE_TAG OF TYPE_TAG_NAME;
+
+
+CONST
+  TypeTagNames = TYPE_TAG_NAMES { "VOID"
+                                , "BYTE"
+                                , "BOOLEAN"
+                                , "CHAR"
+                                , "INTEGER"
+                                , "CARDINAL"
+                                , "REAL"
+                                , "COMPLEX"
+                                , "ADDRESS"
+                                , "RANGE"
+                                , "ENUM"
+                                , "POINTER"
+                                , "REFERENCE"
+                                , "CLASS"
+                                , "SET"
+                                , "PROCEDURE"
+                                , "ARRAY"
+                                , "DYN ARRAY"
+                                , "RECORD"
+                                , "OPEN ARRAY"
+                                };
+
+
+  FIRST_PRIMITIVE_TYPE  = 0; -- Нельзя менять константу!
+
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+-- Изменения значений нижеперечисленных констант может привести     --
+-- при преобразовании внешнего представления отладочной информации  --
+-- во внутреннее к серьезным ошибкам! Любые изменения нежелательны, --
+-- так как эти константы используются конверторами отладочной       --
+-- информации, которые необходимо будет исправить.                  --
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+-- Это же касается описания типов и обьектов отладочной информации  --
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+
+
+<* IF DEST_K26 THEN *>
+
+  PRIMITIVE_TYPES       = 46;                  (* Кол-во примитивных типов *)
+
+<* ELSE *>
+
+  PRIMITIVE_TYPES       = 39;                  (* Кол-во примитивных типов *)
+
+<* END *>
+
+
+  STD_POINTERS_BEGIN    = PRIMITIVE_TYPES;
+  FIRST_POINTERS_TYPES  = PRIMITIVE_TYPES;
+
+  FIRST_NONPRIMITIVE    = PRIMITIVE_TYPES * 2;
+
+
+  STD_TYPE_VOID         =  0;
+  STD_TYPE_INT8         =  1;
+  STD_TYPE_INT16        =  2;
+  STD_TYPE_INT32        =  3;
+  STD_TYPE_INT64        =  4;
+  STD_TYPE_CARD8        =  5;
+  STD_TYPE_CARD16       =  6;
+  STD_TYPE_CARD32       =  7;
+  STD_TYPE_CARD64       =  8;
+  STD_TYPE_REAL         =  9;
+  STD_TYPE_LONGREAL     = 10;
+  STD_TYPE_LONGLONGREAL = 11;
+  STD_TYPE_COMPLEX      = 12;
+  STD_TYPE_LONGCOMPLEX  = 13;
+  STD_TYPE_BOOLEAN8     = 14;
+  STD_TYPE_BOOLEAN16    = 15;
+  STD_TYPE_BOOLEAN32    = 16;
+  STD_TYPE_CHAR8        = 17;
+  STD_TYPE_CHAR16       = 18;
+  STD_TYPE_CHAR32       = 19;
+  STD_TYPE_ADDRESS      = 20;
+  STD_TYPE_BYTE8        = 21;
+  STD_TYPE_BYTE16       = 22;
+  STD_TYPE_BYTE32       = 23;
+  STD_TYPE_SET8         = 24;
+  STD_TYPE_SET16        = 25;
+  STD_TYPE_SET32        = 26;
+
+ <* IF DEST_K26 THEN *>
+  STD_TYPE_CARDINAL     = PRIMITIVE_TYPES-7;
+  STD_TYPE_SHORTCARD    = PRIMITIVE_TYPES-6;
+  STD_TYPE_INTEGER      = PRIMITIVE_TYPES-5;
+  STD_TYPE_SHORTINT     = PRIMITIVE_TYPES-4;
+
+  STD_TYPE_REAL_F       = PRIMITIVE_TYPES-3;
+  STD_TYPE_REAL_G       = PRIMITIVE_TYPES-2;
+  STD_TYPE_REAL_D       = PRIMITIVE_TYPES-1;
+ <* END *>
+
+
+CONST
+  STD_TYPE_NAME_LENGTH  = 16;
+
+
+TYPE
+  STD_TYPE_NAME = ARRAY [0..STD_TYPE_NAME_LENGTH] OF CHAR;
+  STD_TYPE      = RECORD
+                    Tag   : TYPE_TAG;
+                    Name  : STD_TYPE_NAME;
+                    Length: CARDINAL;
+                  END;
+
+  DEF_STD_TYPES    = ARRAY [0..PRIMITIVE_TYPES-1] OF STD_TYPE;
+  KNAMES_STD_TYPES = ARRAY [0..PRIMITIVE_TYPES-1] OF KEY_INDEX;
+
+CONST
+  STD_TYPES = DEF_STD_TYPES { STD_TYPE { T_Void,    "",              0 }
+                            , STD_TYPE { Int,       "INT8",          1 }
+                            , STD_TYPE { Int,       "INT16",         2 }
+                            , STD_TYPE { Int,       "INT32",         4 }
+                            , STD_TYPE { Int,       "INT64",         8 }
+                            , STD_TYPE { Card,      "CARD8",         1 }
+                            , STD_TYPE { Card,      "CARD16",        2 }
+                            , STD_TYPE { Card,      "CARD32",        4 }
+                            , STD_TYPE { Card,      "CARD64",        8 }
+                            , STD_TYPE { Real,      "REAL",          4 }
+                            , STD_TYPE { Real,      "LONGREAL",      8 }
+                            , STD_TYPE { Real,      "LONGLONGREAL", 10 }
+                            , STD_TYPE { Complex,   "COMPLEX",       8 }
+                            , STD_TYPE { Complex,   "LONGCOMPLEX",  16 }
+                            , STD_TYPE { Boolean,   "BOOLEAN",       1 }
+                            , STD_TYPE { Boolean,   "BOOL16",        2 }
+                            , STD_TYPE { Boolean,   "BOOL32",        4 }
+                            , STD_TYPE { Char,      "CHAR" ,         1 }
+                            , STD_TYPE { Char,      "CHAR16",        2 }
+                            , STD_TYPE { Char,      "CHAR32",        4 }
+                            , STD_TYPE { Address,   "ADDRESS",       4 }
+                            , STD_TYPE { Byte,      "LOC",           1 }
+                            , STD_TYPE { Byte,      "BYTE16",        2 }
+                            , STD_TYPE { Byte,      "BYTE32",        4 }
+                            , STD_TYPE { Set,       "SET8",          1 }
+                            , STD_TYPE { Set,       "SET16",         2 }
+                            , STD_TYPE { Set,       "BITSET",        4 }
+                            , STD_TYPE { Boolean,   "BOOL8",         1 }
+                            , STD_TYPE { Char,      "CHAR8",         1 }
+                            , STD_TYPE { Byte,      "BYTE8",         1 }
+                            , STD_TYPE { Set,       "SET32",         4 }
+
+                            , STD_TYPE { Boolean,   "boolean",       1 }
+                            , STD_TYPE { Int,       "byte",          1 }
+                            , STD_TYPE { Card,      "char",          2 }
+                            , STD_TYPE { Int,       "short",         2 }
+                            , STD_TYPE { Int,       "int",           4 }
+                            , STD_TYPE { Int,       "long",          8 }
+                            , STD_TYPE { Real,      "float",         4 }
+                            , STD_TYPE { Real,      "double",        8 }
+
+                           <* IF DEST_K26 THEN *>
+                            , STD_TYPE { Card,      "CARDINAL",      4 }
+                            , STD_TYPE { Card,      "SHORTCARD",     1 }
+                            , STD_TYPE { Int,       "INTEGER",       4 }
+                            , STD_TYPE { Int,       "SHORTINT",      1 }
+
+                            , STD_TYPE { Real,      "REAL_F",        4 }
+                            , STD_TYPE { Real,      "REAL_G",        8 }
+                            , STD_TYPE { Real,      "REAL_D",        8 }
+                           <* END *>
+                            };
+
+
+
+
+TYPE
+  PTYPE_DATA = POINTER TO TYPE_DATA;
+  TYPE_DATA  = RECORD
+                 Tag  : TYPE_TAG;
+                 Name : R_NAME;
+                 Com  : ComNo;
+                 Mod  : ModNo;
+               END;
+
+  TYPE_RANGE = RECORD
+                 TypeData: TYPE_DATA;
+                 Base    : R_TYPE;
+                 Min, Max: sys.WORD;
+               END;
+
+  TYPE_ARRAY = RECORD
+                 TypeData: TYPE_DATA;
+                 Base    : R_TYPE;
+                 Index   : R_TYPE;
+               END;
+
+  TYPE_ARRAY_OF = RECORD
+                    TypeData: TYPE_DATA;
+                    Base    : R_TYPE;
+                  END;
+
+  TYPE_OPEN_ARRAY = RECORD
+                      TypeData: TYPE_DATA;
+                      Base    : R_TYPE;
+                      Length  : RAW_OBJECT;
+                    END;
+
+  TYPE_POINTER = RECORD
+                   TypeData: TYPE_DATA;
+                   Length  : T_LEN;
+                   Base    : R_TYPE;
+                 END;
+
+  TYPE_REFERENCE = RECORD
+                     TypeData: TYPE_DATA;
+                     Base    : R_TYPE;
+                   END;
+
+  TYPE_SET = RECORD
+               TypeData: TYPE_DATA;
+               Base    : R_TYPE;
+             END;
+
+  TYPE_RECORD = RECORD
+                  TypeData: TYPE_DATA;
+                  Length  : CARDINAL;
+                  Fields  : sys.CARD16;
+                END;
+
+  TYPE_RECORD_FIELD = RECORD
+                        FieldName: R_NAME;
+                        FieldType: R_TYPE;
+                        FieldOffs: CARDINAL;
+                        FieldSTID: SYM_TYPE_ID;;
+                      END;
+
+  TYPE_CLASS = RECORD
+                 TypeData  : TYPE_DATA;
+                 Length    : CARDINAL;
+                 Base      : R_TYPE;
+                 MyMembers : sys.CARD32;
+                 AllMembers: sys.CARD32;
+               END;
+
+  TYPE_ENUM = RECORD
+                TypeData: TYPE_DATA;
+                Base    : R_TYPE;
+                Quantity: sys.CARD16;
+             END;
+
+  TYPE_ENUM_ITEM = RECORD
+                     EnumName : R_NAME;
+                     EnumValue: CARDINAL;
+                   END;
+
+  TYPE_PROCEDURE = RECORD
+                     TypeData   : TYPE_DATA;
+                     ResultType : R_TYPE;
+                     ParamCount : sys.CARD16;
+                     CallingConv: sys.CARD8;
+                   END;
+
+  TYPE_PROCEDURE_PARAM = RECORD
+                           Descrition: sys.CARD8;
+                           Type      : R_TYPE;
+                         END;
+
+  ST_TYPE_NAME = ARRAY [0..24] OF CHAR;
+
+  TYPE_DESC = RECORD
+                name  : ST_TYPE_NAME;
+                fmt   : ARRAY [0..5] OF CHAR;
+                len   : CARDINAL;
+                s_len : CARDINAL;
+                std   : CARDINAL;
+              END;
+
+  ST_TYPES = ARRAY SYM_TYPE_ID OF TYPE_DESC;
+
+CONST
+  Types = ST_TYPES{ TYPE_DESC { 'Original' , ''      , 0,  0,  0               }
+                  , TYPE_DESC { 'Mixed'    , '%$2X'  , 1,  3,  0               }
+                  , TYPE_DESC { 'Byte'     , '%$2X'  , 1,  2,  STD_TYPE_BYTE8  }
+                  , TYPE_DESC { 'Word'     , '%$4X'  , 2,  4,  STD_TYPE_BYTE16 }
+                  , TYPE_DESC { 'DWord'    , '%$8X'  , 4,  8,  STD_TYPE_BYTE32 }
+                  , TYPE_DESC { 'CARD8'    , '%u'    , 1,  3,  STD_TYPE_CARD8  }
+                  , TYPE_DESC { 'CARD16'   , '%u'    , 2,  5,  STD_TYPE_CARD16 }
+                  , TYPE_DESC { 'CARD32'   , '%u'    , 4, 10,  STD_TYPE_CARD32 }
+                  , TYPE_DESC { 'INT8'     , '%i'    , 1,  4,  STD_TYPE_INT8   }
+                  , TYPE_DESC { 'INT16'    , '%i'    , 2,  6,  STD_TYPE_INT16  }
+                  , TYPE_DESC { 'INT32'    , '%i'    , 4, 11,  STD_TYPE_INT32  }
+                  , TYPE_DESC { 'CHAR'     , '%c'    , 1,  0,  STD_TYPE_CARD8  }
+                  , TYPE_DESC { 'Decimal'  , '%u'    , 0,  0,  0               }
+                  , TYPE_DESC { 'Signed'   , '%i'    , 0,  0,  0               }
+                  , TYPE_DESC { 'Hex'      , '0%XH'  , 0,  0,  0               }
+                  , TYPE_DESC { 'Octal'    , '%oB'   , 0,  0,  0               }
+                  , TYPE_DESC { 'Binary'   , '%$8bI' , 0,  0,  0               }
+                  , TYPE_DESC { 'Deference', ''      , 0,  0,  0               }
+                  , TYPE_DESC { 'Inside'   , ''      , 0,  0,  0               }                  };
+
+
+CONST
+  AtomicTypes  = TYPE_TAG_SET{ Byte, Boolean, Char, Int, Card, Real };
+
+VAR
+  Components    : COMPONENTS;
+  KNamesStdTypes: KNAMES_STD_TYPES; (* Ключ по именам стандартных типов     *)
+
+END DI_Types.
+

@@ -1,0 +1,28 @@
+DEFINITION MODULE Def_Thrs;
+
+IMPORT lnx := Linux;
+
+TYPE
+ <* IF TARGET_x86 THEN *>
+  ACCESS_BREAKS = ARRAY [1..4] OF BOOLEAN;
+ <* END *>
+
+  THREAD = RECORD
+             Handle      : lnx.THANDLE;
+--             ID          : lnx.TID;
+            <* IF TARGET_x86 THEN *>
+             AccessBreaks: ACCESS_BREAKS; (* Debug registers, Used or free *)
+            <* END *>
+           END;
+
+  PTHREAD = POINTER TO THREAD;
+
+
+CONST
+  InitialAccessBreaks = ACCESS_BREAKS {FALSE, FALSE, FALSE, FALSE};
+--  InitialThread = THREAD {0, MAX(lnx.TID), InitialAccessBreaks};
+--  InitialThread = THREAD {NIL, MAX(lnx.TID), InitialAccessBreaks};
+--  InitialThread = THREAD {{0, 0, 0}, InitialAccessBreaks};
+  InitialThread = THREAD {NIL, InitialAccessBreaks};
+
+END Def_Thrs.

@@ -1,0 +1,18 @@
+-- Интерпретация команд языка пакетной отладки.
+
+DEFINITION MODULE PckOpers;
+
+TYPE
+  (* Процедура, реализующая оператор *)
+  OPERATOR_PROC = PROCEDURE (): CARDINAL;
+
+(* Исполнить строку; RC - код возврата оператора *)
+(* Вернет TRUE - если строка исполнялась         *)
+(* warning - при наличии лишних парамтров        *)
+PROCEDURE Execute (line: ARRAY OF CHAR; VAR RC: CARDINAL; VAR warning: BOOLEAN): BOOLEAN;
+
+PROCEDURE IsOperator (name: ARRAY OF CHAR): BOOLEAN;
+
+PROCEDURE GetCurrentPos(): CARDINAL;
+
+END PckOpers.

@@ -1,0 +1,57 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+DEFINITION MODULE [2] time;
+
+FROM SYSTEM IMPORT int, size_t, ADDRESS;
+
+<* IF __GEN_C__ THEN *>
+<*$< GENTYPEDEF- *>
+<* END *>
+TYPE
+  tm = RECORD
+         tm_sec   : int;
+         tm_min   : int;
+         tm_hour  : int;
+         tm_mday  : int;
+         tm_mon   : int;
+         tm_year  : int;
+         tm_wday  : int;
+         tm_yday  : int;
+         tm_isdst : int;
+       END;
+<*$>*>
+
+TYPE
+  clock_t;
+  time_t;
+
+PROCEDURE asctime(VAR t: tm): ADDRESS;
+(* returns pointer to string Tue Aug 12:00:00 1999 \n 0c *)
+
+PROCEDURE clock(): clock_t;
+(* no of clock after start process *)
+
+PROCEDURE ctime(VAR t: time_t): ADDRESS;
+(* returns pointer to string Tue Aug 12:00:00 1999 \n 0c *)
+
+PROCEDURE difftime(time2,time1: time_t): LONGREAL;
+
+PROCEDURE gmtime(VAR t: time_t): ADDRESS;
+(* any t converts to pointer to tm *)
+
+PROCEDURE localtime(VAR t: time_t): ADDRESS;
+(* t (time() ) converts to pointer to tm *)
+
+PROCEDURE mktime(VAR t: tm): time_t;
+(* converts tm to time *)
+
+PROCEDURE time(VAR t: time_t): time_t;
+(* returns time in second *)
+
+PROCEDURE strftime(VAR s: ARRAY OF CHAR; maxsize: size_t;
+		  format: ARRAY OF CHAR; VAR t: tm): size_t;
+
+END time.

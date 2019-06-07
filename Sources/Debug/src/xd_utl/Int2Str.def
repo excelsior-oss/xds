@@ -1,0 +1,8 @@
+-- Операции над 64-битными целыми числами
+
+DEFINITION MODULE Int2Str;
+
+-- Преобразование числа в строку
+PROCEDURE IntToStr (signed: BOOLEAN; Hi, Lo: CARDINAL; VAR s: ARRAY OF CHAR);
+
+END Int2Str.

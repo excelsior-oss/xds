@@ -1,0 +1,1118 @@
+\chapter{Checking your program for errors}
+\label{osa}
+
+The amount of resources required to debug and thoroughly test a program
+grows exponentially as the size of the program grows.
+To help you reduce it, XDS includes a error checker, which is based 
+on the XDS compiler construction framework and uses powerful data flow 
+analysis algorithms to detect potential run-time errors {\em statically}, 
+i.e. without program execution.
+
+{\bf Note:} In the current version of this chapter it is assumed that the host 
+platform is Windows.
+
+
+\section{Overview}
+\label{osa:overview}
+
+The static error checker OSA checks \ot{} and \mt{} programs for run-time 
+errors by analysing the source code. The checker is able to detect
+all kinds of violations of \mt{} and \ot{} dynamic semantics,
+which are typically found (or not found) during debugging and testing stages
+of development.
+
+OSA also checks the analysed program for violations of well organized 
+program criteria. Of course, violations of these criteria are not errors,
+but they often indicate other program weaknesses that may be errors. 
+
+Some (but not all) of the erroneous situation types in a program that OSA
+is able to detect are listed below:
+\begin{itemize}
+\item usage of an uninitialized variable 
+\item dereference of a pointer whose value is \verb'NIL' in
+      "\verb'<designator>^'" constructs
+\item assignment of a variable whose value is never used
+\item type guard violation
+\item usage of a dead variable (a variable that was already deallocated)
+\item unreachable branches in statements \verb'IF', \verb'CASE', and \ot{} 
+      \verb'WITH'
+\item always true (or always false) operands in constructs like
+      "\verb'<Expr1> OR <Expr2>'" and "\verb'<Expr1> AND <Expr2>'"
+\item procedure without exit
+\item \verb'ASSERT' condition is always false
+\item overflow (underflow) in arithmetic operators and type
+      transfers
+\item array index is out of bounds
+\item division by zero
+\item \verb'FOR' loop repeats zero times
+\item \verb'ALLOCATE' or \verb'NEW' is used to create an array whose length is 
+      less than or equal to zero
+\end{itemize}
+
+Actually, this is a typical list of erroneous situations that an ordinary
+error checker, e.g. for the C language, can detect. But OSA has two
+important advantages:
+\begin{enumerate}
+\item OSA distinguishes between a definite error, a warning, and a
+      doubtful situation. In the latter case, OSA produces a message called 
+      "conditional error" that in practice appear to indicate an error
+      in approximately one case from five.
+
+\item OSA performs context-sensitive data flow analysis, so it is able to
+      recognize an error that shows itself for some calls of the 
+      procedure containing it, but does not for other calls. 
+      Thus, OSA handles situations of high complexity.
+\end{enumerate}
+
+Data-flow analysis performed by OSA requires a considerable amount of
+time and memory. If your program causes OSA to exhaust the resources 
+of your computer, you may wish to read the section \ref{osa:speedup}, which
+describes how to speedup analysis in exchange for its quality.
+
+OSA was originally developed at the Institute of Informatics Systems,
+Novosibirsk, Russia, by Vladimir I. Shelekhov (\verb'vshel@iis.nsk.su') and
+Sergey V. Kuksenko (\verb'sergic@iis.nsk.su').
+
+\section{The OSA environment}
+\label{osa:env}
+
+OSA is based on the XDS compiler construction framework,
+and inherits the user interface of XDS compilers.
+XDS compiler configuration, control files, operation modes,
+options and equations, etc., are fully applicable to OSA.
+Refer to chapters \ref{config}, \ref{usage}, and \ref{options}
+for more information.
+
+Similarly to an XDS compiler environment, the OSA environment consists of
+the executable file, {\tt osa\Exe{}}, and a set of system files: 
+\verb'osa.red', \verb'osa.cfg', and \verb'osa.msg'. The \verb'showmsg.exe' 
+utility may be used to transmit OSA messages into XDS environment 
+(Windows only).
+
+You may wish to create subdirectories \verb'msg', \verb'sym', \verb'irf', 
+and \verb'lst' for analyser output files in your working directory. 
+You may continue to translate programs that reside in that directory 
+with an XDS compiler.
+
+A \See{redirection file}{}{xc:red}, \verb'osa.red', defines directories
+in which OSA seeks and creates files of variuos types. The most important
+are your program source files and XDS library files. \verb'osa.red' must 
+reside in the directory that is the current directory when you start OSA.
+If there is no redirection file in the current directory,
+the {\it master redirection file} is read from
+the directory in which the OSA executable resides.
+
+An OSA redirection file example is shown below:
+
+\begin{verbatim}
+*.msg  = c:\xds\bin
+*.cfg  = c:\xds\bin
+*.prj  = prj 
+*.sym  = sym; c:\xds\sym\x86
+*.def  = def; c:\xds\def\iso; c:\xds\def\ts
+*.mod  = mod
+*.ob2  = oberon; appl
+*.mes  = msg
+*.lst  = lst
+*.grf  = lst
+*.irf  = irf
+\end{verbatim}
+
+According to this file, OSA will search for \ot{} modules 
+in the subdirectories \verb'oberon' and \verb'appl' of the current directory, 
+for \mt{} definition modules --- in the \verb'def' subdirectory 
+and in XDS system directories, \verb'C:\XDS\DEF\ISO' and \verb'C:\XDS\DEF\TS',
+and so on. The OSA message listing for a program will be written to the
+file \verb'msg\<main module name>.mes'.
+
+The analyser may be set up so that it will save the partially analysed
+intermediate representation of the program to file and then will
+terminate (see \ref{osa:speedup:save}). The default extension for these 
+files is \verb'irf', and this redirection file forces OSA to place
+them into the subdirectory \verb'irf'.
+
+The \See{procedure call graph}{}{osa:graph} of a program is written to 
+the \verb'lst' subdirectory if the option \OERef{GRAPH} is ON.
+
+\subsection{Symbol files}
+\label{osa:env:sym}
+
+Symbol files for program modules are created and/or read when a program is
+translated by the XDS \mt{}/\ot{} front-end, which is part of OSA.
+As a result, the analyzer may read symbol files that were created by an
+XDS compiler\footnote{Provided that the compiler is built in the same mode
+(normal, trial, or demo) and uses the same version of the front-end.}.
+
+The equation \OERef{SYM} (sybmol file extension)
+may be used to help you better distinguish between OSA symbol 
+files and your XDS compiler symbol files. For instance, to
+have the extension \verb'osm' to be used for OSA symbol files,
+add the line
+
+\verb'    -sym=osm'
+
+to your \verb'osa.cfg' file. Now, to have these files placed
+into the \verb'osa_sym' subdirectory, add  the line
+
+\verb'    *.osm = osa_sym;' 
+
+to your \verb'osa.red' file.
+
+
+\section{Starting OSA}
+\label{osa:start}
+
+Generally, OSA is invoked like an XDS compiler. All XDS
+\See{operation modes}{}{xc:modes}, except GEN, BROWSE, and BATCH,
+may be used. The \Ref{ALL}{xc:modes:all} submode is always assumed.
+The error checker recognizes all XDS options and equations that are
+not specific to a particular code generator.
+
+{\bf Note:} The option \OERef{MAIN} has to be set ON (inline or in the 
+command line) for the main \ot{} module.
+
+If your program consists of a single module, OSA can be invoked 
+in the \Ref{COMPILE}{xc:modes:compile} mode:
+\index{osa\Exe{}@{osa\Exe{}}}
+
+\verb'    osa [=c] <source file name> [<options and equations>]'
+
+If your program includes several modules but has no
+project file, use the \Ref{MAKE}{xc:modes:make} mode:
+
+\verb'    osa =m <top-level module file> [<options and equations>]'
+
+Finally, if your program includes several modules and has a
+project file, use the \Ref{PROJECT}{xc:modes:project} mode:
+
+\verb'    osa =p <project file name> [<options and equations>]'
+
+A project file example is presented below:
+
+\begin{verbatim}
+-graph+         % OSA option
+-o2extensions+  % Modula-2/Oberon-2 front-end options
+-m2extensions+
+-m2addtypes+
+!module Start.mod
+\end{verbatim}
+
+Given the main module of a program, OSA searches for other
+modules according to XDS make strategy, using paths specified
+in the redirection file and \OERef{LOOKUP} equations. 
+If the source text of a module cannot be found using search
+paths, then at least the correspondent symbol file 
+must be present. To produce a symbol file for a module, 
+use the command line like
+
+\verb'    osa <module name> +msym'
+
+
+\section{Analysed configuration}
+\label{osa:anconf}
+
+Upon startup, the analyser builds the analysed configuration of the 
+specified program, using the redirection file and \OERef{LOOKUP} equations.
+An analysed configuration may be the whole program or some part of it
+and includes procedures (and module bodies) called from the main module 
+or from top procedures (see section \ref{osa:speedup:part}). 
+If the source code of a module is not available to OSA, then procedures
+of this module are called {\em external procedures} and variables
+exported from this module are called {\em external variables}.
+
+{\bf Note:} The term "external procedure" shall not be mixed with
+the XDS language extension that allows to declare procedures as external
+(see \ref{multilang:extproc}).
+
+An analysed configuration should have the least possible number of external
+entities, because data flow analysis of external entities has to be
+very rough to be true.
+
+{\bf Note:} In \ot{} programs, if the analysed configuration includes a 
+call of a method for the object \verb'Obj', then all procedures, 
+bodies of which contain calls include calls \verb'NEW(Obj)' or 
+assignment statements that assign values to \verb'Obj', must be 
+also included in the analysed configuration. 
+Otherwise data flow analysis results will be incorrect.
+
+
+\section{Analysis phases and stages}
+\label{osa:phases}
+
+The analyser processes your program in several passes: 
+
+\begin{enumerate}
+\item Creation of the XDS intermediate representation
+      of your program by the XDS \mt{}/\ot{} front-end.
+\item Conversion of the XDS intermediate representation to the OSA 
+      intermediate representation.
+\item Data flow analysis
+\item Error analysis
+\end{enumerate}
+
+In turn, data flow analysis in OSA consists of the following phases:
+
+\begin{tabular}{ll}
+\bf CI  &  context-insensitive analysis \\
+\bf CIF &  CI phase finalization        \\
+\bf CS  &  context-sensitive analysis   \\
+\bf CSF &  CS phase finalization        \\
+\bf VC  &  value calculation
+\end{tabular}
+
+Each phase consists of a sequence of {\em stages}. 
+A stage is a minimal independent step of analysis.
+Stages are sequentially numbered through all phases.
+
+You may explicitly terminate an analysis phase at a specific stage
+by substituting the number of that stage into the 
+\OERef{CUT} equation, or interactively by
+pressing the {\bf Esc} key (see section \ref{osa:speedup}). 
+This will cut off parts of the program that were not analysed yet
+for the remaining phases.
+
+Finalization phases were introduced for correct cleanup after 
+an explicit cutoff of an analysis phase.
+If the analysis phase was not cut off, the respective finalization
+phase is not invoked. So it is recommended not to cut off
+a finalization phase.  
+
+Sometimes, if the CI phase was failed due to lack of resources,
+the option \OERef{CI} can be of help. If this option is set OFF,
+data flow analysis is started with the CS phase.
+
+If the VC option is set OFF, the VC phase will be omitted.
+This feature may be used, for instance, if OSA crashes during this
+phase.
+
+The Error analysis part of OSA consists of the following phases:
+
+\begin{tabular}{ll}
+\bf EP  &  preliminary analysis         \\
+\bf EU  &  analysis of variable usages  \\
+\bf EM  &  message printing             \\
+\end{tabular}
+
+There are the following modes of the EU phase:
+\begin{itemize}
+\item FULL  -  full analysis (by default)
+\item ROUGH -  simplified analysis that is less precise but needs less 
+               resources 
+\item NONE  -  EU phase is omitted 
+\end{itemize}
+
+Desirable mode of the EU phase may be chosen by the equation \OERef{EU}. 
+
+
+\section{Procedure call graph output}
+\label{osa:graph}
+
+If the option \OERef{GRAPH} is set ON, the analyser outputs the procedure
+call graph when data flow analysis finishes or is terminated using
+one of the equations \OERef{CUT}, \OERef{SAVE}, or \OERef{SAVE\_MEM},
+or intercatively.
+
+If the program being passed through OSA is large or complicated, 
+data flow analysis may slow down drastically at some stage 
+due to lack of resources. The procedure call graph may help you 
+understand which procedures cause the difficulties.
+
+There are two sections in a procedure call graph file.
+The first part shows, for each procedure, which procedures are 
+called in its body. The second part shows, for each procedure, 
+from what procedures it may be called.
+
+Each procedure belongs to a certain {\em layer}. 
+Procedures in the layer 0 call no other procedures.
+A procedure $P$ that belong to the layer $N$, may call 
+a procedure belonging to a layer whose number is less than $N$ 
+(or is equal to $N$ if the procedure $P$ is recursive).
+
+A procedure layer in the first section of a procedure call graph
+has the following structure: 
+
+\begin{verbatim}
+ ----------------------- LAYER N ----------------------
+ <list of procedure names>
+ <calls in the body of the first procedure>
+ ............................................ and so on
+ <calls in the body of the last procedure>
+\end{verbatim}
+
+In the \verb'<list of procedure names>' the name of a procedure that
+is already processed by OSA is followed by two numbers: the number of
+contexts and the number of variables in the collected data flow information
+for this procedure. The second number strongly correlates
+with the amount of memory required for analysis of the procedure.
+If the number of contexts is in the range 200-400 or above (this may happen 
+for a recursive procedure) then, as a rule, the analysis of such 
+procedure is slow. The equation \OERef{ONE} may be used to speedup
+analysis of such procedures (see \ref{osa:speedup}).
+
+In the begining of the first section, the external procedures 
+(see \ref{osa:anconf}) are showed. The OSA analysis will be drastically
+slow and inprecise if the second number in brackets is high for some
+external procedure.
+
+In the second section of a procedure call graph each line 
+has the following structure:
+ 
+\verb'    <procedure name> <-- <list of calling procedures>'
+
+Each call in the \verb'<list of calling procedures>' is 
+
+\verb'    <procedure name> ( <line number>, <column number> )'
+
+A fragment of a procedure call graph is shown below.
+
+\begin{verbatim}
+ ----------------------- LAYER 7 ----------------------
+ slP.openOut(15,121) slP.boolExpr(4,455)! 
+     slP.openOut-->slP.warning,ManagerDesc:xiFi.Open;  
+     slP.boolExpr-->slP.Value!,slK.push,slK.fatal!;  
+\end{verbatim}
+
+It shows which procedures are called from procedures \verb'slP.openOut' 
+and \verb'slP.boolExpr', which belong to layer 7 of the call graph. 
+The number of contexts for \verb'slP.openOut' is 15; the number of 
+variable definitions (assignments) is 121. The respective values for 
+\verb'slP.boolExpr' are 4 and 455.
+
+%!!! Continue explanations
+
+The token \verb'"!"' indicates procedures whose analysis has not been 
+finished yet. In the above fragment, procedures \verb'slP.Value', 
+\verb'slK.fatal', and, as a result, \verb'slP.boolExpr' are still
+processed by data flow analysis. This may give you some idea on
+the progress of data flow analysis.
+
+In the second part of a procedure call graph file, calls to 
+each procedure are shown. For instance, if you want to find out
+from where the procedure \verb'Value' is called, search for the string
+"\verb'Value<--'" in the call graph file. 
+You might find a string like:
+
+\verb'    slP.Value<--slP.boolExpr(351,14), slP.Cbra(341,4), slH.Binar() ' 
+
+which indicates that procedures \verb'slP.boolExpr', \verb'slP.Cbra',
+and \verb'slH.Binar' have calls to \verb'Value' in their bodies,
+but only procedures \verb'slP.boolExpr' and \verb'slP.Cbra' were processed 
+by data flow analysis, because coordinates of calls are shown in brackets
+only for these two procedures. The procedure \verb'slH.Binar' did not  
+undergo data flow analysis yet.
+
+
+\section{How to speedup OSA analysis}
+\label{osa:speedup}
+
+If data flow analysis exhausts the resources of your system,
+or takes too much time, you may use one or more of
+the following techniques:
+
+\begin{itemize}
+\item Use the equation \OERef{SAVE} to have OSA save the partially
+      analysed program to file after the given analysis stage
+      is finished. Then, invoke OSA again specifying the equation
+      \OERef{READ} to continue analysis (see section \ref{osa:speedup:save}).
+\item Any analysis phase may be explicitly terminated after the
+      given stage is finished using the equation \OERef{CUT}.
+      The remaining phases will work only on the program part
+      that has been processed by the terminated phase (see section \ref{osa:speedup:cut}). 
+\item A well closed part of a program (based on one or a few procedures) 
+      may be independently passed through OSA (see section \ref{osa:speedup:part}).
+\item Use the equation \OERef{ONE} to analyse specific
+      procedures context-insensitive mode only (see section \ref{osa:speedup:nocsa}).
+\end{itemize}
+
+To have the names of procedures processed in data flow analysis
+displayed on the screen, use the option \OERef{SHOW}.
+
+These features may be activated interactively by pressing the {\bf Esc}
+key during OSA execution (Windows only) when analysis phases
+are working. If you press {\bf Esc} when data flow analysis is working, 
+then after the end of the current analysis stage the following menu
+will be written to the screen:
+
+\begin{verbatim}
+ANALYSIS INTERRUPTED!
+(S) - save intermediate file and terminate
+(C) - cut off non-analysed part of the program and skip to next phase
+(G) - output procedure call graph to file
+(H) - toggle progress indicator
+(N) - continue analysis
+(F) - terminate immediately
+\end{verbatim}
+
+If you type "g", OSA outputs the current procedure call graph to
+a file (see \ref{osa:graph}), and then redisplays the menu. 
+You may now look at the call call graph in another window and 
+then make your choice.
+
+If you type "h", OSA triggers the option \OERef{SHOW}, and then
+redisplays the menu. To see the names of procedures processed by
+data flow analysis, switch this option ON.
+
+OSA is written in the \ot{} language, which integral memory management relies 
+on garbage collection. However, the garbage collector is off by default,
+so that it does not slow down the analyser. If you notice increased
+swapping activity during analysis, terminate OSA and turn on garbage 
+collection by specifying the equations \OERef{COLLECTMIN} and 
+\OERef{COLLECTMAX} in the OSA configuration file, \verb'osa.cfg':
+
+\verb'    -CollectMin = 110' \\
+\verb'    -CollectMax = 127' 
+
+In this example, garbage collection will be invoked after the current analysis 
+stage is finished, if the amount of memory allocated by the analyser is
+in the range 110-127 megabytes. This range is close to optimal for 
+a system with 128M RAM running under OS/2 Warp version 3. 
+We recommend to put this range close to the amount of available physical memory
+before you start OSA, but you'll have to experiment until you find suitable values
+for your system.
+
+
+\subsection{Analysing part of a program}
+\label{osa:speedup:part}
+
+Part of a program, defined by one or more procedures, 
+may be independently analysed by using the equation \OERef{TOP}.
+
+Type 
+
+\verb'    osa =p <project file name> -top=<procedure list>, '
+
+where 
+{\samepage
+\begin{verbatim}
+<procedure list> ::= 
+          <procedure> |
+          <procedure list>;<procedure>
+<procedure> ::= 
+          <ordinary procedure> |
+          <type-bound procedure>
+<ordinary procedure> ::= 
+          <module name>.<procedure name>
+<type-bound procedure> ::= 
+          <module name>.<type name>::<procedure name>
+\end{verbatim}
+} % \samepage
+
+Note that blanks and commas are not permitted inside a \verb'<procedure list>'.
+For \ot{} type-bound procedures the name of the respective pointer type 
+or the name of the record type may be used.
+
+When the equation \OERef{TOP} is specified, the analysed configuration
+is built as if the top-level module of the program contained only calls
+to the given procedures, with unknown values of parameters, so
+it consists of these procedures and all procedures that may be 
+reached from them during execution.
+
+{\bf Note:} It is a user's responsibility to ensure that the
+resulting analysed configuration is {\em well closed}.
+This means that variables declared in imported modules are 
+not changed by modules that are not included in the analysed configuration. 
+
+
+\subsection{Saving a partially analysed program to file}
+\label{osa:speedup:save}
+
+A partially analysed intermediate representation of a program may be
+saved to file after any stage using the \OERef{SAVE} equation.
+To continue analysis, the \OERef{READ} equation shall be used when
+the analyser is invoked next time.
+
+For instance, if the main program module is named \verb'Main', and 
+the project name is \verb'MainProj', the command line
+
+\verb'    osa =p MainProj -save=456 '
+
+would save the intermediate representation to file \verb'Main_456.irf'
+after completion of the analysis stage number 456. To continue analysis, 
+type 
+
+\verb'    osa -read=Main_456'
+
+The amount of memory required to load a previously saved partially 
+analysed program is typically much less than was allocated before 
+it was saved. So this feature may be used to decrease OSA memory 
+requirements.
+
+There are three special values of the \OERef{SAVE} equation.
+Specifying \verb'-save=last' causes the analysed program to be saved after
+completion of data flow analysis. \verb'-save=first', caused it to be saved
+right before data flow analysis. \verb'-save=check', caused it to be saved
+after completion of the EU phase of the Error analysis 
+(see section \ref{osa:phases}). 
+
+The equation \OERef{SAVE\_MEM} may be used to save a partially analysed 
+program to file if the amount of allocated memory exceeds the given
+value (in megabytes) after completion of the current analysis stage.
+
+
+\subsection{Excluding program parts from subsequent phases}
+\label{osa:speedup:cut}
+
+An analysis phase may be explicitly terminated using the equation 
+\OERef{CUT} or interactively by pressing the {\bf Esc} key.
+The current phase will be terminated after completion of the
+specified stage. The part of the program that has not been
+processed during this stage is cut off; the subsequent phases 
+will process only the remaining part.
+
+There is one special value of the \OERef{CUT} equation. If you type 
+
+\verb'    osa -read=<file> -cut=now' 
+
+then after reading the partially program from "\verb'file'", 
+the current phase will be terminated, and the next analysis 
+phase will be started.
+
+
+\subsection{Simplified analysis of procedures}
+\label{osa:speedup:nocsa}
+
+It may happen that data flow analysis works a very long time
+at some stage. A possible cause is the constantly growing number of contexts
+for some (usually recursive) procedures. This may be confirmed
+by studying the procedure call graph after the current analysis stage
+(see section \ref{osa:graph}).
+
+If the above appears to be the case, the equation \OERef{ONE} may be used 
+in the next invocation of OSA to specify the list of procedures
+that have to be analysed context-insensitively. 
+The structure of a procedure list is described in section \ref{osa:speedup:part}.
+Analysis will be faster but rough for listed procedures.
+
+To have the names of procedures processed in data flow analysis
+displayed on the screen, use the option \OERef{SHOW}.
+
+
+\subsection{Turning off context-insensitive analysis}
+\label{osa:speedup:nocia}
+
+If the option \OERef{CI} option is set OFF, the CI analysis phase 
+will be skipped and data flow analysis will be started from the CS phase
+(see \ref{osa:phases}).
+This may help if the CI phase fails due to lack of resources.
+
+
+\subsection{Turning off analysis of variable usage}
+\label{osa:speedup:noeua}
+
+Setting the equation \OERef{EU} to \verb'ROUGH' causes the analysis of 
+variable usage to be performed in simplified mode using less resourses.
+Setting it to \verb'NONE' completely disables the EU phase of the 
+Error analysis. See section \ref{osa:phases} for more information.
+
+This may help if the Error analysis fails due to lack of memory.
+
+
+\section{OSA messages}
+\label{osa:msg}
+
+{\samepage
+Let's run the example program \verb'weak2' (below) through OSA by typing
+the following string: 
+
+\verb'    osa weak2.ob2'
+
+This will produce a message file \verb'weak2.mes' in the approriate 
+directory.
+
+\begin{verbatim}
+1  MODULE weak2;
+2    IMPORT M;
+3    TYPE p_rec= POINTER TO RECORD field: INTEGER END;
+4    VAR X,Y:   p_rec;
+5    VAR i,j,k: INTEGER;
+6    PROCEDURE F(Z:p_rec);
+7    BEGIN  Z^.field:=k+1  END F;
+8  BEGIN
+9    NEW(X); NEW(Y);
+10   M.G(i,i+1);
+11   IF i=0 THEN F(X); M.G(j,j+1) ELSIF i>0 THEN F(Y) END;
+12 END weak2.
+\end{verbatim}
+} %\samepage
+
+
+\subsection{Message modes}
+\label{osa:msg:modes}
+
+A message listing produced by OSA includes error messages,
+conditional error messages and warnings. An
+error message corresponds to an absolute error; 
+the error site in source code is reached for
+every execution of a program. An error site for a conditional
+error is nested inside a control statement that may alter execution flow,
+such as \verb'IF', \verb'CASE', or \verb'WHILE'.
+A conditional error turns to the actual error if error site is
+reached for any execution of program. This depends on the values of
+conditions in the \verb'IF', \verb'CASE', etc. statements that lead to 
+error site.
+
+The resulting OSA message listing includes the following messages: 
+
+{\footnotesize
+\begin{verbatim}
+################### Unassigned Variables (ABSOLUTE ERRORS) #################
+
+[E] (t/weak2.ob2 10,9) variable i not assigned
+      M.G(i,i$+1);
+
+################# Unassigned Variables (CONDITIONAL ERRORS) ################
+
+[C] (t/weak2.ob2 7,20) variable k not assigned
+      BEGIN  Z^.field:=k$+1  END F;
+[C] (t/weak2.ob2 11,27) variable j not assigned
+      IF i=0 THEN F(X); M.G(j,j$+1) ELSIF i>0 THEN F(Y) END;
+\end{verbatim}
+} % \footnotesize
+
+The first message reports an absolute error because the
+expression \verb'i=0' is always calculated when the program is executed.
+The third message indicates a conditional error, because the condition 
+\verb'j>0' is inside an \verb'IF' statement so it is possible that it will not
+be calculated during program execution (if the value of \verb'i' is zero).
+The second message is also conditional. Even though the statement 
+\verb'Z^.field:=k+1' in the body of the procedure \verb'F' is not 
+nested inside an \verb'IF', \verb'CASE', or another control statement,
+both calls to \verb'F' are nested inside an \verb'IF' statement. 
+So this is an actual error only if \verb'(i=0) OR (j>0)' is true
+during execution of \verb'weak2'. 
+
+
+\subsection{Variables}
+
+The message listing for the above example program \verb'weak2' also
+includes the following message: 
+
+{\footnotesize
+\begin{verbatim}
+######################## UNUSABLE VARIABLES (Strong) #######################
+
+[W] (t/weak2.ob2 7,17) variables $new0.field,$new1.field assigned but not
+   used
+      BEGIN  Z^.field$:=k+1  END F;
+  #DEREFERENCES Z^=$new0,$new1!
+  #DECLARATIONS $new0:(9,2) $new1:(9,10) Z:(6,14)
+\end{verbatim}
+} % \footnotesize
+
+This warning reports that the values of variables \verb'$new0.field' and
+\verb'$new1.field' are not used in program \verb'weak2', and so
+the assignment \verb'Z^.field :=  k+1' to these variables is superfluous.
+
+Variables \verb'$new0' and \verb'$new1' denote heap variables generated after
+execution of statements \verb'NEW(X)' and \verb'NEW(Y)', respectively. 
+That is, \verb'X^=$new0' and \verb'Y^=$new1'. 
+
+The section \verb'#DEREFERENCES' in the message shows the values of
+dereferenced variables which constitute target variable of the
+assignment statement. For the target variable \verb'Z^.field', variables
+\verb'$new0' and \verb'$new1' are showed as the values of variable \verb'Z'. 
+
+The symbol "\verb'!'", located at the end of the \verb'#DEREFERENCES' section, 
+indicates that both variables \verb'$new0' and \verb'$new1' were recognized 
+as obligatory (must-) values of \verb'Z'.
+The symbol "\verb'?'" in that position would mean that 
+variables after the symbol "\verb'?'" were recognized 
+as possible (may-) values of  \verb'Z'.
+
+In the \verb'#DECLARATIONS' section, coordinates (line and column numbers)
+of the variable declaration in the source code are shown for each variable
+from the \verb'#DEREFERENCES' section.
+
+
+\subsection{Contexts}
+
+A {\em context} of a procedure \verb'F' is a subset of the full set of
+call chains to the procedure \verb'F' from the body of the main program 
+module or from \See{top procedures}{}{osa:speedup:part}.
+Let us illustrate the notion of context 
+on the example program \verb'weak3' below. 
+
+\begin{verbatim}
+1  MODULE weak3;
+2    TYPE p_rec= POINTER TO RECORD field: INTEGER END;
+3    VAR X,Y,U:   p_rec;
+4    VAR i,k:     INTEGER; 
+5 
+6    PROCEDURE F(Z:p_rec);
+7    BEGIN  Z^.field:=k+1  END F;
+8
+9    PROCEDURE G(R:p_rec);
+10   BEGIN  IF k#0 THEN F(R) END END G;
+11 BEGIN
+12   NEW(X); NEW(Y);
+13   IF i=0 THEN F(X) ELSE G(Y) END;
+14   G(U);
+15 END weak3.
+\end{verbatim}
+
+The full set of call chains to the procedure \verb'F' (that is the
+full context) is the following: 
+
+\verb'     $body_weak3(13,14)' $\rightarrow$ \verb'F' \\
+\verb'     $body_weak3(13,24)' $\rightarrow$ \verb'G(10,21)' $\rightarrow$ \verb'F' \\
+\verb'     $body_weak3(14,2) ' $\rightarrow$ \verb'G(10,21)' $\rightarrow$ \verb'F'
+
+Each OSA message holds only within the context given in the \verb'#CONTEXT' 
+section of the message. If the \verb'#CONTEXT' section is
+not present, the message holds for all possible call chains.
+
+A context containing a single call chain 
+
+\verb'    $body_weak3(14,2) -> G(10,21) -> F' 
+
+is used in the following message: 
+
+{\footnotesize
+\begin{verbatim}
+######## NIL pointer dereference & type guard (CONDITIONAL ERRORS) #########
+
+[C] (t/weak3.ob2 7,10) NIL pointer dereference for variable Z
+      BEGIN  Z$^.field:=k+1  END F;
+  #CONTEXT F(7,10) <- G(10,21?) <- $body_weak3(14,2)
+\end{verbatim}
+} % \footnotesize
+
+It means that this message is valid when the procedure \verb'F' is
+called from the procedure \verb'G' at position (10,21), 
+and \verb'G', in turn, is called from the body of the module \verb'weak3'
+at position \verb'(14,2)'.
+
+The symbol "\verb'?'" in \verb'G(10,21?)' means that the indicated call of 
+\verb'F' in the body of \verb'G' is under condition. 
+
+A context including two call chains is defined in the message below. 
+
+{\footnotesize
+\begin{verbatim}
+[W] (t/weak3.ob2 7,17) variable $new0.field,$new1.field assigned but not used
+      BEGIN  Z^.field$:=k+1  END F;
+  #DEREFERENCES Z^=$new0,$new1!
+  #DECLARATIONS $new0:(12,2) $new1:(12,10) Z:(6,14) 
+  #CONTEXT F(7,17) <- G(10,21?) <- $body_weak3(13,24?)
+      # F(7,17) <- $body_weak3(13,14?)
+\end{verbatim}
+} % \footnotesize
+
+In general case, a context is described by a tree-like chain of calls.
+Each new branch of the tree begins with the symbol '\verb'#'" followed by a
+procedure call entered before. 
+
+
+\subsection{Variable denotations}
+\label{osa:msg:var}
+
+The variable name modes used in OSA message list are described
+below.
+
+\begin{verbatim}
+<variable name> ::= 
+          <variable identifier> |
+          <heap variable> |
+          <variable name>.<field name> |
+          <variable name>[] |
+          <previous instance of variable> |
+          <external variable denotation> |
+          ~<variable name> |
+          <temporary variable>
+\end{verbatim}
+
+If \verb'A' is a name of an array variable. \verb'A[]' denotes an arbitrary
+element or the array \verb'A'. \verb'~A' denotes a local variable \verb'A'
+after return from from the procedure containing it, when the address of
+\verb'A' is the value of a pointer variable which is global
+relative to that procedure. 
+
+\begin{verbatim}
+<heap variable> ::= 
+          $new<number of NEW or ALLOCATE statement>
+<number of NEW or ALLOCATE statement> ::=  <integer> 
+<previous instance of variable> ::= 
+          <variable identifier>' |
+          <heap variable>' 
+\end{verbatim}
+
+Name \verb'$newK' denotes a variable generated by the \verb'K'-th occurrence of
+a call to the \verb'ALLOCATE' procedure (when the option \OERef{ALLOCATE} 
+is ON) or to the \verb'NEW' procedure in source code. 
+Any previous instance of a variable generated before by the same 
+\verb'NEW' or \verb'ALLOCATE' statement is denoted by \verb"$newK'". 
+
+In the example program below, after execution of the statement
+\verb'NEW(n)', the variable \verb'n' points to a heap variable \verb'$new0' 
+\verb'(n^=$new0)'. If the variable \verb'list' is not equal to \verb'NIL'
+on line 10 (that is when \verb'i' is greater than one), the variable 
+\verb'list' points to \verb'$new0' generated in the previous call of
+the procedure \verb'to_list', and hence \verb"list^=$new0'". 
+
+\begin{verbatim}
+1  MODULE previous;
+2  TYPE pList = POINTER TO List;
+3       List = RECORD elem:INTEGER; next:pList END;
+4  VAR list: pList; i: INTEGER;
+5
+6  PROCEDURE to_list(elem:INTEGER);
+7    VAR n: pList;
+8  BEGIN
+9    NEW(n); n.elem:=elem;
+10   IF list#NIL THEN n.next:=list END;
+11   list:=n;
+12 END to_list;
+13
+14 BEGIN FOR i:=1 TO 8 DO to_list(i) END
+15 END previous.
+\end{verbatim}
+
+If \verb'z' be a variable identifier declared in a recursive procedure
+\verb'F', then \verb'z' denotes that variable for the current call
+of \verb'F' and \verb"z'" denotes the same variable in any previous 
+recursive call.
+
+\begin{verbatim}
+<external variable denotation> ::= #<type name>
+\end{verbatim}
+
+A variable declared beyond the analysed configuration of a program
+is called an external variable. A pointer variable that receives its value as
+a result of execution of an external procedure (a procedure whose body is 
+not included in the analysed configuration), is assumed to point to an
+an external variable. Such variables are denoted by \verb'#T'
+where \verb'T' is the name of the pointer base type.
+
+\begin{verbatim}
+<temporary variable> ::= 
+          $temp_<number of WITH statement> |
+          $agr_<number of array or record constructor> 
+\end{verbatim}
+
+A temporary variable is created by data flow analyser for each
+\mt{} \verb'WITH' statement, and for each occurrence of
+an array or record constructor in the source code. 
+
+
+\section{OSA options}
+\label{osa:options}
+
+All XDS compiler options not specific to a particular back-end
+may be used with OSA. See Chapter \ref{options} for more information.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|c|l|}
+\hline
+\bf Option  & \bf Default & \bf Meaning \\
+\hline
+\OERef{GRAPH}        & OFF & enable procedure call graph output \\
+\OERef{CLOSED}       & ON  & assume well closed configuration \\
+\OERef{ALLOCATE}     & ON  & assume standard heap manager \\
+\OERef{SHOW}         & OFF & print names of analysed procedures \\
+\OERef{MSYM}         & OFF & only make symbol files \\
+\OERef{FIELD\_ALIAS} & OFF & assume variant field aliasing \\
+\OERef{CI}           & ON  & enable context-insensitive phase \\
+\OERef{CV}           & ON  & enable value calculation phase \\
+\hline
+\end{tabular}
+\end{center}
+\caption{OSA options}
+\label{table:opt:osa}
+\index{options!OSA}
+\end{table}
+
+\ifonline \else
+\begin{description}
+\fi
+\OptHead{GRAPH}{enable procedure call graph output}
+
+        Setting this option ON enables procedure call graph output
+        after end of the data flow analysis. See section \ref{osa:graph}
+        for more information.
+
+        This option is OFF by default.
+
+\OptHead{CLOSED}{assume well closed configuration}
+ 
+        If this option is set ON, OSA assumes that the part of the 
+        program being analysed is well closed for used \mt{} modules.
+
+        This option is ON by default.
+
+        See section \ref{osa:speedup:part} for more information.
+
+\OptHead{ALLOCATE}{assume standard heap manager}
+
+        If this options is set ON, the analyser assumes that the
+        procedure \verb'ALLOCATE' used in the program is declared in
+        the standard module \verb'Storage'. This may significantly improve 
+        analysis results.
+
+        This option is ON by default.
+
+\OptHead{SHOW}{print names of analysed procedures}
+
+        Setting this option ON enables output of the names of procedures
+        processed by data flow analysis to the screen.
+
+        This option is OFF by default.
+
+        See sections \ref{osa:speedup:cut} and \ref{osa:speedup}.
+
+\OptHead{MSYM}{only make symbol files} 
+
+        This option, when set ON, causes OSA to terminate immediately 
+        after creation of the XDS internal representation of your program.
+        Use it if you only need to create a symbol
+        file for some module.
+
+        This option is OFF by default.
+
+        See section \ref{osa:start}. 
+
+\OptHead{FIELD\_ALIAS}{assume variant field aliasing} \inline
+
+        If this option is set OFF, the analyser treats fields of
+        variant parts of \mt{} record types as if they were non-overlapping. 
+        This does not affect analysis correctness, provided that in no event
+        the program accesses a variant field different from what was assigned 
+        last, and the quality of analysis is better.
+        Set this option ON inline for types that do not fall into the above 
+        category.
+
+        This option is OFF by default.
+   
+\OptHead{CI}{enable context-insensitive phase}
+
+        Setting this option OFF forces the analyser to omit the
+        context-insensitive phase of analysis and proceed
+        directly to the context-sensitive phase,
+        like it was in OSA versions 0.33 and below.
+
+        This option is ON by default.
+
+        See section \ref{osa:phases}. 
+
+\OptHead{CV}{enable value calculation phase}
+
+        Setting this option OFF disables the value calculation phase
+        of analysis.
+
+        This option is ON by default.
+
+        See section \ref{osa:phases}.
+
+\ifonline \else
+\end{description}
+\fi
+
+
+\section{OSA equations}
+\label{osa:equations}
+
+All XDS compiler equations not specific to a particular back-end
+may be used with OSA. See chapter \ref{options} for more information.
+
+\ifonline \else
+\begin{description}
+\fi
+\EquHead{TOP}{fake top-level module}
+
+        Use this equation to specify a list of procedures that
+        are to be used as starting call graph nodes when selecting the part
+        of program to analyse. By default, the main module body
+        is the starting node of the call graph.
+
+        See section \ref{osa:speedup:part} for more information.
+
+\EquHead{SAVE\_MEM}{memory limit}
+
+        The analysed program is saved after the stage that caused OSA
+        to exceed the specified amount of memory. Then, the
+        \OERef{READ} equation can be used then to continue analysis.
+
+        See section \ref{osa:speedup:save} for more information.
+
+\EquHead{CUT}{data flow analysis stop stage number}
+
+        If specified, this equation causes data flow analysis to stop
+        after stage with the given number. \havetowrite
+
+        See section \ref{osa:speedup:save} for more information.
+
+\EquHead{SAVE}{data flow analysis save stage number}
+
+        When the analysis stage with the specified number is finished,
+        the analysed program is saved into a file.
+
+        See sections \ref{osa:env} and \ref{osa:speedup:save}. 
+
+\EquHead{READ}{continue a prefiously saved analysis}
+
+        If specified, this equation forces OSA to read a partially
+        analysed program from the given file, previously saved by
+        using the \OERef{SAVE} equation or the \OERef{SAVE\_MEM} equation.
+        The data-flow analysis is then continued
+
+        See also section \ref{osa:speedup:save}. 
+
+\EquHead{ONE}{analyse given procedures context-insensitively}
+
+        Only the context-insensitive data flow analysis is applied 
+        to listed procedures, if any. Use this feature to speedup
+        analysis in exchange for its accuracy.
+
+        See also section \ref{osa:speedup}. 
+
+\EquHead{EU}{analysis mode of EU phase}
+
+        Set this equation to \verb'NONE' to disable the EU (variable usage)
+        phase of the Error analysis. Set it to \verb'ROUGH' to simplify 
+        analysis in that phase. The default setting is \verb'FULL'.
+
+        See also sections \ref{osa:phases} and \ref{osa:speedup:noeua}
+
+
+\EquHead{INIT}{default value for variables}
+
+        By default the initial values of all variables are undefined. 
+        Using this equation, you may significantly improve
+        the value calculation analysis done by OSA.
+
+\EquHead{COLLECTMIN}{minimal amount of memory for garbage collection}
+
+        The minimal amount of allocated memory, in megabytes, that
+        causes the garbage collector to be invoked after the current
+        analysis stage is completed.
+
+        See section \ref{osa:speedup}. 
+
+\EquHead{COLLECTMAX}{maximum amount of memory for garbage collection}
+
+        The maximum amount of allocated memory, in megabytes, that
+        causes the garbage collector to be invoked after the current
+        analysis stage is completed.
+
+        See section \ref{osa:speedup}. 
+
+\EquHead{MSGEXT}{message file extension}
+
+        Specifies an extension for OSA message list files.
+        By default, the extension \verb'mes' is used.
+
+\EquHead{IRFEXT}{intermediate file extension}
+
+        Specifies an extension for intermediate analysis files.
+        By default, the extension \verb'irf' is used.
+
+\EquHead{GRFEXT}{call graph file extension}
+
+        Specifies an extension for output files that contain
+        procedure call graphs.
+        By default, the extension \verb'grf' is used.
+
+\ifonline \else
+\end{description}
+\fi
+

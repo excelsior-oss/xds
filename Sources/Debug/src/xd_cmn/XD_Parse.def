@@ -1,0 +1,10 @@
+-- Разбор параметров командной строки.
+-- Модуль является системо-зависимым.
+
+DEFINITION MODULE XD_Parse;
+
+(* Разбор командной строки *)
+PROCEDURE ParseCommandLine (VAR help: BOOLEAN): BOOLEAN;
+
+END XD_Parse.
+

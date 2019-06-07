@@ -1,0 +1,98 @@
+<* +M2EXTENSIONS *>
+DEFINITION MODULE xDevData; (* Hady. 13.06.96 13:46 *)
+
+IMPORT  SYSTEM, xlibOS, IOLink, ChanConsts, xmRTS;
+
+TYPE
+  Object = IOLink.DeviceTablePtr;
+  FlagSet = ChanConsts.FlagSet;
+  OpenResults = ChanConsts.OpenResults;
+
+CONST
+  BUFSIZE = 256;
+
+TYPE
+  BufMode = (   (* mode of file buffering *)
+    bmDefault,  (* one of three of following, depending on handle type *)
+    bmFull,     (* full buffering, requires SEEK operation allowed; type=regular file *)
+    bmLine,     (* write buffering, flush upon EndOfLine or read request; type=character device *)
+    bmNone);    (* no buffering, direct I/O; type=pipe, unknown *)
+
+TYPE
+  FileName = POINTER TO ARRAY OF CHAR;
+  Buffer = POINTER TO ARRAY [0..BUFSIZE-1] OF SYSTEM.BYTE;
+  DevData = POINTER TO DevDataRec;
+  IO_OP = PROCEDURE(DevData,SYSTEM.ADDRESS,CARDINAL,VAR CARDINAL): INTEGER;
+  UNGETC_OP = PROCEDURE(DevData,CHAR);
+  FLUSH_OP = PROCEDURE(DevData): INTEGER;
+  DevDataRec = RECORD
+    cf: xlibOS.X2C_OSFHANDLE;
+    fwd : DevData;
+    bck : DevData;
+    name: FileName;
+    flags: FlagSet;
+    tags: BITSET;
+
+    bread : IO_OP;         (* buffering read  *)
+    bwrite: IO_OP;         (* buffering write *)
+
+    read : IO_OP;          (* text converting read      *)
+    write: IO_OP;          (* text converting write     *)
+    ungetc: UNGETC_OP;     (* text converting ungetchar *)
+    flush: FLUSH_OP;
+
+    buf : Buffer;          (* file buffer                               *)
+    bpos: CARDINAL;        (* current char in the buffer                *)
+    blen: CARDINAL;        (* length of valid information in the buffer *)
+    spos: xlibOS.X2C_FPOS; (* starting position of the buffer           *)
+
+    ubuf: ARRAY [0..7] OF CHAR;  (* buffer for ungetc       *)
+    ucnt: CARDINAL;              (* ungetc'ed chars counter *)
+
+    <* IF multithread THEN *>
+      lock: xmRTS.X2C_MUTEX;
+    <* END *>
+  END;
+
+PROCEDURE MakeName(VAR fn: FileName; name: ARRAY OF CHAR; VAR res: OpenResults);
+(* Makes zero-terminated dynamic string; for convenience... *)
+PROCEDURE UnMakeName(VAR fn: FileName);
+
+PROCEDURE Open(x: Object;
+            file: xlibOS.X2C_OSFHANDLE;
+            name: FileName;
+           flags: FlagSet;
+           bmode: BufMode;   (* SetPos/GetPos operations assumed *)
+         VAR res: OpenResults);
+
+
+PROCEDURE ForbidAll(x: Object);
+
+PROCEDURE SetMode(x: Object; input: BOOLEAN);
+
+PROCEDURE GetDevData(x: Object): DevData;
+
+PROCEDURE GetDID(VAR d: IOLink.DeviceId);
+
+PROCEDURE Close(x: Object);
+
+PROCEDURE HardError(x: Object; res: SYSTEM.WORD);
+PROCEDURE SoftError(x: Object; res: SYSTEM.WORD);
+
+(* Folowing procedures are applicable to objects opened with rnd=TRUE only *)
+(* They also may rize softDeviceError exception *)
+PROCEDURE CurrentPos(x: Object; VAR pos: xlibOS.X2C_FPOS);
+PROCEDURE Length(x: Object; VAR pos: xlibOS.X2C_FPOS);
+PROCEDURE SetPos(x: Object; pos: xlibOS.X2C_FPOS);
+
+(* Sets file position according to the real position of the file.
+   Returns true on success or false on errors.
+   This usage scenario is the following:
+   1) one calls Flush on the stdout/stderr objects
+   2) executes several processes that may write something to stdout/stderr streams
+   3) update current position of the stdout/stderr objects
+   Note: this function does nothing if the buffer is not empty.
+*)
+PROCEDURE SynchronizePos(x: Object): BOOLEAN;
+
+END xDevData.

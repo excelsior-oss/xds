@@ -1,0 +1,337 @@
+<* M2EXTENSIONS+ *>
+<* IF BACKEND = "C" THEN *>
+  <* CSTDLIB+ *>
+  <* NOHEADER+ *>
+<* END *>
+
+DEFINITION MODULE ["StdCall"] WinRTL;
+
+<* IF BACKEND # "C" THEN *>
+
+IMPORT SYSTEM;
+FROM Windows IMPORT RESOURCESTRA, RESOURCESTRW, ATOMSTR, ATOMWSTR, ATOM,
+                    BYTE, WORD, DWORD, HGLOBAL, POINT, BOOL, ULONG,
+                    WPARAM, LPARAM, HWND, PSTR, PWSTR, HMENU, HINSTANCE,
+                    PBYTE, WS_SET, DLGPROC, DLGTEMPLATE, WCHAR, CWP_SET,
+                    GW_ENUM, HCURSOR, HLOCAL, COLORREF, POINTS, PVOID, LPCVOID, ROP, ROP4,
+                    LANGID, LCID, HANDLE, CHAR_ATTRIBUTES_SET,
+                    RECT, CHAR_INFO, COORD, SMALL_RECT, PCSTR, PCWSTR, PCSMALL_RECT,
+                    OVERLAPPED, SOCKET, fd_set, timeval, in_addr;
+
+(* ------------------ General section ---------------------- *)
+
+PROCEDURE MyInstance () : HINSTANCE;
+PROCEDURE MAKEINTRESOURCEA (x : INTEGER) : RESOURCESTRA;
+PROCEDURE MAKEINTRESOURCEW (x : INTEGER) : RESOURCESTRW;
+PROCEDURE MAKEINTATOMA (x : ATOM) : ATOMSTR;
+PROCEDURE MAKEINTATOMW (x : ATOM) : ATOMWSTR;
+
+PROCEDURE GetPSTR  (x : ARRAY OF CHAR) : PSTR;
+PROCEDURE GetPWSTR (x : ARRAY OF WCHAR) : PWSTR;
+
+PROCEDURE max (a, b : INTEGER) : INTEGER;
+PROCEDURE min (a, b : INTEGER) : INTEGER;
+PROCEDURE MAKEWORD (lo, hi : BYTE) : WORD;
+PROCEDURE MAKELONG (lo, hi : WORD) : DWORD;
+PROCEDURE LOWORD (x : DWORD) : WORD;
+PROCEDURE HIWORD (x : DWORD) : WORD;
+PROCEDURE LOBYTE (x : WORD) : BYTE;
+PROCEDURE HIBYTE (x : WORD) : BYTE;
+
+(* ----------------- WinBase section ----------------------- *)
+
+PROCEDURE GlobalDiscard (h : HGLOBAL) : HGLOBAL;
+PROCEDURE LocalDiscard (h : HLOCAL) : HLOCAL;
+PROCEDURE HasOverlappedIoCompleted (VAR Overlapped : OVERLAPPED) : BOOL;
+
+(* ----------------- WinUser section ----------------------- *)
+
+PROCEDURE ExitWindows (dwReserved : DWORD; Code : INTEGER) : BOOL;
+PROCEDURE POINTSTOPOINT (VAR pt : POINT; pts : LPARAM);
+PROCEDURE POINTTOPOINTS (pt : POINT) : LPARAM;
+PROCEDURE CreateWindowA (ClassName  : ATOMSTR;
+                         WindowName : ARRAY OF CHAR;
+                         Style : WS_SET;
+                         X, Y, Width, Height : INTEGER;
+                         hWndParent : HWND;
+                         hNenu : HMENU;
+                         hInstance : HINSTANCE;
+                         Param : PBYTE
+                        )
+                           : HWND;
+PROCEDURE CreateWindowW (ClassName  : ATOMWSTR;
+                         WindowName : ARRAY OF WCHAR;
+                         Style : WS_SET;
+                         X, Y, Width, Height : INTEGER;
+                         hWndParent : HWND;
+                         hNenu : HMENU;
+                         hInstance : HINSTANCE;
+                         Param : PBYTE
+                        )
+                           : HWND;
+
+PROCEDURE CreateDialogA (hInstance : HINSTANCE;
+                         TemplateName : RESOURCESTRA;
+                         Parent : HWND;
+                         lpDialogFunc : DLGPROC) : HWND;
+
+PROCEDURE CreateDialogW (hInstance : HINSTANCE;
+                         TemplateName : RESOURCESTRW;
+                         Parent : HWND;
+                         lpDialogFunc : DLGPROC) : HWND;
+
+PROCEDURE CreateDialogIndirectA (hInstance : HINSTANCE;
+                                 Template : DLGTEMPLATE;
+                                 Parent : HWND;
+                                 DialogFunc : DLGPROC) : HWND;
+
+PROCEDURE CreateDialogIndirectW (hInstance : HINSTANCE;
+                                 Template : DLGTEMPLATE;
+                                 Parent : HWND;
+                                 DialogFunc : DLGPROC) : HWND;
+
+PROCEDURE DialogBoxA (hInstance : HINSTANCE;
+                      TemplateName : RESOURCESTRA;
+                      Parent : HWND;
+                      lpDialogFunc : DLGPROC) : INTEGER;
+
+PROCEDURE DialogBoxW (hInstance : HINSTANCE;
+                      TemplateName : RESOURCESTRW;
+                      Parent : HWND;
+                      lpDialogFunc : DLGPROC) : INTEGER;
+
+PROCEDURE DialogBoxIndirectA (hInstance : HINSTANCE;
+                              Template : DLGTEMPLATE;
+                              Parent : HWND;
+                              DialogFunc : DLGPROC) : INTEGER;
+
+PROCEDURE DialogBoxIndirectW (hInstance : HINSTANCE;
+                              Template : DLGTEMPLATE;
+                              Parent : HWND;
+                              DialogFunc : DLGPROC) : INTEGER;
+
+PROCEDURE CharUpper1A (s : CHAR)  : CHAR;
+PROCEDURE CharUpper1W (s : WCHAR) : WCHAR;
+PROCEDURE CharLower1A (s : CHAR)  : CHAR;
+PROCEDURE CharLower1W (s : WCHAR)  : WCHAR;
+
+PROCEDURE rtlMenuItemFromPoint (hWnd : HWND; hMenu : HMENU; pt : POINT) : INTEGER;
+PROCEDURE rtlDragDetect (hwnd : HWND; pt : POINT) : BOOL;
+PROCEDURE rtlWindowFromPoint (pt : POINT) : HWND;
+PROCEDURE rtlChildWindowFromPoint (Parent: HWND; pt : POINT) : HWND;
+PROCEDURE rtlChildWindowFromPointEx (Parent : HWND; pt : POINT; flags : CWP_SET) : HWND;
+PROCEDURE rtlPtInRect (Rect : RECT; pt : POINT) : BOOL;
+
+PROCEDURE GetWindowPtrA (hWnd : HWND; Index : INTEGER) : SYSTEM.ADDRESS;
+PROCEDURE GetWindowPtrW (hWnd : HWND; Index : INTEGER) : SYSTEM.ADDRESS;
+PROCEDURE SetWindowPtrA (hWnd : HWND; Index : INTEGER; NewLong : SYSTEM.ADDRESS) : SYSTEM.ADDRESS;
+PROCEDURE SetWindowPtrW (hWnd : HWND; Index : INTEGER; NewLong : SYSTEM.ADDRESS) : SYSTEM.ADDRESS;
+
+PROCEDURE CopyCursor (hCursor : HCURSOR) : HCURSOR;
+
+(* ----------------- WinGDI section ----------------------- *)
+
+PROCEDURE MAKEROP4 (fore, back : ROP) : ROP4;
+PROCEDURE GetCValue (cmyk : COLORREF) : BYTE;
+PROCEDURE GetMValue (cmyk : COLORREF) : BYTE;
+PROCEDURE GetYValue (cmyk : COLORREF) : BYTE;
+PROCEDURE GetKValue (cmyk : COLORREF) : BYTE;
+PROCEDURE CMYK (c,m,y,k : BYTE) : COLORREF;
+PROCEDURE MAKEPOINTS (l : DWORD) : POINTS;
+PROCEDURE RGB (r,g,b : BYTE) : COLORREF;
+PROCEDURE PALETTERGB   (r,g,b : BYTE) : COLORREF;
+PROCEDURE PALETTEINDEX (i : BYTE) : COLORREF;
+PROCEDURE GetRValue (rgb : COLORREF) : BYTE;
+PROCEDURE GetGValue (rgb : COLORREF) : BYTE;
+PROCEDURE GetBValue (rgb : COLORREF) : BYTE;
+
+(* ----------------- WinError section --------------------- *)
+
+PROCEDURE SUCCEEDED (Status : ULONG) : BOOL;
+PROCEDURE FAILED (Status : ULONG) : BOOL;
+PROCEDURE IS_ERROR (Status : ULONG) : BOOL;
+PROCEDURE HRESULT_CODE (hr : ULONG) : ULONG;
+PROCEDURE SCODE_CODE (sc : ULONG) : ULONG;
+PROCEDURE HRESULT_FACILITY (hr : ULONG) : ULONG;
+PROCEDURE SCODE_FACILITY (sc : ULONG) : ULONG;
+PROCEDURE HRESULT_SEVERITY (hr : ULONG) : BOOL;
+PROCEDURE SCODE_SEVERITY (sc : ULONG) : BOOL;
+PROCEDURE MAKE_HRESULT (sev : BOOL; fac : ULONG; code : ULONG) : ULONG;
+PROCEDURE MAKE_SCODE (sev : BOOL; fac : ULONG; code : ULONG) : ULONG;
+PROCEDURE HRESULT_FROM_WIN32 (x : ULONG) : ULONG;
+PROCEDURE HRESULT_FROM_NT (x : ULONG) : ULONG;
+PROCEDURE GetScode (hr : ULONG) : ULONG;
+PROCEDURE ResultFromScode (sc : ULONG) : ULONG;
+PROCEDURE PropagateResult (hrPrevious : ULONG; scBase : ULONG) : ULONG;
+
+(* ----------------- WinNT section ----------------------- *)
+
+PROCEDURE MAKELANGID    (primary, sublang : WORD) : LANGID;
+PROCEDURE PRIMARYLANGID (id : LANGID) : WORD;
+PROCEDURE SUBLANGID (id : LANGID) : WORD;
+PROCEDURE MAKELCID (lgid : LANGID; srtid : WORD) : LCID;
+PROCEDURE LANGIDFROMLCID (lcid : LCID) : LANGID;
+PROCEDURE SORTIDFROMLCID (lcid : LCID) : LANGID;
+
+PROCEDURE RtlCopyMemory (Destination : PVOID;
+                         Source : LPCVOID;
+                         Length : DWORD);
+
+(* ----------------- WinCon section ---------------------- *)
+
+PROCEDURE rtlReadConsoleOutputA (hConsoleOutput : HANDLE;
+                                 VAR Buffer     : ARRAY OF CHAR_INFO;
+                                 dwBufferSize   : COORD;
+                                 dwBufferCoord  : COORD;
+                                 VAR ReadRegion : SMALL_RECT) : BOOL;
+
+PROCEDURE rtlReadConsoleOutputW (hConsoleOutput : HANDLE;
+                                 VAR Buffer     : ARRAY OF CHAR_INFO;
+                                 dwBufferSize   : COORD;
+                                 dwBufferCoord  : COORD;
+                                 VAR ReadRegion : SMALL_RECT) : BOOL;
+
+PROCEDURE rtlWriteConsoleOutputA (hConsoleOutput  : HANDLE;
+                                  Buffer          : ARRAY OF CHAR_INFO;
+                                  dwBufferSize    : COORD;
+                                  dwBufferCoord   : COORD;
+                                  VAR WriteRegion : SMALL_RECT) : BOOL;
+
+PROCEDURE rtlWriteConsoleOutputW (hConsoleOutput  : HANDLE;
+                                  Buffer          : ARRAY OF CHAR_INFO;
+                                  dwBufferSize    : COORD;
+                                  dwBufferCoord   : COORD;
+                                  VAR WriteRegion : SMALL_RECT) : BOOL;
+
+
+PROCEDURE rtlReadConsoleOutputCharacterA (hConsoleOutput : HANDLE;
+                                          VAR Character  : ARRAY OF CHAR;
+                                          nLength        : DWORD;
+                                          dwReadCoord    : COORD;
+                                          VAR NumberOfCharsRead : DWORD) : BOOL;
+
+PROCEDURE rtlReadConsoleOutputCharacterW (hConsoleOutput : HANDLE;
+                                          VAR Character  : ARRAY OF WCHAR;
+                                          nLength        : DWORD;
+                                          dwReadCoord    : COORD;
+                                          VAR NumberOfCharsRead : DWORD) : BOOL;
+
+PROCEDURE rtlReadConsoleOutputAttribute (hConsoleOutput        : HANDLE;
+                                         VAR Attribute         : ARRAY OF CHAR_ATTRIBUTES_SET;
+                                         nLength               : DWORD;
+                                         dwReadCoord           : COORD;
+                                         VAR NumberOfAttrsRead : DWORD) : BOOL;
+
+PROCEDURE rtlWriteConsoleOutputCharacterA (hConsoleOutput : HANDLE;
+                                           lpCharacter    : PCSTR;
+                                           nLength        : DWORD;
+                                           dwWriteCoord   : COORD;
+                                           VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+PROCEDURE rtlWriteConsoleOutputCharacterW (hConsoleOutput : HANDLE;
+                                           lpCharacter    : PCWSTR;
+                                           nLength        : DWORD;
+                                           dwWriteCoord   : COORD;
+                                           VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+PROCEDURE rtlWriteConsoleOutputAttribute (hConsoleOutput : HANDLE;
+                                          Attribute      : ARRAY OF CHAR_ATTRIBUTES_SET;
+                                          nLength        : DWORD;
+                                          dwWriteCoord   : COORD;
+                                          VAR NumberOfAttrsWritten : DWORD) : BOOL;
+
+PROCEDURE rtlFillConsoleOutputCharacterA (hConsoleOutput : HANDLE;
+                                          cCharacter     : CHAR;
+                                          nLength        : DWORD;
+                                          dwWriteCoord   : COORD;
+                                          VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+PROCEDURE rtlFillConsoleOutputCharacterW (hConsoleOutput : HANDLE;
+                                          cCharacter     : WCHAR;
+                                          nLength        : DWORD;
+                                          dwWriteCoord   : COORD;
+                                          VAR NumberOfCharsWritten : DWORD) : BOOL;
+
+PROCEDURE rtlFillConsoleOutputAttribute (hConsoleOutput : HANDLE;
+                                         wAttribute     : CHAR_ATTRIBUTES_SET;
+                                         nLength        : DWORD;
+                                         dwWriteCoord   : COORD;
+                                         VAR NumberOfAttrsWritten : DWORD) : BOOL;
+
+PROCEDURE rtlGetLargestConsoleWindowSize (hConsoleOutput : HANDLE) : COORD;
+
+PROCEDURE rtlSetConsoleScreenBufferSize (hConsoleOutput : HANDLE;
+                                         dwSize         : COORD) : BOOL;
+
+PROCEDURE rtlSetConsoleCursorPosition (hConsoleOutput   : HANDLE;
+                                         dwCursorPosition : COORD) : BOOL;
+
+PROCEDURE rtlScrollConsoleScreenBufferA (hConsoleOutput      : HANDLE;
+                                         ScrollRectangle     : SMALL_RECT;
+                                         ClipRectangle       : PCSMALL_RECT;
+                                         dwDestinationOrigin : COORD;
+                                         Fill                : CHAR_INFO) : BOOL;
+
+PROCEDURE rtlScrollConsoleScreenBufferW (hConsoleOutput      : HANDLE;
+                                         ScrollRectangle     : SMALL_RECT;
+                                         ClipRectangle       : PCSMALL_RECT;
+                                         dwDestinationOrigin : COORD;
+                                         Fill                : CHAR_INFO) : BOOL;
+
+(* ----------------- CommDlg section ----------------------- *)
+
+PROCEDURE CommDlg_OpenSave_GetSpecA        (hdlg : HWND; psz : PSTR;   cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_GetSpecW        (hdlg : HWND; psz : PWSTR;  cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_GetFilePathA    (hdlg : HWND; psz : PSTR;   cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_GetFilePathW    (hdlg : HWND; psz : PWSTR;  cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_GetFolderPathA  (hdlg : HWND; psz : PSTR;   cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_GetFolderPathW  (hdlg : HWND; psz : PWSTR;  cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_GetFolderIDList (hdlg : HWND; pidl : PVOID; cbmax : INTEGER) : INTEGER;
+PROCEDURE CommDlg_OpenSave_SetControlText  (hdlg : HWND; id : INTEGER; text : PSTR) : INTEGER;
+PROCEDURE CommDlg_OpenSave_HideControl     (hdlg : HWND; id : INTEGER);
+PROCEDURE CommDlg_OpenSave_SetDefExt       (hdlg : HWND; ext : PSTR);
+
+(* ----------------- WinSock section --------------------- *)
+
+PROCEDURE FD_CLR     (fd : SOCKET; VAR set : fd_set);
+PROCEDURE FD_SET     (fd : SOCKET; VAR set : fd_set);
+PROCEDURE FD_ZERO    (VAR set : fd_set);
+PROCEDURE timerisset (VAR tvp : timeval) : BOOL;
+
+PROCEDURE timergt    (tvp, uvp : timeval) : BOOL;
+PROCEDURE timerlt    (tvp, uvp : timeval) : BOOL;
+PROCEDURE timerequ   (tvp, uvp : timeval) : BOOL;
+
+PROCEDURE timerclear (VAR tvp : timeval);
+PROCEDURE IN_CLASSA  (i : ULONG) : BOOL;
+PROCEDURE IN_CLASSB  (i : ULONG) : BOOL;
+PROCEDURE IN_CLASSC  (i : ULONG) : BOOL;
+PROCEDURE rtl_inet_ntoa (in : in_addr) : PSTR;
+
+
+(* ----------------- MMSystem section -------------------- *)
+
+PROCEDURE MAKEFOURCC (ch0, ch1, ch2, ch3 : BYTE) : DWORD;
+PROCEDURE MEVT_EVENTTYPE (x : DWORD) : BYTE;
+PROCEDURE MEVT_EVENTPARM (x : DWORD) : DWORD;
+
+PROCEDURE MCI_MSF_MINUTE  (msf : DWORD) : BYTE;
+PROCEDURE MCI_MSF_SECOND  (msf : DWORD) : BYTE;
+PROCEDURE MCI_MSF_FRAME   (msf : DWORD) : BYTE;
+PROCEDURE MCI_MAKE_MSF    (m, s, f : BYTE) : DWORD;
+PROCEDURE MCI_TMSF_TRACK  (tmsf : DWORD) : BYTE;
+PROCEDURE MCI_TMSF_MINUTE (tmsf : DWORD) : BYTE;
+PROCEDURE MCI_TMSF_SECOND (tmsf : DWORD) : BYTE;
+PROCEDURE MCI_TMSF_FRAME  (tmsf : DWORD) : BYTE;
+PROCEDURE MCI_MAKE_TMSF   (t, m, s, f : BYTE) : DWORD;
+PROCEDURE MCI_HMS_HOUR    (hms : DWORD) : BYTE;
+PROCEDURE MCI_HMS_MINUTE  (hms : DWORD) : BYTE;
+PROCEDURE MCI_HMS_SECOND  (hms : DWORD) : BYTE;
+PROCEDURE MCI_MAKE_HMS    (h, m, s : BYTE) : DWORD;
+
+PROCEDURE DIBINDEX (n : WORD) : DWORD;
+
+<* END *>
+
+END WinRTL.
+

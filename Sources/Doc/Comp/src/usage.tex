@@ -1,0 +1,888 @@
+% !!! XRef for operation modes
+
+\chapter{Using the compiler}\label{usage}
+
+\section{Invoking the compiler}
+
+The \xds{} \mt{} and \ot{} compilers are combined together with
+the make subsystem and an \ot{} browser into a single
+utility, \xc{}. When invoked without parameters, the utility outputs
+a brief help information.
+
+\xc{} is invoked from the command line of the following form
+\index{\XC{}\Exe{}@{\XC{}\Exe{}}}
+
+\verb'    '\xc{}\verb' { mode | option | name }'
+
+where \verb'name', depending on the operation \verb'mode' can be
+a module name, a source file name, or a project file name.
+See \ref{xc:modes} for a full description of operation modes.
+
+\verb'option' is a compiler setup directive (See \ref{config:options}).
+All options are applied to all operands, notwithstanding their relative order
+on the command line. On some platforms, it may be
+necessary to enclose setup directives in quotation marks:
+
+\verb'    '\xc{}\verb" hello.mod '-checkindex+'"
+
+See Chapter \ref{options} for the list of all compiler options
+and equations.
+
+\subsection{Precedence of compiler options}\label{precedence}
+\index{option precedence}
+\index{precedence of options}
+
+The \xc{} utility receives its options in the following order:
+\begin{enumerate}
+\item         from a configuration file {\bf \cfg} (See \ref{config:cfg})
+\item         from the command line (See \ref{xc:modes})
+\item         from a project file (if present) (See \ref{xc:project})
+\item         from a source text (not all options can be used there)
+              (See \ref{m2:pragmas})
+\end{enumerate}
+
+At any point during operation, the last value of an option is
+in effect. Thus, if the equation \OERef{OBERON} was set to {\bf.ob2} in a
+configuration file, but then set to {\bf.o2} on the command line, the
+compiler will use {\bf.o2} as the default \ot{} extension.
+
+\section{\XDS{} compilers operation modes}\label{xc:modes}
+\index{operation modes}
+
+\xds{} \mt{}/\ot{} compilers have the following operation modes:
+\begin{tabular}{ll}
+\bf Mode    & \bf Meaning                                     \\
+\hline
+\Ref{COMPILE}{xc:modes:compile} & Compile all modules given on the command line  \\
+\Ref{PROJECT}{xc:modes:project} & Make all projects given on the command line    \\
+\Ref{MAKE}{xc:modes:make}       & Check dependencies and recompile               \\
+\Ref{GEN}{xc:modes:gen}         & Generate makefile for all projects             \\
+\Ref{BROWSE}{xc:modes:browse}   & Extract definitions from symbol files          \\
+HELP                            & Print help and terminate
+\end{tabular}
+
+Both the PROJECT and MAKE modes have two optional operation submodes:
+\See{BATCH}{}{xc:modes:batch} and \See{ALL}{}{xc:modes:all}.
+Two auxiliary operation submodes --- \See{options}{}{xc:modes:options}
+and \See{EQUATIONS}{}{xc:modes:equations} can be used to inspect the set of
+compiler options and equations and their values.
+
+On the command line, the compiler mode is specified with the "\verb'='" symbol
+followed by a mode name. Mode names are not case sensitive, and specifying
+an unique portion of a mode name is sufficient, thus
+
+\verb'    =PROJECT' is equivalent to   \verb'=p' \\
+\verb'    =BROWSE ' is equivalent to   \verb'=Bro'
+
+Operation modes and options can be placed on the command line in arbitrary
+order, so the following two command lines are equivalent:
+
+\verb'    '\xc{}\verb' =make hello.mod =all -checknil+' \\
+\verb'    '\xc{}\verb' -checknil+ =a =make hello.mod'
+
+\subsection{COMPILE mode}\label{xc:modes:compile}
+\index{operation modes!COMPILE}
+
+\verb'    '\xc{}\verb' [=compile] { FILENAME | OPTION }'
+
+COMPILE is the default mode, and can be invoked simply by  supplying
+\xc{} with a source module(s) to compile. If \xc{} is invoked without a
+given  mode, COMPILE mode is assumed. In order to determine which
+compiler should be used, \xc{} looks at the extensions of the given source
+files. The default mapping of extensions is given below :
+\begin{flushleft}
+\begin{tabular}{lcl}
+\bf        .mod  &-& Modula-2 implementation module \\
+\bf        .def  &-& Modula-2 definition module     \\
+\bf        .ob2  &-& Oberon-2 module                \\
+\end{tabular}
+\end{flushleft}
+
+For example:
+
+\verb'    '\xc{}\verb' hello.mod'
+
+will invoke the \mt{} compiler, whereas:
+
+\verb'    '\xc{}\verb' hello.ob2'
+
+will invoke the \ot{} compiler.
+
+The user is able to reconfigure  the  extension  mapping
+(See \ref{config:fileext}). It is also
+possible to override it from the command line
+using the options \OERef{M2} and \OERef{O2}:
+
+\verb'    '\xc{}\verb' hello.mod +o2  (* invokes O2 compiler *)'  \\
+\verb'    '\xc{}\verb' hello.ob2 +m2  (* invokes M2 compiler *)'
+
+{\bf Note:} In the rest of this manual, the COMPILE mode also
+refers to any case in which the compiler {\it compiles}
+a source file, regardless of the actually specified mode
+(which can be COMPILE, MAKE, or PROJECT).
+For instance, an option or equation, which is stated to affect
+the compiler behaviour in the COMPILE mode, is relevant to
+MAKE and PROJECT modes as well.
+
+\subsection{MAKE mode}\label{xc:modes:make}
+\index{operation modes!MAKE}
+
+\verb'    '\xc{}\verb' =make [=batch] [=all] { FILENAME | OPTION }'
+
+In the MAKE mode the compiler determines module dependencies using
+\verb'IMPORT' clauses and then recompiles all necessary modules.
+Starting from the files on the command line, it tries to find an \ot{}
+module or a definition and implementaion module for each imported
+module. It then does the same for each of the imported modules until
+all modules are located. Note that a search is made for source files
+only. If a source file is not found, the imported modules will not be
+appended to the recompile list. See section \ref{xc:make} for more details.
+
+When all modules are gathered, the compiler performs an action according to
+the operation submode. If the \See{BATCH submode}{}{xc:modes:batch} was specified, it
+creates a batch file of all necessary compilations, rather than
+actually compiling the source code.
+
+If the \See{ALL submode}{}{xc:modes:all} was specified, all gathered files are
+recompiled, otherwise \xds{} recompiles only the necessary files.
+The {\em smart recompilation} algorithm is described in
+\ref{xc:smart}.
+
+Usually, a \mt{} program module or an \ot{} top-level module
+is specified on the command line. In this case, if the \OERef{LINK} equation
+is set in either configuration file or \xc{} command line,
+the linker will be invoked automatically in case of successful
+compilation. This feature allows you to build simple programs without
+creating project files.
+
+\subsection{PROJECT mode}\label{xc:modes:project}
+\index{operation modes!PROJECT}
+
+\verb'    '\xc{}\verb' =project [=batch] [=all] { PROJECTFILE | OPTION }'
+
+The PROJECT mode is essentially the same as the MAKE mode except that the
+modules to be `made' are provided in a project file. A project
+file specifies a set of options and a list of modules.
+See \ref{xc:project} for further details.
+As in the MAKE mode, \See{ALL}{}{xc:modes:all} and \See{BATCH}{}{xc:modes:batch}
+submodes can be used.
+
+If a file extension of a project file is omitted, \xds{} will use
+an extension given by the equation \OERef{PRJEXT}
+({\bf .prj} by default). \index{.prj (See PRJEXT)}
+
+It may be necessary to compile a single module in the environment
+specified in a project file. It can be accomplished in the COMPILE
+operation mode using with the \OERef{PRJ} equation:
+
+\verb'    '\xc{}\verb' -prj=myproject MyModule.mod'
+
+\Seealso
+\begin{itemize}
+\item   MAKE operation mode: \ref{xc:modes:make}
+\item   Make strategy: \ref{xc:make}
+\item   Smart recompilation: \ref{xc:smart}
+\end{itemize}
+
+\subsection{GEN mode}\label{xc:modes:gen}
+\index{operation modes!GEN}
+\index{template files}
+
+\verb'    '\xc{}\verb' =gen { PROJECTFILE | OPTION }'
+
+The  GEN operation mode allows one to generate a file containing
+information about your project. The most important usage is to
+generate
+\ifgenc
+  a makefile, which can then be passed to the make utility
+  accompanying the "underlaying" C compiler, so that all
+  generated C files can be compiled and linked into an
+  executable program.
+\else
+  a linker response file (See \ref{start:build}).
+\fi
+
+This operation mode can also be used to obtain additional
+information about your project, e.g. a list of all
+modules, import lists, etc.
+
+A so-called template file, specified by the \OERef{TEMPLATE} equation,
+is used in this mode. A template file is a text file, some lines of which are
+marked with a certain symbol. All the lines which are not marked are
+copied to the output file verbatim. The marked lines are processed
+in a special way. See \ref{xc:template} for more information.
+
+The compiler creates a file with a name specified by
+the equation \OERef{MKFNAME}. If the equation is empty,
+the project file name is used.
+A file name is then concatenated with the
+extension specified by the equation \OERef{MKFEXT}.
+\index{.mkf (See MKFEXT)}
+
+\subsection{BROWSE mode}\label{xc:modes:browse}
+\index{operation modes!BROWSE}
+
+\verb'    '\xc{}\verb' =browse { MODULENAME | OPTION }'
+
+The BROWSE operation mode allows one to generate a pseudo definition
+module for an \ot{} module. In this mode, the compiler reads a symbol
+file and produces a file which contains
+declarations of all objects exported from the \ot{} module,
+if a format resembling \mt{} definition modules.
+
+The configuration option \OERef{BSDEF}
+specifies the extension of a generated file.
+If this option is not set, then the default extension ({\bf .odf})
+will be used. \index{.odf (See BSDEF)}
+
+Options \OERef{BSCLOSURE} and \OERef{BSREDEFINE} can be used to control the
+form of a generated file. {\bf Note:} the \OERef{BSTYLE} equation
+(described in \ref{o2:env:makedef}) is ignored in this operation mode,
+and the browse style is always set to DEF.
+
+The \OERef{MAKEDEF} option (See \ref{o2:env:makedef}) provides
+an alternative method of producing pseudo definition modules,
+preserving so-called {\em exported} comments if necessary.
+
+\subsection{ALL submode}
+\label{xc:modes:all}
+\index{operation modes!ALL}
+
+In both \Ref{PROJECT}{xc:modes:project} and \Ref{MAKE}{xc:modes:make} modes,
+the compiler checks the time stamps of the files concerned and recompiles
+only those files that are necessary (See \ref{xc:smart}).
+If the ALL submode was specified, the time stamps are ignored,
+and all files are compiled.
+
+\subsection{BATCH submode}\label{xc:modes:batch}
+\index{operation modes!BATCH}
+
+In the BATCH submode, the compiler creates a batch file of all necessary
+compilations, rather than actually calling the compilers and compiling
+the source code.
+
+A batch file is a sequence of lines beginning with the compiler name,
+followed by module names to recompile.
+
+The compiler creates a batch file with a name determined by either:
+\begin{enumerate}
+\item The compiler option \OERef{BATNAME}
+\item The project file name (if given)
+\item The name {\bf out} (if the name could not be determined
+      by the above).
+\end{enumerate}
+
+The name is then concatenated  with the batch  file
+extension specified by the equation \OERef{BATEXT}
+({\bf.bat} by default).
+\index{.bat (See BATEXT)}
+
+\Seealso
+\begin{itemize}
+\item option \OERef{LONGNAME}   (\ref{opt:bool})
+\item equation \OERef{BATWIDTH} (\ref{opt:equ})
+\end{itemize}
+
+\subsection{OPTIONS submode}\label{xc:modes:options}
+\index{operation modes!OPTIONS}
+
+The OPTIONS submode allows you to inspect the values of options which
+are set in the configuration file, project file and on the command
+line. It can be used together with
+\See{COMPILE}{}{xc:modes:compile},
+\See{MAKE}{}{xc:modes:make}, and
+\See{PROJECT}{}{xc:modes:project} modes.
+
+The following command line prints (to the standard output) the
+list of all defined options, including all pre-declared options,
+all options declared in the configuration file, in the project
+file {\tt my.prj} and on the command line ({\tt xyz} option):
+
+\verb'    '\xc{}\verb' =options -prj=my.prj -xyz:+'
+
+In the PROJECT mode options are listed for each project file
+given on the command line.
+
+See also the \Ref{EQUATIONS submode}{xc:modes:equations}.
+
+\subsection{EQUATIONS submode}\label{xc:modes:equations}
+\index{operation modes!EQUATIONS}
+
+The EQUATIONS submode allows you to inspect the values of equations
+which are set in the configuration file, project file and on the command
+line.
+It can be used together with
+\See{COMPILE}{}{xc:modes:compile},
+\See{MAKE}{}{xc:modes:make}, and
+\See{PROJECT}{}{xc:modes:project} modes.
+
+See also the \Ref{OPTIONS submode}{xc:modes:options}.
+
+\section{Files generated during compilation}\label{usage:genfiles}
+
+When applied to a file which contains a module {\bf name},
+the compilers produce the following files.
+
+\subsection{Modula-2 compiler}
+
+When applied to a definition module, the \mt{} compiler produces a
+{\em symbol file}\index{symbol files}\index{\Sym (See SYM)}
+\ifgenc
+  ({\bf name\Sym}) and a C header file ({\bf name\Header}).
+  \index{\Header (See HEADER)}
+  Generation of a header file can be prevented by use of
+  the \OERef{NOHEADER} option.
+\else
+  ({\bf name\Sym}).
+\fi
+The symbol file contains information required
+during compilation of a module which imports the module {\bf name}.
+
+When applied to an implementation module or a top level module,
+the \mt{} compiler produces
+\ifgencode an object \fi
+\ifgenc a C code    \fi
+file ({\bf name\Code}).\index{\Code (See CODE)}
+
+\subsection{Oberon-2 compiler}
+
+For all compiled modules, the Oberon-2 compiler
+produces
+\ifgencode
+  a {\em symbol file} ({\bf name\Sym})
+  and an object file ({\bf name\Code}).
+\fi
+\ifgenc
+  a {\em symbol file} ({\bf name\Sym}),
+  a C header file ({\bf name\Header}) and a code file ({\bf name\Code}).
+\fi
+The symbol file\index{symbol files}
+({\bf name\Sym}) contains information required
+during compilation of a module which imports the module {\bf name}.
+If the compiler needs to overwrite an existing symbol file,
+it will only do so if the \OERef{CHANGESYM} option is set ON.
+
+\Examples
+\begin{tabular}{ll}
+\bf Command line                 & \bf Generated files \\
+\hline
+\tt \xc{} Example.def            & \tt Example\Sym  \\
+\ifgenc
+                                 & \tt Example\Header \\
+\fi
+\tt \xc{} Example.mod            & \tt Example\Code  \\
+\tt \xc{} Win.ob2 +CHANGESYM     & \tt Win\Sym  \\
+\ifgenc
+                                 & \tt Win\Header  \\
+\fi
+                                 & \tt Win\Code \\
+\end{tabular}
+
+\section{Control file preprocessing}
+\label{usage:cfp}
+
+An \XDS{} compiler may read the following control files during execution:
+\begin{itemize}
+\item a \See{redirection file}{}{xc:red}
+\item a \See{configuration file}{}{config:cfg}
+\item a \See{project file}{}{xc:project}
+\item a \See{template file}{}{xc:template}
+\end{itemize}
+All these files are preprocessed during read according to the
+following rules:
+
+A control file is a plain text file containing a sequence of lines.
+The backslash character (\verb|"\"|) at the end of a line denotes its
+continuation.
+
+The following constructs are handled during control file preprocessing:
+\begin{itemize}
+\item macros of the kind \verb'$('{\it name}\verb')'. A macro expands
+      to the value of the equation {\it name} or, if it does not exist,
+      to the value of the environment variable {\it name}.
+\item the {\em base directory} macro (\verb|$!|) % \index{$!@\verb'$!'}. !!!
+      This macro expands to the directory in which the file containing
+      it resides.
+\item a set of directives, denoted by the exclamation mark (\verb|"!"|)
+      as a first non-whitespace character on a line.
+\end{itemize}
+
+A directive has the following syntax (all keywords are case independent):
+\begin{verbatim}
+Directive = "!" "NEW" SetOption | SetEquation
+          | "!" "SET" SetOption | SetEquation
+          | "!" "MESSAGE" Expression
+          | "!" "IF" Expression "THEN"
+          | "!" "ELSIF" Expression "THEN"
+          | "!" "ELSE"
+          | "!" "END".
+SetOption   = name ( "+" | "-" ).
+SetEquation = name "=" string.
+\end{verbatim}
+
+The \verb'NEW' directive declares a new option or equation. The \verb'SET' directive
+changes the value of an existent option or equation. The \verb'MESSAGE' directive
+prints \verb'Expression' value to the standard output.
+The \verb'IF' directive allows to process or skip portions of files according
+to the value of \verb'Expression'. \verb'IF' directives may be nested.
+
+\begin{verbatim}
+Expression  = Simple [ Relation Simple ].
+Simple      = Term { "+" | OR Term }.
+Relation    = "=" | "#" | "<" | ">".
+Term        = Factor { AND Factor }.
+Factor      = "(" Expression ")".
+            | String
+            | NOT Factor
+            | DEFINED name
+            | name.
+String      = "'" { character } "'"
+            | '"' { character } '"'.
+\end{verbatim}
+
+An operand in an expression is either string, equation name, or option
+name. In the case of equation, the value of equation is used. In the
+case of option, a string \verb'"TRUE"' or \verb'"FALSE"' is used.
+The \verb'"+"' operator denotes string concatenation.
+Relation operators perform case insensitive string comparison.
+The \verb'NOT' operator may be applied to a string with value
+\verb'"TRUE"' or \verb'"FALSE"'. The \verb'DEFINED' operator yields \verb'"TRUE"' if
+an option or equation \verb'name' is declared and \verb'"FALSE"' otherwise.
+
+See also section \ref{opt:COMPILER}.
+
+\section{Project files}\label{xc:project}
+\index{project files}
+
+A project file has the following structure:
+
+\verb'    {SetupDirective}' \\
+\verb'    {!module {FileName}}'
+
+Setup directives define options and equations that all modules
+which constitute the project should be compiled with.
+See also \ref{config:options} and \ref{usage:cfp}.
+
+Every line in a project file can contain only one setup directive. The
+character "\verb|%|" indicated a comment; it causes the rest of
+a line to be discarded. {\bf Note:} the comment character can not be
+used in a string containing equation setting.
+
+Each  {\tt FileName} is a name of a file which should be compiled,
+linked, or otherwise processed when a project is being built, e.g.
+a source file, an additional library, a resource file (on Windows),
+etc. The compiler processes only \mt{} and \ot{}
+source files. The type of a file is determined by its extension
+(by default \mt{}/\ot{} source files extension is assumed).
+Files of other types are taken into account only when a template file
+is processed (see \ref{xc:template}).
+
+The compiler recursively scans import lists of all
+specified \mt{}/\ot{} source modules and builds the full list of modules used
+in the project. Thus, usually, a project file for an executable program
+would contain a single {\tt !module} directive for the file which
+contains the main program module and, optionally, several {\tt !module}
+directives for non-source files.
+
+At least one \verb'!module' directive should be specified in a project file.
+
+A project file can contain several \OERef{LOOKUP} equations, which
+allow you to define additional search paths.
+
+\xds{} compilers give you complete freedom over where to set options, equations
+and redirection directives. However, it is recommended to specify
+only those settings in the configuration and redirection files
+which are applied to all your projects, and use project files
+for all project-specific options and redirection directives.
+
+\begin{figure}[htb]
+\begin{verbatim}
+    -lookup = *.mod = mod
+    -lookup = *.sym = sym; $(XDSDIR)/sym/C
+    % check project mode
+    !if not defined mode then
+      % by default use debug mode
+      !new mode = debug
+    !end
+    % report the project mode
+    !message "Making project in the " + mode + " mode"
+    % set options according to the mode
+    !if mode = debug then
+       - gendebug+
+       - checkrange+
+    !else
+       - gendebug-
+    !fi
+    % specify template file
+    - template = $!/templates/watcom.tem
+    !module hello
+    !module hello.res
+\end{verbatim}
+\caption{A Sample Project File}
+\label{xc:project:sample}
+\end{figure}
+
+Given the sample project file shown on Figure \ref{xc:project:sample},
+the compiler will search for files with \verb'.mod'
+and \verb'.sym' extensions using search paths specified in the
+project file {\it before} paths specified in a redirection file.
+
+A project file is specified explicitly in the \See{PROJECT}{}{xc:modes:project}
+and \See{GEN}{}{xc:modes:gen} operation modes. In these modes, all
+options and equations are set and then the compiler proceeds through
+the module list to gather all modules constituting a project (See \ref{xc:make}).
+
+In the \See{MAKE}{}{xc:modes:make} and \See{COMPILE}{}{xc:modes:compile}
+operation modes, a project file can be specified using the \OERef{PRJ}
+equation. In this case, the module list is ignored, but all options
+and equations from the project file are set.
+
+The following command line forces the compiler
+to compile the module {\tt hello.mod} using options
+and equations specified in the
+project file {\tt hello.prj}:
+
+\verb'    '\xc{}\verb' hello.mod -prj=hello.prj'
+
+\section{Make strategy}\label{xc:make}
+
+This section concerns
+\See{MAKE}{}{xc:modes:make},
+\See{PROJECT}{}{xc:modes:project}, and
+\See{GEN}{}{xc:modes:gen},
+operation modes.
+In these modes, an \XDS{} compiler builds a set of all modules that
+constitute the project, starting from the modules specified in a
+project file (PROJECT and GEN) or on the command line (MAKE).
+
+The MAKE mode is used in the following examples, but
+the comments also apply to the PROJECT and GEN modes.
+
+First, the compiler tries to find all given modules according to the
+following strategy:
+\begin{itemize}
+\item
+        If both filename extension and path are present,
+        the compiler checks if the given file exists.
+
+        \verb'    '\xc{}\verb' =make mod'\DirSep{}\verb'hello.mod'
+
+\item
+        If only an extension is specified, the compiler seeks
+        the given file using search paths.
+
+        \verb'    '\xc{}\verb' =make hello.mod'
+
+\item
+        If no extension is specified, the compiler searches for
+        files with the given name and the \ot{} module extension, \mt{}
+        implementation module extension, and \mt{} definition
+        module extension.
+
+        \verb'    '\xc{}\verb' =make hello'
+
+        An error is raised if more than one file was found,
+        e.g. if both {\tt hello.ob2} and {\tt hello.mod} files exist.
+\end{itemize}
+
+Starting from the given files, the compiler tries to find an \ot{}
+source module or \mt{} definition and implementation modules for
+each imported module. It then tries to do the same for each of
+the imported modules until all the possible modules are located.
+For each module, the compiler checks correspondence between the
+file name extension and the kind of the module.
+
+% impext.tex !!!
+
+\section{Smart recompilation}\label{xc:smart}
+
+In the \See{MAKE}{}{xc:modes:make} and \See{PROJECT}{}{xc:modes:project}
+modes, if the \See{ALL}{}{xc:modes:all} submode was not specified,
+an \XDS{} compiler performs {\em smart recompilation} of modules which are
+inconsistent with the available source code files. The complier
+uses file modification time to determine which file has been changed.
+For each module the decision (to recompile or not) is made
+only after the decision is made for all modules on which it depends.
+A source file is (re)compiled if one or more of the following conditions is true:
+\begin{description}
+\item[\mt{} definition module] \mbox{}
+
+        \begin{itemize}
+        \item the symbol file is missing
+        \item the symbol file is present but
+          its modification date is earlier than that of the
+          source file or one of the imported symbol files
+        \ifgenc
+          \item the header file is missing (\OERef{NOHEADER} option is OFF)
+          or its modification date is earlier than that of the source file
+        \fi
+\ifcomment
+        \item the source file modification date is earlier than that
+        of the project file (in the PROJECT mode only)
+\fi
+        \end{itemize}
+
+\item[\mt{} implementation module] \mbox{}
+
+        \begin{itemize}
+        \item the code file is missing
+        \item the code file is present but
+          the file modification date is earlier than that of the
+          source file or one of the imported symbol files
+          (including its own symbol file)
+\ifcomment
+        \item the source file modification date is earlier than that
+        of the project file (in the PROJECT mode only)
+\fi
+        \end{itemize}
+
+\item[\mt{} program module] \mbox{}
+
+        \begin{itemize}
+        \item the code file is missing
+        \item the code file is present but
+          the file modification date is earlier than that of the
+          source file or one of the imported symbol files
+\ifcomment
+        \item the source file modification date is earlier than that
+        of the project file (in the PROJECT mode only)
+\fi
+        \end{itemize}
+
+\item[Oberon-2 module] \mbox{}
+
+        \begin{itemize}
+        \item the symbol file is missing
+        \item the symbol file is present but
+          the modification date is earlier than that
+          of one of the imported symbol files
+        \ifgenc
+          \item the header file is missing (\OERef{NOHEADER} option is OFF)
+        \fi
+        \item the code file is missing
+        \item the code file is present but
+          the file modification date is earlier than that of the
+          source file or one of the imported symbol files
+\ifcomment
+        \item the source file modification date is earlier than that
+        of the project file (in the PROJECT mode only)
+\fi
+        \end{itemize}
+\end{description}
+
+When the \OERef{VERBOSE} option is set ON, the compiler reports a reason
+for recompilation of each module.  {\bf Note:} if an error occured during
+compilation of a \mt{} definition module or an \ot{} module,
+all its client modules are not compiled at all.
+
+\section{Template files}\label{xc:template}
+\index{template files}
+
+A {\it template file} is used to build a "makefile"
+in the \See{PROJECT}{}{xc:modes:project}
+and \See{GEN}{}{xc:modes:gen} operation modes,
+if the option \OERef{MAKEFILE} is ON\footnote{
+"MAKEFILE" is a historical name; a linker or library manager response file
+may be built as well.}.
+
+The compiler copies lines from a template file into the
+output file verbatim, except lines marked as requiring further
+attention. A single character (attention mark) is specified by the
+equation \OERef{ATTENTION} (default is '!') % \index{! (See ATTENTION)}. % !!! ! in \index{}
+
+A template file is also subject to \See{preprocessing}{}{usage:cfp}.
+
+A marked line (or template) has the following
+format\footnote{The same syntax is used in the
+\OERef{LINK} equation.}:
+\begin{verbatim}
+    Template  = { Sentence }.
+    Sentence  = Item { "," Item } ";" | Iterator.
+    Item      = Atom | [ Atom | "^" ] "#" [ Extension ].
+    Atom      = String | name.
+    String    = '"' { character } '"'
+              | "'" { character } "'".
+    Extension = [ ">" ] Atom.
+    Iterator  = "{" Set ":" { Sentence } "}".
+    Set       = { Keyword | String }
+    Keyword   = DEF | IMP | OBERON | MAIN
+              | C | HEADER | ASM | OBJ.
+\end{verbatim}
+{\tt name} should be a name of an equation. Not more than three items
+may be used in a sentence. A first item in a sentence is a format
+string, while others are arguments.                                        % !!! What it may contain?
+
+The \XDS{} distribution contains a template file {\tt \xc{}.tem} which
+can be used to produce
+\ifgencode
+a linker response file.
+\fi
+\ifgenc
+a makefile for one of the supported C compilers.
+\fi
+
+\subsection{Using equation values}
+
+In the simplest form, a template line may be used to output a value of
+an equation. For example, if the template file contains the line
+
+\verb'     ! "The current project is %s.\n",prj;'
+
+and the project {\tt prj\DirSep{}test.prj} is processed,
+the output will contain the line
+
+\verb'    The current project is prj'{\tt \DirSep{}}\verb'test.prj.'
+
+{\bf Note:} the line
+
+\verb'    ! prj;'
+
+is valid, but may produce unexpected results under systems in which
+the backslash character ("\verb'\'") is used as a directory names separator
+(e.g. OS/2 or Windows):
+
+\verb'    prj     est.prj'
+
+because \verb'"\t"' in a format string is replaced with the tab character.
+Use the following form instead:
+
+\verb'    ! "%s",prj;'
+
+\subsection{File name construction}\label{xc:template:fname}
+
+The \verb|"#"| operator constructs a file name from a name and an
+extension, each specified as an equation name or literal string.
+A file is then searched for according to \XDS{} search paths
+and the resulting name is substituted.
+For example, if the file \verb'useful.lib' resides in the directory '../mylibs'
+and the redirection file contains the following line:
+
+\verb'    *.lib = /xds/lib;../mylibs'
+
+the line
+
+\verb'    ! "useful"#"lib"'
+
+will produce
+
+\verb'    ../mylibs/useful.lib'
+
+If the modifier \verb|">"| is specified, the compiler assumes that the file
+being constructed is an output file and creates its name according to the
+strategy for output files (See \ref{xc:red} and the \OERef{OVERWRITE}
+option).
+
+The \verb'"#"' operator is also used to represent the current value of
+an \See{iterator}{}{xc:template:iterators}.
+The form in which a name or extension is omitted can be used
+in an iterator only.
+
+The form \verb'"^#"' may be used in a second level iterator to represent
+the current value of the first level iterator.
+
+\subsection{Iterators}
+\label{xc:template:iterators}
+
+{\em Iterators} are used to generate some text for all modules from a given
+set. Sentences inside the first level of braces are repeated
+for all modules of the project, while sentences inside the second level are
+repeated for all modules imported into the module currently iterated at
+the first level. A set is a sequence of keywords and strings.
+Each string denotes a specific module, while a keyword denotes all
+modules of specific kind.
+
+The meaning of keywords is as follows:
+\begin{tabular}{lp{8cm}}
+\bf Keyword &\bf Meaning  \\
+ \hline
+\tt DEF     & Modula-2 definition module                       \\
+\tt IMP     & Modula-2 implementation module                   \\
+\tt MAIN    & Modula-2 program module or Oberon-2 module marked as \OERef{MAIN} \\
+\tt OBERON  & Oberon module                                    \\
+\ifgenc
+\tt C       & C source text                                    \\
+\tt HEADER  & C header file                                    \\
+\fi
+\tt ASM     & assembler source text                            \\
+\tt OBJ     & object file                                      \\
+%\tt PROJECT & project name                                    \\
+\end{tabular}
+
+% There are other keywords !!!
+
+A keyword not listed above is treated as filename extension.
+Sentences are repeated for all files with that extension which are
+explicitly specified in the project file using \verb'!module' directives
+(see \ref{xc:project}).
+This allows, for instance, additional
+libraries to be specified in a project file:
+
+\begin{verbatim}
+sample.prj:
+
+    -template = mytem.tem
+    !module Sample.mod
+    !module mylib.lib
+
+mytem.tem:
+      .  .  .
+    ! "%s","libxds"#"lib"
+    ! { lib: "+%s",#; }
+    ! "\n"
+      .  .  .
+
+generated file:
+      .  .  .
+    d:\xds\lib\x86\libxds.lib+mylib.lib
+      .  .  .
+\end{verbatim}
+
+\subsection{Examples}
+
+Consider a sample project which consists of a program module {\tt A},
+which imports modules {\tt B} and {\tt C}, and
+{\tt B}, in turn, imports {\tt D} (all modules are written in \mt{}):
+\begin{verbatim}
+                A
+               / \
+              B   C
+              |
+              D
+\end{verbatim}
+The following examples illustrate template files usage:
+
+This template line lists all project modules for
+which source files are available:
+
+\verb'    ! { imp oberon main: "%s ",#; }'
+
+For the sample project, it would generate the following line:
+
+\verb'    A.mod B.mod C.mod D.mod'
+
+To output both definition and implementation modules, the following
+lines may be used:
+
+\verb'    ! { def : "%s ",#; }'\\
+\verb'    ! { imp oberon main: "%s ",#; }'
+
+The output would be:
+
+\verb'    B.def C.def D.def A.mod B.mod C.mod D.mod'
+
+The last template line may be used to list all modules
+along with their import:
+
+\verb'    ! { imp main: "%s\n",#; { def: "  %s\n",#; } }'
+
+The output:
+
+\begin{verbatim}
+    A.mod
+      B.def
+      C.def
+    B.mod
+      D.def
+    C.mod
+    D.mod
+\end{verbatim}

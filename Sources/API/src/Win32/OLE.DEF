@@ -1,0 +1,616 @@
+<* +M2EXTENSIONS  *>
+<* ALIGNMENT="8" *>
+<* ENUMSIZE="4" *>
+<* SETSIZE="4" *>
+
+DEFINITION MODULE ["StdCall"] OLE;
+
+(*****************************************************************************\
+*                                                                             *
+* OLE.def -     Object Linking and Embedding functions, types, and definitions*
+*                                                                             *
+*               Version 1.0                                                   *
+*                                                                             *
+\*****************************************************************************)
+
+IMPORT SYSTEM;
+FROM WinDef IMPORT BYTE, BOOL, LONG, UINT, USHORT, WORD, DWORD, PVOID, LPCVOID,
+                   PCSTR, PSTR, HANDLE, HINSTANCE, HWND, HDC, HGLOBAL,
+                   RECT, PRECT;
+FROM WinGDI IMPORT LOGPALETTE, PLOGPALETTE;
+
+
+(* Object types *)
+
+TYPE OT_TYPE = (OT_0,
+                OT_LINK,       (* 1 *)
+                OT_EMBEDDED,   (* 2 *)
+                OT_STATIC);    (* 3 *)
+
+(* activate verbs *)
+
+CONST OLEVERB_PRIMARY    = 0;
+
+(* target device info structure *)
+
+TYPE OLETARGETDEVICE = RECORD
+                              otdDeviceNameOffset  : USHORT;
+                              otdDriverNameOffset  : USHORT;
+                              otdPortNameOffset    : USHORT;
+                              otdExtDevmodeOffset  : USHORT;
+                              otdExtDevmodeSize    : USHORT;
+                              otdEnvironmentOffset : USHORT;
+                              otdEnvironmentSize   : USHORT;
+                              otdData              : ARRAY [0..0] OF BYTE;
+                       END;
+    POLETARGETDEVICE = POINTER TO OLETARGETDEVICE;
+
+(* flags used in some methods *)
+
+TYPE OF_FLAGS_ENUM = (OF__SET,      (* 0 *)
+                      OF__GET,      (* 1 *)
+                      OF__HANDLER); (* 2 *)
+
+     OF_FLAGS_SET = SET OF OF_FLAGS_ENUM;
+
+CONST OF_SET     = OF_FLAGS_SET {OF__SET};     (* 0x0001 *)
+      OF_GET     = OF_FLAGS_SET {OF__GET};     (* 0x0002 *)
+      OF_HANDLER = OF_FLAGS_SET {OF__HANDLER}; (* 0x0004 *)
+
+
+(* return codes for OLE functions *)
+
+TYPE OLESTATUS = (
+    OLE_OK,                     (* 0   Function operated correctly             *)
+
+    OLE_WAIT_FOR_RELEASE,       (* 1   Command has been initiated, client      *)
+                                (*     must wait for release. keep dispatching *)
+                                (*     messages till OLE_RELESE in callback    *)
+
+    OLE_BUSY,                   (* 2   Tried to execute a method while another *)
+                                (*     method is in progress.                  *)
+
+    OLE_ERROR_PROTECT_ONLY,     (* 3   Ole APIs are called in real mode        *)
+    OLE_ERROR_MEMORY,           (* 4   Could not alloc or lock memory          *)
+    OLE_ERROR_STREAM,           (* 5  (OLESTREAM) stream error                 *)
+    OLE_ERROR_STATIC,           (* 6   Non static object expected              *)
+    OLE_ERROR_BLANK,            (* 7   Critical data missing                   *)
+    OLE_ERROR_DRAW,             (* 8   Error while drawing                     *)
+    OLE_ERROR_METAFILE,         (* 9   Invalid metafile                        *)
+    OLE_ERROR_ABORT,            (* 10  Client chose to abort metafile drawing  *)
+    OLE_ERROR_CLIPBOARD,        (* 11  Failed to get/set clipboard data        *)
+    OLE_ERROR_FORMAT,           (* 12  Requested format is not available       *)
+    OLE_ERROR_OBJECT,           (* 13  Not a valid object                      *)
+    OLE_ERROR_OPTION,           (* 14  Invalid option(link update / render)    *)
+    OLE_ERROR_PROTOCOL,         (* 15  Invalid protocol                        *)
+    OLE_ERROR_ADDRESS,          (* 16  One of the pointers is invalid          *)
+    OLE_ERROR_NOT_EQUAL,        (* 17  Objects are not equal                   *)
+    OLE_ERROR_HANDLE,           (* 18  Invalid handle encountered              *)
+    OLE_ERROR_GENERIC,          (* 19  Some general error                      *)
+    OLE_ERROR_CLASS,            (* 20  Invalid class                           *)
+    OLE_ERROR_SYNTAX,           (* 21  Command syntax is invalid               *)
+    OLE_ERROR_DATATYPE,         (* 22  Data format is not supported            *)
+    OLE_ERROR_PALETTE,          (* 23  Invalid color palette                   *)
+    OLE_ERROR_NOT_LINK,         (* 24  Not a linked object                     *)
+    OLE_ERROR_NOT_EMPTY,        (* 25  Client doc contains objects.            *)
+    OLE_ERROR_SIZE,             (* 26  Incorrect buffer size passed to the api *)
+                                (*     that places some string in caller's     *)
+                                (*     buffer                                  *)
+
+    OLE_ERROR_DRIVE,            (* 27  Drive letter in doc name is invalid     *)
+    OLE_ERROR_NETWORK,          (* 28  Failed to establish connection to a     *)
+                                (*     network share on which the document     *)
+                                (*     is located                              *)
+
+    OLE_ERROR_NAME,             (* 29  Invalid name(doc name, object name),    *)
+                                (*     etc.. passed to the APIs                *)
+
+    OLE_ERROR_TEMPLATE,         (* 30  Server failed to load template          *)
+    OLE_ERROR_NEW,              (* 31  Server failed to create new doc         *)
+    OLE_ERROR_EDIT,             (* 32  Server failed to create embedded        *)
+                                (*     instance                                *)
+    OLE_ERROR_OPEN,             (* 33  Server failed to open document,         *)
+                                (*     possible invalid link                   *)
+
+    OLE_ERROR_NOT_OPEN,         (* 34  Object is not open for editing          *)
+    OLE_ERROR_LAUNCH,           (* 35  Failed to launch server                 *)
+    OLE_ERROR_COMM,             (* 36  Failed to communicate with server       *)
+    OLE_ERROR_TERMINATE,        (* 37  Error in termination                    *)
+    OLE_ERROR_COMMAND,          (* 38  Error in execute                        *)
+    OLE_ERROR_SHOW,             (* 39  Error in show                           *)
+    OLE_ERROR_DOVERB,           (* 40  Error in sending do verb, or invalid    *)
+                                (*     verb                                    *)
+    OLE_ERROR_ADVISE_NATIVE,    (* 41  Item could be missing                   *)
+    OLE_ERROR_ADVISE_PICT,      (* 42  Item could be missing or server doesn't *)
+                                (*     this format.                            *)
+
+    OLE_ERROR_ADVISE_RENAME,    (* 43  Server doesn't support rename           *)
+    OLE_ERROR_POKE_NATIVE,      (* 44  Failure of poking native data to server *)
+    OLE_ERROR_REQUEST_NATIVE,   (* 45  Server failed to render native data     *)
+    OLE_ERROR_REQUEST_PICT,     (* 46  Server failed to render presentation    *)
+                                (*     data                                    *)
+    OLE_ERROR_SERVER_BLOCKED,   (* 47  Trying to block a blocked server or     *)
+                                (*     trying to revoke a blocked server       *)
+                                (*     or document                             *)
+
+    OLE_ERROR_REGISTRATION,     (* 48  Server is not registered in regestation *)
+                                (*     data base                               *)
+    OLE_ERROR_ALREADY_REGISTERED,(*49  Trying to register same doc multiple    *)
+                                 (*    times                                   *)
+    OLE_ERROR_TASK,             (* 50  Server or client task is invalid        *)
+    OLE_ERROR_OUTOFDATE,        (* 51  Object is out of date                   *)
+    OLE_ERROR_CANT_UPDATE_CLIENT,(* 52 Embed doc's client doesn't accept       *)
+                                (*     updates                                 *)
+    OLE_ERROR_UPDATE,           (* 53  erorr while trying to update            *)
+    OLE_ERROR_SETDATA_FORMAT,   (* 54  Server app doesn't understand the       *)
+                                (*     format given to its SetData method      *)
+    OLE_ERROR_STATIC_FROM_OTHER_OS,(* 55 trying to load a static object created *)
+                                   (*    on another Operating System           *)
+    OLE_ERROR_FILE_VER);
+
+(*  Following are warnings *)
+
+CONST OLE_WARN_DELETE_DATA = SYSTEM.CAST (OLESTATUS, VAL (LONG, 1000));
+    (*     Caller must delete the data when he is  *)
+    (*     done with it.                           *)
+
+
+(* Codes for CallBack events *)
+
+TYPE OLE_NOTIFICATION =
+  ( OLE_CHANGED,            (* 0                                             *)
+    OLE_SAVED,              (* 1                                             *)
+    OLE_CLOSED,             (* 2                                             *)
+    OLE_RENAMED,            (* 3                                             *)
+    OLE_QUERY_PAINT,        (* 4  Interruptible paint support                *)
+    OLE_RELEASE,            (* 5  Object is released(asynchronous operation  *)
+                            (*    is completed)                              *)
+    OLE_QUERY_RETRY         (* 6  Query for retry when server sends busy ACK *)
+  );
+
+TYPE OLE_RELEASE_METHOD =
+  ( OLE_NONE,               (* 0  no method active                           *)
+    OLE_DELETE,             (* 1  object delete                              *)
+    OLE_LNKPASTE,           (* 2  PasteLink(auto reconnect)                  *)
+    OLE_EMBPASTE,           (* 3  paste(and update)                          *)
+    OLE_SHOW,               (* 4  Show                                       *)
+    OLE_RUN,                (* 5  Run                                        *)
+    OLE_ACTIVATE,           (* 6  Activate                                   *)
+    OLE_UPDATE,             (* 7  Update                                     *)
+    OLE_CLOSE,              (* 8  Close                                      *)
+    OLE_RECONNECT,          (* 9  Reconnect                                  *)
+    OLE_SETUPDATEOPTIONS,   (* 10 setting update options                     *)
+    OLE_SERVERUNLAUNCH,     (* 11 server is being unlaunched                 *)
+    OLE_LOADFROMSTREAM,     (* 12 LoadFromStream(auto reconnect)             *)
+    OLE_SETDATA,            (* 13 OleSetData                                 *)
+    OLE_REQUESTDATA,        (* 14 OleRequestData                             *)
+    OLE_OTHER,              (* 15 other misc async operations                *)
+    OLE_CREATE,             (* 16 create                                     *)
+    OLE_CREATEFROMTEMPLATE, (* 17 CreatefromTemplate                         *)
+    OLE_CREATELINKFROMFILE, (* 18 CreateLinkFromFile                         *)
+    OLE_COPYFROMLNK,        (* 19 CopyFromLink(auto reconnect)               *)
+    OLE_CREATEFROMFILE,     (* 20 CreateFromFile                             *)
+    OLE_CREATEINVISIBLE     (* 21 CreateInvisible                            *)
+  );
+
+(* rendering options *)
+
+TYPE  OLEOPT_RENDER = (olerender_none,
+                       olerender_draw,
+                       olerender_format);
+
+(* standard clipboard format type *)
+
+TYPE OLECLIPFORMAT = WORD;
+
+
+(* Link update options *)
+TYPE OLEOPT_UPDATE = (oleupdate_always,
+                      oleupdate_onsave,
+                      oleupdate_oncall,
+                      oleupdate_onclose);
+
+TYPE HOBJECT     = HANDLE;
+TYPE LHSERVER    = LONG;
+TYPE LHCLIENTDOC = LONG;
+TYPE LHSERVERDOC = LONG;
+
+TYPE POLEOBJECT = POINTER TO OLEOBJECT;
+TYPE POLESTREAM = POINTER TO OLESTREAM;
+TYPE POLECLIENT = POINTER TO OLECLIENT;
+
+(* object method table definitions. *)
+
+<* IF BACKEND # "C" THEN *>
+
+TYPE OLEOBJECTVTBL =
+     RECORD
+     QueryProtocol        : PROCEDURE (POLEOBJECT, PCSTR) : PVOID;
+     Release              : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     Show                 : PROCEDURE (POLEOBJECT, BOOL) : OLESTATUS;
+     DoVerb               : PROCEDURE (POLEOBJECT, UINT, BOOL, BOOL) : OLESTATUS;
+     GetData              : PROCEDURE (POLEOBJECT, OLECLIPFORMAT, VAR HANDLE) : OLESTATUS;
+     SetData              : PROCEDURE (POLEOBJECT, OLECLIPFORMAT, HANDLE) : OLESTATUS;
+     SetTargetDevice      : PROCEDURE (POLEOBJECT, HGLOBAL) : OLESTATUS;
+     SetBounds            : PROCEDURE (POLEOBJECT, RECT) : OLESTATUS;
+     EnumFormats          : PROCEDURE (POLEOBJECT, OLECLIPFORMAT) : OLECLIPFORMAT;
+     SetColorScheme       : PROCEDURE (POLEOBJECT, LOGPALETTE) : OLESTATUS;
+
+     (* Server has to implement only the above methods. *)
+
+     (* Extra methods required for client. *)
+
+     Delete               : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     SetHostNames         : PROCEDURE (POLEOBJECT, PCSTR, PCSTR) : OLESTATUS;
+     SaveToStream         : PROCEDURE (POLEOBJECT, POLESTREAM) : OLESTATUS;
+     Clone                : PROCEDURE (POLEOBJECT, POLECLIENT, LHCLIENTDOC, PCSTR, VAR POLEOBJECT) : OLESTATUS;
+     CopyFromLink         : PROCEDURE (POLEOBJECT, POLECLIENT, LHCLIENTDOC, PCSTR, VAR POLEOBJECT) : OLESTATUS;
+     Equal                : PROCEDURE (POLEOBJECT, POLEOBJECT) : OLESTATUS;
+     CopyToClipboard      : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     Draw                 : PROCEDURE (POLEOBJECT, HDC, RECT, RECT, HDC) : OLESTATUS;
+     Activate             : PROCEDURE (POLEOBJECT, UINT, BOOL, BOOL, HWND, RECT) : OLESTATUS;
+     Execute              : PROCEDURE (POLEOBJECT, HGLOBAL, UINT) : OLESTATUS;
+     Close                : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     Update               : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     Reconnect            : PROCEDURE (POLEOBJECT) : OLESTATUS;
+
+     ObjectConvert        : PROCEDURE (POLEOBJECT, PCSTR, POLECLIENT, LHCLIENTDOC, PCSTR, VAR POLEOBJECT) : OLESTATUS;
+     GetLinkUpdateOptions : PROCEDURE (POLEOBJECT, VAR OLEOPT_UPDATE) : OLESTATUS;
+     SetLinkUpdateOptions : PROCEDURE (POLEOBJECT, OLEOPT_UPDATE) : OLESTATUS;
+
+     Rename               : PROCEDURE (POLEOBJECT, PCSTR) : OLESTATUS;
+     QueryName            : PROCEDURE (POLEOBJECT, PSTR, VAR UINT) : OLESTATUS;
+
+     QueryType            : PROCEDURE (POLEOBJECT, VAR LONG) : OLESTATUS;
+     QueryBounds          : PROCEDURE (POLEOBJECT, VAR RECT) : OLESTATUS;
+     QuerySize            : PROCEDURE (POLEOBJECT, VAR DWORD) : OLESTATUS;
+     QueryOpen            : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     QueryOutOfDate       : PROCEDURE (POLEOBJECT) : OLESTATUS;
+
+     QueryReleaseStatus   : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     QueryReleaseError    : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     QueryReleaseMethod   : PROCEDURE (POLEOBJECT) : OLE_RELEASE_METHOD;
+
+     RequestData          : PROCEDURE (POLEOBJECT, OLECLIPFORMAT) : OLESTATUS;
+     ObjectLong           : PROCEDURE (POLEOBJECT, UINT, VAR LONG) : OLESTATUS;
+
+     (* This method is internal only *)
+
+     ChangeData           : PROCEDURE (POLEOBJECT, HANDLE, POLECLIENT, BOOL) : OLESTATUS;
+     END;
+     POLEOBJECTVTBL = POINTER TO OLEOBJECTVTBL;
+
+<* ELSE *>
+
+TYPE OLEOBJECTVTBL =
+     RECORD
+     QueryProtocol        : PROCEDURE (POLEOBJECT, PCSTR) : PVOID;
+     Release              : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     Show                 : PROCEDURE (POLEOBJECT, BOOL) : OLESTATUS;
+     DoVerb               : PROCEDURE (POLEOBJECT, UINT, BOOL, BOOL) : OLESTATUS;
+     GetData              : PROCEDURE (POLEOBJECT, OLECLIPFORMAT, VAR HANDLE) : OLESTATUS;
+     SetData              : PROCEDURE (POLEOBJECT, OLECLIPFORMAT, HANDLE) : OLESTATUS;
+     SetTargetDevice      : PROCEDURE (POLEOBJECT, HGLOBAL) : OLESTATUS;
+     SetBounds            : PROCEDURE (POLEOBJECT, PRECT) : OLESTATUS;
+     EnumFormats          : PROCEDURE (POLEOBJECT, OLECLIPFORMAT) : OLECLIPFORMAT;
+     SetColorScheme       : PROCEDURE (POLEOBJECT, PLOGPALETTE) : OLESTATUS;
+
+     (* Server has to implement only the above methods. *)
+
+     (* Extra methods required for client. *)
+
+     Delete               : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     SetHostNames         : PROCEDURE (POLEOBJECT, PCSTR, PCSTR) : OLESTATUS;
+     SaveToStream         : PROCEDURE (POLEOBJECT, POLESTREAM) : OLESTATUS;
+     Clone                : PROCEDURE (POLEOBJECT, POLECLIENT, LHCLIENTDOC, PCSTR, VAR POLEOBJECT) : OLESTATUS;
+     CopyFromLink         : PROCEDURE (POLEOBJECT, POLECLIENT, LHCLIENTDOC, PCSTR, VAR POLEOBJECT) : OLESTATUS;
+     Equal                : PROCEDURE (POLEOBJECT, POLEOBJECT) : OLESTATUS;
+     CopyToClipboard      : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     Draw                 : PROCEDURE (POLEOBJECT, HDC, PRECT, PRECT, HDC) : OLESTATUS;
+     Activate             : PROCEDURE (POLEOBJECT, UINT, BOOL, BOOL, HWND, PRECT) : OLESTATUS;
+     Execute              : PROCEDURE (POLEOBJECT, HGLOBAL, UINT) : OLESTATUS;
+     Close                : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     Update               : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     Reconnect            : PROCEDURE (POLEOBJECT) : OLESTATUS;
+
+     ObjectConvert        : PROCEDURE (POLEOBJECT, PCSTR, POLECLIENT, LHCLIENTDOC, PCSTR, VAR POLEOBJECT) : OLESTATUS;
+     GetLinkUpdateOptions : PROCEDURE (POLEOBJECT, VAR OLEOPT_UPDATE) : OLESTATUS;
+     SetLinkUpdateOptions : PROCEDURE (POLEOBJECT, OLEOPT_UPDATE) : OLESTATUS;
+
+     Rename               : PROCEDURE (POLEOBJECT, PCSTR) : OLESTATUS;
+     QueryName            : PROCEDURE (POLEOBJECT, PSTR, VAR UINT) : OLESTATUS;
+
+     QueryType            : PROCEDURE (POLEOBJECT, VAR LONG) : OLESTATUS;
+     QueryBounds          : PROCEDURE (POLEOBJECT, VAR RECT) : OLESTATUS;
+     QuerySize            : PROCEDURE (POLEOBJECT, VAR DWORD) : OLESTATUS;
+     QueryOpen            : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     QueryOutOfDate       : PROCEDURE (POLEOBJECT) : OLESTATUS;
+
+     QueryReleaseStatus   : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     QueryReleaseError    : PROCEDURE (POLEOBJECT) : OLESTATUS;
+     QueryReleaseMethod   : PROCEDURE (POLEOBJECT) : OLE_RELEASE_METHOD;
+
+     RequestData          : PROCEDURE (POLEOBJECT, OLECLIPFORMAT) : OLESTATUS;
+     ObjectLong           : PROCEDURE (POLEOBJECT, UINT, VAR LONG) : OLESTATUS;
+
+     (* This method is internal only *)
+
+     ChangeData           : PROCEDURE (POLEOBJECT, HANDLE, POLECLIENT, BOOL) : OLESTATUS;
+     END;
+     POLEOBJECTVTBL = POINTER TO OLEOBJECTVTBL;
+
+<* END *>
+
+TYPE OLEOBJECT = RECORD pvtbl : POLEOBJECTVTBL; END;
+
+TYPE OLECLIENTVTBL =
+     RECORD
+          CallBack : PROCEDURE (POLECLIENT, OLE_NOTIFICATION, POLEOBJECT) : INTEGER;
+     END;
+     POLECLIENTVTBL = POINTER TO OLECLIENTVTBL;
+
+TYPE OLECLIENT = RECORD pvtbl : POLECLIENTVTBL; END;
+
+(* Stream definitions *)
+TYPE OLESTREAMVTBL =
+     RECORD
+           Get : PROCEDURE (POLESTREAM,  PVOID, DWORD) : DWORD;
+           Put : PROCEDURE (POLESTREAM, LPCVOID, DWORD) : DWORD;
+     END;
+     POLESTREAMVTBL = POINTER TO OLESTREAMVTBL;
+
+TYPE OLESTREAM = RECORD pstbl : POLESTREAMVTBL; END;
+
+
+(* Public Function Prototypes *)
+
+PROCEDURE OleDelete               (Obj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleRelease              (Obj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleSaveToStream         (Obj : POLEOBJECT; Stream : POLESTREAM) : OLESTATUS;
+PROCEDURE OleEqual                (Obj : POLEOBJECT; Obj2 : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleCopyToClipboard      (Obj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleSetHostNames         (Obj : POLEOBJECT; Client : PCSTR; ClientObj : PCSTR) : OLESTATUS;
+PROCEDURE OleSetTargetDevice      (Obj : POLEOBJECT; hotd : HGLOBAL) : OLESTATUS;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE OleSetBounds            (Obj : POLEOBJECT; rect : RECT) : OLESTATUS;
+<* ELSE *>
+PROCEDURE OleSetBounds            (Obj : POLEOBJECT; rect : PRECT) : OLESTATUS;
+<* END *>
+<* IF BACKEND # "C" THEN *>
+PROCEDURE OleSetColorScheme       (Obj : POLEOBJECT; palette : LOGPALETTE) : OLESTATUS;
+<* ELSE *>
+PROCEDURE OleSetColorScheme       (Obj : POLEOBJECT; palette : PLOGPALETTE) : OLESTATUS;
+<* END *>
+PROCEDURE OleQueryBounds          (Obj : POLEOBJECT; VAR bounds : RECT) : OLESTATUS;
+PROCEDURE OleQuerySize            (Obj : POLEOBJECT; VAR size : DWORD) : OLESTATUS;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE OleDraw                 (Obj : POLEOBJECT; hdc : HDC; Bounds : RECT; WBounds : RECT; hdcFormat : HDC) : OLESTATUS;
+<* ELSE *>
+PROCEDURE OleDraw                 (Obj : POLEOBJECT; hdc : HDC; Bounds : PRECT; WBounds : PRECT; hdcFormat : HDC) : OLESTATUS;
+<* END *>
+PROCEDURE OleQueryOpen            (Obj : POLEOBJECT) : OLESTATUS;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE OleActivate             (Obj : POLEOBJECT; verb : UINT; fShow : BOOL; fTakeFocus : BOOL; hwnd : HWND; bound : RECT) : OLESTATUS;
+<* ELSE *>
+PROCEDURE OleActivate             (Obj : POLEOBJECT; verb : UINT; fShow : BOOL; fTakeFocus : BOOL; hwnd : HWND; bound : PRECT) : OLESTATUS;
+<* END *>
+PROCEDURE OleExecute              (Obj : POLEOBJECT; cmds : HGLOBAL; reserved : UINT) : OLESTATUS;
+PROCEDURE OleClose                (Obj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleUpdate               (Obj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleReconnect            (Obj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleGetLinkUpdateOptions (Obj : POLEOBJECT; VAR UpdateOpt : OLEOPT_UPDATE) : OLESTATUS;
+PROCEDURE OleSetLinkUpdateOptions (Obj : POLEOBJECT; UpdateOpt : OLEOPT_UPDATE) : OLESTATUS;
+PROCEDURE OleQueryProtocol        (Obj : POLEOBJECT; pszProtocol : PCSTR) : PVOID;
+
+(* Routines related to asynchronous operations. *)
+
+PROCEDURE OleQueryReleaseStatus (Obj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleQueryReleaseError  (Obj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleQueryReleaseMethod (Obj : POLEOBJECT) : OLE_RELEASE_METHOD;
+
+PROCEDURE OleQueryType (Obj : POLEOBJECT; VAR Type : OT_TYPE) : OLESTATUS;
+
+(* LOWORD is major version, HIWORD is minor version *)
+
+PROCEDURE OleQueryClientVersion () : DWORD;
+PROCEDURE OleQueryServerVersion () : DWORD;
+
+(* Converting to format (as in clipboard): *)
+
+PROCEDURE OleEnumFormats    (Obj : POLEOBJECT; fmt : OLECLIPFORMAT) : OLECLIPFORMAT;
+PROCEDURE OleGetData        (Obj : POLEOBJECT; fmt : OLECLIPFORMAT; VAR hData : HANDLE) : OLESTATUS;
+PROCEDURE OleSetData        (Obj : POLEOBJECT; fmt : OLECLIPFORMAT; hdata : HANDLE) : OLESTATUS;
+<* IF BACKEND # "C" THEN *>
+PROCEDURE OleQueryOutOfDate (Obj : OLEOBJECT) : OLESTATUS;
+<* ELSE *>
+PROCEDURE OleQueryOutOfDate (Obj : POLEOBJECT) : OLESTATUS;
+<* END *>
+<* IF BACKEND # "C" THEN *>
+PROCEDURE OleRequestData    (Obj : OLEOBJECT; fmt : OLECLIPFORMAT) : OLESTATUS;
+<* ELSE *>
+PROCEDURE OleRequestData    (Obj : POLEOBJECT; fmt : OLECLIPFORMAT) : OLESTATUS;
+<* END *>
+
+(* Query apis for creation from clipboard *)
+
+PROCEDURE OleQueryLinkFromClip   (protocol : PCSTR; renderopt : OLEOPT_RENDER; fmt : OLECLIPFORMAT) : OLESTATUS;
+PROCEDURE OleQueryCreateFromClip (protocol : PCSTR; renderopt : OLEOPT_RENDER; fmt : OLECLIPFORMAT) : OLESTATUS;
+
+(* Object creation functions *)
+
+PROCEDURE OleCreateFromClip (protocol : PCSTR; client : POLECLIENT;
+                             clientdoc : LHCLIENTDOC; ObjName : PCSTR;
+                             VAR Obj : POLEOBJECT; renderopt : OLEOPT_RENDER;
+                             fmt : OLECLIPFORMAT) : OLESTATUS;
+PROCEDURE OleCreateLinkFromClip (protocol : PCSTR; client : POLECLIENT;
+                                 clientdoc : LHCLIENTDOC; ObjName : PCSTR;
+                                 VAR Obj : POLEOBJECT; renderopt : OLEOPT_RENDER;
+                                 fmt : OLECLIPFORMAT) : OLESTATUS;
+PROCEDURE OleCreateFromFile (protocol : PCSTR; client : POLECLIENT;
+                             Class : PCSTR; File : PCSTR;
+                             clientdoc : LHCLIENTDOC;
+                             objname : PCSTR;
+                             VAR Obj : POLEOBJECT;
+                             renderopt : OLEOPT_RENDER;
+                             fmt : OLECLIPFORMAT) : OLESTATUS;
+PROCEDURE OleCreateLinkFromFile (protocol : PCSTR; client : POLECLIENT;
+                                 Class : PCSTR; File : PCSTR; Item : PCSTR;
+                                 clientdoc : LHCLIENTDOC;
+                                 objname : PCSTR;
+                                 VAR Obj : POLEOBJECT;
+                                 renderopt : OLEOPT_RENDER;
+                                 fmt : OLECLIPFORMAT) : OLESTATUS;
+PROCEDURE OleLoadFromStream (Stream : POLESTREAM; protocol : PCSTR;
+                             Client : POLECLIENT; ClientDoc : LHCLIENTDOC;
+                             ObjName : PCSTR; VAR Obj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleCreate (protocol : PCSTR; Client : POLECLIENT;
+                     Class : PCSTR; ClientDoc : LHCLIENTDOC;
+                     ObjName : PCSTR; VAR Obj : POLEOBJECT;
+                     render : OLEOPT_RENDER; fmt : OLECLIPFORMAT) : OLESTATUS;
+PROCEDURE OleCreateInvisible (protocol : PCSTR; Client : POLECLIENT;
+                              Class : PCSTR; ClientDoc : LHCLIENTDOC;
+                              ObjName : PCSTR; VAR Obj : POLEOBJECT;
+                              render : OLEOPT_RENDER; fmt : OLECLIPFORMAT;
+                              fActivate : BOOL) : OLESTATUS;
+PROCEDURE OleCreateFromTemplate (protocol : PCSTR; Client : POLECLIENT;
+                     Template : PCSTR; ClientDoc : LHCLIENTDOC;
+                     ObjName : PCSTR; VAR Obj : POLEOBJECT;
+                     render : OLEOPT_RENDER; fmt : OLECLIPFORMAT) : OLESTATUS;
+PROCEDURE OleClone (Obj : POLEOBJECT; CLient : POLECLIENT;
+                    ClientDoc : LHCLIENTDOC;
+                    ObjName : PCSTR; VAR NewObj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleCopyFromLink (Obj : POLEOBJECT; Protocol : PCSTR;
+                           Client : POLECLIENT; ClientDoc : LHCLIENTDOC;
+                           ObjName : PCSTR; VAR NewObj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleObjectConvert (Obj : POLEOBJECT; Protocol : PCSTR;
+                            CLient : POLECLIENT; ClientDoc : LHCLIENTDOC;
+                            ObjName : PCSTR; VAR NewObj : POLEOBJECT) : OLESTATUS;
+PROCEDURE OleRename (Obj : POLEOBJECT; NewName : PCSTR) : OLESTATUS;
+PROCEDURE OleQueryName (Obj : POLEOBJECT; name : PSTR; VAR Size : UINT) : OLESTATUS;
+PROCEDURE OleRevokeObject (Client : POLECLIENT) : OLESTATUS;
+PROCEDURE OleIsDcMeta (hdc : HDC) : BOOL;
+
+(* client document API *)
+PROCEDURE OleRegisterClientDoc (Class : PCSTR; Doc : PCSTR;
+                                reserved : LONG;
+                                VAR ClientDoc : LHCLIENTDOC) : OLESTATUS;
+PROCEDURE OleRevokeClientDoc (ClientDoc : LHCLIENTDOC) : OLESTATUS;
+PROCEDURE OleRenameClientDoc (ClientDoc : LHCLIENTDOC; newname : PCSTR) : OLESTATUS;
+PROCEDURE OleRevertClientDoc (ClientDoc : LHCLIENTDOC) : OLESTATUS;
+PROCEDURE OleSavedClientDoc  (ClientDoc : LHCLIENTDOC) : OLESTATUS;
+PROCEDURE OleEnumObjects     (ClientDoc : LHCLIENTDOC; VAR Obj : POLEOBJECT) : OLESTATUS;
+
+(* server usage definitions *)
+
+TYPE OLE_SERVER_USE = (
+    OLE_SERVER_MULTI,           (* multiple instances *)
+    OLE_SERVER_SINGLE           (* single instance(multiple document) *)
+   );
+
+(* Server API *)
+TYPE POLESERVER = POINTER TO OLESERVER;
+
+PROCEDURE OleRegisterServer (Class : PCSTR; Server : POLESERVER;
+                             VAR hServer : LHSERVER; hinst : HINSTANCE;
+                             srvuse : OLE_SERVER_USE) : OLESTATUS;
+PROCEDURE OleRevokeServer  (hsrv : LHSERVER) : OLESTATUS;
+PROCEDURE OleBlockServer   (hsrv : LHSERVER) : OLESTATUS;
+PROCEDURE OleUnblockServer (hsrv : LHSERVER; VAR Request : BOOL) : OLESTATUS;
+
+(* APIs to keep server open *)
+
+PROCEDURE OleLockServer   (Obj : POLEOBJECT; VAR hServer : LHSERVER) : OLESTATUS;
+PROCEDURE OleUnlockServer (hsrv : LHSERVER) : OLESTATUS;
+
+(* Server document API *)
+
+TYPE POLESERVERDOC = POINTER TO OLESERVERDOC;
+
+PROCEDURE OleRegisterServerDoc (hServer : LHSERVER;docname : PCSTR;
+                                Doc : POLESERVERDOC;
+                                VAR ServerDoc : LHSERVERDOC) : OLESTATUS;
+PROCEDURE OleRevokeServerDoc   (ServerDoc : LHSERVERDOC) : OLESTATUS;
+PROCEDURE OleRenameServerDoc   (ServerDoc : LHSERVERDOC; newname : PCSTR) : OLESTATUS;
+PROCEDURE OleRevertServerDoc   (ServerDoc : LHSERVERDOC) : OLESTATUS;
+PROCEDURE OleSavedServerDoc    (ServerDoc : LHSERVERDOC) : OLESTATUS;
+
+TYPE OLESERVERVTBL =
+     RECORD
+     Open : PROCEDURE (POLESERVER, LHSERVERDOC, PCSTR, VAR POLESERVERDOC) : OLESTATUS;
+                                   (* long handle to doc(privtate to DLL)  *)
+                                   (* lp to OLESERVER                      *)
+                                   (* document name                        *)
+                                   (* place holder for returning oledoc.   *)
+
+     Create : PROCEDURE (POLESERVER, LHSERVERDOC, PCSTR, PCSTR, VAR POLESERVERDOC) : OLESTATUS;
+                                   (* long handle to doc(privtate to DLL)  *)
+                                   (* lp to OLESERVER                      *)
+                                   (* lp class name                        *)
+                                   (* lp doc name                          *)
+                                   (* place holder for returning oledoc.   *)
+
+     CreateFromTemplate : PROCEDURE (POLESERVER, LHSERVERDOC, PCSTR, PCSTR, PCSTR, VAR POLESERVERDOC) : OLESTATUS;
+                                   (* long handle to doc(privtate to DLL)  *)
+                                   (* lp to OLESERVER                      *)
+                                   (* lp class name                        *)
+                                   (* lp doc name                          *)
+                                   (* lp template name                     *)
+                                   (* place holder for returning oledoc.   *)
+
+     Edit : PROCEDURE (POLESERVER, LHSERVERDOC, PCSTR, PCSTR, VAR POLESERVERDOC) : OLESTATUS;
+                                   (* long handle to doc(privtate to DLL)  *)
+                                   (* lp to OLESERVER                      *)
+                                   (* lp class name                        *)
+                                   (* lp doc name                          *)
+                                   (* place holder for returning oledoc.   *)
+
+     Exit : PROCEDURE (POLESERVER) : OLESTATUS;
+                                   (* lp OLESERVER                         *)
+
+     Release : PROCEDURE (POLESERVER) : OLESTATUS;
+                                   (* lp OLESERVER                         *)
+
+     Execute : PROCEDURE (POLESERVER, HGLOBAL) : OLESTATUS;
+                                   (* lp OLESERVER                         *)
+                                   (* handle to command strings            *)
+     END;
+     POLESERVERVTBL = POINTER TO OLESERVERVTBL;
+
+TYPE OLESERVER = RECORD pvtbl : POLESERVERVTBL; END;
+
+<* IF BACKEND # "C" THEN *>
+
+TYPE OLESERVERDOCVTBL =
+     RECORD
+     Save             : PROCEDURE (POLESERVERDOC) : OLESTATUS;
+     Close            : PROCEDURE (POLESERVERDOC) : OLESTATUS;
+     SetHostNames     : PROCEDURE (POLESERVERDOC, PCSTR, PCSTR) : OLESTATUS;
+     SetDocDimensions : PROCEDURE (POLESERVERDOC, RECT) : OLESTATUS;
+     GetObject        : PROCEDURE (POLESERVERDOC, PCSTR, VAR POLEOBJECT, POLECLIENT) : OLESTATUS;
+     Release          : PROCEDURE (POLESERVERDOC) : OLESTATUS;
+     SetColorScheme   : PROCEDURE (POLESERVERDOC, LOGPALETTE) : OLESTATUS;
+     Execute          : PROCEDURE (POLESERVERDOC, HGLOBAL) : OLESTATUS;
+     END;
+     POLESERVERDOCVTBL = POINTER TO OLESERVERDOCVTBL;
+
+<* ELSE *>
+
+TYPE OLESERVERDOCVTBL =
+     RECORD
+     Save             : PROCEDURE (POLESERVERDOC) : OLESTATUS;
+     Close            : PROCEDURE (POLESERVERDOC) : OLESTATUS;
+     SetHostNames     : PROCEDURE (POLESERVERDOC, PCSTR, PCSTR) : OLESTATUS;
+     SetDocDimensions : PROCEDURE (POLESERVERDOC, PRECT) : OLESTATUS;
+     GetObject        : PROCEDURE (POLESERVERDOC, PCSTR, VAR POLEOBJECT, POLECLIENT) : OLESTATUS;
+     Release          : PROCEDURE (POLESERVERDOC) : OLESTATUS;
+     SetColorScheme   : PROCEDURE (POLESERVERDOC, PLOGPALETTE) : OLESTATUS;
+     Execute          : PROCEDURE (POLESERVERDOC, HGLOBAL) : OLESTATUS;
+     END;
+     POLESERVERDOCVTBL = POINTER TO OLESERVERDOCVTBL;
+
+<* END *>
+
+TYPE OLESERVERDOC = RECORD pltbl : POLESERVERDOCVTBL; END;
+
+
+END OLE.

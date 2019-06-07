@@ -1,0 +1,50 @@
+(* Copyright (c) xTech 1992,95.  All Rights Reserved *)
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+<*- GENTYPEDEF *>
+DEFINITION MODULE ["C"] X2C;
+
+IMPORT SYSTEM, xmRTS;
+
+TYPE
+  (* Do not declare types, which are not declared in X2C.H ! *)
+  X2C_EXIT_PROC = PROCEDURE;
+  X2C_LSET_BASE;
+  X2C_ppcCHAR = POINTER TO POINTER TO CHAR;
+
+VAR
+  X2C_argc-        : SYSTEM.int;
+  X2C_argv-        : POINTER TO POINTER TO CHAR;
+  X2C_LSET_SIZE-   : SYSTEM.int;
+  X2C_adr_aligment-: INTEGER;
+
+  (* Oberon-2 Exceptions *)
+  X2C_assertException-,
+  X2C_guardException-,
+  (* RTS Exceptions *)
+  X2C_noMemoryException-,
+  X2C_internalError-,
+  X2C_castError-,
+  X2C_UserBreak-,
+  X2C_unreachDLL-,
+  X2C_stack_overflow-: SYSTEM.CARD32;
+
+(*-----------------------------------------------------*)
+
+VAR
+  X2C_OFS_END-: SYSTEM.ADDRESS;
+  X2C_OFS_ARR-: SYSTEM.ADDRESS;
+  X2C_OFS_REC-: SYSTEM.ADDRESS;
+  X2C_BASE-   : SYSTEM.ADDRESS;
+
+PROCEDURE X2C_GET_TD(a: SYSTEM.ADDRESS): xmRTS.X2C_TD;
+
+PROCEDURE X2C_adr_lss(x,y: SYSTEM.ADDRESS): BOOLEAN;
+PROCEDURE X2C_adr_gtr(x,y: SYSTEM.ADDRESS): BOOLEAN;
+
+(*-----------------------------------------------------*)
+
+PROCEDURE X2C_PROC_INP;
+PROCEDURE X2C_TRAP(trap_no: SYSTEM.INT32);
+
+END X2C.
