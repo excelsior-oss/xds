@@ -21,12 +21,17 @@
 /*/*.html
 /*/*.xml
 
-/EclipseSDKUpdate/update_site
-/*/help_plugin/
-/*/eclipse/
+/*/*.chm
+/*/*.clg
+/*/*.hha
+/*/*.hhc
+/*/*.php
+/*/*.pdf
 
 /*/workplace/*.hlp
 /*/workplace/*.HLP
 /*/workplace/*.cnt
 /*/workplace/*.jar
 /*/workplace/*.zip
+
+!/Common/*.*

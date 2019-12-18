@@ -7,4 +7,11 @@
 workplace\sdk.ini                 .\
 workplace\sdk-c.ini               .\
 workplace\sdk-x86.ini             .\
+
+workplace\pdf\xc.pdf             pdf\
+workplace\pdf\xm.pdf             pdf\
+workplace\pdf\xd.pdf             pdf\
+workplace\pdf\o2rep.pdf          pdf\
+workplace\pdf\h2d.pdf            pdf\
+workplace\pdf\xdslib.pdf         pdf\
               
