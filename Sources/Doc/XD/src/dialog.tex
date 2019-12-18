@@ -85,7 +85,7 @@ over one of its items. The following keys may be used to move the cursor:
 \KeyListEnd
 
 An item may also be selected by clicking it with the left or right mouse button.
-In the latter case, a \Ref{pop-up menu}{dialog:intro:menus} will also be displayed.
+In the latter case, a \TRef{pop-up menu}{dialog:intro:menus} will also be displayed.
 
 Information windows which contain lists of program entities,
 for instance, a list of all modules or a list of local variables
@@ -286,7 +286,7 @@ breakpoint position. See \ref{dialog:breaks} for more information.
 When the two cursors coincide, only the execution cursor is displayed.
 The user cursor is moved to the position of the execution cursor
 when the debuggee execution is interrupted, for instance, when
-a step command is executed or a \Ref{breakpoint}{dialog:breaks} is hit.
+a step command is executed or a \TRef{breakpoint}{dialog:breaks} is hit.
 You may also quickly move the user cursor to the position of the execution
 cursor by pressing {\bf Ctrl+Home} or selecting {\bf Home} from the
 {\bf Search} menu.
@@ -462,7 +462,7 @@ on or off.
 \label{dialog:navigating:modules}
 
 The {\bf Modules} window contains the list of modules which constitute
-the current \Ref{component}{dialog:navigating:components}.
+the current \TRef{component}{dialog:navigating:components}.
 To open it, select {\bf Modules} from the {\bf Code}
 menu or press {\bf Ctrl+M}. To display another module in the
 {\bf Program} window, double-click its name, select it using arrow
@@ -475,10 +475,10 @@ all modules.
 
 % !!! New in version 1.1:
 The module that is currently displayed in the 
-\Ref{{\bf Program} window}{dialog:navigating} and the module that contains
+\TRef{{\bf Program} window}{dialog:navigating} and the module that contains
 the instruction pointer have marks in the first column. The color
 of each mark matches the color of the respective
-\Ref{cursor}{dialog:navigating:cursors}.
+\TRef{cursor}{dialog:navigating:cursors}.
 
 To display global variables of a particular module in a separate window
 (see \ref{dialog:data:module}), press {\bf Ctrl+V} or select 
@@ -541,7 +541,7 @@ The execution commands are collected in the {\bf Run} menu:
 \item[{\bf Step out}] \mbox{} \\
     Execute until return from the current procedure.
 \item[{\bf Run to cursor}] \mbox{} \\
-    Execute until the current \Ref{user cursor}{dialog:navigating:cursors}
+    Execute until the current \TRef{user cursor}{dialog:navigating:cursors}
     position is reached.
 \item[{\bf Run to epilogue}] \mbox{} \\
     Execute until the current procedure's stack cleanup code.
@@ -612,9 +612,9 @@ the \verb'call' instruction which called the current procedure, and then
 resumes execution. If no other breakpoints or breaks are encountered,
 the debuggee will be executed until the current procedure finishes,
 and then control will be returned back to the debugger. You may use
-this command if you accidentally issued the \Ref{{\bf Step into}}
+this command if you accidentally issued the \TRef{{\bf Step into}}
 {dialog:executing:stepinto} command instead of
-\Ref{{\bf Step over}}{dialog:executing:stepover}.
+\TRef{{\bf Step over}}{dialog:executing:stepover}.
 
 Shortcut key: {\bf Ctrl+F6}
 
@@ -623,7 +623,7 @@ Shortcut key: {\bf Ctrl+F6}
 
 The {\bf Run to cursor} command installs a temporary breakpoint at
 the current position of the user cursor, which has to be on an
-\Ref{executable line}{start:general:executable},
+\TRef{executable line}{start:general:executable},
 and then resumes execution of the debuggee.
 So execution will stop at that line, provided that no other breakpoints
 or breaks are encountered, no exception is raised and the debuggee
@@ -656,8 +656,8 @@ otherwise you will corrupt the code and execution will not stop.
 
 The {\bf Restart} command reloads the debuggee and exectues it up to 
 the beginning of the main module body. All
-\Ref{breakpoints}{dialog:breaks}, \Ref{breaks}{dialog:breaks},
-and \Ref{watches}{dialog:data:watches} are retained.
+\TRef{breakpoints}{dialog:breaks}, \TRef{breaks}{dialog:breaks},
+and \TRef{watches}{dialog:data:watches} are retained.
 
 {\bf Note:} Your program may load DLLs at run-time, which will
 be unavailable after restart. If there were any breakpoints
@@ -796,7 +796,7 @@ menu:
 The {\bf Sticky breakpoint} command sets a breakpoint
 at the line or instrution pointed to by the user cursor.
 It is called "sticky" because it is not removed when hit,
-unlike a \Ref{simple breakpoint}{dialog:breaks:simple}.
+unlike a \TRef{simple breakpoint}{dialog:breaks:simple}.
 
 The $\Diamond$ symbol is displayed in the mark column for
 breakpoints in this type.
@@ -817,7 +817,7 @@ Shortcut key: {\bf F8}
 \label{dialog:breaks:delayedsticky}
 
 The {\bf Delayed sticky breakpoint} command sets a
-\Ref{sticky breakpoint}{dialog:breaks:sticky}
+\TRef{sticky breakpoint}{dialog:breaks:sticky}
 which stops the debuggee only after the specified number of hits.
 This is very useful for debugging loops.
 
@@ -863,12 +863,12 @@ Shortcut key: {\bf Ctrl+F8}
 \label{dialog:breaks:expression}
 
 The {\bf Expression breakpoint} command installs a
-\Ref{sticky breakpoint}{dialog:breaks:sticky}
+\TRef{sticky breakpoint}{dialog:breaks:sticky}
 and associates a boolean expression with it. The expression is evaluated each
 time the breakpoint is hit, and execution is stopped only if the result is
 \verb'TRUE'.
 
-When the \Ref{user cursor}{dialog:navigating:cursors}
+When the \TRef{user cursor}{dialog:navigating:cursors}
 is positioned over a line containing an expression
 breakpoint, the associated expression is shown in the {\bf Program}
 window header.
@@ -882,7 +882,7 @@ Shortcut key: {\bf Alt+F9}
 \label{dialog:breaks:counter}
 
 The {\bf Pass counter} command establishes a
-\Ref{sticky breakpoint}{dialog:breaks:sticky}
+\TRef{sticky breakpoint}{dialog:breaks:sticky}
 which, however, does not cause execution to stop but just counts the number of hits.
 A pass counter initially has a value of zero which is incremented
 each time the line or instruction associated with it is
@@ -894,7 +894,7 @@ program execution.
 This information may be used, for instance, when setting delayed
 breakpoints.
 
-When the \Ref{user cursor}{dialog:navigating:cursors} is positioned over
+When the \TRef{user cursor}{dialog:navigating:cursors} is positioned over
 a pass counter, its value is shown in the {\bf Program} window header.
 You may also use the \See{{\bf Breaks} window}{}{dialog:breaks:window}
 to examine pass counter values.
@@ -909,9 +909,9 @@ Shortcut key: {\bf .}
 \label{dialog:breaks:watchpoint}
 
 The {\bf Watchpoint} command sets a
-\Ref{sticky breakpoint}{dialog:breaks:sticky},
+\TRef{sticky breakpoint}{dialog:breaks:sticky},
 upon encountering which execution is resumed automatically.
-The effect is that all \Ref{information windows}{dialog:intro}
+The effect is that all \TRef{information windows}{dialog:intro}
 are updated when a watchpoint is passed.
 
 This approach is in many cases more efficient than
@@ -980,7 +980,7 @@ For an access break, access type and address range are displayed.
 Finally, for a conditional break, the associated expression is displayed.
 
 Double-clicking or pressing {\bf Enter} on a breakpoint moves
-the \Ref{user cursor}{dialog:navigating:cursors} to the
+the \TRef{user cursor}{dialog:navigating:cursors} to the
 breakpoint position. You may also achieve this by selecting {\bf Go to}
 from the pop-up menu.
 
@@ -1075,7 +1075,7 @@ variable element which, in turn, is of a structured or pointer type.
 
 % !!! New in 1.1:
 You may alter the display format of a particular element of data using
-the {\bf Type} \Ref{pop-up submenu}{dialog:intro:menus}. You may change radix
+the {\bf Type} \TRef{pop-up submenu}{dialog:intro:menus}. You may change radix
 for wholes, turn pointer dereference on/off, etc.
 
 To modify a variable of a basic, range, or enumeration type
@@ -1130,7 +1130,7 @@ press {\bf Ctrl+V}.
 
 To display global variables of a particular module in a separate window,
 select {\bf Show variables} from the pop-up menu of the 
-\Ref{{\bf Modules} window}{dialog:navigating:modules}.
+\TRef{{\bf Modules} window}{dialog:navigating:modules}.
 
 See also \ref{dialog:data:display}.
 
@@ -1140,7 +1140,7 @@ See also \ref{dialog:data:display}.
 Select {\bf Local variables} from the {\bf Data} menu to open the
 {\bf Local variables} window. That window displays parameters and local
 variables of the procedure currently selected in the
-\Ref{{\bf Call Stack}}{dialog:executing:callstack} window.
+\TRef{{\bf Call Stack}}{dialog:executing:callstack} window.
 Name of that procedure is displayed in the window header.
 
 A horizontal line separates parameters from locals. An exclamation mark
@@ -1288,7 +1288,7 @@ behaviour in dialog mode.
     from the {\bf Source} mode to the {\bf Disassembly} mode
     during execution.
 \item[{\bf Code highlight}] \mbox{} \\
-    If enabled, XD displays \Ref{executable lines}{start:general:executable}
+    If enabled, XD displays \TRef{executable lines}{start:general:executable}
     in different color.
 \item[{\bf Full disasm mode}] \mbox{} \\
     If enabled, XD tries to resolve addresses to publics and
@@ -1316,7 +1316,7 @@ behaviour in dialog mode.
     Enables detection of the actual dynamic type of an Oberon-2 pointer 
     or a Java object. If this option is disabled, actual type of a 
     particular entity can still be determined using a
-    \Ref{pop-up menu}{dialog:intro:menus}.
+    \TRef{pop-up menu}{dialog:intro:menus}.
 \item[{\bf Use single structure window}] \mbox{} \\
     Controls whether a new window is opened when you select an array element
     or a record field of a structured or pointer type.
@@ -1355,7 +1355,7 @@ The following keys may be used in a color sheet:
 
 If you have the \See{{\bf Save debug session layout} option}{}{dialog:options}
 switched ON, the new color scheme will be stored in a
-\Ref{session file}{dialog:sysfiles}
+\TRef{session file}{dialog:sysfiles}
 upon debugging session termination. Otherwise, the changes you made
 will be lost unless you explicitly save the current configuration
 using the {\bf Save config} command from the {\bf File} menu.

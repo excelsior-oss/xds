@@ -47,12 +47,12 @@ rem === Setup 'PATH' to MSYS
 set PATH=%PATH%;%MSYS%\bin
 
 rem === Setup 'PATH' to Microsoft Help Workshop  
-rem NOTE: docs generation disabled 
-rem set PATH=%MS_HELP_WORKSHOP%;%PATH%
+if exist "%MS_HELP_WORKSHOP%"  set PATH=%MS_HELP_WORKSHOP%;%PATH%
 
 rem === Setup 'PATH' to MikTeX  
-rem NOTE: docs generation disabled 
-rem set PATH=%MIKTEX%\bin;%PATH%
+if exist "%MIKTEX%"  set PATH=%MIKTEX%\bin;%PATH%
+if exist "%MIKTEX%\bin\pdflatex.exe"      set PATH=%MIKTEX%\bin;%PATH%
+if exist "%MIKTEX%\bin\x64\pdflatex.exe"  set PATH=%MIKTEX%\bin\x64;%PATH%
 
 goto :EOF
 

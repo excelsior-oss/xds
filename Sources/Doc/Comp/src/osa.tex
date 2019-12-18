@@ -164,7 +164,7 @@ to your \verb'osa.red' file.
 
 Generally, OSA is invoked like an XDS compiler. All XDS
 \See{operation modes}{}{xc:modes}, except GEN, BROWSE, and BATCH,
-may be used. The \Ref{ALL}{xc:modes:all} submode is always assumed.
+may be used. The \TRef{ALL}{xc:modes:all} submode is always assumed.
 The error checker recognizes all XDS options and equations that are
 not specific to a particular code generator.
 
@@ -172,18 +172,18 @@ not specific to a particular code generator.
 command line) for the main \ot{} module.
 
 If your program consists of a single module, OSA can be invoked 
-in the \Ref{COMPILE}{xc:modes:compile} mode:
+in the \TRef{COMPILE}{xc:modes:compile} mode:
 \index{osa\Exe{}@{osa\Exe{}}}
 
 \verb'    osa [=c] <source file name> [<options and equations>]'
 
 If your program includes several modules but has no
-project file, use the \Ref{MAKE}{xc:modes:make} mode:
+project file, use the \TRef{MAKE}{xc:modes:make} mode:
 
 \verb'    osa =m <top-level module file> [<options and equations>]'
 
 Finally, if your program includes several modules and has a
-project file, use the \Ref{PROJECT}{xc:modes:project} mode:
+project file, use the \TRef{PROJECT}{xc:modes:project} mode:
 
 \verb'    osa =p <project file name> [<options and equations>]'
 

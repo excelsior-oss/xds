@@ -204,7 +204,7 @@ When compiling an EXE module:
 
 To allow the \See{MAKE mode}{}{xc:modes:make} to be used, you have to
 orgranize your source files and redirections as if you were using the
-\Ref{PROJECT mode}{xc:modes:project} (see below).
+\TRef{PROJECT mode}{xc:modes:project} (see below).
 
 If you prefer to use the compiler in the \See{PROJECT mode}{}{xc:modes:project},
 create a project file for each executable component (EXE or DLL).
@@ -223,7 +223,7 @@ visible to the compiler via redirections.
     } % end \footnotesize
 \end{quote}
 
-In the \Ref{PROJECT mode}{xc:modes:project}, if the \OERef{DLLNAME} equation was
+In the \TRef{PROJECT mode}{xc:modes:project}, if the \OERef{DLLNAME} equation was
 not set, the compiler substitutes the name of the project file (without path and extension,
 of course). So you do not have to care about this setting, as long as your DLLs
 are named after their project files.
@@ -305,7 +305,7 @@ There are three ways to control which identifiers are to be exported:
 
       You may switch to this method at any time.
       Once you have built a DLL without an EDF, you may use the
-      \Ref{XDS Library Manager}{xlib} to produce it
+      \TRef{XDS Library Manager}{xlib} to produce it
       (see \ref{xlib:modes:export}).
       Next time you link the DLL, you may use this file,
       or a modified version of it.
@@ -431,14 +431,14 @@ may be linked without import libraries:
 \begin{itemize}
 \item If the \OERef{IMPLIB} option is set ON, the compiler expects that
       import libraries for all DLLs used by the currently compiled source
-      will be available at link time. You have to use \Ref{XLIB}{xlib}
+      will be available at link time. You have to use \TRef{XLIB}{xlib}
       or another library manager to create the necessary import libraries
       (see \ref{xlib:modes:import} and then specify their names to the linker.
       If you are taking advantage of
       \See{the XDS project subsystem}{}{xc:project},
       you may list them in the project file using the
-      \Ref{{\tt !module} directive}{xc:project}, provided that
-      the \Ref{template file}{xc:template} has appropriate support.
+      \TRef{{\tt !module} directive}{xc:project}, provided that
+      the \TRef{template file}{xc:template} has appropriate support.
 
       In this case, import will be performed either
       by name or by ordinal (see \ref{dll:overview}),

@@ -314,7 +314,7 @@ next statement.
 
 The \verb'"-"'-form disables trapping of a specified error.
 
-The \Ref{{\tt \#IMPORT}}{batch:IMPORT} directive and the SIGNAL statement
+The \TRef{{\tt \#IMPORT}}{batch:IMPORT} directive and the SIGNAL statement
 allow to implement reusable handlers for a certain group
 of errors.
 
@@ -416,13 +416,13 @@ terminate the debuggee. In this case, control file processing continues from
 a statement next to the \verb'START' statement.
 } % \samepage
 
-The \verb'START/STOP' statements form a pair similar to \Ref{{\tt CALL/RETURN}}{batch:CALL},
+The \verb'START/STOP' statements form a pair similar to \TRef{{\tt CALL/RETURN}}{batch:CALL},
 except that nesting is not allowed. This means that a program may not be
 restarted until it is explicitly stopped, so \verb'START' is not allowed within
 a handler. Conversely, \verb'STOP' is not allowed outside a handler.
 % !!! Which error is issued in the latter case? Does execution continues in both cases?
 
-The \verb'STOP' statement unwinds the \Ref{subroutine stack}{batch:CALL} up to the
+The \verb'STOP' statement unwinds the \TRef{subroutine stack}{batch:CALL} up to the
 level from which the \verb'START' statement was issued.
 
 {\samepage

@@ -53,11 +53,11 @@ compiler will use {\bf.o2} as the default \ot{} extension.
 \begin{tabular}{ll}
 \bf Mode    & \bf Meaning                                     \\
 \hline
-\Ref{COMPILE}{xc:modes:compile} & Compile all modules given on the command line  \\
-\Ref{PROJECT}{xc:modes:project} & Make all projects given on the command line    \\
-\Ref{MAKE}{xc:modes:make}       & Check dependencies and recompile               \\
-\Ref{GEN}{xc:modes:gen}         & Generate makefile for all projects             \\
-\Ref{BROWSE}{xc:modes:browse}   & Extract definitions from symbol files          \\
+\TRef{COMPILE}{xc:modes:compile} & Compile all modules given on the command line  \\
+\TRef{PROJECT}{xc:modes:project} & Make all projects given on the command line    \\
+\TRef{MAKE}{xc:modes:make}       & Check dependencies and recompile               \\
+\TRef{GEN}{xc:modes:gen}         & Generate makefile for all projects             \\
+\TRef{BROWSE}{xc:modes:browse}   & Extract definitions from symbol files          \\
 HELP                            & Print help and terminate
 \end{tabular}
 
@@ -248,7 +248,7 @@ preserving so-called {\em exported} comments if necessary.
 \label{xc:modes:all}
 \index{operation modes!ALL}
 
-In both \Ref{PROJECT}{xc:modes:project} and \Ref{MAKE}{xc:modes:make} modes,
+In both \TRef{PROJECT}{xc:modes:project} and \TRef{MAKE}{xc:modes:make} modes,
 the compiler checks the time stamps of the files concerned and recompiles
 only those files that are necessary (See \ref{xc:smart}).
 If the ALL submode was specified, the time stamps are ignored,
@@ -303,7 +303,7 @@ file {\tt my.prj} and on the command line ({\tt xyz} option):
 In the PROJECT mode options are listed for each project file
 given on the command line.
 
-See also the \Ref{EQUATIONS submode}{xc:modes:equations}.
+See also the \TRef{EQUATIONS submode}{xc:modes:equations}.
 
 \subsection{EQUATIONS submode}\label{xc:modes:equations}
 \index{operation modes!EQUATIONS}
@@ -316,7 +316,7 @@ It can be used together with
 \See{MAKE}{}{xc:modes:make}, and
 \See{PROJECT}{}{xc:modes:project} modes.
 
-See also the \Ref{OPTIONS submode}{xc:modes:options}.
+See also the \TRef{OPTIONS submode}{xc:modes:options}.
 
 \section{Files generated during compilation}\label{usage:genfiles}
 
