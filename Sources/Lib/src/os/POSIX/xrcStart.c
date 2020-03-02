@@ -13,7 +13,9 @@
 */
 
 #include <stdlib.h>
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 
 extern int main(int argc, char *argv[]);
 

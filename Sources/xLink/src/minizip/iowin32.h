@@ -7,7 +7,9 @@
    Copyright (C) 1998-2005 Gilles Vollant
 */
 
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 
 
 #ifdef __cplusplus

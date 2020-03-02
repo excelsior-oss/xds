@@ -1,5 +1,7 @@
 #include <stdio.h>
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 
 main ()
 {

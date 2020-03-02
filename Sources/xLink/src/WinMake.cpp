@@ -1,4 +1,6 @@
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 #include <stdlib.h>
 #include "winmake.h"
 

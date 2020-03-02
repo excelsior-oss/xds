@@ -5,7 +5,9 @@
 
 #if (defined(__WATCOMC__) && defined(__NT__)) || (defined(_MSC_VER) && defined(_WIN32))
 
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 void xtsLib_Delay(X2C_CARD32 t) {
   Sleep(t);
 }

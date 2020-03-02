@@ -11,14 +11,18 @@
 #if defined(_msdos)
 
 #if defined(_WIN32) || defined (__NT__) /* Temporary patch */
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 #endif
 
 #if defined(_MSC_VER) && defined(_WIN32)
 
 /* Microsoft C compiler for Win32 */
 #define WIN32_LEAN_AND_MEAN
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 #include <mmsystem.h>
 #define EN_INTS()
 #define DIS_INTS()

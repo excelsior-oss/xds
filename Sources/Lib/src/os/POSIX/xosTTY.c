@@ -94,7 +94,9 @@ X2C_INT32 X2C_InitTTY()
 #else
 #if defined(_WIN32) || defined(__NT__)
 
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 
 static HANDLE hInp, hOut;
 static int init = 0;

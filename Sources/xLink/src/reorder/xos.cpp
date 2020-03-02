@@ -363,7 +363,9 @@ void initOS ()
 //----------------------------------------------------------------------------
 #if defined(xos_WINNT)
 
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 #include <io.h>
 
 class Win32MappingFile : public OSFile {

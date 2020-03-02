@@ -219,7 +219,9 @@
 #    ifdef FAR
 #      undef FAR
 #    endif
+#    pragma pack(push, 8)
 #    include <windows.h>
+#    pragma pack(pop)
      /* No need for _export, use ZLIB.DEF instead. */
      /* For complete Windows compatibility, use WINAPI, not __stdcall. */
 #    define ZEXPORT WINAPI

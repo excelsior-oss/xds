@@ -4,7 +4,9 @@
 
 #if (defined(__WATCOMC__) && defined(__NT__)) || (defined(_MSC_VER) && defined(_WIN32))
 
+#pragma pack(push, 8)
 #include <windows.h>
+#pragma pack(pop)
 void xtsIO_SetConMode(X2C_BOOLEAN set, X2C_CARD32* tmp) {
     HANDLE hCon = GetStdHandle(STD_INPUT_HANDLE);
     DWORD conOldState;
