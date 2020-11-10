@@ -236,6 +236,22 @@
   !end
   ! "CC\t= @cl\n"
   !new ccomp = $$(CC) $$(CDEFS) $$(CF) $$(GENDLL) /Fo%s /Tc%s
+!elsif env_target="clangnt" then
+  ! "CDEFS\t= /DX2C_alt_offs /DX2C_no_asinh /DX2C_no_acosh /DX2C_no_atanh /DWINDOWS_IGNORE_PACKING_MISMATCH\n"
+  !if gendebug then
+    ! "CF\t= -m32 /c /nologo /w /J /Zp1 /Zi /I$(INCL)\n"
+  !else
+    ! "CF\t= -m32 /c /nologo /w /J /Zp1 /I$(INCL)\n"
+  !end
+  !if gendll then
+    ! "GENDLL\t= /LD -DX2C_GEN_DLL\n"
+  !elsif defined usedll and usedll then
+    ! "GENDLL\t= -DX2C_GEN_DLL\n"
+  !else
+    ! "GENDLL\t= \n"
+  !end
+  ! "CC\t= @clang-cl\n"
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) $$(GENDLL) /Fo%s /Tc%s
 !elsif (env_target="winntpp") or (env_target="winntpl") then
   ! "CDEFS\t= /DX2C_alt_offs /DX2C_no_asinh /DX2C_no_acosh /DX2C_no_atanh\n"
   !if gendebug then
@@ -358,6 +374,7 @@
   !elsif env_target="powermac" then
 
   !elsif (env_target="winnt") or \
+         (env_target="clangnt") or \
          (env_target="winntpp") or \
          (env_target="ppcnt") or \
          (env_target="winntpl") then
@@ -518,7 +535,7 @@
       ! "lib %s\n","os2face"#"lib"
       ! "<<\n"
     !end
-  !elsif env_target="winnt" then
+  !elsif (env_target="winnt") or (env_target="clangnt") then
     ! "$(TSLIB) : $(M) $(OBJ)\n"
     ! "\t@link.exe @<<\n"
     ! "/nologo\n"
@@ -591,7 +608,8 @@
   !elsif (env_target="sunos4") or (env_target="hpgcc") then
     ! "\tgcc -o $(TARGET) $(OBJ) $(TSLIB) -lm\n"
   !elsif (env_target="winnt")   or (env_target="winntpp") or \
-         (env_target="winntpl") or  (env_target="ppcnt") then
+         (env_target="winntpl") or  (env_target="ppcnt")  or \
+         (env_target="clangnt") then
     ! "\t@link.exe @<<\n"
     ! "/nologo\n"
     !if gendebug then

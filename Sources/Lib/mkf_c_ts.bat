@@ -51,24 +51,45 @@ goto lbl_Success
 
 rem ============================================= Generate TopSpeed MSVC makefile
 :lbl_msvcts_mkf
-set MAKE_OPTIONS=-mkf_name:=msvcts -cc=MSVC -env_target=winnt -target_fs=unc -target_family=win32 -target_os=winnt
+set LIB_MKF_NAME=msvcts
+set MAKE_OPTIONS=-mkf_name:=%LIB_MKF_NAME% -cc=MSVC -env_target=winnt -target_fs=unc -target_family=win32 -target_os=winnt
 
-call :lbl_gen_mkf msvcts  "%MAKE_OPTIONS%"  || goto lbl_Error
+call :lbl_gen_mkf %LIB_MKF_NAME%  "%MAKE_OPTIONS%"  || goto lbl_Error
 
-set CHECK_OPTIONS=nmake /f msvcts.mkf
-call :lbl_check_mkf msvcts "%CHECK_OPTIONS%"  || (popd & exit /B 1)
+set CHECK_OPTIONS=nmake /f %LIB_MKF_NAME%.mkf
+call :lbl_check_mkf %LIB_MKF_NAME% "%CHECK_OPTIONS%"  || (popd & exit /B 1)
 goto lbl_Success
+
 
 rem ============================================= Generate TopSpeed MSVC makefile
 :lbl_watcomts_mkf
-set MAKE_OPTIONS=-mkf_name:=watcomts -cc=Watcom -env_target=watcomnt -target_family=win32
-call :lbl_gen_mkf watcomts "%MAKE_OPTIONS%"  || goto lbl_Error
+set LIB_MKF_NAME=watcomts
+set MAKE_OPTIONS=-mkf_name:=%LIB_MKF_NAME% -cc=Watcom -env_target=watcomnt -target_family=win32
+
+call :lbl_gen_mkf %LIB_MKF_NAME% "%MAKE_OPTIONS%"  || goto lbl_Error
 goto lbl_Success
+
 
 rem ============================================= Generate TopSpeed Unix makefile
 :lbl_unixts_mkf
-set MAKE_OPTIONS=-mkf_name:=unixts -cc=GCC -env_target= -target_fs=unix -target_family=unix -target_os=unix -libext=a 
-call :lbl_gen_mkf unixts "%MAKE_OPTIONS%"  || goto lbl_Error
+set LIB_MKF_NAME=unixts
+set MAKE_OPTIONS=-mkf_name:=%LIB_MKF_NAME% -cc=GCC -env_target= -target_fs=unix -target_family=unix -target_os=unix -libext=a 
+
+call :lbl_gen_mkf %LIB_MKF_NAME% "%MAKE_OPTIONS%"  || goto lbl_Error
+goto lbl_Success
+
+
+rem ============================================= Generate TopSpeed LLVM makefile
+:lbl_clangclts_mkf
+set LIB_MKF_NAME=clangclts
+set MAKE_OPTIONS=-mkf_name:=%LIB_MKF_NAME% -cc=CLangCL -env_target=clangnt -target_fs=unc -target_family=win32 -target_os=winnt
+
+call :lbl_gen_mkf %LIB_MKF_NAME%  "%MAKE_OPTIONS%"  || goto lbl_Error
+
+if not defined LLVM_HOME  goto lbl_Success
+
+set CHECK_OPTIONS=nmake /f %LIB_MKF_NAME%.mkf
+call :lbl_check_mkf %LIB_MKF_NAME% "%CHECK_OPTIONS%"  || (popd & exit /B 1)
 goto lbl_Success
 
 

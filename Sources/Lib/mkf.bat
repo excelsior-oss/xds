@@ -52,6 +52,7 @@ rem ============================================= Make component
 :lbl_msvc_mkf
 :lbl_unix_mkf
 :lbl_watcom_mkf
+:lbl_clangcl_mkf
 
 call mkf_c.bat %MAKE_INCOMMING_ARGS%  || goto lbl_Error
 goto lbl_Success
@@ -62,6 +63,7 @@ rem ============================================= Make component
 :lbl_msvcts_mkf
 :lbl_watcomts_mkf
 :lbl_unixts_mkf
+:lbl_clangclts_mkf
 
 call mkf_c_ts.bat %MAKE_INCOMMING_ARGS%  || goto lbl_Error
 goto lbl_Success

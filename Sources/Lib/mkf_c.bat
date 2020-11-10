@@ -73,25 +73,19 @@ set MAKE_OPTIONS=-mkf_name:=%LIB_MKF_NAME% %XDS_OPT% %TARGET_OPT%
 call :lbl_gen_mkf %LIB_MKF_NAME%  "%MAKE_OPTIONS%"  || goto lbl_Error
 goto lbl_Success
 
+rem ============================================= Generate LLVM makefile
+:lbl_clangcl_mkf
+set LIB_MKF_NAME=clangcl
+set XDS_OPT=-cc=CLangCL -env_target=clangnt -decor=rht 
+set TARGET_OPT=-target_fs=unc -target_family=win32 -target_os=winnt  
+set MAKE_OPTIONS=-mkf_name:=%LIB_MKF_NAME% %XDS_OPT% %TARGET_OPT%
 
-rem ============================================= Make MSVC TopSpeed library
-:lbl_tsmsvc_lib
-set XDS_OPT=-cc=MSVC -env_target=winnt -env_host=winnt
-set TARGET_OPT=-target_fs=unc -target_family=win32 -target_os=winnt 
+call :lbl_gen_mkf %LIB_MKF_NAME%  "%MAKE_OPTIONS%"  || goto lbl_Error
 
-echo.
-echo Build XDS-C TopSpeed lib for MSVC x86 
-echo Update C-sources 
+if not defined LLVM_HOME  goto lbl_Success
 
-xcopy /R /Y src\TSlibs\POSIX\*.c  ch\C\     || exit /B 1 
-copy src\TSlibs\IO.*  src\TSlibs\IO_.*
-
-set MAKE_OPTIONS=%XDS_OPT% %TARGET_OPT% 
-if "%MAKE_MODE_ALL%" == "yes"     set MAKE_OPTIONS=%MAKE_OPTIONS% =a
-if "%MAKE_MODE_RELEASE%" == "yes" set MAKE_OPTIONS=%MAKE_OPTIONS% -mode:=enduser
-echo.
-echo "%WORKPLACE_DIR%\bin\xm.exe" =p tslib.prj %MAKE_OPTIONS%
-"%WORKPLACE_DIR%\bin\xm.exe" =p tslib.prj %MAKE_OPTIONS%  || exit /B 1
+set CHECK_OPTIONS=nmake /f %LIB_MKF_NAME%.mkf
+call :lbl_check_mkf %LIB_MKF_NAME% "%CHECK_OPTIONS%"  || goto lbl_Error
 goto lbl_Success
 
 
