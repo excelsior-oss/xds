@@ -27,7 +27,7 @@ set TEST_ERR_FILE=%REP_DIR%\%~n1.err
 
 if not exist "%TEMPLATE%" goto lbl_Tepl_not_found
 
-call "%~dp0\.config\setenv.bat"
+call "%~dp0\..\.config\setenv.bat"
 
 call "%~dp0\clean.bat"
 

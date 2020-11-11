@@ -2,10 +2,10 @@
 rem Setup remote folder to tests
 rem Usage: remote_setup Target [Test]
 rem   Target - remote folder to setup
-rem   Test   - test folder to setup: 'xmwe_msvc', 'xmwe_mingw' etc
+rem   Test   - test folder to setup: 'xdsc_msvc', 'xdsn_x86' etc
 
 set RATS_SETUP_DIR=%~1
-if "%RATS_SETUP_DIR%" == "" call "%~dp0\get_setup_dir.bat" RATS_SETUP_DIR 
+if "%RATS_SETUP_DIR%" == "" call "%~dp0\remote_get_dir.bat" RATS_SETUP_DIR 
 
 echo Setup RATS in "%RATS_SETUP_DIR%"
 
@@ -18,7 +18,7 @@ if not "%TEST_FOLDER%" == ""  call :lbl_Copy_test_folder "%TEST_FOLDER%"
 if     "%TEST_FOLDER%" == ""  for /F "eol=# tokens=1*" %%i IN (%~dp0\..\.testing.bsc) do  call :lbl_Copy_test_folder %%i
 
 rem ============================================= Setup test environment
-for %%i in (.scripts,bin,lib,templates) do xcopy "%~dp0\..\%%i"  "%RATS_SETUP_DIR%\%%i\" /Q /E 
+for %%i in (.config,.scripts,bin,lib,templates) do xcopy "%~dp0\..\%%i"  "%RATS_SETUP_DIR%\%%i\" /Q /E 
 for %%i in (bsc,bat) do xcopy "%~dp0\..\*.%%i"  "%RATS_SETUP_DIR%\" /Q 
 
 if not "%TEST_FOLDER%" == "" echo %TEST_FOLDER% > "%RATS_SETUP_DIR%\.testing.bsc"

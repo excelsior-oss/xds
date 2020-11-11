@@ -23,10 +23,10 @@ if not exist "%~dp0\%1" (
     exit /B 1
 ) 
 
-call %~dp0\.config\setenv.bat
+call "%~dp0\.config\setenv.bat"
 if not "%WINNOSENT%" == ""  call :lbl_notify_start %WINNOSENT%
 
-if not exist "%~dp0\XDS" xcopy "%~dp0\..\..\XDS\*" "%~dp0\XDS\" /Y /E /Q
+if not exist "%~dp0\XDS"  mklink /D /J  "%~dp0\XDS"  "%~dp0\..\..\XDS"
 
 if "%REP_COUNT%" == "" call "%~dp0\.scripts\get_rep_count.bat"
 
@@ -69,8 +69,8 @@ goto :EOF
 
 rem ============================================= Setup and Run test in remote folder
 :lbl_remote
-call "%~dp0\.scripts\get_setup_dir.bat" RATS_TARGET_DIR || goto :lbl_Exit
-call "%~dp0\.scripts\setup.bat" "%RATS_TARGET_DIR%" %1  || goto :lbl_Exit
+call "%~dp0\.scripts\remote_get_dir.bat" RATS_TARGET_DIR        || goto :lbl_Exit
+call "%~dp0\.scripts\remote_setup.bat"   "%RATS_TARGET_DIR%" %1 || goto :lbl_Exit
 
 echo ORIGIN_DIR=%~dp0> "%RATS_TARGET_DIR%\.origin.bsc"
 
@@ -88,7 +88,7 @@ if "%YesNo%" == "Y"  set RelocateRep=yes
 if "%YesNo%" == "y"  set RelocateRep=yes
 if "%YesNo%" == "≠"  set RelocateRep=yes
 if "%YesNo%" == "ç"  set RelocateRep=yes
-if "%RelocateRep%" == "yes" call "%~dp0\.scripts\remote2origin.bat" "%TEST_DESC%"
+if "%RelocateRep%" == "yes" call "%~dp0\.scripts\remote_retrieve.bat" "%TEST_DESC%"
 goto :EOF
 
 

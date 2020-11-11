@@ -1,4 +1,6 @@
 @echo off
+rem Run all tests in the current test folder
+rem Usage: test_all 
 
 set REP_DIR=reports
 set TEMPL_DIR=..\templates

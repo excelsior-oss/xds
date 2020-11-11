@@ -18,7 +18,7 @@ rem ============================================= Set Environment
 for /F "eol=# delims== tokens=1,2" %%i in (%XDS_ENV_CONFIG_FILE%) do call :lbl_set_envvar %%i "%%j"
 
 if not exist "%MSVC_HOME%"        call :lbl_Error MSVC_HOME       "%MSVC_HOME%"     
-rem if not exist "%LLVM_HOME%"        call :lbl_Error LLVM_HOME       "%LLVM_HOME%"     
+if not exist "%LLVM_HOME%"        call :lbl_Error LLVM_HOME       "%LLVM_HOME%"     
 if not exist "%MINGW%"            call :lbl_Error MINGW           "%MINGW%"         
 if not exist "%MINGW_MYSYSDIR%"   call :lbl_Error MINGW_MYSYSDIR  "%MINGW_MYSYSDIR%"
 
@@ -27,7 +27,8 @@ set PATH=%MINGW_MYSYSDIR%\bin;%PATH%
 
 rem === Setup 'PATH' to Microsoft Visual C++
 set PATH=%MSVC_HOME%\bin;%PATH%
-call "%MSVC_HOME%\vcvarsall.bat"
+if exist "%MSVC_HOME%\vcvarsall.bat"                  call "%MSVC_HOME%\vcvarsall.bat"
+if exist "%MSVC_HOME%\Auxiliary\Build\vcvarsall.bat"  call "%MSVC_HOME%\Auxiliary\Build\vcvarsall.bat" x86
 
 rem === Setup 'PATH' to MinGW  
 set PATH=%MINGW%\bin;%PATH%
@@ -38,10 +39,8 @@ set PATH=%LLVM_HOME%\bin;%PATH%
 set XDSDIR=%~dp0..\XDS
 set PATH=%XDSDIR%\bin;%PATH%
 
-
 set XDS_X86_RATS_ENV=%~dp0\setenv.bat
 goto :EOF
-
 
 
 rem ============================================= Check if the environment was already setuped
@@ -53,12 +52,10 @@ if "%XDS_X86_RATS_ENV%" == "%~dp0\setenv.bat"  set IS_XDS_X86_RATS_ENV_DEFINED=y
 goto :EOF
 
 
-
 rem ============================================= Set Environment Varibale
 :lbl_set_envvar
 set %1=%~2
 goto :EOF
-
 
 
 rem ============================================= Script Messages

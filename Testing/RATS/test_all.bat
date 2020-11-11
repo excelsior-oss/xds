@@ -53,8 +53,8 @@ goto :EOF
 
 rem ============================================= Setup and Ru8n test in remote folder
 :lbl_remote
-call "%~dp0\.scripts\get_setup_dir.bat" RATS_TARGET_DIR || goto :lbl_Exit
-call "%~dp0\.scripts\setup.bat" "%RATS_TARGET_DIR%"     || goto :lbl_Exit
+call "%~dp0\.scripts\remote_get_dir.bat" RATS_TARGET_DIR      || goto :lbl_Exit
+call "%~dp0\.scripts\remote_setup.bat"   "%RATS_TARGET_DIR%"  || goto :lbl_Exit
 
 echo ORIGIN_DIR=%~dp0> "%RATS_TARGET_DIR%\.origin.bsc~"
 
@@ -73,7 +73,7 @@ if "%YesNo%" == "Y"  set RelocateRep=yes
 if "%YesNo%" == "y"  set RelocateRep=yes
 if "%YesNo%" == "≠"  set RelocateRep=yes
 if "%YesNo%" == "ç"  set RelocateRep=yes
-if "%RelocateRep%" == "yes" call "%~dp0\.scripts\remote2origin.bat" "%TEST_ALL_DESC%"
+if "%RelocateRep%" == "yes" call "%~dp0\.scripts\remote_retrieve.bat" "%TEST_ALL_DESC%"
 goto :EOF
 
 
