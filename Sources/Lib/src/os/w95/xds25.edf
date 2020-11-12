@@ -12,21 +12,21 @@ EXPORTS
    X2C_PROFILE_NEST_START   @1507
    X2C_PROFILE_NEST_END     @1508
 
-   xrTCSx86_BEGIN                           @1509
-   xrTCSx86_DecreaseRecursionDepth          @1510
-   xrTCSx86_DecreaseVariableValue           @1511
-   xrTCSx86_IncreaseConditionCounter        @1512
-   xrTCSx86_IncreaseCounter                 @1513
-   xrTCSx86_IncreaseCounterExt              @1514
-   xrTCSx86_IncreaseIterationCounter        @1515
-   xrTCSx86_IncreaseRecursionDepth          @1516
-   xrTCSx86_IncreaseRelationCounter         @1517
-   xrTCSx86_IncreaseRelationCounterSigned   @1518
-   xrTCSx86_IncreaseRelationCounterUnsigned @1519
-   xrTCSx86_InitIterationCounter            @1520
-   xrTCSx86_InitRecursionDepth              @1521
-   xrTCSx86_RegistryModule                  @1522
-   xrTCSx86_RegistryModuleDynamic           @1523
+   xrTCS_BEGIN                           @1509
+   xrTCS_DecreaseRecursionDepth          @1510
+   xrTCS_DecreaseVariableValue           @1511
+   xrTCS_IncreaseConditionCounter        @1512
+   xrTCS_IncreaseCounter                 @1513
+   xrTCS_IncreaseCounterExt              @1514
+   xrTCS_IncreaseIterationCounter        @1515
+   xrTCS_IncreaseRecursionDepth          @1516
+   xrTCS_IncreaseRelationCounter         @1517
+   xrTCS_IncreaseRelationCounterSigned   @1518
+   xrTCS_IncreaseRelationCounterUnsigned @1519
+   xrTCS_InitIterationCounter            @1520
+   xrTCS_InitRecursionDepth              @1521
+   xrTCS_RegistryModule                  @1522
+   xrTCS_RegistryModuleDynamic           @1523
 
    xrFName_X2C_ExtractBaseName @1540
    xrFName_X2C_ExtractFileExt  @1541

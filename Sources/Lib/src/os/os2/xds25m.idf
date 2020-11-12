@@ -952,11 +952,11 @@ FROM XDS25M.DLL IMPORT
  ,X2C_PROFILE_PROC_END
  ,X2C_PROFILE_NEST_START
  ,X2C_PROFILE_NEST_END
- ,xrTCSx86_IncreaseCounter
- ,xrTCSx86_IncreaseCounterExt
- ,xrTCSx86_IncreaseIterationCounter
- ,xrTCSx86_RegistryModule
- ,xrTCSx86_BEGIN
+ ,xrTCS_IncreaseCounter
+ ,xrTCS_IncreaseCounterExt
+ ,xrTCS_IncreaseIterationCounter
+ ,xrTCS_RegistryModule
+ ,xrTCS_BEGIN
  ,X2C_ClearFPP
  ,X2C_InitFPP
  ,X2C_TRAP_OVERFL

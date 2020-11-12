@@ -9,21 +9,21 @@ EXPORTS
    X2C_InitFPP4NaN          @1704
    X2C_EXIT_PROFILER        @1705
 
-   xrTCSx86_BEGIN                           @1609
-   xrTCSx86_DecreaseRecursionDepth          @1610
-   xrTCSx86_DecreaseVariableValue           @1611
-   xrTCSx86_IncreaseConditionCounter        @1612
-   xrTCSx86_IncreaseCounter                 @1613
-   xrTCSx86_IncreaseCounterExt              @1614
-   xrTCSx86_IncreaseIterationCounter        @1615
-   xrTCSx86_IncreaseRecursionDepth          @1616
-   xrTCSx86_IncreaseRelationCounter         @1617
-   xrTCSx86_IncreaseRelationCounterSigned   @1618
-   xrTCSx86_IncreaseRelationCounterUnsigned @1619
-   xrTCSx86_InitIterationCounter            @1620
-   xrTCSx86_InitRecursionDepth              @1621
-   xrTCSx86_RegistryModule                  @1622
-   xrTCSx86_RegistryModuleDynamic           @1623
+   xrTCS_BEGIN                           @1609
+   xrTCS_DecreaseRecursionDepth          @1610
+   xrTCS_DecreaseVariableValue           @1611
+   xrTCS_IncreaseConditionCounter        @1612
+   xrTCS_IncreaseCounter                 @1613
+   xrTCS_IncreaseCounterExt              @1614
+   xrTCS_IncreaseIterationCounter        @1615
+   xrTCS_IncreaseRecursionDepth          @1616
+   xrTCS_IncreaseRelationCounter         @1617
+   xrTCS_IncreaseRelationCounterSigned   @1618
+   xrTCS_IncreaseRelationCounterUnsigned @1619
+   xrTCS_InitIterationCounter            @1620
+   xrTCS_InitRecursionDepth              @1621
+   xrTCS_RegistryModule                  @1622
+   xrTCS_RegistryModuleDynamic           @1623
 
    xrFName_X2C_ExtractBaseName @1640
    xrFName_X2C_ExtractFileExt  @1641

@@ -522,7 +522,7 @@
     !module dosclock.asm dosfio.asm
   !end
 
-  !module xrTCSx86
+  !module xrTCS
 
 !end
 

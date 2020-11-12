@@ -15,23 +15,13 @@
 
 MODULE tcObjs;
 
-<* IF    TARGET_386  THEN *> FROM  xrTCSx86   IMPORT  TestConditionType;
-<* ELSIF TARGET_PPC   THEN *> FROM  xrTCSppc   IMPORT  TestConditionType;
-<* ELSIF TARGET_MIPS THEN *> FROM  xrTCSmips  IMPORT  TestConditionType;
-<* ELSIF TARGET_VAX  THEN *> FROM  xrTCSvax   IMPORT  TestConditionType;
-<* ELSIF TARGET_SPARC THEN *> FROM  xrTCSsparc IMPORT  TestConditionType;
-<* END *>
+FROM xrTCS IMPORT TestConditionType;
 
 IMPORT  pc := pcK,             pcF,               sys := SYSTEM
      ,  pcO,                   pcB,               env := xiEnv
      ,  fe := tcFEproxy,       xcStr,             tcc := tcConfig
      ,  pcS
-<* IF    TARGET_386  THEN *>,  tc := xrTCSx86
-<* ELSIF TARGET_PPC   THEN *>,  tc := xrTCSppc
-<* ELSIF TARGET_MIPS THEN *>,  tc := xrTCSmips
-<* ELSIF TARGET_VAX  THEN *>,  tc := xrTCSvax
-<* ELSIF TARGET_SPARC THEN *>,  tc := xrTCSsparc
-<* END *>
+     ,  tc := xrTCS
      ;
 
 IMPORT DStrings;

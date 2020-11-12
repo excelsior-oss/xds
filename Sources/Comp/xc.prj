@@ -156,18 +156,16 @@
   -lookup = *.ob2  = $!/src/be_ppc;  $!/src/be_krnl
   -lookup = *.def  = $!/src/be_ppc;  $!/src/be_krnl; $!/src/be_krnl/RTS
   -lookup = *.mod  = $!/src/be_ppc;  $!/src/be_krnl
-  -lookup = xrTCSppc.def = $!/../Lib/src/xr/PPC
 !elsif target_sparc then
   -lookup = *.ob2  = $!/src/be_sparc; $!/src/be_krnl
   -lookup = *.def  = $!/src/be_sparc; $!/src/be_krnl; $!/src/be_krnl/RTS
   -lookup = *.mod  = $!/src/be_sparc; $!/src/be_krnl
-  -lookup = xrTCSsparc.def = $!/../Lib/src/xr/SPARC
 !elsif target_386 then
   -lookup = *.ob2  = $!/src/be_x86;   $!/src/be_krnl
   -lookup = *.def  = $!/src/be_x86;   $!/src/be_krnl; $!/src/be_krnl/RTS
   -lookup = *.mod  = $!/src/be_x86;   $!/src/be_krnl
-  -lookup = xrTCSx86.def = $!/../Lib/src/xr/x86
 !end
+-lookup = xrTCS.def = $!/../Lib/src/xr
 
 !if target_idb then
   -lookup = *.ob2 = $!/src/be_idb

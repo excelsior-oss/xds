@@ -13,12 +13,7 @@ MODULE tcConfig;
 
 IMPORT  sys := SYSTEM,         RegComp,              tcLib
      ,  env := xiEnv,          DStrings,             xfs := xiFiles
-<* IF    TARGET_386  THEN *>,  tc := xrTCSx86
-<* ELSIF TARGET_PPC   THEN *>,  tc := xrTCSppc
-<* ELSIF TARGET_MIPS THEN *>,  tc := xrTCSmips
-<* ELSIF TARGET_VAX  THEN *>,  tc := xrTCSvax
-<* ELSIF TARGET_SPARC THEN *>,  tc := xrTCSsparc
-<* END *>
+     ,  tc  := xrTCS
      ;
 
 TYPE 

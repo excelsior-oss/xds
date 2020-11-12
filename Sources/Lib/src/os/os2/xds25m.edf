@@ -955,12 +955,12 @@ EXPORTS
    X2C_PROFILE_PROC_END     @1377
    X2C_PROFILE_NEST_START   @1378
    X2C_PROFILE_NEST_END     @1379
-   xrTCSx86_IncreaseCounter          @1380
-   xrTCSx86_IncreaseCounterExt       @1381
-   xrTCSx86_IncreaseIterationCounter @1382
-   xrTCSx86_RegistryModule           @1383
-   xrTCSx86_RegistryModuleDynamic    @1384
-   xrTCSx86_BEGIN                    @1385
+   xrTCS_IncreaseCounter          @1380
+   xrTCS_IncreaseCounterExt       @1381
+   xrTCS_IncreaseIterationCounter @1382
+   xrTCS_RegistryModule           @1383
+   xrTCS_RegistryModuleDynamic    @1384
+   xrTCS_BEGIN                    @1385
 
    X2C_ClearFPP     @1400
    X2C_InitFPP      @1401

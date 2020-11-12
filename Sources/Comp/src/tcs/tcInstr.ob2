@@ -10,23 +10,13 @@
 <* +o2addkwd *>
 MODULE tcInstr;
 
-<* IF    TARGET_386  THEN *> FROM  xrTCSx86   IMPORT  TestConditionType;
-<* ELSIF TARGET_PPC  THEN *>  FROM  xrTCSppc   IMPORT  TestConditionType;
-<* ELSIF TARGET_MIPS THEN *> FROM  xrTCSmips  IMPORT  TestConditionType;
-<* ELSIF TARGET_VAX  THEN *> FROM  xrTCSvax   IMPORT  TestConditionType;
-<* ELSIF TARGET_SPARC THEN *> FROM  xrTCSsparc IMPORT  TestConditionType;
-<* END *>
+FROM xrTCS IMPORT TestConditionType;
 
 IMPORT  env := xiEnv,          pc   := pcK
      ,  tco := tcObjs,         fe   := tcFEproxy
      ,  sys := SYSTEM,         dstr := DStrings
      ,  pcO,                   tcLib
-<* IF    TARGET_386  THEN *>,  tc := xrTCSx86
-<* ELSIF TARGET_PPC   THEN *>,  tc := xrTCSppc
-<* ELSIF TARGET_MIPS THEN *>,  tc := xrTCSmips
-<* ELSIF TARGET_VAX  THEN *>,  tc := xrTCSvax
-<* ELSIF TARGET_SPARC THEN *>,  tc := xrTCSsparc
-<* END *>
+     ,  tc := xrTCS
      ;
 
 --------------------------------------------------------------------------------
@@ -721,12 +711,7 @@ END ImportModule;
 
 --------------------------------------------------------------------------------
 PROCEDURE ExtendModuleImport * (cu: pc.OBJECT);
-<* IF    TARGET_386  THEN *> CONST RTS_MODULE_NAME = "xrTCSx86";
-<* ELSIF TARGET_PPC   THEN *> CONST RTS_MODULE_NAME = "xrTCSppc";
-<* ELSIF TARGET_MIPS THEN *> CONST RTS_MODULE_NAME = "xrTCSmips";
-<* ELSIF TARGET_SPARC THEN *> CONST RTS_MODULE_NAME = "xrTCSsparc";
-<* ELSIF TARGET_VAX  THEN *> CONST RTS_MODULE_NAME = "xrTCSvax";
-<* END *>
+CONST RTS_MODULE_NAME = "xrTCS";
 BEGIN
   tco.ObjRTSModule := ImportModule (cu, RTS_MODULE_NAME);
   pcO.inp_sym_file ("SYSTEM", FALSE, FALSE, tco.ObjSYSModule);

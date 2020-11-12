@@ -13,7 +13,7 @@
 -- are not required in compile time.                       
 --------------------------------------------------------------------------------
 <* ALIGNMENT = '8' *> 
-IMPLEMENTATION MODULE xrTCSx86;
+IMPLEMENTATION MODULE xrTCS;
 
 IMPORT sys := SYSTEM;
 
@@ -282,4 +282,4 @@ END ItereateEntries;
 
 <* POP *>
 
-END xrTCSx86.
+END xrTCS.

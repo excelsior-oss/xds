@@ -2,13 +2,13 @@
 --                      Excelsior XDS Test Coverage System
 --                          (c) 2015, Excelsior Ltd.
 -- Module:   tcMain
--- Mission:  Main module of programm instrumentation for Test Coverage. 
+-- Mission:  Main module of program instrumentation for Test Coverage. 
 -- Authors:  Lvov Konstantin
 -- Created:  06-Dec-2002
 --
--- Performs programm tree traversal.
+-- Performs program tree traversal.
 -- First process expression, then create test condition for statement, 
--- after that process statement and finaly add instrumented code which 
+-- after that process statement and finally add instrumented code which 
 -- created on step 2 to expression.
 --
 -- It's a part of Excelsior XDS O2/M2 compiler. 
@@ -17,12 +17,7 @@
 <* +o2addkwd *>
 MODULE tcMain;
 
-<* IF    TARGET_386  THEN *> FROM  xrTCSx86   IMPORT  TestConditionType;
-<* ELSIF TARGET_PPC   THEN *> FROM  xrTCSppc   IMPORT  TestConditionType;
-<* ELSIF TARGET_MIPS THEN *> FROM  xrTCSmips  IMPORT  TestConditionType;
-<* ELSIF TARGET_VAX  THEN *> FROM  xrTCSvax   IMPORT  TestConditionType;
-<* ELSIF TARGET_SPARC THEN *> FROM  xrTCSsparc IMPORT  TestConditionType;
-<* END *>
+FROM xrTCS IMPORT TestConditionType;
 
 IMPORT  sys := SYSTEM,       env := xiEnv,             pcO
      ,  tci := tcInstr,      tcc := tcConfig,          fe := tcFEproxy

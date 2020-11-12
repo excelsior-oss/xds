@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 --                   Excelsior XDS Test Coverage Runtime Library
 --                          (c) 2015, Excelsior Ltd.
--- Module:       xrTCSx86
+-- Module:       xrTCS
 -- Mission:      Test Coverage Run-Time Support
 -- Synonym:      tc
 -- Authors:      Lvov Konstantin
@@ -32,7 +32,7 @@
   <*+ GENDEBUG *>   
 <* END *>
 
-IMPLEMENTATION MODULE xrTCSx86;
+IMPLEMENTATION MODULE xrTCS;
 
 IMPORT  xmRTS,              xrFName                                 
      ,  sys := SYSTEM,      os := xtcsOS
@@ -2175,4 +2175,4 @@ BEGIN
   RETURN clonedList;
 END GetClone;
 
-END xrTCSx86.
+END xrTCS.

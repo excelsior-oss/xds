@@ -4,7 +4,7 @@
 --                   Excelsior XDS Test Coverage Runtime Library
 --                          (c) 2015, Excelsior Ltd.
 --
--- Module:       xrTCSx86
+-- Module:       xrTCS
 -- Synonym:      tc
 -- Authors:      Lvov Konstantin
 -- Created:      10-Dec-2002
@@ -28,7 +28,7 @@
 <* IF ~ DEFINED(__GEN_PPC__)   THEN *>  <* NEW __GEN_PPC__-   *>  <* END *>
 <* IF ~ DEFINED(__GEN_X86__)  THEN *>  <* NEW __GEN_X86__- *>   <* END *>
 
-DEFINITION MODULE xrTCSx86;
+DEFINITION MODULE xrTCS;
 IMPORT sys := SYSTEM;
 
 CONST
@@ -642,4 +642,4 @@ PROCEDURE ItereateEntries ( fname: ARRAY OF CHAR
 VAR
   ErrorCnt: TErrorCnt;
 
-END xrTCSx86.
+END xrTCS.
