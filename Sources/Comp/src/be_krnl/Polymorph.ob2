@@ -1,10 +1,14 @@
 (* initialization of target defined interface for target 386 *)
 MODULE Polymorph;
 
-IMPORT DAG_I,
-       PrepGen_I,
-       opTune_I,
-       Iselect_I;
+IMPORT PrepGen_I;
+IMPORT opTune_I;
+
+<* IF NOT TARGET_LLVM THEN *>
+IMPORT DAG_I;
+IMPORT Iselect_I;
+<* END *>
+
 <* IF TARGET_386 THEN *>
 IMPORT RDefs_I;
 <* END *>
@@ -24,6 +28,8 @@ IMPORT LCDef_I,
 <* IF OBJ_GAS   THEN *> IMPORT form_gas; <* END *>
 <* IF OBJ_ASM   THEN *> IMPORT form_asm; <* END *>
 
+<* IF TARGET_LLVM THEN *> IMPORT formLLVM; <* END *>
+
 -- Инициализация генераторов конкретных форматов отладочной информации
 <* IF DBG_CV    THEN *> IMPORT dbgCV;    <* END *>
 <* IF DBG_HLL   THEN *> IMPORT dbgHLL;   <* END *>
@@ -32,6 +38,7 @@ IMPORT LCDef_I,
 <* IF DBG_REF   THEN *> IMPORT dbgREF;   <* END *>
 <* IF DBG_DWARF THEN *> IMPORT dbgDWARF; <* END *>
 <* IF DBG_GO32  THEN *> IMPORT dbgGO32;  <* END *>
+<* IF DBG_LLVM  THEN *> IMPORT dbgLLVM; <* END *>
 
 -- Инициализация генератора текстового представления отладочной
 -- информации, используется только для отладочных целей

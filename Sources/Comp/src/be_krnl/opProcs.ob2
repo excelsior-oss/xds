@@ -103,6 +103,7 @@ TYPE
              size* : ir.SizeType; (* размер параметра ?? *)
              where*: MemType;     (* где находится параметр *)
              offs* : LONGINT;     (* смещение на стеке *)
+             obj*  : pc.OBJECT;   (* object corresponding to the parameter *)
            END;
 
   params* = POINTER TO ARRAY OF param;
@@ -174,17 +175,21 @@ END DummyIsParInReg;
 <* END *>
 
 (* ------ l i s t   o f   p r o c e d u r e s -------- *)
-CONST
-  external* = 0;
-  public*   = 1;
-  has_info  = 2;    (* у процедуры есть back-end информация *)
+TYPE
+  ProcInfoTag *= (
+    external
+  , public
+  , has_info       -- у процедуры есть back-end информация
 <* IF TARGET_RISC OR TARGET_SPARC THEN *>
-  has_calls = 3;    (* процедура содержит вызовы *)
+  , has_calls      -- процедура содержит вызовы 
+  , is_leaf        -- процедура генерируется как листовая
 <* END *>
+  );
+  ProcInfoTags *= PACKEDSET OF ProcInfoTag;
 
 TYPE
   proc_info* = RECORD
-                 tags*     : SET;
+                 tags*     : ProcInfoTags;
                  BE_info   : RegMask;
                  name*     : ir.NameType;
                  obj*      : pc.OBJECT;
@@ -208,7 +213,7 @@ BEGIN
     FOR i := ir.ZEROProcNum TO SYSTEM.PRED(NProc) DO new[i] := ProcList[i] END;
     ProcList := new;
   END;
-  ProcList[NProc].tags := {};
+  ProcList[NProc].tags := ProcInfoTags{};
   ProcList[NProc].BE_info := EmptyRegMask;
   IF o # NIL THEN ProcList[NProc].name := o.name;
   ELSE            ProcList[NProc].name := NIL;
@@ -246,6 +251,33 @@ BEGIN
   RETURN ProcList[num].obj
 END ProcObj;
 
+--------------------------------------------------------------------------------
+PROCEDURE ProcProto *(type: pc.STRUCT): Proto; 
+VAR a: at.ATTR_EXT;
+    proto_num: ProtoNum;
+BEGIN
+  IF type # NIL THEN
+    a := at.attr(type.ext, at.a_prot);
+    IF a # NIL THEN
+      proto_num := a(at.PROT_EXT).proto;
+      RETURN ProtoList[proto_num];
+    END;  
+  END;
+  RETURN NIL;
+END ProcProto;
+
+--------------------------------------------------------------------------------
+PROCEDURE ProcProtoByObj *(obj: pc.OBJECT): Proto; 
+VAR proto: Proto;
+BEGIN 
+  proto := ProcProto(obj.type);
+  IF proto = NIL THEN
+    proto := ProtoList[ProcProtoNum(ProcNumByObj(obj))];
+  END;
+  RETURN proto; 
+END ProcProtoByObj; 
+
+--------------------------------------------------------------------------------
 PROCEDURE NumParams*(p: ProcNum): INTEGER;
   VAR prot: Proto;
 BEGIN
@@ -854,11 +886,13 @@ END show_proc_list;
 
 PROCEDURE CallParamType(p : ir.TriadePtr; i : ir.INT) : ir.TypeType;
 VAR q : ir.ParamPtr;
+    par_no: ir.ProtoParNumber;
 BEGIN
   IF i = 0 THEN RETURN ir.t_ref; END;
   q := p.Params^[i];
-  IF (i-1 >= ProtoList[p^.Prototype].npar) OR
-     (ProtoList[p^.Prototype].par[i-1].mode = pm_seq)
+  par_no := p.Params[i].protoparnum;
+  IF (par_no >= ProtoList[p^.Prototype].npar) OR
+     (ProtoList[p^.Prototype].par[par_no].mode = pm_seq)
   THEN
     IF (q^.tag = ir.y_RealConst) OR
        (q^.tag = ir.y_Variable) &
@@ -869,31 +903,38 @@ BEGIN
       RETURN tune.seq_item_type;
     END;
   ELSE
-    RETURN ProtoList[p^.Prototype].par[i-1].type;
+    RETURN ProtoList[p^.Prototype].par[par_no].type;
   END;
 END CallParamType;
 
 PROCEDURE CallParamSize(p : ir.TriadePtr; i : ir.INT) : ir.SizeType;
 VAR q : ir.ParamPtr;
+    par_no: ir.ProtoParNumber;
 BEGIN
   IF i = 0 THEN RETURN tune.addr_sz; END;
 
   q := p.Params^[i];
-  IF (i-1 >= ProtoList[p^.Prototype].npar) OR
-     (ProtoList[p^.Prototype].par[i-1].mode = pm_seq)
+  par_no := p.Params[i].protoparnum;
+  IF (par_no >= ProtoList[p^.Prototype].npar) OR
+     (ProtoList[p^.Prototype].par[par_no].mode = pm_seq)
   THEN
     IF (q^.tag = ir.y_RealConst) OR
        (q^.tag = ir.y_Variable) &
        (ir.Vars^[q^.name].Def^.ResType = ir.t_float)
     THEN
-      RETURN tune.longreal_sz;;
+      RETURN tune.longreal_sz;
+  <* IF TARGET_LLVM THEN *>
+    ELSIF (q.name # ir.UNDEFINED) & (ir.Vars[q.name].Def # NIL) THEN
+      RETURN ir.Vars[q.name].Def.ResSize;
+  <* ELSE *>      
     ELSIF ir.Vars^[q^.name].Def^.ResSize = 8 THEN
       RETURN 8;
+  <* END *>      
     ELSE
-      RETURN tune.seq_item_sz;;
+      RETURN tune.seq_item_sz;
     END;
   ELSE
-    RETURN ProtoList[p^.Prototype].par[i-1].size;
+    RETURN ProtoList[p^.Prototype].par[par_no].size;
   END;
 END CallParamSize;
 

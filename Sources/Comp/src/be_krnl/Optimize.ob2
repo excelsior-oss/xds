@@ -30,7 +30,7 @@ IMPORT def := opDef;
 IMPORT ope := opE;
 
 
-<* IF TARGET_386 THEN *>
+<* IF TARGET_386 OR TARGET_LLVM THEN *>
 IMPORT opCard64;
 <* END *>
 

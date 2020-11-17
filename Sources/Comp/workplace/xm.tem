@@ -187,7 +187,11 @@
 # ------------------- target make rules -------------------
 #                     -----------------
 
-! '$(TARGET) : $(OBJ) "$(XDSLIB)"\n'
+!if genlib then
+  ! '$(TARGET) : $(OBJ)\n'
+!else
+  ! '$(TARGET) : $(OBJ) "$(XDSLIB)"\n'
+!end
 !if cc="Watcom" then
   ! "\t@if exist xds.lnk @del xds.lnk\n"
   ! "\t@%append xds.lnk sys nt\n"

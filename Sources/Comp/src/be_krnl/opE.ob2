@@ -13,8 +13,9 @@ IMPORT  pc := pcK,                         ir,
         str:= Strings,
 <* IF db_e OR db_procs THEN *> io := opIO, <* END *>
         SYSTEM;
-IMPORT xfs:=xiFiles,Printf;
-IMPORT cmd:=CodeDef;
+IMPORT xfs := xiFiles,Printf;
+IMPORT cmd := CodeDef;
+IMPORT pcO;
 TYPE
   INT = ir.INT;
 
@@ -291,9 +292,9 @@ BEGIN
   gen_conv(tpos, arg, from_ty, from_sz, to_ty, to_sz);
 END gen_conv_Ex;
 
-PROCEDURE gen_conversion (tpos-: ir.TPOS;
-                       VAR arg : ir.Arg;
-                  s_from, s_to : pc.STRUCT);
+PROCEDURE gen_conversion *(tpos-: ir.TPOS;
+                        VAR arg : ir.Arg;
+                   s_from, s_to : pc.STRUCT);
   VAR
     from_ty, to_ty: ir.TypeType;
     from_sz, to_sz: ir.SizeType;
@@ -676,6 +677,11 @@ BEGIN
     --ty := tune.index_ty;
     --sz := tune.index_sz;
     def.type_info(type, ty, sz);
+    <* IF TARGET_LLVM THEN *>
+      IF (larg.tag # ir.y_NumConst) & (sz # tune.index_sz) THEN
+        gen_conversion(n.pos, larg, def.INDEX_T, type);
+      END;
+    <* END *>    
   ELSIF
     type.len <= tune.BITSET_LEN_InInclExcl
   THEN
@@ -1166,9 +1172,13 @@ BEGIN
   IF t.mode IN len_avl THEN
     IF (n.mode = pc.nd_unary) AND (n.l.mode = pc.nd_value) AND (n.l.type.mode = pc.ty_SS) AND (n.type.mode = pc.ty_array) AND (n.type.base.mode = pc.ty_char) THEN
       (* it's a case of passing string literal to formal type open array of char's array *)
-      def.c_number(1, arg); RETURN
+      def.c_number(1, arg);
+      arg.type := pcO.size_t; 
+      RETURN;      
     ELSE
-      def.c_number(t.len, arg); RETURN
+      def.c_number(t.len, arg);
+      arg.type := pcO.size_t; 
+      RETURN;      
     END;
   ELSIF t.mode IN pc.WHOLEs+pc.REALs THEN
     IF (n.mode = pc.nd_value) THEN
@@ -1195,6 +1205,7 @@ BEGIN
         def.add_offs(n.pos,
             tune.DYNARR_LENs_offset+(n.type.len-dim-1)*tune.index_sz*2, arg);
         def.deref(n.pos, tune.index_ty, tune.index_sz, ir.OptionsSet{ir.o_Constant}, arg);
+        arg.type := pcO.size_t; 
         RETURN;
     | pc.nd_index:
         gen_len(n.l,dim+1,type,arg);
@@ -1224,11 +1235,13 @@ BEGIN
               ir.MakeArgNum(arg, def.zz_one);
             END;
           END;
+          arg.type := pcO.size_t; 
           RETURN;
         END;
     | pc.nd_sequence:
         i := sequence_size(n) DIV def.get_bytes(n.pos, n.type.base);
         def.c_number(i, arg);
+        arg.type := pcO.size_t; 
         RETURN;
     ELSE (* nothing *)
     END;
@@ -1379,6 +1392,8 @@ PROCEDURE gen_halt * (pos-: ir.TPOS; arg-: ir.Arg);
 BEGIN
   q := ir.NewTriadeInit(1, ir.o_stop, ir.t_void, 0);
   q.Position := pos;
+  q.OpType := ir.t_int;
+  q.OpSize := tune.word_sz;
   INCL(q.Options, ir.o_Dangerous);
   ir.ParmByArg(q.Params[0], arg);
   gr.AppendTr(q);
@@ -1499,6 +1514,12 @@ PROCEDURE gen_call*(n: pc.NODE; md: ir.GenModeSet; VAR arg: ir.Arg);
         ELSE
           gen_value(l, cc+ir.GenModeSet{def.REF}, arg);
         END;
+
+        <* IF TARGET_LLVM THEN *>
+          IF (l.mode = pc.nd_lconv) &( l.type.mode = pc.ty_array_of) THEN
+            def.get_element_ptr(l.pos, 0, arg, l.type.base);
+          END;
+        <* END *>
 
         ir.ParmByArg(q.Params[i+1], arg);
         j := 0;
@@ -2583,10 +2604,11 @@ BEGIN
     q := def.NewTriadeTS(1, ir.o_assign, n.type);
     q.Position := n.pos;
     q.Tag := ir.y_RealVar;
+    q.type := n.type;
     make_temp(n.type, q.Name);
     ir.ParmByArg(q.Params[0], arg);
     gr.AppendTr(q);
-    ir.MakeArgAddr(arg, q.Name, 0);
+    ir.MakeArgAddr(arg, q.Name, 0, n.type);
   END;
 END chk_ref;
 
@@ -2596,10 +2618,11 @@ BEGIN
   IF def.NEG IN md THEN
     q := def.NewTriadeTS(1, ir.o_not, n.type);
     q.Position := n.pos;
+    q.type     := n.type;
     ir.ParmByArg(q.Params[0], arg);
     ir.GenResVar(q);
     gr.AppendTr(q);
-    ir.MakeArgVar(arg, q.Name);
+    ir.MakeArgVar(arg, q.Name, n.type);
   END;
 END chk_neg;
 
@@ -3282,26 +3305,34 @@ BEGIN
   gen_value(l, ir.GenModeSet{def.REF}, larg);
   IF def.VOLATILE IN larg.mode THEN volatile := TRUE END;
 
-  p := ir.NewTriadeInit(no + 1, ir.o_add, tune.addr_ty, tune.addr_sz);
+  <* IF TARGET_LLVM THEN *>
+    p := ir.NewTriadeGEP(no + 1, n.type);
+  <* ELSE *>    
+    p := ir.NewTriadeInit(no + 1, ir.o_add, tune.addr_ty, tune.addr_sz);
+  <* END *>    
   p.Position := n.pos;
   ir.ParmByArg(p.Params[0], larg);
   i := 1;
   REPEAT
     gen_index_check(r[no-i], l, i-1, chkd[no-i], larg);
-    gen_size(l, i, rarg);
-    IF (rarg.tag = ir.y_NumConst)
-      & ir.EQ(rarg.value, def.zz_one, tune.index_ty, tune.index_sz, TRUE)
-    THEN
+    <* IF TARGET_LLVM THEN *>
       ir.ParmByArg(p.Params[i], larg);
-    ELSE
-      gen_mult(r[no-i].pos, larg, rarg, tune.index_ty, tune.index_sz, arg);
-      ir.ParmByArg(p.Params[i], arg);
-    END;
+    <* ELSE *>    
+      gen_size(l, i, rarg);
+      IF (rarg.tag = ir.y_NumConst)
+        & ir.EQ(rarg.value, def.zz_one, tune.index_ty, tune.index_sz, TRUE)
+      THEN
+        ir.ParmByArg(p.Params[i], larg);
+      ELSE
+        gen_mult(r[no-i].pos, larg, rarg, tune.index_ty, tune.index_sz, arg);
+        ir.ParmByArg(p.Params[i], arg);
+      END;
+    <* END *>    
     INC(i);
   UNTIL (i > no);
   ir.GenResVar(p);
   gr.AppendTr(p);
-  ir.MakeArgVar(arg, p.Name);
+  ir.MakeArgVar(arg, p.Name, p.type);
   IF volatile THEN INCL(arg.mode, def.VOLATILE) END;
 END gen_index;
 
@@ -4045,6 +4076,7 @@ PROCEDURE gen_value*(n: pc.NODE; md: ir.GenModeSet; VAR arg: ir.Arg);
     check_node, err_node, cont_node: ir.Node;
     tmp: ir.Local;
     dd: BOOLEAN;
+    index: LONGINT;
 BEGIN  (* ---- g e n _ v a l u e ----- *)
 <* IF db_e THEN *>
   io.print_pos(n.pos); io.print(" gen_value(n = %d; md = %d)\n", n, md);
@@ -4052,6 +4084,7 @@ BEGIN  (* ---- g e n _ v a l u e ----- *)
   CASE n.mode OF
     |pc.nd_var:
        def.o_usage(n.pos, n.obj, md - ir.GenModeSet{def.NEG}, arg);  -- print_arg("nd_var", arg);
+       arg.type := n.type;
        chk_neg(n, md, arg);
 
     |pc.nd_proc:
@@ -4062,7 +4095,12 @@ BEGIN  (* ---- g e n _ v a l u e ----- *)
        IF n.obj.mode = pc.ob_field THEN
          ofs := def.obj_offset(n.obj);
          gen_value(n.l, md*ir.GenModeSet{def.CC}+ir.GenModeSet{def.REF}, arg);
-         def.add_offs(n.pos, ofs, arg);
+         <* IF TARGET_LLVM THEN *>
+           index := def.field_index(n.obj); 
+           def.get_element_ptr(n.pos, index, arg, n.type);
+         <* ELSE *>         
+           def.add_offs(n.pos, ofs, arg, n.type);
+         <* END *>         
          def.chk_adr(n.pos, md, n.type, arg);
        ELSE
          ASSERT(FALSE);

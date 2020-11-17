@@ -111,6 +111,7 @@ CONST
   omark_used = pc.omark_aux20;  -- object is used in CurProc (included in .use list)
   omark_incl = pc.omark_aux21;
   omark_keep = pc.omark_aux22;  -- object is used, must be saved
+  omark_used_import = pc.omark_aux31;  -- object is used in 'CurMod' (included in '.use_imported' list)
 
   tmark_ingen   = pc.tmark_aux20;      -- GenProc started for this procedure
   tmark_genok   = pc.tmark_aux21;      -- GenProc completed for this procedure
@@ -538,6 +539,34 @@ BEGIN
 
   RETURN FALSE;
 END Power2;
+
+
+--------------------------------------------------------------------------------
+PROCEDURE setCurProc (obj: pc.OBJECT);
+VAR use: pc.USAGE;
+BEGIN
+  IF CurProc # NIL THEN
+    -- clear auxiliary marks of object usage analysis
+    use := CurProc.use;
+    WHILE use # NIL DO
+      use.obj.marks := use.obj.marks - pc.OMARK_SET{omark_used, omark_incl};
+      use := use.next
+    END;
+  END;
+  IF obj = NIL THEN
+    CurLevel := -1;
+    CurProc  := NIL;
+  ELSE
+    ASSERT( obj.mode IN (pc.PROCs + pc.OB_SET{pc.ob_module}) );
+    CurLevel := obj.lev + 1;
+    CurProc  := obj.type;
+    use := CurProc.use;
+    WHILE use # NIL DO
+      INCL (use.obj.marks, omark_used);
+      use := use.next
+    END;
+  END;
+END setCurProc;
 
 
 (*================== EXPRESSIONS REUSABILITY PROCESSING ===================*)
@@ -1434,6 +1463,36 @@ PROCEDURE ObjectUsage (    p: pc.TPOS      -- object usage position
     ASSERT( h.obj.lev+1 = o.lev);
   END ChkAlloc;
 
+  ------------------------------------------------------------------------------
+  PROCEDURE getUsageRec (root: pc.USAGE; obj: pc.OBJECT): pc.USAGE;
+  BEGIN
+    WHILE (root # NIL) & (root.obj # obj) DO
+      root := root.next
+    END;
+    RETURN root;
+  END getUsageRec;
+
+  ------------------------------------------------------------------------------
+  -- Add object to '.use_import' list of 'CurMod' or update usage 'tags'
+  PROCEDURE AddUseImport (VAR root: pc.USAGE);
+  VAR u: pc.USAGE;
+  BEGIN
+    IF (o.mno = CurMod.mno) OR o.is_system() THEN
+      RETURN
+    END;
+    IF omark_used_import IN o.marks THEN
+      u := getUsageRec(CurMod.use_import, o);
+      u.tags := u.tags + tags;
+    ELSE  
+      INCL(o.marks, omark_used_import);
+      NEW (u);
+      u.obj  := o;
+      u.tags := tags;
+      u.next := root;
+      root := u;
+    END;
+  END AddUseImport;
+
   -------------------------------
 <* IF TARGET_MEGOS THEN *> (* FS 26.2 *)
 
@@ -1537,26 +1596,24 @@ END;
   END;
 
   IF omark_used IN o.marks THEN
-    u := CurProc.use;
-    WHILE u.obj # o DO
-      u := u.next
-    END;
+    u := getUsageRec(CurProc.use, o);
     IF BitChk (SYSTEM.VAL(SET, u.tags), SYSTEM.VAL(SET, U_WR)) THEN
---      BitClr (SYSTEM.VAL(SET, tags), SYSTEM.VAL(SET, U_RD))
       tags := tags - U_RD
     END;
---    BitSet (SYSTEM.VAL(SET, u.tags), SYSTEM.VAL(SET, tags));
     u.tags := u.tags + tags;
   ELSIF o.mode IN pc.PROCs THEN
-    IF (o.lev > 0) & (CurLevel > 1) THEN
+    IF o.is_local() & (CurLevel > 1) THEN
       Use;
     END;
   ELSIF o.mode IN pc.VARs THEN
-    IF (o.lev > 0) & (o.lev < CurLevel) THEN
+    IF o.is_local() & (o.lev < CurLevel) THEN
       EXCL (o.tags, pc.otag_no_threat);
       Use;
       ChkAlloc ();
     END;
+  END;
+  IF o.is_global() THEN
+    AddUseImport(CurMod.use_import);
   END;
 END ObjectUsage;
 
@@ -4958,7 +5015,7 @@ BEGIN
   IF EnDebug THEN dbg.CallTraceInd (1, "(GenBody n=%X", n) END;
 <* END *>
 
-  IF (CurProc # NIL) & EnConsProp THEN (* Init values DFA here *)
+  IF (CurProc # NIL) & (CurProc.mode # pc.ty_module) & EnConsProp THEN (* Init values DFA here *)
     i := 0;
     o := CurProc.prof;
     WHILE o # NIL DO
@@ -5092,8 +5149,7 @@ BEGIN
 
   savednestedThrowsCall:=nestedThrowsCall;
   nestedThrowsCall:=FALSE;
-  CurLevel := p.lev+1;
-  CurProc  := p.type;
+  setCurProc(p);
   INCL (CurProc.marks, tmark_ingen);
   IF p.val.mode = pc.nd_aggregate THEN
     IF GenExprList (p.val.l(*=>*), p.val.l) THEN
@@ -5112,11 +5168,6 @@ BEGIN
     IF ~Restart & CloseProcUsage (CurProc.use) THEN
       INCL (CurProc.tags, pc.ttag_usage_ok);
     END;
-    u := CurProc.use;
-    WHILE u # NIL DO
-      BitClr (SYSTEM.VAL(SET, u.obj.marks), {ORD(omark_used), ORD(omark_incl)});
-      u := u.next;
-    END;
   END;
   INCL (CurProc.marks, tmark_genok);
   IF nestedThrowsCall AND
@@ -5124,7 +5175,8 @@ BEGIN
   env.errors.Error(p.pos,450,"Procedure must have 'throws' or 'except' attribute");
   END;
   nestedThrowsCall:=savednestedThrowsCall;
-  CurProc := NIL;
+  setCurProc(NIL);
+
 <* IF DB_TRACE THEN *>
   IF EnDebug THEN dbg.CallTraceInd (-1, ")GenProc") END;
 <* END *>
@@ -5132,12 +5184,10 @@ END GenProc;
 
 --------------------------------------------------------------------------------
 PROCEDURE GenNextProc ( p: pc.OBJECT );
-VAR sl: INTEGER;
-    sp: pc.STRUCT;
+VAR sp: pc.STRUCT;
     sv: VALUES;
     sc: LONGINT;
     s1: LONGINT;
-     u: pc.USAGE;
 
 BEGIN
   IF p.mno # CurMod.mno THEN
@@ -5154,30 +5204,18 @@ BEGIN
     RETURN
   END;
 
-  sl       := CurLevel;  CurLevel := MAX (INTEGER);
-  sp       := CurProc;   CurProc  := NIL;
-  sv       := CurProps;  CurProps := NIL;
-  sc       := StatCnt;
-  s1       := StatCnt1;
-  IF sp # NIL THEN
-    u := sp.use;
-    WHILE u # NIL DO
-      EXCL (u.obj.marks, omark_used);
-      u := u.next
-    END;
-  END;
+  sp := CurProc;   
+  sv := CurProps;  CurProps := NIL;
+  sc := StatCnt;
+  s1 := StatCnt1;
+  
+  setCurProc(NIL);
   GenProc (p);
-  IF sp # NIL THEN
-    u := sp.use;
-    WHILE u # NIL DO
-      INCL (u.obj.marks, omark_used);
-      u := u.next
-    END;
+  IF sp # NIL THEN  setCurProc(sp.obj);
+  ELSE              setCurProc(NIL);
   END;
   StatCnt1 := s1;
   StatCnt  := sc;
-  CurLevel := sl;
-  CurProc  := sp;
   CurProps := sv;
 END GenNextProc;
 
@@ -5193,9 +5231,8 @@ PROCEDURE (c: CONSTS) eval_value (n: pc.NODE);
 (*
 *)
 BEGIN
-  CurLevel := -1;
-  CurProc  := NIL;
-  CurMod   := NIL;
+  CurMod := NIL;
+  setCurProc(NIL);
   EnReusageChk := FALSE;
   EnUsageChk   := FALSE;
   EnConsProp   := TRUE;    (* 3: FALSE? *)
@@ -5379,9 +5416,11 @@ BEGIN
   THEN
     GenExpr (o.attr(pc.NODE), NIL);
   ELSIF o.mode = pc.ob_module THEN
+    setCurProc(o);
     IF GenBody (o.val.r(*=>*)) THEN
       INCL (o.val.tags, pc.ntag_no_exit)
     END;
+    setCurProc(NIL);
   END;
 END object;
 
@@ -5399,20 +5438,9 @@ PROCEDURE ( VAR w: USEWRN ) object ( o: pc.OBJECT );
     IF pc.ttag_usage_ok IN o.type.tags THEN
       RETURN
     END;
-    CurLevel := o.lev+1;
-    CurProc  := o.type;
-    u := CurProc.use;
-    WHILE u # NIL DO
-      INCL (u.obj.marks, omark_used);
-      u := u.next
-    END;
+    setCurProc(o);
     SYSTEM.EVAL(CloseProcUsage (CurProc.use));
-    u := CurProc.use;
-    WHILE u # NIL DO
-      BitClr (SYSTEM.VAL(SET, u.obj.marks), {ORD(omark_used), ORD(omark_incl)});
-      u := u.next;
-    END;
-    CurProc := NIL;
+    setCurProc(NIL);
   END DoCloseProcUsage;
 
 -- 0 -- USEWRN::object ---------------------------------------------------------
@@ -5494,6 +5522,7 @@ VAR ini : INIOBJ;
     Wrn : USEWRN;
     clr : CLROBJ;
     rcnt: INTEGER;
+    use : pc.USAGE;
 
 BEGIN
   ASSERT( n.mode = pc.nd_module );
@@ -5521,8 +5550,8 @@ BEGIN
     IF rcnt > 3 THEN
       EnInline := FALSE
     END;
+    setCurProc(NIL);
     CurLevel := 0;
-    CurProc  := NIL;
     (* ini object tags *)
     ini.object (n.type.obj);
     n.type.objects (ini);
@@ -5542,7 +5571,13 @@ BEGIN
     n.type.objects (clr);
     INC (rcnt);
   UNTIL ~Restart;
-  CurProc := NIL;
+  -- clear auxiliary marks of object usage analysis
+  use := CurMod.use_import;
+  WHILE use # NIL DO
+    use.obj.marks := use.obj.marks - pc.OMARK_SET{omark_used_import};
+    use := use.next
+  END;
+  setCurProc(NIL);
   CurMod  := NIL;
   EnReusageChk := FALSE;   -- Vit: what for???
   EnUsageChk   := FALSE;   --
@@ -5554,8 +5589,7 @@ PROCEDURE ( c: CONSTS ) eval_const ( n: pc.NODE ) :  pc.VALUE;
 (*
 *)
 BEGIN
-  CurLevel := -1;
-  CurProc  := NIL;
+  setCurProc(NIL);
   CurMod   := NIL;
   EnStatOpt    := FALSE;
   EnConsProp   := pc.code.en_preopt OR env.config.Option ("IRCONSPROP");
@@ -5604,8 +5638,7 @@ BEGIN
   IntOne  := NewNode (env.null_pos, pc.nd_value, c.ZZ_type);
     SetValue (IntOne,  vIntOne );
 *)
-  CurLevel     := -1;
-  CurProc      := NIL;
+  setCurProc(NIL);
   CurMod       := NIL;
   EnReusageChk := FALSE;
   EnUsageChk   := FALSE;
@@ -5635,5 +5668,6 @@ BEGIN
   trySortTreeLock := 0;
 END Set;
 
-
+BEGIN
+  CurProc := NIL;
 END pcConst.

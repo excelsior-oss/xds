@@ -124,7 +124,7 @@ BEGIN
         DO
             s := s^.Next;
         END;
-<* IF NOT (TARGET_SPARC OR TARGET_RISC) THEN *>
+<* IF NOT (TARGET_SPARC OR TARGET_RISC OR TARGET_LLVM) THEN *>
         IF p.NodeNo = s.NodeNo THEN
             LOOP
                 IF p = s THEN
@@ -598,7 +598,9 @@ BEGIN
                         ReplaceMulti  (p);
       <* END *>
         | ir.o_ret:     IF p^.Params <> NIL THEN p^.Op := ir.o_retfun; END;
+      <* IF NOT TARGET_LLVM THEN *>
         | ir.o_copy:    IF ~at.fastcomp THEN ReplaceCopy (p); END;
+      <* END *>
         | ir.o_seqpoint: ReplaceSeqpoint(p);
         | ELSE
         END;

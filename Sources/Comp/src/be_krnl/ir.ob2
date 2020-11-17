@@ -30,6 +30,7 @@ TYPE
         NameType       *= pc.STRING;                    (* ??? *)
         TypeType       *= ir_def.TypeType;
         SizeType       *= ir_def.SizeType;
+        AlignType      *= ir_def.AlignType;
 
         Node           *= INT;
         TriadePtr      *= POINTER TO Triade;
@@ -47,6 +48,8 @@ TYPE
 
         TypeTypeSet    *= ir_def.TypeTypeSet;
         SizeTypeRange  *= ir_def.SizeTypeRange;
+
+        ProtoParNumber *= LONGINT;
 
 
 CONST   MaxVarSize *= ir_def.MaxVarSize;
@@ -207,7 +210,12 @@ TYPE Operation      *=
         o_checkneq                (* if param == 0 then
                                          call x2j_trap_division()
                                   *)
-
+<* IF TARGET_LLVM THEN *>
+---- LLVM instruction
+     ,  o_getelementptr          (* r = x [index1, index2, ...] 
+                                     get the address of a subelement of an aggregate data structure.
+                                  *)
+<* END *>                                  
     );
 
 CONST   max_op_code    *= MAX(Operation);
@@ -323,21 +331,24 @@ CONST   OpProperties *= OpPropertiesArray {
                 {isRead, isPrelive},                            (* o_seqpoint *)
                 {},                                             (* o_constr *)
                 {isMovable, isPrelive}                          (* o_checkneq *)
+              <* IF TARGET_LLVM THEN *>
+              , {}                                              (* o_getelementptr *)
+              <* END *>
         };        
 
 
 (* ------------------------------ TagType ---------------------------------- *)
 
-TYPE    TagType       *= SHORTINT;
-CONST
+TYPE    TagType *= SHORTINT;
+CONST   -- field 'name' in Param type corresponding to
         y_Nothing       * = TagType{ 1 };
-        y_NumConst      * = TagType{ 2 };
-        y_AddrConst     * = TagType{ 3 };
-        y_RealConst     * = TagType{ 4 };
-        y_ComplexConst  * = TagType{ 5 };
-        y_ProcConst     * = TagType{ 6 };
-        y_RealVar       * = TagType{ 7 };
-        y_Variable      * = TagType{ 8 };
+        y_NumConst      * = TagType{ 2 };  -- no name, see field 'value' in Param type
+        y_AddrConst     * = TagType{ 3 };  -- ir.Locals
+        y_RealConst     * = TagType{ 4 };  -- no name, see field 'value' in Param type
+        y_ComplexConst  * = TagType{ 5 };  -- no name, see field 'value' in Param type
+        y_ProcConst     * = TagType{ 6 };  -- opProcs.ProcList
+        y_RealVar       * = TagType{ 7 };  -- ir.Locals
+        y_Variable      * = TagType{ 8 };  -- ir.Vars
 
 
 TYPE    TagTypeSet *= PACKEDSET OF TagType;
@@ -468,7 +479,9 @@ TYPE Option *=
 
         o_Debug,                -- Используется при выдаче отладочной информации
 --      o_Volatile
-        o_IsChecknil
+        o_IsChecknil,
+        o_ParameterLen          -- local corresponding to the parameter that is used 
+                                -- to pass the length of an open array in one demension
        );
 
 TYPE    OptionsSet     *= PACKEDSET OF Option;
@@ -522,9 +535,11 @@ TYPE
 <* ELSE *>
                          triade     *: TriadePtr;
 <* END *>
-                         paramnumber*: INTEGER;
+                         paramnumber*: INTEGER;         -- parameter number in triad
+                         protoparnum*: ProtoParNumber;  -- for o_call only, parameter number in procedure prototype
                          position   *: TPOS;        (* For o_fi only *)
                          options    *: ParamOptionsSet;
+                         type       -: pc.STRUCT;
                      END;
 
     ParamArray *= POINTER TO ARRAY OF ParamPtr;
@@ -558,7 +573,9 @@ TYPE
                          Params      *: ParamArray;
                          Position    *: TPOS;
                          NPar        *: SHORTINT;       (* For o_getpar only *)
-                 END;                                   (* NPar for o_copy - alignment *)
+                                                        (* NPar for o_copy - alignment *)
+                         type        *: pc.STRUCT;
+                 END;
 
 TYPE
     Loc *= (
@@ -657,6 +674,7 @@ TYPE    NodeType *= RECORD
        NodeRefs  *= POINTER TO ARRAY OF NodeType;  -- INDEXED BY "Node"
 
 CONST  UndefLoop      *= Loop   { -1};
+       UndefLocal     *= Local  { -1};
        UndefNode      *= MAX (Node);
        UndefTSNode    *= TSNode { -1};
        UNDEFINED      *= VarNum { -1};
@@ -973,6 +991,7 @@ BEGIN
   p.reverse    := FALSE;
   p.position   := NullPos;
   p.tag        := y_Nothing;
+  p.type       := NIL;
 END Init;
 
 VAR
@@ -1060,15 +1079,19 @@ BEGIN
                     ASSERT(i=0);
                     RETURN p.OpType;
     | o_clinit:
-                ASSERT(i=0);
+                    ASSERT(i=0);
                     RETURN t_ref;
     | o_cmpswap:
                     IF i = 0 THEN
-                RETURN t_ref;
+                        RETURN t_ref;
                     ELSE  
                         RETURN p.OpType;
                     END;
-    | ELSE
+                    
+    | o_stop: 
+                    ASSERT(i=0);
+                    RETURN p.OpType;
+    ELSE
     END;
     RETURN p^.ResType;
 END ParamType;
@@ -1134,14 +1157,17 @@ BEGIN
                     ASSERT(i=0);
                     RETURN p.ResSize * 2;
     | o_clinit:
-                ASSERT(i=0);
+                    ASSERT(i=0);
                     RETURN tune.addr_sz;
     | o_cmpswap:
                     IF i = 0 THEN
-                RETURN tune.addr_sz;
+                        RETURN tune.addr_sz;
                     ELSE
                         RETURN p.OpSize;
                     END;
+    | o_stop: 
+                    ASSERT(i=0);
+                    RETURN p.OpSize;
     ELSE
     END;
     RETURN p^.ResSize;
@@ -1167,6 +1193,7 @@ BEGIN
         NewParamPtr  (p^[i]);
         p^[i].triade      := q;
         p^[i].paramnumber := SHORT (i);
+        p^[i].protoparnum := VAL(ProtoParNumber, i) - 1;
     END;
     RETURN p;
 END NewParams;
@@ -1193,6 +1220,9 @@ BEGIN
     p^.tag  := y_Variable;
     p^.name := v;
     p^.reverse := reverse;
+    IF Vars[v].Def # NIL THEN
+      p^.type := Vars[v].Def.type;
+    END;    
     IF addUse THEN
       AddUse (p);
     END;
@@ -1206,7 +1236,9 @@ END MakeParVar;
 PROCEDURE MakeParNum* (p: ParamPtr; u: VALUE);
 BEGIN
     p.Init();
-    p^.tag   := y_NumConst;
+    IF u.is_RR() THEN  p^.tag := y_RealConst;
+    ELSE               p^.tag := y_NumConst;
+    END;
     p^.value := u;
     p^.reverse := FALSE;
 END MakeParNum;
@@ -1288,8 +1320,15 @@ BEGIN
     d^.value   := s^.value;
     d^.name    := s^.name;
     d^.offset  := s^.offset;
+    d^.type    := s^.type;
+    IF NOT s^.position.IsNull() THEN
+      d^.position := s^.position;
+    END;
     IF d^.tag = y_Variable THEN
         AddUse (d);
+    END;
+    IF (s.triade # NIL) AND (s.triade.Op = o_call) THEN
+      d^.protoparnum := s^.protoparnum;
     END;
 END CopyParam;
 
@@ -1318,6 +1357,7 @@ VAR rev: BOOLEAN;
     val: VALUE;
     nam: VarNum;
     ofs: LONGINT;
+    type: pc.STRUCT;
 BEGIN
     IF d^.tag = y_Variable THEN
         RemoveUse(d);
@@ -1340,6 +1380,9 @@ BEGIN
     ofs        := d^.offset;
     d^.offset  := s^.offset;
     s^.offset  := ofs;
+    type       := d^.type;
+    d^.type    := s^.type;
+    s^.type    := type;    
 
     IF d^.tag = y_Variable THEN
         AddUse (d);
@@ -1510,6 +1553,18 @@ BEGIN
   RETURN q
 END NewTriadeOp;
 
+<* IF TARGET_LLVM THEN *>
+PROCEDURE NewTriadeGEP *(nparams: INT; type: pc.STRUCT): TriadePtr; 
+VAR q: TriadePtr;
+BEGIN 
+  q := NewTriadeInit(nparams, o_getelementptr, tune.addr_ty, tune.addr_sz);
+  q.OpType    := t_int;
+  q.type      := pc.new_type(pc.ty_pointer);
+  q.type.base := type;
+  RETURN q;
+END NewTriadeGEP; 
+<* END *>
+
 (* -------------------------------------------------------------------------- *)
 (* -------------------------------------------------------------------------- *)
 
@@ -1538,6 +1593,7 @@ TYPE
            name       *: VarNum;
            value      *: VALUE;
            offset     *: LONGINT;
+           type       *: pc.STRUCT;
          END;
 
 PROCEDURE MakeArgLocal* (VAR arg: Arg; l: Local; offset: LONGINT);
@@ -1550,9 +1606,10 @@ BEGIN
     arg.offset := offset;
 --  arg.parpos   := NullPos;
 --  arg.operpos  := NullPos;    (* position of previous operation *)
+    arg.type := NIL;
 END MakeArgLocal;
 
-PROCEDURE MakeArgVar* (VAR arg: Arg; v: VarNum);   (* no AddUse !! *)
+PROCEDURE MakeArgVar* (VAR arg: Arg; v: VarNum; type:=NIL: pc.STRUCT);   (* no AddUse !! *)
 BEGIN
     arg.mode := GenModeSet{};
 
@@ -1562,7 +1619,7 @@ BEGIN
     arg.offset := 0;
 --  arg.parpos   := NullPos;
 --  arg.operpos  := NullPos;    (* position of previous operation *)
-
+    arg.type := type;
 END MakeArgVar;
 
 PROCEDURE MakeArgNum* (VAR arg: Arg; u: VALUE);
@@ -1574,6 +1631,7 @@ BEGIN
     arg.offset := 0;
 --  arg.parpos   := NullPos;
 --  arg.operpos  := NullPos;    (* position of previous operation *)
+    arg.type := NIL;
 END MakeArgNum;
 
 PROCEDURE MakeArgFloat* (VAR arg: Arg; u: VALUE);
@@ -1586,10 +1644,11 @@ BEGIN
     arg.offset := 0;
 --  arg.parpos   := NullPos;
 --  arg.operpos  := NullPos;    (* position of previous operation *)
+    arg.type := NIL;
 END MakeArgFloat;
 
 -- make arg to be 'address(u)+offs'
-PROCEDURE MakeArgAddr* (VAR arg: Arg; u: Local; offset: LONGINT);
+PROCEDURE MakeArgAddr* (VAR arg: Arg; u: Local; offset: LONGINT; type:=NIL: pc.STRUCT);
 BEGIN
     arg.mode := GenModeSet{};
     IF u # MAX(Local) THEN
@@ -1601,6 +1660,7 @@ BEGIN
     arg.offset := offset;
 --  arg.parpos   := NullPos;
 --  arg.operpos  := NullPos;    (* position of previous operation *)
+    arg.type := type;
 END MakeArgAddr;
 
 PROCEDURE MakeArgNil*(VAR arg: Arg);
@@ -1615,6 +1675,7 @@ BEGIN
     arg.name := UNDEFINED;
     arg.value := NIL;
     arg.offset := 0;
+    arg.type := NIL;
 END MakeArgNothing;
 
 (*  Сделать аргументом адрес константы *)
@@ -1641,7 +1702,7 @@ BEGIN
     arg.offset := 0;
 --  arg.parpos   := NullPos;
 --  arg.operpos  := NullPos;    (* position of previous operation *)
-
+    arg.type := NIL;
 END MakeArgProc;
 
 (*---------------------------- Parameters ------------------------------------*)
@@ -1672,6 +1733,7 @@ BEGIN
   prm.value    := arg.value;
   prm.name     := arg.name;
   prm.offset   := arg.offset;
+  prm.type     := arg.type;
 
   IF arg.tag = y_Variable THEN
     AddUse(prm)
@@ -1687,7 +1749,7 @@ BEGIN
   arg.value    := prm.value;
   arg.name     := prm.name;
   arg.offset   := prm.offset;
-
+  arg.type     := prm.type;
 END ArgByParm;
 
 PROCEDURE GT*(p1, p2: pc.VALUE; ty: TypeType; sz: SizeType; strict: BOOLEAN): BOOLEAN;

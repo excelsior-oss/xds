@@ -475,6 +475,11 @@ BEGIN
   RETURN ps.line=MAX(LONGINT);
 END IsNull;
 
+PROCEDURE (VAR x: TPOS) InSameFile *(y-: TPOS): BOOLEAN;
+BEGIN
+  RETURN x.file = y.file;
+END InSameFile;
+
 PROCEDURE (VAR x: TPOS) cmp*(y-: TPOS): INTEGER;
 BEGIN
   IF x.file<y.file THEN RETURN -1 END;

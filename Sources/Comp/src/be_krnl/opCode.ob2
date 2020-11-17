@@ -35,8 +35,15 @@ IMPORT od := OverDye;
   IMPORT TOC;
 <* END *>
 
+<* IF TARGET_LLVM THEN *>
+IMPORT llvmCode;
+IMPORT llvmModify;  
+IMPORT plt := xmPlatform;
+<* ELSE *>
+IMPORT Select := Iselect;
+<* END *>
+
 IMPORT
-  Select := Iselect,
   KillDead,
 <* IF db_code OR pcvis THEN *> io := opIO,     <* END *>
 <* IF pcvis THEN *>            pcVis,          <* END *>
@@ -199,15 +206,21 @@ END UnifyReturns;
 *)
 
 PROCEDURE make_return_object (mode : pc.OB_MODE) : pc.OBJECT;
-  VAR o: pc.OBJECT;
-     nm: pc.STRING;
+VAR obj: pc.OBJECT;
+    proto: pr.Proto;
 BEGIN
-  nm := at.make_name("RETURN");
-  o := at.new_work_object(nm, at.curr_proc.type.base, at.curr_proc.type, mode, FALSE);
-  at.work_objects := o.next;
-  o.next := at.curr_proc.type.prof;
-  at.curr_proc.type.prof := o;
-  RETURN o
+  proto := pr.ProcProtoByObj(at.curr_proc);
+  IF (proto # NIL) & (proto.npar > 0) & (proto.par[0].mode = pr.pm_return)
+   & (proto.par[0].obj # NIL)
+  THEN
+    ASSERT( proto.par[0].obj.mode = mode );
+    obj := proto.par[0].obj;
+  ELSE  
+    obj := def.make_return_object(mode, at.curr_proc.type);
+  END;   
+  obj.next := at.curr_proc.type.prof;
+  at.curr_proc.type.prof := obj;
+  RETURN obj; 
 END make_return_object;
 
 PROCEDURE get_proc_ret_info (VAR di: ir.DebugInfo);
@@ -413,6 +426,27 @@ BEGIN
   Optimize.Init();
   gr.KillDead;
 
+<* IF TARGET_LLVM THEN *>
+  gr.FindLoops;
+  WriteTest ("m", "Before Modify.Decompose (m)");
+  llvmModify.Decompose();
+
+  WriteTest ("p", "before PrepGen (p)");
+  PrepGen.Prepare();
+
+  WriteTest ("f", "final (f)");
+  IF ~env.shell.Active () & (env.dc_progress IN env.decor) THEN
+     env.info.print("\rGenerating");
+  END;
+
+  llvmCode.Generate();
+
+  IF ~env.shell.Active () & (env.dc_progress IN env.decor) THEN
+    env.info.print("\r");
+  END;
+  RETURN;
+
+<* ELSE *>  
   IF at.COMP_MODE * at.CompModeSet{at.debug, at.SPACE} = at.CompModeSet{} THEN
     Modify.UnrollFors;
   END;
@@ -495,6 +529,7 @@ BEGIN
   IF ~env.shell.Active () & (env.dc_progress IN env.decor) THEN
     env.info.print("\r");
   END;
+<* END *> -- TARGET_LLVM
 END Optim_Do;
 
 (** ------------- s t a n d a r d   p r o c e d u r e s ---------- *)
@@ -514,6 +549,11 @@ BEGIN
   IF  def.is_scalar(type) THEN
     ope.gen_value(n.r, ir.GenModeSet{def.LVL}, larg);
     def.type_info(type, ty, sz);
+    <* IF TARGET_LLVM THEN *>    
+      IF (rarg.tag # ir.y_NumConst) & (sz # tune.index_sz) THEN
+        ope.gen_conversion(n.pos, rarg, def.INDEX_T, type);
+      END;
+    <* END *>    
   ELSE
     ope.gen_value(n.r, ir.GenModeSet{def.REF}, larg);
     ir.MakeArgNum(arg, def.val(tune.BITSET_LEN));
@@ -1553,6 +1593,8 @@ BEGIN
   was_alloca := TRUE;
   q := ir.NewTriadeInit(1, ir.o_alloca, tune.addr_ty, tune.addr_sz);
   q.Position := tpos;
+  q.type := pc.new_type(pc.ty_pointer);
+  q.type.base := pc.shortcard_type;   
   IF at.stack_checked IN at.COMP_MODE THEN
     INCL(q.Options, ir.o_Checked)
   END;
@@ -1693,9 +1735,11 @@ BEGIN
   ir.Locals^[loc].VarType := ty;
   ir.Locals^[loc].VarSize := sz;
   ir.Locals^[loc].Offset  := proto.par[i].offs;
+  INCL(ir.Locals[loc].Options, ir.o_Parameters);
 
   q := ir.NewTriadeInit(0, ir.o_getpar, ty, sz);
   q.Position := tpos;
+  INCL(q.Options, ir.o_Parameters);
   q.NPar := SHORT(i);
   q.Tag := ir.y_RealVar;
   q.Name := loc;
@@ -1766,6 +1810,7 @@ PROCEDURE get_params(p: pc.OBJECT);
           loc_len := get_one(i, nm);
           change_info(v, at.a_len+SHORT(j), ir.y_RealVar, VAL(at.InfExtName, loc_len));
           ir.Locals[loc_len].Obj := v;
+          INCL(ir.Locals[loc_len].Options, ir.o_ParameterLen);
           INC(j);
         END;
         IF RtoL THEN get_param(v.next, i) END;
@@ -2081,7 +2126,6 @@ END vis_proc;
 
 <* END *>
 
-<* IF TARGET_386 THEN *>
 ----- procedures for profiler code generating -------
 
 PROCEDURE raw_object (name-: ARRAY OF CHAR; m: pc.OB_MODE; size: LONGINT): pc.OBJECT;
@@ -2099,6 +2143,7 @@ BEGIN
   cmd.set_ready(o, seg);
 END set_raw_segm;
 
+<* IF TARGET_386 THEN *>
 PROCEDURE gen_raw_loc (o: pc.OBJECT): ir.Local;
 VAR loc: ir.Local;
 BEGIN
@@ -2612,8 +2657,10 @@ BEGIN
 
   env.config.Equation( "gen_only_proc", onlyProcName);
   IF ((onlyProcName = NIL) OR (onlyProcName^ = at.curr_mod.name^))
+    <* IF TARGET_386 THEN *>
      AND ((at.curr_mod.type.flag IN opt.LangsWithModuleConstructors) OR
            (at.profilingMode # xProfRTS.PROF_MODE_NONE))
+    <* END *>
   THEN
     at.curr_proc := at.curr_mod;
     at.curr_procno := def.proc_num(at.curr_mod);
@@ -2735,8 +2782,9 @@ BEGIN
     THEN (* nothing *)
     ELSIF (o.mode = pc.ob_var) & ~(pc.otag_valpar IN o.tags) THEN
         IF nms.valid_name(o.name) THEN wrn_obj(o, 300) END;
-    ELSIF o.mode IN pc.VARs   THEN wrn_obj(o, 301);
-    ELSIF o.mode IN pc.PROCs  THEN wrn_obj(o, 303);
+        INCL(o.marks,at.omark_not_used);
+    ELSIF o.mode IN pc.VARs   THEN wrn_obj(o, 301);  INCL(o.marks,at.omark_not_used);
+    ELSIF o.mode IN pc.PROCs  THEN wrn_obj(o, 303);  INCL(o.marks,at.omark_not_used); 
 --  ELSIF o.mode = pc.ob_cons THEN env.errors.Warning(o.pos, 305);
     END;
     o:=o.next;
@@ -2832,7 +2880,18 @@ END skip_struct;
 
 PROCEDURE (c: CODE) selected;
 BEGIN
+<* IF TARGET_LLVM THEN *>
+  env.config.SetOption("__GEN_LLVM__", TRUE);
+  IF plt.targetCPU = "" THEN
+  ELSIF plt.isTargetCPU(plt.CPU_PPC)   THEN  env.config.SetOption("__GEN_PPC__", TRUE);
+  ELSIF plt.isTargetCPU(plt.CPU_SPARC) THEN  env.config.SetOption("__GEN_SPARC__", TRUE);
+  ELSIF plt.isTargetCPU(plt.CPU_MIPS)  THEN  env.config.SetOption("__GEN_MIPS__", TRUE);
+  ELSIF plt.isTargetCPU(plt.CPU_X86)   THEN  env.config.SetOption("__GEN_X86__", TRUE);
+  ELSE env.errors.Error(env.null_pos, 533, plt.targetCPU);   --- "Can not select target CPU"
+  END;
+<* ELSE *>  
   env.config.SetOption("__GEN_X86__", TRUE);
+<* END *>  
 END selected;
 
 <* IF NOT TARGET_VAX THEN *>
@@ -3141,7 +3200,8 @@ BEGIN
 END generate_obj_file;
 
 PROCEDURE (c: CODE) gen_code(cu: pc.Mno; main: BOOLEAN);
-  VAR prof, mem : pc.OBJECT;
+VAR prof, mem : pc.OBJECT;
+    genasm_saved: BOOLEAN;
 BEGIN
   at.curr_proc := NIL;
   at.curr_mno := cu;
@@ -3159,9 +3219,16 @@ BEGIN
     mark_intrinsic(mem);
   END;
 
-  Select.InitOutput;
+<* IF TARGET_LLVM THEN *>  
+  genasm_saved := at.GENASM IN at.COMP_MODE;
+  INCL(at.COMP_MODE, at.GENASM);
+<* END *>
 
- <* IF TARGET_RISC OR TARGET_SPARC THEN *>
+<* IF NOT TARGET_LLVM THEN *>
+  Select.InitOutput;
+<* END *>
+
+<* IF TARGET_RISC OR TARGET_SPARC THEN *>
   TOC.Start;
   at.LocalTOC := at.new_work_object(at.make_name("%s_TOC",at.curr_mod.name^),
                                     NIL,
@@ -3173,7 +3240,7 @@ BEGIN
 --  def.collect_glob_vars(at.work_objects); - эти объекты появятся только потом
   def.alloc_glob_vars;
   def.clear_glob_info;
- <* END *>
+<* END *>
 
   Optim_Init;
   gen_module;
@@ -3184,17 +3251,22 @@ BEGIN
   IF env.errors.err_cnt # 0 THEN RETURN END;
   check_objects(at.curr_mod.type.mem);
 
- <* IF db_procs THEN *>
+<* IF db_procs THEN *>
   pr.show_proc_list;
   pr.show_prototype_list;
- <* END *>
+<* END *>
 
- <* IF TARGET_RISC OR TARGET_SPARC THEN *>
+<* IF TARGET_RISC OR TARGET_SPARC THEN *>
   TOC.Finish;
- <* END *>
+<* END *>
 
   generate_obj_file;
 
+<* IF TARGET_LLVM THEN *>
+  IF NOT genasm_saved THEN
+    EXCL(at.COMP_MODE, at.GENASM);
+  END;
+<* END *>
 END gen_code;
 
 PROCEDURE (c: CODE) get_size(op: pc.SUB_MODE; t: pc.STRUCT): LONGINT;

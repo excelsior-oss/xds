@@ -22,6 +22,8 @@ CONST CODE_VERSION* =
             "RISC, v0.99";
 <* ELSIF TARGET_SPARC THEN *>
             "SPARC, v0.10";
+<* ELSIF TARGET_LLVM THEN *>
+            "LLVM v0.01";
 <* ELSE *>
             "x86, v1.51";
 <* END *>
@@ -209,6 +211,7 @@ CONST
 
   otag_versionkey* = pc.otag_aux6; (* version key in module body name *)
   otag_created*    = pc.otag_aux7; (* имеется триадный объект *)
+  otag_workobject *= pc.otag_aux18;(* compiler generated object, has no prototype in source code *)
 
 (* значения omark используются только во время одной трансляции *)
 (* и в sym-файлы не записываются                                *)
@@ -218,6 +221,7 @@ CONST
   omark_nested_read*  = pc.omark_aux12; (* вложенные доступаются к локалам процедуры *)
   omark_nested_write* = pc.omark_aux13; (* вложенные доступаются к локалам процедуры *)
   omark_procdesc*     = pc.omark_aux14; (* объект - дескриптор процедуры *)
+  omark_not_used*     = pc.omark_aux15; (* object is not used in the program *)
 
   omark_gen_FIRST*  = pc.omark_aux16;                   (* пометки формирования кода: *)
   omark_gen_ready*  = omark_gen_FIRST ;  (*   есть сгенерированный код *)
@@ -232,9 +236,10 @@ CONST
 (* значения tmark используются только во время одной трансляции *)
 (* и в sym-файлы не записываются                                *)
 
-  tmark_processed*  = pc.tmark_aux10; (* тип обработан   *)
-  tmark_prototyped* = pc.tmark_aux11; (* создан прототип *)
-  tmark_db_index*   = pc.tmark_aux12; (* has index number for debug info *)
+  tmark_processed  *= pc.tmark_aux10; (* тип обработан   *)
+  tmark_db_passed  *= pc.tmark_aux11; (* passed when traversing by the debugger emitter *)
+  tmark_db_index   *= pc.tmark_aux12; (* has index number for debug info *)
+  tmark_llvm_defined *= pc.tmark_aux13; (* type defined in LLVM code *)
 
 (** ----------------- A L I G N M E N T --------------------------------- *)
 
@@ -255,7 +260,8 @@ CONST  (* -- в и д ы   а т р и б у т о в -- *)
    a_globOFFS*    = 10;  (* размещение глобальной переменной *)      (* size_ext *)
    a_name*        = 11;  (* object's external name *)                (* name_ext *)
    a_TOCoffs*     = 12;  (* offset in TOC *)                         (* TOC_ext  *)
-   a_adr_glob*    = 13;  (* variable - address of SL-1 global *) (* inf_ext - use only 'name' *)
+   a_codeOFFS*    = 13;  (* offset in code *)                        (* offs_ext *)
+   a_param_no*    = 14;  (* parameter number in prototype *)         (* size_ext *)
 
    a_mybase*      = 16;  (* база переменных процедуры *)             (* inf_ext  *)
    a_base*        = a_mybase+1; (*!!*)
@@ -334,8 +340,10 @@ TYPE
 
 PROCEDURE (att: OFFS_EXT) out*(file: xfs.SymFile);
 BEGIN
-  file.WriteInt(a_globOFFS);
-  file.WriteInt(att.offset);
+  IF att.kind = a_globOFFS THEN
+    file.WriteInt(a_globOFFS);
+    file.WriteInt(att.offset);
+  END;
   att.out^(file);
 END out;
 
@@ -872,6 +880,10 @@ BEGIN
     o.lev := 0;
     o.mno := pc.ZEROMno;
   END;
+  IF h # NIL THEN             o.flag := h.flag;
+  ELSIF curr_proc # NIL THEN  o.flag := curr_proc.flag;
+  ELSIF curr_mod # NIL  THEN  o.flag := curr_mod.flag;
+  END;        
   o.type := t;
   o.sno:=-1;
   o.tags:=pc.OTAG_SET{};
@@ -953,6 +965,7 @@ BEGIN
   f.val := v;
   nm := make_name("R'%d", floats_no);
   o := new_work_object(nm, T_type(ty, sz), curr_mod.type, pc.ob_cons, FALSE);
+  INCL(o.tags, otag_workobject);
 <* IF TARGET_RISC OR TARGET_SPARC THEN *>
   alloc_work_object(o);
 <* END *>

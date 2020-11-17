@@ -503,7 +503,14 @@ BEGIN
   ELSIF dbg_only_procs & ~(o.mode IN pc.PROCs) THEN
     RETURN FALSE;
   ELSE
-    RETURN ((o.lev # 0) OR NOT emit.CheckMarks OR (at.omark_gen_marked IN o.marks));
+    RETURN ( o.is_local() OR NOT emit.CheckMarks
+         <* IF TARGET_LLVM THEN *> 
+           OR (pc.otag_public IN o.tags) OR NOT (at.omark_not_used IN o.marks)
+         <* ELSE *>
+           OR (at.omark_gen_marked IN o.marks)
+         <* END *>  
+           )
+         & NOT o.is_extern();
   END;
 END emit_symbol;
 
@@ -521,15 +528,24 @@ BEGIN
   | sy_var:
     ASSERT(o.lev = 0);
     IF emit_symbol(o) THEN
-      tind := type_index (o.type);
-      IF (tind >= 0) THEN
+      tind := get_index (o.type);
+      IF tind < 0 THEN
+        tind := type_index (o.type);
+      END;
+      IF (tind >= 0) 
+      <* IF TARGET_LLVM THEN *>
+      & (o.mno = pc.cur_mod) -- from current module only
+      <* END *>
+      THEN
         emit.SymbEmitter (stag, o, tind);
       END;
     END;
 
   | sy_param, sy_local_var:
     IF emit_symbol(o) THEN
-      a := at.attr (o.ext, at.a_dbg);
+      <* IF TARGET_LLVM THEN *>  a := at.attr (o.ext, at.a_codeOFFS);
+      <* ELSE *>                 a := at.attr (o.ext, at.a_dbg);
+      <* END *>
       IF a # NIL THEN
         type := o.type;
         IF type.mode = pc.ty_array_of THEN

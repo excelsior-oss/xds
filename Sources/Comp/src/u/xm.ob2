@@ -34,6 +34,7 @@ IMPORT
   <* IF TARGET_SPARC THEN *> opCode,    <* END *>
   <* IF TARGET_68K   THEN *> opCode,    <* END *>
   <* IF TARGET_VAX   THEN *> opCode,    <* END *>
+  <* IF TARGET_LLVM  THEN *> opCode,    <* END *>
   <* IF TARGET_C     THEN *> ccCode,    <* END *>
   <* IF TARGET_NULL  THEN *> beNull,    <* END *>
 
@@ -88,11 +89,16 @@ TYPE
   END;
 
 CONST
+<* IF TARGET_LLVM THEN *>
+  vers = "v0.01";
+<* ELSE *>
   vers = "v2.51";
+<* END *>  
+  
   header =
-    "O2/M2 development system " + vers
+    "O2/M2 Development System " + vers
     <* IF ts_compatible THEN *> + " TS " <* END *>
-    + " (c) 1991-2010 Excelsior, LLC."
+    + " (c) 1991-2020 Excelsior, LLC."
   ;
   mode_tag = '=';
 
@@ -615,6 +621,7 @@ BEGIN
   <* IF TARGET_SPARC THEN *> be(opCode.Set,"SPARC");    <* END *>
   <* IF TARGET_68K   THEN *> be(opCode.Set,"68K");      <* END *>
   <* IF TARGET_VAX   THEN *> be(opCode.Set,"VAX");      <* END *>
+  <* IF TARGET_LLVM  THEN *> be(opCode.Set, "LLVM");    <* END *>
   <* IF TARGET_C     THEN *> be(ccCode.Set,"C");        <* END *>
   <* IF TARGET_NULL  THEN *> be(beNull.Set,"NULL");     <* END *>
 

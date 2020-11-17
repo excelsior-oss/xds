@@ -5,6 +5,7 @@ MODULE CodeFace;
 
 IMPORT at:=opAttrs, pc:=pcK, nms:=ObjNames, cmd:=CodeDef, xfs:=xiFiles,
        env:=xiEnv, dstr:=DStrings, SYSTEM, io:=opIO;
+IMPORT pcO;
 IMPORT opt := Options;
 IMPORT reg := Registry;
 
@@ -20,7 +21,15 @@ IMPORT reg := Registry;
     BEGIN
       IF (o.mno#at.curr_mno) OR (o.mode=pc.ob_eproc)  THEN
         RETURN status_Extern;
-      ELSIF (o.mode=pc.ob_cproc) OR cmd.based_var(o) OR NOT((at.omark_gen_ready IN o.marks) OR (o.mode=pc.ob_var)&(o.lev=0)) THEN
+      ELSIF (o.mode=pc.ob_cproc) OR cmd.based_var(o) 
+         OR NOT (  (at.omark_gen_ready IN o.marks) 
+                OR ((o.mode = pc.ob_var) & o.is_global())
+              <* IF TARGET_LLVM THEN *>  
+                OR ( (o.mode = pc.ob_type)
+                   & ((pcO.omark_tried IN o.marks) OR o.is_public()) )
+              <* END *>      
+                ) 
+      THEN
         RETURN status_Unkown;
       ELSIF o.is_public() THEN
         RETURN status_Global;
@@ -38,12 +47,16 @@ IMPORT reg := Registry;
     BEGIN
       ASSERT(ObjectStatus(o) # status_Unkown);
       CASE o.mode OF
-        pc.ob_proc,pc.ob_xproc,
+      | pc.ob_proc,pc.ob_xproc,
         pc.ob_lproc, pc.ob_module,
-        pc.ob_eproc               : RETURN class_Text   |
-        pc.ob_type                : RETURN class_Data   |
-        pc.ob_cons                : RETURN class_Data   | -- class_ROData
-        pc.ob_var                 : RETURN class_BSS    |
+        pc.ob_eproc               : RETURN class_Text
+      | pc.ob_type                : RETURN class_Data
+      <* IF TARGET_MIPS OR TARGET_SPARC OR TARGET_PPC OR TARGET_LLVM THEN *>
+      | pc.ob_cons                : RETURN class_ROData;  -- class_ROData
+      <* ELSE *>
+      | pc.ob_cons                : RETURN class_Data;    -- class_ROData
+      <* END *>
+      | pc.ob_var                 : RETURN class_BSS    
       ELSE           ASSERT(FALSE,100h+ORD(o^.mode));
       END;
     END ObjectClass;
@@ -273,7 +286,7 @@ IMPORT reg := Registry;
 
       PROCEDURE ManagerIterate(o: OBJECT);
       BEGIN
-        IF NOT(omark_gen_passed IN o.marks) THEN
+        IF NOT(omark_gen_passed IN o.marks) AND NOT (at.omark_not_used IN o.marks) THEN
           IF ( ObjectStatus(o) # status_Unkown ) AND
              ( (curr_f1=NIL) OR curr_f1(o) )       AND
              ( (curr_f2=NIL) OR curr_f2(o) )
@@ -306,6 +319,27 @@ IMPORT reg := Registry;
         END;
       END do_iteration;
 
+    PROCEDURE IterateExplicitImport * (proc: iter_proc_type; needFixup: BOOLEAN);
+    VAR
+      u: pc.USAGE;
+      o: pc.OBJECT;
+    BEGIN
+      u := at.curr_mod.type.use;
+      WHILE u # NIL DO
+        o := u.obj;
+        IF at.curr_mod.mno # o.mno THEN
+          IF o.mode IN pc.VARs THEN
+            -- FROM variables IMPORT
+            IF (at.omark_used IN o.marks) & NOT (at.omark_not_used IN o.marks) THEN
+              ASSERT(o.is_global());
+              proc(o);
+            END;
+          END;
+        END;
+        u := u.next;
+      END;
+    END IterateExplicitImport;
+
     PROCEDURE IterateContext * (proc: iter_proc_type; f1: filter_proc_type; f2: filter_proc_type);
     BEGIN
       DoProceedExterns:=TRUE;
@@ -314,8 +348,10 @@ IMPORT reg := Registry;
       curr_f1:=f1;
       curr_f2:=f2;
       cmd.iter_context(at.curr_mod,do_iteration);
+      IterateExplicitImport(CurrentManager, TRUE);
       CurrentManager:=ManagerClear;
       cmd.iter_context(at.curr_mod,do_iteration);
+      IterateExplicitImport(CurrentManager, TRUE);
     END  IterateContext;
 
 (*******************************************************************)

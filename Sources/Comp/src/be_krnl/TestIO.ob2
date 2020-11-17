@@ -54,7 +54,7 @@ VAR
         curr_proc_name*: pc.STRING;
         need_proc_name: pc.STRING;
 TYPE
-    ArrayOfString = ARRAY ir.Operation OF ARRAY 14 OF CHAR;
+    ArrayOfString = ARRAY ir.Operation OF ARRAY 16 OF CHAR;
 CONST
     TriadeName* = ArrayOfString
     { "o_invalid",
@@ -148,7 +148,10 @@ CONST
       "o_SEQPOINT",
       "o_CONSTR",
       "o_CHECKNEQ"
-       };
+    <* IF TARGET_LLVM THEN *>    
+    , "o_GETELEMENTPTR"
+    <* END *>  
+    };
 
 (* -------------------------------------------------------------------------- *)
 
@@ -157,8 +160,11 @@ TYPE    INT = ir.INT;
 VAR
         pos:    INT;
         file:   SeqFile.ChanId;
-        fname:  ARRAY 256 OF CHAR;    -- name of a Q-file
-        qfileNo:LONGINT; -- number of current qfile from the compiler run
+        fname:  ARRAY 256 OF CHAR;  -- name of a Q-file
+        qfileNo:LONGINT;            -- number of current qfile from the compiler run
+        outstr: DStrings.String;    -- output string in 'StringMode'  
+
+        StringMode: BOOLEAN; 
 
 
 (* -------------------------------------------------------------------------- *)
@@ -190,18 +196,26 @@ END Close;
 
 PROCEDURE WrChar (c: CHAR);
 BEGIN
+  IF StringMode THEN
+    DStrings.Append (c, outstr);    
+  ELSE  
     TextIO.WriteChar (file, c);
 --    DStrings.Append (c, nodeLabel);
-    INC (pos);
+  END;  
+  INC (pos);
 END WrChar;
 
 (* -------------------------------------------------------------------------- *)
 
 PROCEDURE Ln;
 BEGIN
+  IF StringMode THEN
+    DStrings.Append ("\n", outstr);
+  ELSE  
     TextIO.WriteLn (file);
---    DStrings.Append ("\n", nodeLabel);
-    pos := 0;
+  --    DStrings.Append ("\n", nodeLabel);
+  END;  
+  pos := 0;
 END Ln;
 
 (* -------------------------------------------------------------------------- *)
@@ -527,7 +541,7 @@ END WrParamTypes;
 
 PROCEDURE WrTail (p: ir.TriadePtr);
 BEGIN
-    Tab (60);
+    Tab (62);
     IF p.Op IN ir.OpSet{ir.o_putpar, ir.o_le, ir.o_eq, ir.o_cmpswap} THEN
         WrType (p^.OpType, p^.OpSize);
     ELSE
@@ -881,7 +895,7 @@ BEGIN
         WrStr    ('clinit (');
         WrParam  (p^.Params^[0]);
         WrChar   (')');
-   | ir.o_loset:
+    | ir.o_loset:
         WrAssign (p);
         WrStr    ('{ 0 .. ');
         WrParam (p^.Params^[0]);
@@ -963,6 +977,17 @@ BEGIN
             WrParam (p^.Params^[LEN(p^.Params^)-1]);
             WrChar  (')');
         END;
+  <* IF TARGET_LLVM THEN *>
+    | ir.o_getelementptr:
+        WrAssign (p);
+        WrStr ('GEP (');
+        WrParam (p^.Params^[0]);
+        FOR i := 1 TO LEN (p^.Params^)-1 DO
+            WrStr(', ');
+            WrParam (p^.Params^[i]);
+        END;    
+        WrStr (')');
+  <* END *>                
     ELSE
         WrAssign (p);
         IF (p^.Op = ir.o_add) & p^.Params^[0]^.reverse THEN
@@ -991,11 +1016,32 @@ BEGIN
         END;
     END;
     Tab (TRPOS);
-    WrStr    (TriadeName[p^.Op]);
+    WrStr (TriadeName[p^.Op]);
 --    Tab (TRPOS+10);
 --    WrInt    (ORD(p^.Op));
     WrTail (p);
 END WrTriade;
+
+(* -------------------------------------------------------------------------- *)
+
+PROCEDURE GetTriadeInfo *(tr: ir.TriadePtr): DStrings.String;
+VAR res: DStrings.String;
+    saved_pos: INT;
+BEGIN
+  StringMode := TRUE;
+  DStrings.Assign("", res);
+  outstr := res;
+  saved_pos := pos;
+  pos := 0;
+  
+  WrTriade(tr);
+  
+  StringMode := FALSE;
+  res := outstr;
+  outstr := NIL;
+  pos := saved_pos;
+  RETURN res;
+END GetTriadeInfo;  
 
 (* -------------------------------------------------------------------------- *)
 
@@ -1465,6 +1511,8 @@ VAR    i: INTEGER;
       qfile_string, fname_string  : pc.STRING;   (* for generating *.Q file *)
   VAR dir,name,ext: pc.STRING;
 BEGIN
+  outstr := NIL;
+  StringMode := FALSE;  
   env.config^.Equation("QFILE_PROC", need_proc_name);
   env.config^.Equation("QFILE",      qfile_string);
   IF qfile_string # NIL THEN

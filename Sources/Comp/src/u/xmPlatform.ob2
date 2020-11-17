@@ -29,10 +29,14 @@ CONST
   HOST_CPU*       = "HOST_CPU";
   HOST_FS*        = "HOST_FS";
   HOST_BIGENDIAN* = "HOST_BIGENDIAN";
+  
+CONST
   TARGET_OS*        = "TARGET_OS";
   TARGET_CPU*       = "TARGET_CPU";
   TARGET_FS*        = "TARGET_FS";
   TARGET_BIGENDIAN* = "TARGET_BIGENDIAN";
+
+CONST
   CC = "CC";
   CROSS_OS = "CROSS_OS";
   CROSS_CPU = "CROSS_CPU";
@@ -44,12 +48,23 @@ CONST
   (* attention! adding a new value to FSVALUE do not forget add new
      naming convention support to the "PFNConv" module of the compiler!*)
 
+CONST
+  CPU_X86   *= "X86";
+  CPU_MIPS  *= "MIPS";
+  CPU_SPARC *= "SPARC"; 
+  CPU_PPC   *= "PPC";
 
 VAR
   hostOS-,hostCPU-,hostFS-,hostFamily-,hostExeExt-: ARRAY STRLEN OF CHAR;
   hostBigendian-: BOOLEAN;
   targetOS-,targetCPU-,targetFS-,targetFamily-: ARRAY STRLEN OF CHAR;
   targetBigendian-: BOOLEAN;
+
+--------------------------------------------------------------------------------
+PROCEDURE isTargetCPU *(cpu-: ARRAY OF CHAR): BOOLEAN; 
+BEGIN 
+  RETURN targetCPU = cpu;
+END isTargetCPU; 
 
 PROCEDURE check(nm-,val-,set-: ARRAY OF CHAR);
 BEGIN
@@ -115,13 +130,15 @@ PROCEDURE HBE(val: BOOLEAN); BEGIN hostBigendian:=val END HBE;
 
 PROCEDURE TBE(val: BOOLEAN); BEGIN targetBigendian:=val END TBE;
 
-(* ---- calculation of derrivative settings ---- *)
+(* ---- calculation of derivative settings ---- *)
 
-PROCEDURE getEndian(os-,cpu-: ARRAY OF CHAR): BOOLEAN;
+PROCEDURE getEndian(os-, cpu-: ARRAY OF CHAR): BOOLEAN;
 BEGIN
-  IF cpu="X86" THEN RETURN FALSE
-  ELSIF cpu="PPC" THEN
-    IF os="CHORUS" THEN RETURN FALSE
+  IF cpu = CPU_X86 THEN RETURN FALSE
+  ELSIF cpu = CPU_MIPS  THEN  RETURN FALSE
+  ELSIF cpu = CPU_SPARC THEN  RETURN TRUE
+  ELSIF cpu = CPU_PPC THEN
+    IF os = "CHORUS" THEN RETURN FALSE
     ELSE RETURN TRUE
     END;
   END;

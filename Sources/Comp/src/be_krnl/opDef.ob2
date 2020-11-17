@@ -14,6 +14,7 @@ IMPORT
   opt := Options,
   Calc,
   ObjNames,
+  pcO,
 <* IF TARGET_RISC OR TARGET_SPARC THEN *>
   TOC,
   TOCData,
@@ -386,6 +387,14 @@ BEGIN
   im_offs := sz;
 END re_im_offs;
 
+PROCEDURE re_im_type *(type: pc.STRUCT): pc.STRUCT;    (* type of real and imaginary parts *)
+BEGIN
+  CASE type.mode OF
+  | pc.ty_complex:  RETURN pc.real_type;
+  | pc.ty_lcomplex: RETURN pc.longreal_type; 
+  END;
+END re_im_type;
+
 PROCEDURE is_scalar*(t: pc.STRUCT): BOOLEAN;
    (* значение такого типа "напрямую" присваивается  *)
    (*  и возвращается как результат функции          *)
@@ -660,12 +669,17 @@ BEGIN
   IF ty = ir.t_float THEN at.was_float_triade := TRUE END;
   IF VOLATILE IN arg.mode THEN INCL(opts, ir.o_Volatile) END;
   q := ir.NewTriadeInit(1, ir.o_loadr, ty, sz);
+  IF (arg.type # NIL) & (arg.type.mode IN pc.PTRs) THEN
+    q.type := arg.type.base;
+  ELSE  
+    q.type := arg.type;
+  END;
   q.Position := pos;
   q.Options := q.Options + opts;
   ir.ParmByArg(q.Params[0], arg);
   ir.GenResVar(q);
   gr.AppendTr(q);
-  ir.MakeArgVar(arg, q.Name);
+  ir.MakeArgVar(arg, q.Name, q.type);
 END deref;
 
 PROCEDURE chk_adr*(tpos-: ir.TPOS;
@@ -689,7 +703,7 @@ BEGIN
   END;
 END chk_volatile;
 
-PROCEDURE add_offs*(tpos-: ir.TPOS; offs: LONGINT; VAR arg: ir.Arg);
+PROCEDURE add_offs*(tpos-: ir.TPOS; offs: LONGINT; VAR arg: ir.Arg; type:=NIL: pc.STRUCT);
   VAR q: ir.TriadePtr; volatile: BOOLEAN;
 BEGIN
   IF offs # 0 THEN
@@ -698,16 +712,34 @@ BEGIN
     ELSE
       volatile := VOLATILE IN arg.mode;
       q := ir.NewTriadeInit(2, ir.o_add, tune.addr_ty, tune.addr_sz);
+      q.type     := type;
       q.Position := tpos;
       ir.ParmByArg(q.Params[0], arg);
       ir.MakeParNum(q.Params[1], Calc.NewInteger(offs, tune.addr_sz));
       ir.GenResVar(q);
       gr.AppendTr(q);
-      ir.MakeArgVar(arg, q.Name);
+      ir.MakeArgVar(arg, q.Name, type);
       IF volatile THEN INCL(arg.mode, VOLATILE) END;
     END;
   END;
 END add_offs;
+
+<* IF TARGET_LLVM THEN *>
+PROCEDURE get_element_ptr *(tpos-: ir.TPOS; offs: LONGINT; VAR arg: ir.Arg; type: pc.STRUCT);
+VAR q: ir.TriadePtr;
+    volatile: BOOLEAN;
+BEGIN
+  volatile := VOLATILE IN arg.mode;
+  q := ir.NewTriadeGEP(2, type);
+  q.Position := tpos;
+  ir.ParmByArg(q.Params[0], arg);
+  ir.MakeParNum(q.Params[1], Calc.NewInteger(offs, tune.addr_sz));
+  ir.GenResVar(q);
+  gr.AppendTr(q);
+  ir.MakeArgVar(arg, q.Name, q.type);
+  IF volatile THEN INCL(arg.mode, VOLATILE) END;
+END get_element_ptr;  
+<* END *>
 
 PROCEDURE o_attr*(tpos-: ir.TPOS;
                       o: pc.OBJECT; kind: SHORTINT; md: ir.GenModeSet;
@@ -803,6 +835,7 @@ BEGIN
     END;
     chk_adr(tpos, md, type, arg);
   END;
+  IF o # NIL THEN  arg.type := o.type  END;
 END o_attr;
 
 PROCEDURE o_usage*(tpos-: ir.TPOS; o: pc.OBJECT; md: ir.GenModeSet; VAR arg: ir.Arg);
@@ -825,7 +858,7 @@ BEGIN
  <* END *>
   o_usage(tpos, o, ir.GenModeSet{}, arg);
   ASSERT(arg.tag = ir.y_ProcConst);
-  proto_num := pr.ProcProtoNum(VAL(pr.ProcNum,arg.name));
+  proto_num := pr.ProcProtoNum(VAL(pr.ProcNum, arg.name));
   proto     := pr.ProtoList[proto_num];
   q := ir.NewTriadeInit(proto.npar+1, ir.o_call, proto.ret_type, proto.ret_size);
   q.Position := tpos;
@@ -845,6 +878,22 @@ BEGIN
   inf := a(at.INFO_EXT);
   RETURN inf.offs
 END obj_offset;
+
+PROCEDURE field_index *(field: pc.OBJECT): LONGINT;
+VAR i: LONGINT;
+    f: pc.OBJECT;
+BEGIN
+  i := 0;
+  f := field.host.prof;
+  WHILE f # NIL DO
+    IF f = field THEN
+      RETURN i;
+    END;
+    INC(i);
+    f := f.next;
+  END;
+  ASSERT( FALSE );
+END field_index;   
 
 PROCEDURE is_char*(t: pc.STRUCT): BOOLEAN;
 BEGIN
@@ -924,17 +973,18 @@ BEGIN
   WHILE sz > 0 DO cd.GenByte(0X); INC(sg_len); DEC(sz) END;
 END put_filling;
 
-PROCEDURE put_str(v: pc.VALUE; len: LONGINT; VAR sg_len: LONGINT);
+PROCEDURE put_str(v: pc.VALUE; t: pc.STRUCT; VAR sg_len: LONGINT);
   VAR i: LONGINT; ch: CHAR;
 BEGIN
-  cd.GenStartString;
-  FOR i := 0 TO len - 1 DO
+  ASSERT( (t.mode = pc.ty_SS) OR (t.mode = pc.ty_array) );
+  cd.GenStartString(t);
+  FOR i := 0 TO t.len - 1 DO
     zz_tmp.index_get(i, v);
     ch := CHR(zz_tmp.get_integer());
     cd.GenStringChar(ch);
   END;
   cd.GenEndString;
-  sg_len := sg_len + len;
+  sg_len := sg_len + t.len;
 END put_str;
 
 PROCEDURE ^ put_value(v: pc.VALUE; t: pc.STRUCT; c_c: BOOLEAN; VAR sg_len: LONGINT);
@@ -948,11 +998,14 @@ BEGIN
   b_align := type_align(base);
   v1 := pc.value.new(v.pos, base);
   put_pad(b_align, sg_len);
+  cd.GenAggregateConstStart(t);
   FOR i:=0 TO t.len-1 DO
+    cd.GenAggregateConstItemSep(i # 0);
     v1.index_get(i, v);
     put_value(v1, base, FALSE, sg_len);
     put_pad(b_align, sg_len);
   END;
+  cd.GenAggregateConstEnd(t, b_align);
 END put_array;
 
 PROCEDURE put_C_str(v: pc.VALUE; t: pc.STRUCT; VAR sg_len: LONGINT);
@@ -968,7 +1021,7 @@ PROCEDURE put_C_str(v: pc.VALUE; t: pc.STRUCT; VAR sg_len: LONGINT);
     bslash, oct, hex: BOOLEAN;
 BEGIN
   ASSERT(t.mode = pc.ty_SS);
-  cd.GenStartString;
+  cd.GenStartString(t);
   bslash := FALSE; oct := FALSE; hex := FALSE; x := 0;
   FOR i := 0 TO t.len-1 DO
     zz_tmp.index_get(i, v);
@@ -1032,8 +1085,12 @@ PROCEDURE put_record(v: pc.VALUE; t: pc.STRUCT; VAR sg_len: LONGINT);
 
   PROCEDURE put_fld_seq(f: pc.OBJECT);
     VAR l: pc.NODE; w: pc.VALUE;
+        not_first: BOOLEAN;
   BEGIN
+    not_first := FALSE;    
     WHILE f # NIL DO
+      cd.GenAggregateConstItemSep(not_first);  
+      not_first := TRUE;
       IF f.mode = pc.ob_header THEN
         ASSERT(f.val.mode = pc.nd_case);
         l := f.val.l;
@@ -1052,8 +1109,10 @@ PROCEDURE put_record(v: pc.VALUE; t: pc.STRUCT; VAR sg_len: LONGINT);
 
   PROCEDURE put_level(t: pc.STRUCT);
   BEGIN
+    cd.GenAggregateConstStart(t);
     IF t.base # NIL THEN put_level(t.base) END;
     put_fld_seq(t.prof);
+    cd.GenAggregateConstEnd(t, type_align(t));
   END put_level;
 
   VAR rem : LONGINT;
@@ -1135,22 +1194,32 @@ BEGIN
       sz := VAL(ir.SizeType, type_size(t));
       cd.put_ordinal(v, type_kind(t), sz);
       INC(sg_len, sz);
+  
   | pc.ty_array:
-      IF is_char(t.base) THEN
-        put_str(v, t.len, sg_len);
-      ELSE
+      IF is_char(t.base) THEN  
+        put_str(v, t, sg_len);
+      ELSE                     
         put_array(v, t, sg_len);
       END;
+  
   | pc.ty_SS:
-      IF c_c THEN put_C_str(v, t, sg_len) ELSE put_str(v, t.len, sg_len) END;
+      IF c_c THEN 
+        put_C_str(v, t, sg_len) 
+      ELSE        
+        put_str(v, t, sg_len) 
+      END;
+  
   | pc.ty_record:
       put_record(v, t, sg_len);
-  |pc.ty_set:
+      
+  | pc.ty_set:
       put_lset(v, t, sg_len);
-  |pc.ty_proctype:
+      
+  | pc.ty_proctype:
       put_procedure(v.get_object());
       INC(sg_len, tune.proc_sz);
-  |pc.ty_ZZ:
+      
+  | pc.ty_ZZ:
       IF v.is_neg() THEN
         ty := ir.t_int;
       ELSE
@@ -1158,10 +1227,12 @@ BEGIN
       END;
       cd.put_ordinal(v, ty, tune.index_sz);
       INC(sg_len, tune.index_sz);
-  |pc.ty_RR:
+      
+  | pc.ty_RR:
       cd.put_float(v, tune.longreal_sz);
       INC(sg_len, tune.longreal_sz);
-  |pc.ty_CC:
+      
+  | pc.ty_CC:
       cd.put_float(Calc.Unary(pc.su_re, ir.t_float, tune.longreal_sz, v), tune.longreal_sz);
       INC(sg_len, tune.longreal_sz);
       cd.put_float(Calc.Unary(pc.su_im, ir.t_float, tune.longreal_sz, v), tune.longreal_sz);
@@ -1246,14 +1317,20 @@ PROCEDURE const_aggregate*(v: pc.VALUE;    (* value *)
     c_c := ((CC IN md) AND (at.GenCStrings IN at.COMP_MODE)) OR (at.GenCStringsAlways IN at.COMP_MODE);
     put_value(v, t, c_c, sg_len);
     IF in_tmp(sg) THEN
-      cd.set_segm(old); RETURN
+      cd.set_segm(old); 
+      RETURN;
     END;
-    tmp := at.new_work_object(at.make_name("$c_%d",cns_cnt), t,
-                                   at.curr_mod.type, pc.ob_cons, FALSE);
-   <* IF TARGET_RISC OR TARGET_SPARC THEN *>
+    tmp := at.new_work_object( at.make_name( "$c_%d", cns_cnt)
+                           , t, at.curr_mod.type, pc.ob_cons, FALSE );
+    pcO.new(tmp.val, pc.nd_value);
+    tmp.val.type := t;
+    tmp.val.val  := v;
+    tmp.val.pos  := env.null_pos;
+    tmp.val.end  := env.null_pos;
+  <* IF TARGET_RISC OR TARGET_SPARC THEN *>
     TOC.Add(tmp);  -- to make all aggregates self-based
-   <* END *>
-
+  <* END *>
+ 
     c.obj := tmp;
     cd.set_ready(tmp, sg);
     cd.set_segm(old);
@@ -1269,6 +1346,7 @@ PROCEDURE const_aggregate*(v: pc.VALUE;    (* value *)
     ELSE
       ir.MakeArgLocal(arg, loc, 0);
     END;
+    arg.type := tmp.type; 
   END aggregate;
 
 BEGIN (* --- c o n s t _ a g g r e g a t e --- *)
@@ -1315,6 +1393,7 @@ BEGIN (* --- c o n s t _ a g g r e g a t e --- *)
   ELSE
     env.errors.Fault (t.pos, 961, t.mode);   --- invalid type mode (%d)
   END;
+  arg.type := t;
 END const_aggregate;
 
 PROCEDURE get_bytes*(ps-: pc.TPOS; t: pc.STRUCT): LONGINT;
@@ -1339,7 +1418,34 @@ BEGIN
 END app_len;
 *)
 
-PROCEDURE prototype* (t: pc.STRUCT) : pr.ProtoNum;
+--------------------------------------------------------------------------------
+PROCEDURE make_param_object ( mode: pc.OB_MODE; type, host: pc.STRUCT
+                            ; pos-, end-: pc.TPOS 
+                            ; name_fmt-: ARRAY OF CHAR; SEQ args: SYSTEM.BYTE
+                            ): pc.OBJECT; 
+VAR obj: pc.OBJECT;
+    name: pc.STRING;
+BEGIN 
+  ASSERT( host.mode = pc.ty_proctype );
+  name := at.make_name(name_fmt, args);
+  obj := at.new_work_object(name, type, host, mode, FALSE);
+  INCL(obj.tags, at.otag_workobject);
+  at.work_objects := obj.next;
+  obj.next := NIL;
+  obj.pos := pos;
+  obj.end := end;
+  RETURN obj
+END make_param_object;    
+
+--------------------------------------------------------------------------------
+PROCEDURE make_return_object *(mode: pc.OB_MODE; type: pc.STRUCT): pc.OBJECT;
+BEGIN
+  ASSERT( type.mode = pc.ty_proctype );
+  RETURN make_param_object(mode, type.base, type, type.pos, type.end, "RETURN");
+END make_return_object;
+
+--------------------------------------------------------------------------------
+PROCEDURE prototype *(t: pc.STRUCT) : pr.ProtoNum;
   CONST MAX_PAR = 125;
 
   VAR buf_errs: BOOLEAN;
@@ -1348,12 +1454,21 @@ PROCEDURE prototype* (t: pc.STRUCT) : pr.ProtoNum;
     offset, last_offs: LONGINT;
     RtoL: BOOLEAN;
 
+  PROCEDURE set_param_number_attr (obj: pc.OBJECT; param_no: LONGINT); 
+  VAR attr: at.SIZE_EXT;
+  BEGIN 
+    NEW(attr);
+    attr.size := param_no;
+    at.app_obj_attr(obj, attr, at.a_param_no);
+  END set_param_number_attr; 
+    
   PROCEDURE parameter(p_md   : pr.ParamMode;
                       p_ind  : SHORTINT;
                       p_type : ir.TypeType;
                       p_sz   : ir.SizeType;
                       p_where: pr.MemType;
-                      p_offs : LONGINT);
+                      p_offs : LONGINT;
+                      p_obj  : pc.OBJECT);
     VAR ln: LONGINT;
   BEGIN
     IF buf_errs THEN RETURN
@@ -1367,6 +1482,10 @@ PROCEDURE prototype* (t: pc.STRUCT) : pr.ProtoNum;
       prm_buf[prm_cnt].size := p_sz;
       prm_buf[prm_cnt].where:= p_where;
       prm_buf[prm_cnt].offs := p_offs;
+      prm_buf[prm_cnt].obj  := p_obj;
+      IF p_obj # NIL THEN
+        set_param_number_attr(p_obj, prm_cnt);
+      END;      
       IF (p_where = pr.STACK) & (p_sz > 0) THEN
         IF p_sz<4 THEN
           IF tune.BIG_END THEN       -- прижать к другому краю
@@ -1404,7 +1523,8 @@ PROCEDURE prototype* (t: pc.STRUCT) : pr.ProtoNum;
   BEGIN
     FOR i := 0 TO MAX(pr.Bases) DO
       IF i IN P.bases THEN
-        parameter(pr.pm_base, i, tune.addr_ty, tune.addr_sz, pr.STACK, offset);
+        parameter( pr.pm_base, i, tune.addr_ty, tune.addr_sz, pr.STACK, offset
+                 , make_param_object(pc.ob_var, pcO.addr, t, t.pos, t.end, "%base.%d", i) );
       END;
     END;
   END make_bases;
@@ -1420,9 +1540,10 @@ PROCEDURE prototype* (t: pc.STRUCT) : pr.ProtoNum;
     IF p.mode = pc.ob_varpar THEN ind := ORD(pr.by_ref);
     ELSE                          ind := ORD(pr.by_ROref);
     END;
-    parameter(pr.pm_param, ind, tune.addr_ty, tune.addr_sz, pr.STACK, offset);
+    parameter(pr.pm_param, ind, tune.addr_ty, tune.addr_sz, pr.STACK, offset, p);
     FOR ind := 0 TO p.type.len - 1  DO
-      parameter(pr.pm_len, ind, tune.index_ty, tune.index_sz, pr.STACK, offset);
+      parameter( pr.pm_len, ind, tune.index_ty, tune.index_sz, pr.STACK, offset
+               , make_param_object(pc.ob_var, pcO.index, t, p.pos, p.end, "%s.len%d", p.name^, ind) );
     END;
     RETURN TRUE
   END chk_array_of;
@@ -1469,7 +1590,8 @@ BEGIN
     ELSE
       P.ext_rtn := TRUE;
     END;
-    parameter(pr.pm_return, 0, tune.addr_ty, tune.addr_sz, pr.STACK, offset);
+    parameter( pr.pm_return, 0, tune.addr_ty, tune.addr_sz, pr.STACK, offset
+             , make_return_object(pc.ob_varpar, t) );
   END;
   (* ------------ базы охватывающих процедур ------------ *)
   P.nbase := 0; P.bases := pr.Bases{};
@@ -1507,27 +1629,30 @@ BEGIN
 --           sz := SHORT(SHORT(size));
 --           ty := type_kind(p.type);
              type_info(p.type, ty, sz);
-             parameter(pr.pm_param, ORD(pr.by_val), ty,  sz, pr.STACK, offset);
+             parameter(pr.pm_param, ORD(pr.by_val), ty,  sz, pr.STACK, offset, p);
 
            ELSIF p.type.mode IN pc.CPLXs THEN
              sz := re_im_sz(p.type);
-             parameter(pr.pm_re, ORD(pr.by_val), ir.t_float, sz, pr.STACK, offset);
-             parameter(pr.pm_im, ORD(pr.by_val), ir.t_float, sz, pr.STACK, offset);
+             parameter( pr.pm_re, ORD(pr.by_val), ir.t_float, sz, pr.STACK, offset
+                      , make_param_object(p.mode, re_im_type(p.type), t, p.pos, p.end, "%s.re", p.name^) );
+             parameter( pr.pm_im, ORD(pr.by_val), ir.t_float, sz, pr.STACK, offset
+                      , make_param_object(p.mode, re_im_type(p.type), t, p.pos, p.end, "%s.im", p.name^) );
            ELSE
-             parameter(pr.pm_param, ORD(pr.by_ROref), tune.addr_ty, tune.addr_sz, pr.STACK, offset);
+             parameter(pr.pm_param, ORD(pr.by_ROref), tune.addr_ty, tune.addr_sz, pr.STACK, offset, p);
            END;
       | pc.ob_varpar:
           IF (p.type.mode=pc.ty_record) & (p.type.flag IN opt.LangsWithTypedRecords) THEN
-            parameter(pr.pm_formrec, ORD(pr.by_ref), tune.addr_ty, tune.addr_sz, pr.STACK, offset);
-            parameter(pr.pm_type, ORD(pr.by_val), tune.addr_ty, tune.addr_sz, pr.STACK, offset);
+            parameter(pr.pm_formrec, ORD(pr.by_ref), tune.addr_ty, tune.addr_sz, pr.STACK, offset, p);
+            parameter( pr.pm_type, ORD(pr.by_val), tune.addr_ty, tune.addr_sz, pr.STACK, offset
+                     , make_param_object(pc.ob_var, pcO.addr, t, p.pos, p.end, "%s.type", p.name^) );
           ELSE
-            parameter(pr.pm_param, ORD(pr.by_ref), tune.addr_ty, tune.addr_sz, pr.STACK, offset);
+            parameter(pr.pm_param, ORD(pr.by_ref), tune.addr_ty, tune.addr_sz, pr.STACK, offset, p);
           END;
       | pc.ob_seq:
           ASSERT (p.next = NIL);
           ASSERT (t.flag IN opt.LangsWithSEQParams);
           P.seq := TRUE;
-          parameter(pr.pm_seq, 0, ir.t_flxarr, -1, pr.STACK, offset);
+          parameter(pr.pm_seq, 0, ir.t_flxarr, -1, pr.STACK, offset, p);
       END;
     END;
     p := p.next;
@@ -1856,11 +1981,22 @@ PROCEDURE out_str*(s-: ARRAY OF CHAR): pc.OBJECT;
   VAR tmp : pc.OBJECT;
     old, sg: cd.CODE_SEGM;
     i: INT;   ch: CHAR;
+    type: pc.STRUCT;
+    name: pc.STRING;
 BEGIN
-  tmp := at.new_work_object(NIL, NIL, at.curr_mod.type, pc.ob_cons, FALSE);
+  type := pcO.new_type(pc.ty_SS);
+  type.len := LENGTH(s)+1;
+  type.pos := ir.NullPos;
+  type.end := ir.NullPos;
+  <* IF TARGET_LLVM THEN *>
+    INC(cns_cnt);  name := at.make_name("$fx_c_%d", cns_cnt);
+  <* ELSE *>
+    name := NIL;
+  <* END *>
+  tmp := at.new_work_object(name, type, at.curr_mod.type, pc.ob_cons, FALSE);
   cd.get_segm(old);
   cd.new_segm(sg); cd.set_segm(sg);
-  cd.GenStartString;
+  cd.GenStartString(type);
   i:=0;
   REPEAT
     ch := s[i];

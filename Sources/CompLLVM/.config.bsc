@@ -1,0 +1,13 @@
+# XDS-LLVM Compiler: Build System Configuration
+
+UNIT_NAME=LLVM-Compiler
+
+ALL_COMPONENTS=m2llvm
+PRIMARY_COMPONENTS=m2llvm
+DEFAULT_COMPONENT=m2llvm
+
+# Tools necessary to build component
+ENVIRONMENT=XDSDIR
+
+# External files which are part of this component  
+EXTDEPS=

@@ -188,6 +188,7 @@ BEGIN
   pr.ProtoList[pt].par[n-1].size := size;      (* размер параметра ??    *)
   pr.ProtoList[pt].par[n-1].where:= where;     (* где находится параметр *)
   pr.ProtoList[pt].par[n-1].offs := offs;      (* смещение на стеке      *)
+  pr.ProtoList[pt].par[n-1].obj  := NIL;       (* object corresponding to the parameter *)
 END std_param;
 
 VAR (* ----------- r t s - v a r i a b l e s ---------- *)
@@ -221,7 +222,7 @@ BEGIN
 
   | X2C_BEGIN: (* ---------------------------------------------------------- *)
      proto := std_proc_proto(5);
-     std_param(proto, 1, pr.pm_param, by_val, ir.t_ref, 4,
+     std_param(proto, 1, pr.pm_param, by_ref, ir.t_int, 4,
                                                  pr.STACK, tune.PARAM_START);
      std_param(proto, 2, pr.pm_param, by_val, ir.t_ref, 4,
                                                  pr.STACK, tune.PARAM_START+4);
@@ -864,7 +865,7 @@ BEGIN
  <* END *>
   o := at.new_work_object(nm, NIL, x2c, pc.ob_xproc, TRUE);
   p := pr.NewProc(o);
-  pr.ProcList[p].tags := {pr.external};
+  pr.ProcList[p].tags := pr.ProcInfoTags{pr.external};
   pr.ProcList[p].proto_no := proto;
   at.app_info(o, at.a_self, ir.y_ProcConst, VAL(at.InfExtName, p), NIL, 0);
   o.flag := pc.flag_c;

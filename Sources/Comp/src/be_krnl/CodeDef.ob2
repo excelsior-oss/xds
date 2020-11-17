@@ -23,7 +23,12 @@ IMPORT pc   := pcK,
        FormStr,
        SYSTEM;
 
-<* IF TARGET_386 THEN *> IMPORT xProfRTS; <* END *>
+<* IF TARGET_LLVM THEN *> 
+IMPORT llvm := llvmDefs; 
+IMPORT xProfRTS;
+<* ELSIF TARGET_386 THEN *>  
+IMPORT xProfRTS;
+<* END *>
 
 TYPE 
   INT = LONGINT;
@@ -38,6 +43,9 @@ TYPE
 CONST
   GREEN_HILLS = "GHS";  -- options: generate green hills assembler
 <* END *>
+
+VAR
+  LINE_COMMENT_CHAR -: CHAR; -- Assembler line comment symbol
 
 
 VAR
@@ -150,7 +158,7 @@ TYPE
   CODE_SEGM* = POINTER TO segm_desc;
 
 
-<* IF TARGET_386 THEN *>
+<* IF TARGET_386 OR TARGET_LLVM THEN *>
 VAR
 (* excepttable is array of
      RECORD fxup2proc, procsz, fxup2finalizer: CARD32; END;
@@ -208,12 +216,15 @@ TYPE
                 start*, fin*: LONGINT; -- Начало/конец собственно тела процедуры
                 frame_size* : LONGINT; -- Размер начального кадра процедуры
                 has_frame*  : BOOLEAN;
-<* IF TARGET_RISC OR TARGET_SPARC THEN *>
+              <* IF TARGET_RISC OR TARGET_SPARC THEN *>
                 placeholder*    : def.PHs;
                 placeholder_len*: LONGINT;
                 casetable*      : def.CTs;
                 casetable_len*  : LONGINT;
-<* END *>
+              <* ELSIF TARGET_LLVM THEN *>
+                labels     *: llvm.LHs;
+                labels_len *: LONGINT;
+              <* END *>
               END;
 
 PROCEDURE fxup_length*(fx-: fixup_desc): INTEGER;
@@ -283,13 +294,40 @@ BEGIN
   END;
 END Realloc;
 
-PROCEDURE GenInstr * (s- : ARRAY OF CHAR);
+--------------------------------------------------------------------------------
+PROCEDURE GenInstr * (s- : ARRAY OF CHAR; doDoubleSlashes:=FALSE: BOOLEAN);
+VAR newstr: Instruction;
+    i, j, len: LONGINT;
 BEGIN
   IF c_seg.code_len = LEN(c_seg.acode^) THEN Realloc; END;
-  DStrings.Assign (s, c_seg.acode[c_seg.code_len]);
+  IF doDoubleSlashes THEN
+    len := LENGTH(s);  
+    NEW(newstr, (len * 2) + 2);
+    j := 0;
+    FOR i := 0 TO len-1 DO
+      newstr[j] := s[i];
+      INC(j);
+      IF newstr[i] = "\" THEN
+        newstr[j] := "\";
+        INC(j);
+      END;
+    END;
+    newstr[j] := 0C;
+    DStrings.Assign(newstr^, c_seg.acode[c_seg.code_len]);
+  ELSE
+    DStrings.Assign(s, c_seg.acode[c_seg.code_len]);
+  END;  
   INC(c_seg.code_len);
 END GenInstr;
 
+--------------------------------------------------------------------------------
+PROCEDURE AppendInstr (s-: ARRAY OF CHAR);
+BEGIN
+  DStrings.Append(s, c_seg.acode[c_seg.code_len - 1]);
+END AppendInstr;
+
+
+--------------------------------------------------------------------------------
 PROCEDURE GenByteB(b : SYSTEM.BYTE);
 BEGIN
 <* IF ~ nodebug THEN *>
@@ -302,6 +340,7 @@ BEGIN
   INC(c_seg.code_len);
 END GenByteB;
 
+--------------------------------------------------------------------------------
 PROCEDURE GenByteBToPos*(b : SYSTEM.BYTE; pos: INT);
 BEGIN
 <* IF ~ nodebug THEN *>
@@ -314,6 +353,15 @@ BEGIN
 --  INC(c_seg.code_len);
 END GenByteBToPos;
 
+--------------------------------------------------------------------------------
+PROCEDURE GenByteLLVM (b : SYSTEM.BYTE);
+VAR s: ARRAY 32 OF CHAR;
+BEGIN
+  FormStr.print (s, "%d", SYSTEM.VAL(CARD8, b));
+  GenInstr (s);
+END GenByteLLVM;
+
+--------------------------------------------------------------------------------
 PROCEDURE GenByteA(b : SYSTEM.BYTE);
 VAR s: ARRAY 32 OF CHAR;
 BEGIN
@@ -321,15 +369,21 @@ BEGIN
     GenInstr (s);
 END GenByteA;
 
-PROCEDURE GenByte*(b : SYSTEM.BYTE);
+PROCEDURE GenByte *(b : SYSTEM.BYTE);
 BEGIN
+<* IF TARGET_LLVM THEN *>
+  GenByteLLVM(b); 
+<* ELSE *> 
   IF at.GENASM IN at.COMP_MODE THEN 
     GenByteA(b); 
   ELSE 
     GenByteB(b); 
   END;
+<* END *>   
 END GenByte;
 
+
+--------------------------------------------------------------------------------
 PROCEDURE GenWordB(w : INTEGER);
 BEGIN
 <* IF ~ nodebug THEN *>
@@ -342,6 +396,15 @@ BEGIN
   INC(c_seg.code_len, 2);
 END GenWordB;
 
+--------------------------------------------------------------------------------
+PROCEDURE GenWordLLVM (w : INTEGER);
+VAR s: ARRAY 32 OF CHAR;
+BEGIN
+  FormStr.print (s, "%d", w);
+  GenInstr (s);
+END GenWordLLVM;
+
+--------------------------------------------------------------------------------
 PROCEDURE GenWordA(w : INTEGER);
 VAR s: ARRAY 32 OF CHAR;
 BEGIN
@@ -351,9 +414,15 @@ END GenWordA;
 
 PROCEDURE GenWord*(w : INTEGER);
 BEGIN
+<* IF TARGET_LLVM THEN *>
+  GenWordLLVM(w); 
+<* ELSE *>  
   IF at.GENASM IN at.COMP_MODE THEN GenWordA(w); ELSE GenWordB(w); END;
+<* END *>  
 END GenWord;
 
+
+--------------------------------------------------------------------------------
 PROCEDURE GenLWordB(w : LONGINT);
 BEGIN
 <* IF ~ nodebug THEN *>
@@ -366,6 +435,15 @@ BEGIN
   INC(c_seg.code_len, 4);
 END GenLWordB;
 
+--------------------------------------------------------------------------------
+PROCEDURE GenLWordLLVM (w: LONGINT);
+VAR s: ARRAY 32 OF CHAR;
+BEGIN
+  FormStr.print (s, "%d", w);
+  GenInstr (s);
+END GenLWordLLVM;
+
+--------------------------------------------------------------------------------
 PROCEDURE GenLWordA(w : LONGINT);
 VAR s: ARRAY 32 OF CHAR;
 BEGIN
@@ -375,13 +453,20 @@ END GenLWordA;
 
 PROCEDURE GenLWord*(w : LONGINT);
 BEGIN
+<* IF TARGET_LLVM THEN *>
+  GenLWordLLVM(w); 
+<* ELSE *>  
   IF at.GENASM IN at.COMP_MODE THEN GenLWordA(w); ELSE GenLWordB(w); END;
+<* END *>  
 END GenLWord;
 
 ----------- String generation -----------------
 <* IF TARGET_RISC THEN *>
 VAR 
   str_begin : ARRAY 32 OF CHAR;
+<* ELSIF TARGET_LLVM THEN *>  
+CONST
+  str_begin = 'c"';
 <* ELSE *>
 CONST
   str_begin = '        .ascii  "';
@@ -393,6 +478,8 @@ VAR
 <* IF TARGET_RISC THEN *>
   Quota: BOOLEAN;
   WasStart : BOOLEAN;
+<* ELSIF TARGET_LLVM THEN *>  
+  wasAssign: BOOLEAN;  -- a part of string is already flushed into the instruction
 <* END *>
 
 <* IF TARGET_RISC THEN *>
@@ -437,28 +524,46 @@ BEGIN
   ss_cnt := 0;
 END GenEndStringA1;
 
-PROCEDURE GenStartString*();
+PROCEDURE GenStartString *(type := NIL: pc.STRUCT);
+VAR tname: ARRAY 64 OF CHAR; 
 BEGIN
+<* IF TARGET_LLVM THEN *>
+  ASSERT(ss_cnt = 0);
+  llvm.GetTypeName(tname, type);
+  FormStr.print(ss, "%s %s", tname, str_begin);
+  ss_cnt := LENGTH(ss);
+  wasAssign := FALSE;      
+<* ELSE *>  
   IF at.GENASM IN at.COMP_MODE THEN
    <* IF TARGET_RISC THEN *>
     IF at.ABI = at.PowerOpen THEN GenStartStringA0; RETURN END;
   <* END *>
     GenStartStringA1;
   END;
+<* END *>  
 END GenStartString;
 
 PROCEDURE GenEndString*();
 BEGIN
+<* IF TARGET_LLVM THEN *>
+  ss[ss_cnt] := '"';
+  ss[ss_cnt+1] := 0X;
+  IF wasAssign THEN  AppendInstr(ss);
+  ELSE               GenInstr(ss);  
+  END;  
+  ss_cnt := 0;
+<* ELSE *>    
   IF at.GENASM IN at.COMP_MODE THEN
    <* IF TARGET_RISC THEN *>
     IF at.ABI = at.PowerOpen THEN GenEndStringA0; RETURN END;
   <* END *>
     GenEndStringA1;
   END;
+<* END *>  
 END GenEndString;
 
 PROCEDURE octal(n: INTEGER);
-(* This should produce number wich consists of 3 digits exactly, to avoid
+(* This should produce number which consists of 3 digits exactly, to avoid
    problems with following digit characters, i.e. "\t0" is "\0110" but not
    "\110" *)
 BEGIN
@@ -471,7 +576,28 @@ BEGIN
   INC(ss_cnt);
 END octal;
 
+--------------------------------------------------------------------------------
+-- This should produce a hex number which consists of 2 digits exactly,
+PROCEDURE hex (n: INTEGER);
+VAR d: INTEGER;
+BEGIN
+  ASSERT( n <= 255 );
+  -- first hex digit
+  d := n DIV 16;
+  IF d < 10 THEN ss[ss_cnt] := CHR(ORD("0") + d)
+  ELSE           ss[ss_cnt] := CHR(ORD("A") + (d MOD 10))
+  END;
+  INC(ss_cnt);
+  -- econs hex digit
+  d := n MOD 16;
+  IF d < 10 THEN ss[ss_cnt] := CHR(ORD("0") + d)
+  ELSE           ss[ss_cnt] := CHR(ORD("A") + (d MOD 10))
+  END;
+  INC(ss_cnt);
+END hex;
+
 <* IF TARGET_RISC THEN *>
+--------------------------------------------------------------------------------
 PROCEDURE GenStringCharA(ch: CHAR);
 BEGIN
   IF at.ABI = at.PowerOpen THEN
@@ -508,7 +634,34 @@ BEGIN
   END;
 END GenStringCharA;
 
+<* ELSIF TARGET_LLVM THEN *>
+--------------------------------------------------------------------------------
+PROCEDURE GenStringCharLLVM(ch: CHAR);
+BEGIN
+  IF ss_cnt >= SIZE(ss)-5 THEN
+    IF wasAssign THEN  AppendInstr(ss);
+    ELSE               GenInstr(ss);  
+    END;
+    ss_cnt := 0;
+    wasAssign := TRUE;  
+  END;
+    
+  IF (ch = '\') OR (ch = '"') THEN
+    ss[ss_cnt] := "\";
+    INC(ss_cnt);
+    ss[ss_cnt] := ch;
+    INC(ss_cnt);
+  ELSIF (ch < ' ') OR (ch >'~') THEN
+    ss[ss_cnt] := "\";
+    INC(ss_cnt);
+    hex(ORD(ch));
+  ELSE
+    ss[ss_cnt] := ch; INC(ss_cnt);
+  END;
+END GenStringCharLLVM;
+
 <* ELSE *>
+--------------------------------------------------------------------------------
 PROCEDURE GenStringCharA(ch: CHAR);
 BEGIN
   IF ss_cnt >= SIZE(ss)-5 THEN
@@ -528,15 +681,86 @@ BEGIN
 END GenStringCharA;
 <* END *>
 
+--------------------------------------------------------------------------------
 PROCEDURE GenStringChar*(ch : CHAR);
 BEGIN
+<* IF TARGET_LLVM THEN *>
+  GenStringCharLLVM(ch);
+<* ELSE *>  
   IF at.GENASM IN at.COMP_MODE THEN
     GenStringCharA(ch);
   ELSE
     GenByte(ch);
   END;
+<* END *>  
 END GenStringChar;
 
+
+--------------------------------------------------------------------------------
+PROCEDURE GenStringType * (type: pc.STRUCT);
+<* IF TARGET_LLVM THEN *>
+VAR i: LONGINT;
+    s: ARRAY 32 OF CHAR; 
+BEGIN
+  llvm.GetTypeName(s, type);
+  FOR i := 0 TO LENGTH(s)-1 DO
+    GenStringChar(s[i]);
+  END;
+  GenStringChar(" ");
+<* END *>  
+END GenStringType;
+
+
+--------------------------------------------------------------------------------
+CONST 
+  ARRAYs  = pc.TY_SET{pc.ty_array};
+  RECORDs = pc.TY_SET{pc.ty_record} + pc.CPLXs;
+
+PROCEDURE GenAggregateConstStart * (type: pc.STRUCT);
+<* IF TARGET_LLVM THEN *>
+VAR tname: ARRAY 128 OF CHAR;
+    instr: DStrings.String; 
+BEGIN
+  llvm.GetTypeName(tname, type);
+  DStrings.Assign(tname, instr);
+  IF type.mode IN ARRAYs THEN        DStrings.Append(" [", instr);
+  ELSIF  type.mode IN RECORDs THEN   DStrings.Append(" {", instr);
+  ELSE                                ASSERT( FALSE );  
+  END;
+  GenInstr(instr^);
+<* END *>  
+END GenAggregateConstStart;
+
+--------------------------------------------------------------------------------
+PROCEDURE GenAggregateConstEnd * (type: pc.STRUCT; align: ir.AlignType);
+<* IF TARGET_LLVM THEN *>
+VAR astr: ARRAY 16 OF CHAR;
+    instr: DStrings.String; 
+BEGIN
+  IF type.mode IN ARRAYs THEN        DStrings.Assign("]", instr);
+  ELSIF  type.mode IN RECORDs THEN   DStrings.Assign("}", instr);
+  ELSE                                ASSERT( FALSE );  
+  END;
+  IF align > 0 THEN
+    FormStr.print(astr, ", align %d", align);
+    DStrings.Append(astr, instr);
+  END;
+  GenInstr(instr^);
+<* END *>  
+END GenAggregateConstEnd;
+
+--------------------------------------------------------------------------------
+PROCEDURE GenAggregateConstItemSep * (enabled: BOOLEAN);
+BEGIN
+<* IF TARGET_LLVM THEN *>
+  IF enabled THEN
+    AppendInstr(",");
+  END;  
+<* END *>  
+END GenAggregateConstItemSep;
+
+
+--------------------------------------------------------------------------------
 PROCEDURE GenBuf* (VAR (*IN*) b: ARRAY OF SYSTEM.BYTE);
   VAR newb: CODE_STRING_B; i, ln, inc: INT;
 BEGIN
@@ -763,22 +987,40 @@ BEGIN
   add_pos(c_seg.code_len, pos);
 END mark_pos;
 
+--------------------------------------------------------------------------------
 PROCEDURE put_ordinal*(v: pc.VALUE; ty: ir.TypeType; sz: ir.SizeType);
 VAR
   x: LONGINT;
   x1, x2: SYSTEM.CARD32;
+<* IF TARGET_LLVM THEN *>
+  s: ARRAY 64 OF CHAR;
+  type: ARRAY 16 OF CHAR;
+<* END *>  
 BEGIN
-  IF ty = ir.t_int THEN
-    IF sz = 8 THEN
-      ASSERT(v.get_minBitSize(TRUE) <= 64);
-      x1 := v.get_NDWord(0);
-      x2 := v.get_NDWord(1);
-      GenLWord(x1); GenLWord(x2);
-      RETURN;
-    ELSE
-      x := v.get_integer();
-    END;
+<* IF TARGET_LLVM THEN *>
+  llvm.GetTagTypeName(type, ty, sz);
+  CASE sz OF
+  | 1:
+       x := SYSTEM.VAL(LONGINT, Calc.ToCardinal(v, sz));
+       FormStr.print(s, "%s %d", type, SYSTEM.VAL(CARD8, x));
+  | 2:
+       x := SYSTEM.VAL(LONGINT, Calc.ToCardinal(v, sz));
+       FormStr.print(s, "%s %d", type, VAL(INT16, x));
+  | 4:
+       x := SYSTEM.VAL(LONGINT, Calc.ToCardinal(v, sz));
+       FormStr.print(s, "%s %d", type, x);
+  | 8:
+       x1 := v.get_NDWord(0);
+       x2 := v.get_NDWord(1);
+       IF inverse_byte_order THEN FormStr.print(s, "%d%d", type, x2, x1);
+       ELSE                       FormStr.print(s, "%d%d", type, x1, x2);
+       END;
+  ELSE
+    env.errors.Fault(v.pos, 960); --- "INTERNAL ERROR: invalid constant value"
   END;
+  GenInstr(s);      
+
+<* ELSE *>  
   CASE sz OF
   | 1:
        x := SYSTEM.VAL(LONGINT, Calc.ToCardinal(v, sz));
@@ -790,16 +1032,25 @@ BEGIN
        x := SYSTEM.VAL(LONGINT, Calc.ToCardinal(v, sz));
        GenLWord(x);
   | 8:
-       GenLWord(v.get_NDWord(0));
-       GenLWord(v.get_NDWord(1));
+       x1 := v.get_NDWord(0);
+       x2 := v.get_NDWord(1);
+       IF inverse_byte_order THEN  GenLWord(x2); GenLWord(x1);
+       ELSE                        GenLWord(x1); GenLWord(x2);
+       END;
   ELSE
     env.errors.Fault(v.pos, 960); --- "INTERNAL ERROR: invalid constant value"
   END;
+<* END *>    
 END put_ordinal;
 
+--------------------------------------------------------------------------------
 PROCEDURE put_nil_value*;
 BEGIN
+<* IF TARGET_LLVM THEN *>
+  GenInstr("null");
+<* ELSE *>  
   put_ordinal(Calc.GetNilPointer(), tune.addr_ty, tune.addr_sz);
+<* END *>  
 END put_nil_value;
 
 --------------------------------------------------------------------------------
@@ -1179,6 +1430,9 @@ END IsPrefixOf;
 PROCEDURE IsGoodConst*(loc: ir.Local) : BOOLEAN;
   VAR o: pc.OBJECT; sg: CODE_SEGM;
 BEGIN
+<* IF TARGET_LLVM THEN *>
+    RETURN FALSE
+<* ELSE *>
   IF at.GENASM IN at.COMP_MODE THEN
     RETURN FALSE
   ELSE
@@ -1193,6 +1447,7 @@ BEGIN
       RETURN (sg.fxup = NIL);
     END;
   END;
+<* END *>
 END IsGoodConst;
 
 PROCEDURE GetConstByte*(loc: ir.Local; inx: LONGINT) : SYSTEM.BYTE;
@@ -1331,6 +1586,13 @@ BEGIN
   longreal_type.pos := ir.NullPos;
   longreal_type.end := ir.NullPos;
   InitVal_AuxConst;
+  -- it cannot be placed in begin part of module because in this case env.config is not defined yet
+  LINE_COMMENT_CHAR := "#";
+<* ELSIF TARGET_LLVM THEN*>  
+  -- it cannot be placed in begin part of module because in this case env.config is not defined yet
+  LINE_COMMENT_CHAR := ";";
+<* ELSE *>  
+  LINE_COMMENT_CHAR := ";";
 <* END *>
 END Init;
 

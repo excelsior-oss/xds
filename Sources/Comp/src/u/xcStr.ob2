@@ -145,4 +145,21 @@ BEGIN
   END;
 END Internalize;
 
+--------------------------------------------------------------------------------
+-- Extending the string 'str' to the length 'len'
+PROCEDURE AlignStr *(VAR str: ARRAY OF CHAR; len: LONGINT);
+VAR
+  str_begin : LONGINT;
+  str_end   : LONGINT;
+  i         : LONGINT;
+BEGIN
+  str_begin := LENGTH(str);
+  str_end   := len-1;
+  IF str_end > LEN(str) THEN str_end := LEN(str); END;
+    
+  FOR i := str_begin TO str_end DO
+    FormStr.append(str, " ");
+  END;
+END AlignStr;
+
 END xcStr.

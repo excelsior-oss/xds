@@ -14,11 +14,15 @@ IMPORT
   nms  := ObjNames,
   tune := opTune,
   Emit_PPC,
+<* ELSIF TARGET_LLVM THEN *>
+  nms  := ObjNames,
 <* END *>
   COMPILER,
   SYSTEM;
 <* IF TARGET_386 THEN *> IMPORT xProfRTS; <* END *>
-IMPORT tune:=opTune;
+IMPORT  plt := xmPlatform;
+IMPORT tune := opTune;
+
 TYPE
   INT = LONGINT;
 
@@ -56,6 +60,7 @@ CONST
   objGO32*    = "GO32";
   objASM*     = "ASM";
   objGAS*     = "GAS";
+  objLLVM*    = "LLVM";
 
 VAR
   DefaultOBJFMT* : ARRAY 24 OF CHAR;
@@ -81,6 +86,7 @@ CONST
   dbg_DWARF_2*= "DWARF2.0";
   dbg_REF    *= "REF";
   dbg_GO32   *= "GO32";
+  dbg_LLVM   *= "LLVM";
 
   -- Текстовый формат представления отладочной информации,
   -- используется только для отладочных целей
@@ -420,10 +426,9 @@ BEGIN
       END;
   END;
 
-<* IF TARGET_RISC OR TARGET_SPARC THEN *>
-  SetEqu_IfNotSpecified("ALIGNMENT", "8");
-<* ELSE *>
-  IF (trg = env_x86linux) OR (trg = env_x86go32) THEN
+  IF plt.isTargetCPU(plt.CPU_PPC) OR plt.isTargetCPU(plt.CPU_SPARC) OR plt.isTargetCPU(plt.CPU_MIPS) THEN
+    SetEqu_IfNotSpecified("ALIGNMENT", "8");    
+  ELSIF (trg = env_x86linux) OR (trg = env_x86go32) THEN 
     SetEqu_IfNotSpecified("ALIGNMENT", "4");
     IF OptionSpecified (OPT_GENCPREF) = DEFAULT THEN 
       env.config.SetOption(OPT_GENCPREF, FALSE) 
@@ -431,7 +436,6 @@ BEGIN
   ELSE
     SetEqu_IfNotSpecified("ALIGNMENT", "1");
   END;
-<* END *>
 
   CheckFlag ("GENDEBUG", at.debug);
   IF at.debug IN at.COMP_MODE THEN
@@ -590,6 +594,10 @@ BEGIN
   CheckFlag ("GENASM",     at.GENASM);
 <* END *>
 
+<* IF TARGET_LLVM THEN *>
+  DefaultOBJFMT := objLLVM;
+  env.config.SetEquation(EQU_OBJFMT, DefaultOBJFMT);
+<* ELSE *>  
   IF at.GENASM IN at.COMP_MODE THEN
   <* IF TARGET_RISC THEN *>
     IF at.ABI = at.PowerOpen
@@ -615,6 +623,7 @@ BEGIN
     DefaultOBJFMT := objOMF;
   <* END *>
   END;
+<* END *> -- TARGET_LLVM
 
 (* -- turn off optimize traps - it nullifies traps' lineno & filenames
   -- doreorder и nooptimizetraps не должны быть включены одновременно
@@ -659,6 +668,9 @@ CONST
        + "DOREORDER-"
 <* IF TARGET_RISC OR TARGET_SPARC THEN *>
        + "DOPEEPHOLE+"
+<* ELSIF TARGET_LLVM THEN *>
+       + "GENCSTRINGSALWAYS+"
+       + "LINENOSRC+"
 <* END *>
        + "GENDLL-"
 <* IF TARGET_68k THEN *>

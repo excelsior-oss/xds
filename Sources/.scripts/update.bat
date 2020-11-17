@@ -8,6 +8,7 @@ rem ============================================= Configure
 rem Set ###_SOURCE_DIR, ###_CONFIG_FILE, ###_LOG_DIR, ###_ACTION_FILE and read '.config.bsc'
 call "%~dp0\setvars.bat"  UPDATE  .update.bsc  || exit /B 1
 
+set UPDATE_MODE=work
 if "%~1" == "Release" call :lbl_set_release_action & shift /1
 
 set UPDATE_TASK=Update %UPDATE_UNIT_NAME%
@@ -30,7 +31,7 @@ rem ============================================= Update component
 set UPDATE_ITEM_MODE=%3
 if "%UPDATE_ITEM_MODE%" == "" set UPDATE_ITEM_MODE=%UPDATE_MODE%
 
-if not "%SETUPT_ITEM_MODE%" == "%SETUP_MODE%"  goto :EOF
+if not "%UPDATE_ITEM_MODE%" == "%UPDATE_MODE%"  goto :EOF
 
 set UPDATE_TARGET=%WORKPLACE_DIR%\%2
 
@@ -39,8 +40,13 @@ call :lbl_make_dir "%UPDATE_TARGET%" || exit /B 1
 set UPDATE_SOURCE=%~1
 set UPDATE_SOURCE_LAST_SYMBOL=%UPDATE_SOURCE:~-1%
 
-if     "%UPDATE_SOURCE_LAST_SYMBOL%" == "\"   xcopy "%UPDATE_SOURCE:~0,-1%" "%UPDATE_TARGET%" /Y /S || set UPDATE_errorlevel=1 
-if not "%UPDATE_SOURCE_LAST_SYMBOL%" == "\"   copy /Y "%UPDATE_SOURCE%"     "%UPDATE_TARGET%"       || set UPDATE_errorlevel=1
+if "%UPDATE_SOURCE_LAST_SYMBOL%" == "\"   echo xcopy "%UPDATE_SOURCE:~0,-1%" "%UPDATE_TARGET%" /Y /S
+if "%UPDATE_SOURCE_LAST_SYMBOL%" == "\"        xcopy "%UPDATE_SOURCE:~0,-1%" "%UPDATE_TARGET%" /Y /S || set UPDATE_errorlevel=1 
+
+if not "%UPDATE_SOURCE_LAST_SYMBOL%" == "\"   echo copy /Y "%UPDATE_SOURCE%"     "%UPDATE_TARGET%"
+if not "%UPDATE_SOURCE_LAST_SYMBOL%" == "\"        copy /Y "%UPDATE_SOURCE%"     "%UPDATE_TARGET%"       || set UPDATE_errorlevel=1
+
+echo.
 
 goto :EOF 
 

@@ -387,7 +387,7 @@ TYPE (** type tags *)
      ttag_aux21,
      ttag_aux22,
      ttag_aux23,
-     ttag_aux24,
+     ttag_anonim,
      ttag_strictcallconv,
      ttag_alwaysinline,
      ttag_neverinline,
@@ -493,8 +493,10 @@ TYPE
                      *)
     use* : USAGE;    (** procedure   : used vars
                          module      : import
-             J record    : interfaces implemented
+                         J record    : interfaces implemented
                      *)
+    use_import* : USAGE; (** module: used objects from imported modules *)
+    
     ext* : BEXT;     (** for back-end only              *)
 <* IF target_idb THEN *>
     eno* : LONGINT;      (* id of corresponding entity *)
@@ -1392,6 +1394,58 @@ BEGIN
 END is_public;
 
 -----------------------------------------------------------------------------
+--  Object belongs to module's global scope
+PROCEDURE (o: OBJECT) is_global * ():  BOOLEAN;
+BEGIN
+  RETURN o.lev = 0;
+END is_global;
+
+-----------------------------------------------------------------------------
+--  Object belongs to procedure's local scope
+PROCEDURE (o: OBJECT) is_local * ():  BOOLEAN;
+BEGIN
+  RETURN o.lev > 0;
+END is_local;
+
+-----------------------------------------------------------------------------
+--  Object is declared in the other module
+PROCEDURE (o: OBJECT) is_extern * ():  BOOLEAN;
+BEGIN
+  RETURN (o.mode = ob_eproc);
+END is_extern;
+
+-----------------------------------------------------------------------------
+--  Object has fixed physical address
+PROCEDURE (o: OBJECT) has_fixed_addr * ():  BOOLEAN;
+BEGIN
+  RETURN (o.mode = ob_var) AND (o.attr # NIL);
+END has_fixed_addr;
+
+--------------------------------------------------------------------------------
+--  is object a volatile variable
+PROCEDURE (o: OBJECT) is_volatile * (): BOOLEAN;
+BEGIN
+  RETURN (o.mode IN OB_SET{ob_var, ob_varpar})
+     AND (otag_volatile IN o.tags);
+END is_volatile;
+
+-----------------------------------------------------------------------------
+--  Object is explicit initialized variable
+PROCEDURE (o: OBJECT) is_initvar * ():  BOOLEAN;
+BEGIN
+  RETURN (o.mode = ob_var)
+       & (o.val # NIL)
+       & NOT (otag_with IN o.tags);
+END is_initvar;
+
+-----------------------------------------------------------------------------
+--  Object is one of the predefined objects of Modula-2 language or module SYSTEM.
+PROCEDURE (o: OBJECT) is_system * ():  BOOLEAN;
+BEGIN
+  RETURN (o.mno < ZEROMno);
+END is_system;
+
+-----------------------------------------------------------------------------
 
 PROCEDURE ( n: NODE ) dynamic_type* ( )  :  STRUCT;
 (**
@@ -2269,6 +2323,7 @@ BEGIN
   env.config.SetOption ("__GEN_C__", FALSE);
   env.config.SetOption ("__GEN_X86__", FALSE);
   env.config.SetOption ("__GEN_O2__", FALSE);
+  env.config.SetOption ("__GEN_LLVM__", FALSE);
   c := code;
   e := code;
   REPEAT

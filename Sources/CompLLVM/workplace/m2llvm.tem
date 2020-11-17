@@ -1,0 +1,230 @@
+!if not defined usedll then
+  !new usedll-
+!end
+!if not defined multithread then
+  !new multithread-
+!end
+!if not defined gui then
+  !new gui-
+!end
+!if not defined libname then
+  !new libname=
+!end
+!if not defined genlib then
+  !new genlib-
+!elsif genlib and (libname="") then
+  !if project#"" then
+    !set libname = $(project)
+  !else
+    !set libname = default
+  !end
+!end
+!if not defined dllname then
+  !new dllname=
+!end
+!if not defined gendll then
+  !new gendll-
+!elsif gendll and (dllname="") then
+  !if project#"" then
+    !set dllname = $(project)
+  !else
+    !set dllname = default
+  !end
+!end
+!if not defined exename then
+  !new exename=
+!end
+!if not genlib and not gendll and (exename="") and (project#"") then
+  !set exename = $(project)
+!end
+
+! "M\t= %s\n",mkfname#>mkfext
+
+!if genlib then
+  ! "TARGET\t= %s\n",libname#>libext
+!elsif gendll then
+  !if defined dllname and (dllname#"") then
+    ! "TARGET\t= %s\n",dllname#>dllext
+  !elsif defined project and (project#"") then
+    ! "TARGET\t= %s\n",project#>dllext
+  !end
+!else
+  !if defined exename and (exename#"") then
+    ! "TARGET\t= %s\n",exename#>exeext
+  !elsif defined project and (project#"") then
+    ! "TARGET\t= %s\n",project#>exeext
+  !else
+    ! { main : "TARGET\t= %s\n",#>exeext }
+  !end
+!end
+
+!if gendebug or lineno then
+  ! "CDEBUG\t= \n"
+!else
+  ! "CDEBUG\t= \n"
+!end
+! "CPU\t= --target=%s -m32\n",llvm_target_triple
+! "CDEFS\t= \n"
+! "CF\t= $(CPU) -fno-builtin -ffreestanding" 
+!if defined include and (include # "") then
+  ! " -I%s",include
+!end
+!if not procinline then
+  ! " -fno-inline"
+!end
+!if defined ccomp_options and (ccomp_options # "") then
+  ! " %s",ccomp_options
+!else
+  ! " -Os" 
+!end
+  ! "\n"
+! "CC\t= clang.exe\n"
+!if genasm then
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) $$(CDEBUG) -o %s -S %s
+!else
+  !new ccomp = $$(CC) $$(CDEFS) $$(CF) $$(CDEBUG) -o %s -c %s
+!end
+!new llvmasm = $$(CC) $$(CPU) $$(CDEBUG) -o %s -c %s
+
+!if not defined linker then
+  !new linker=msvc
+!end
+!if link = "" then
+  !set link = "nmake /nologo /f %s",mkfname#mkfext
+!end
+
+
+
+# ------------------ objects enumeration ------------------
+#                    -------------------
+
+! "OBJ="
+!if defined tcsmodule then
+  ! " \\\n\t%s",tcsmodule#>objext
+!end
+! { obj asm : " \\\n\t%s",#>objext }
+
+
+# ------------------- target make rules -------------------
+#                     -----------------
+! "$(TARGET) : $(M) $(OBJ)\n"
+!if (linker = "xds") then
+  !if genlib then
+    ! "\txlib /new /nobak %s @<<\n",libname#>libext
+    ! { imp oberon : "+%s\n",#>objext }
+    ! "<<\n"
+  !else
+    ! "\txlink @<<\n"
+    !if (defined __XDS_SHELL__) and __XDS_SHELL__ then
+      ! "/shell\n"
+    !end
+    !if gui then
+      ! "/sys=W\n"
+    !else
+      ! "/sys=C\n"
+    !end
+    !if gendebug or genhistory or lineno then
+      ! "/debug\n"
+    !end
+    !if defined stacklimit then
+      ! "/stack=%s\n",stacklimit;
+    !else
+      /stack=128K
+    !end
+    ! '/name="$(TARGET)"\n'
+    !if gendll then
+      ! "/dll"
+      ! { edf : "=%s",#}
+      ! "\n"
+    !end
+    !if defined tcsmodule then
+      ! "%s\n",tcsmodule#>objext
+    !end
+    ! { main imp oberon : "%s\n",#>objext }
+    !if gendll then
+      ! "%s\n","xstartd"#libext
+    !else
+      ! "%s\n","xstart"#libext 
+    !end
+    !if usedll then
+      !if multithread then
+        ! "%s\n","xds25mi"#"lib"
+        !if defined topspeed and topspeed then
+          ! "%s\n","xts25mi"#"lib"
+        !end
+      !else
+        ! "%s\n","xds25i"#"lib"
+        !if defined topspeed and topspeed then
+          ! "%s\n","xts25i"#"lib"
+        !end
+      !end
+    !else
+      !if multithread then
+        ! "%s\n","libxdsmt"#"lib"
+        !if defined topspeed and topspeed then
+          ! "%s\n","libtsmt"#"lib"
+        !end
+      !else
+        ! "%s\n","libxds"#"lib"
+        !if defined topspeed and topspeed then
+          ! "%s\n","libts"#"lib"
+        !end
+      !end
+    !end
+    ! "%s\n","import32"#"lib"
+    ! { lib : "%s\n",# }
+    ! { res : "%s\n",# }
+    ! "<<\n"
+  !end
+
+!else
+  !if genlib then
+    ! "\t@lib /nologo /out:%s @<<\n",libname#>libext
+    ! "$(OBJ)\n"
+    ! "<<\n"
+  !else
+    ! "\t@link.exe @<<\n"
+    ! "/nologo\n"
+    !if gendebug then
+      ! "/debug\n"
+    !else
+      ! "/release\n"
+    !end
+    !if gui then
+      ! "/subsystem:windows\n"
+    !else
+      ! "/subsystem:console\n"
+    !end
+    ! "/machine:I386\n"
+    ! "/stack:%s\n",stacklimit
+    ! '/out:"$(TARGET)"\n'
+    ! "$(OBJ)\n"
+    ! "%s\n","libxds"#"lib"
+    !if defined topspeed and topspeed then
+      ! "%s\n","libts"#"lib"
+    !end
+    ! { lib : "%s\n",# }
+    ! "WINMM.LIB\n"
+    ! "USER32.lib\n"
+    ! "KERNEL32.lib\n"
+    ! "GDI32.lib\n"
+    ! "COMDLG32.lib\n"
+    ! { res : "%s\n",# }
+    ! "<<\n"
+  !end
+
+!end
+
+
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+!if genasm then
+  ! { main imp oberon : "%-12s : ",#>objext; " %s\n\t",#asmext,#; llvmasm,#>objext,#asmext; "\n\n" }
+  !if defined tcsmodule then
+    ! "%-12s : ",tcsmodule#>objext; " %s\n\t",tcsmodule#>asmext; llvmasm,tcsmodule#>objext,tcsmodule#asmext; "\n\n"
+  !end
+  ! { main imp oberon : "%-12s : ",#>asmext; " %s\n\t",#"ll",#; ccomp,#>asmext,#"ll"; "\n\n" }
+!else
+  ! { main imp oberon : "%-12s : ",#>objext; " %s\n\t",#"ll",#; ccomp,#>objext,#"ll"; "\n\n" }
+!end

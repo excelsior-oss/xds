@@ -2374,6 +2374,7 @@ PROCEDURE type_definition(VAR t: pc.STRUCT; en_array_of: BOOLEAN);
 
   PROCEDURE type_obj(s: pc.STRUCT);
   BEGIN
+    INCL(s.tags, pc.ttag_anonim);
     pcO.new_anonim_obj(s.obj,pc.ob_type);
     s.obj.type:=s;
     pcO.alloc(s.obj);

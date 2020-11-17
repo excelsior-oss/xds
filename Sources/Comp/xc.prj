@@ -28,8 +28,10 @@
 -target_vax:-
 -target_mips:-
 -target_sparc:-
+-target_risc:-
 -target_ppc:-
 -target_null:-
+-target_llvm:-
 
 -target_386:-
 -target_c:-
@@ -51,6 +53,8 @@
   -target_mips+
 !elsif target="SPARC" then
   -target_sparc+
+!elsif target="RISC" then
+  -target_risc+
 !elsif target="PPC" then
   -target_ppc+
 !elsif target="m68k" then
@@ -65,6 +69,8 @@
   -target_86+
 !elsif target="O2" then
   -target_o2+
+!elsif target="LLVM" then
+  -target_llvm+
 !else
   !message Unknown target $(TARGET)
 !end
@@ -104,6 +110,7 @@
 -dbg_stab:-
 -dbg_ref:-
 -dbg_go32:-
+-dbg_llvm:-
 
 !if (target_family="WIN32") or (target_family="OS2") then
   -dbg_cv+
@@ -152,7 +159,7 @@
   -lookup = *.ob2  = $!/src/be_68k;   $!/src/be_krnl
   -lookup = *.def  = $!/src/be_68k;   $!/src/be_krnl; $!/src/be_krnl/RTS
   -lookup = *.mod  = $!/src/be_68k;   $!/src/be_krnl
-!elsif target_ppc then
+!elsif target_ppc or target_risc then
   -lookup = *.ob2  = $!/src/be_ppc;  $!/src/be_krnl
   -lookup = *.def  = $!/src/be_ppc;  $!/src/be_krnl; $!/src/be_krnl/RTS
   -lookup = *.mod  = $!/src/be_ppc;  $!/src/be_krnl
@@ -164,6 +171,10 @@
   -lookup = *.ob2  = $!/src/be_x86;   $!/src/be_krnl
   -lookup = *.def  = $!/src/be_x86;   $!/src/be_krnl; $!/src/be_krnl/RTS
   -lookup = *.mod  = $!/src/be_x86;   $!/src/be_krnl
+!elsif target_llvm then
+  -lookup = *.ob2  = $!/src/be_llvm;  $!/src/be_krnl
+  -lookup = *.def  = $!/src/be_llvm;  $!/src/be_krnl; $!/src/be_krnl/RTS
+  -lookup = *.mod  = $!/src/be_llvm;  $!/src/be_krnl
 !end
 -lookup = xrTCS.def = $!/../Lib/src/xr
 
@@ -216,6 +227,7 @@
   -ioverflow-
   -coverflow-
   -foverflow-
+
 !elsif mode = "work" then
   -gendebug+
   -lineno+
@@ -241,6 +253,7 @@
   -ioverflow-
   -coverflow-
   -foverflow-
+
 !else
   -gendebug-
   -lineno+

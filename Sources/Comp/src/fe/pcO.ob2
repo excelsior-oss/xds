@@ -48,7 +48,7 @@ CONST
      в исходном тексте, а не в оптимизированной программе *)
   omark_dis_array_of* = pc.omark_aux3;  (* forward type must not be array of *)
 
-  omark_tried *= pc.omark_aux19;  -- object was tried to serach
+  omark_tried *= pc.omark_aux19;  -- object was tried to search
 
   ttag_incomplete  = pc.ttag_aux20; (* full sym file was not read *)
   ttag_public*     = pc.ttag_aux21; (* used in Oberon *)
@@ -82,7 +82,7 @@ TYPE
   estruct_rec=RECORD (pc.struct_rec)
     tree: EOBJECT;
     up  : pc.STRUCT;
-    time: INTEGER;   (* for graph coloring when cleaning the BE extensiosn *)
+    time: INTEGER;   (* for graph coloring when cleaning the BE extensions *)
   END;
 
   TYPES_BUF  = POINTER TO ARRAY OF pc.STRUCT;

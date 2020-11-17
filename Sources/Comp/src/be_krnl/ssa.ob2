@@ -362,7 +362,7 @@ BEGIN
         bv.Move (current.AnyRef, tmp);
         nparams := opProcs.NumParamsByProto (p^.Prototype);
         FOR i:=1 TO LEN (p^.Params^)-1 DO
-            IF (i > nparams) OR NOT opProcs.ProcParamRO (p^.Prototype, i-1) THEN
+            IF (i > nparams) OR NOT opProcs.ProcParamRO (p^.Prototype, p.Params[i].protoparnum) THEN
                 bv.Union (tmp, CanPointsTo (p^.Params^[i]), tmp);
             END;
         END;
@@ -583,7 +583,7 @@ BEGIN
         InclAllExternals (vec);
         nparams := opProcs.NumParamsByProto (p^.Prototype);
         FOR i:=1 TO LEN (p^.Params^)-1 DO
-            IF (i > nparams) OR NOT opProcs.ProcParamRO (p^.Prototype, i-1) THEN
+            IF (i > nparams) OR NOT opProcs.ProcParamRO (p^.Prototype, p.Params[i].protoparnum) THEN
                 bv.Union (vec, CanPointsToCl (p^.Params^[i]), vec);
             END;
         END;

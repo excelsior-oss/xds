@@ -84,7 +84,7 @@ VAR
         RROne,
         NilValue,
 
-        MinusOne, Zero, One, Two : VALUE;
+        MinusOne, Zero-, One-, Two- : VALUE;
 
         IntegerValue,
         CardinalValue,
@@ -303,8 +303,8 @@ BEGIN
       t_ref,
       t_unsign,
       t_ZZ    :     r := pc.value.new (v.pos, pc.ZZ_type);
-                  <* IF TARGET_386 OR TARGET_MIPS THEN *> 
-                    -- host and target should comply to IEEE 754 for binary floatig point
+                  <* IF TARGET_386 OR TARGET_MIPS OR TARGET_LLVM THEN *> 
+                    -- host and target should comply to IEEE 754 for binary floating point
                     IF (ft = t_float) AND (fsz = 4) THEN
                       real := VAL(REAL, v.get_real());
                       r.set_integer(SYSTEM.VAL(LONGINT, real));

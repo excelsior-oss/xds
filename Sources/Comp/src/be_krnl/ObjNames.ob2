@@ -173,9 +173,9 @@ BEGIN
   END;
 END replace_non_alpha;
 
-<* ELSIF TARGET_RISC THEN *>   -- replace non-alphanum symbols
+<* ELSIF TARGET_RISC OR TARGET_LLVM THEN *>   -- replace non-alphanum symbols
 
-PROCEDURE replace_non_alpha(VAR name: ARRAY OF CHAR);
+PROCEDURE replace_non_alpha *(VAR name: ARRAY OF CHAR);
   VAR i: INT; ch: CHAR;
 BEGIN
   i := 0;
@@ -215,7 +215,7 @@ BEGIN
   END;
 END replace_non_alphaA;
 
-PROCEDURE replace_non_alpha(VAR name: ARRAY OF CHAR);
+PROCEDURE replace_non_alpha *(VAR name: ARRAY OF CHAR);
 BEGIN
   IF at.GENASM IN at.COMP_MODE THEN
       replace_non_alphaA(name);
@@ -353,6 +353,8 @@ BEGIN
      ELSE
        module_body_name(o, name);
      END;
+  |pc.ob_unused:
+     COPY(o.name^, name);
 --ELSE ASSERT(FALSE,100h+o^.mode);
   END;
   replace_non_alpha (name);

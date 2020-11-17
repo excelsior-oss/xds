@@ -8,6 +8,7 @@ rem ============================================= Configure
 rem Set ###_SOURCE_DIR, ###_CONFIG_FILE, ###_LOG_DIR, ###_ACTION_FILE and read '.config.bsc'
 call "%~dp0\setvars.bat"  SETUP  .setup.bsc  || exit /B 1
 
+set SETUP_MODE=work
 if "%~1" == "Release" call :lbl_set_release_action & shift /1
 
 set SETUP_TASK=Setup %SETUP_UNIT_NAME% workspace
@@ -42,8 +43,10 @@ set SETUP_TARGET=%WORKPLACE_DIR%\%2
 
 call :lbl_make_dir "%SETUP_TARGET%" || exit /B 1
 
-copy /Y %1 "%SETUP_TARGET%" 1>> "%SETUP_LOG_FILE%" 2>>&1
+echo copy /Y %1 "%SETUP_TARGET%" 1>> "%SETUP_LOG_FILE%" 2>>&1
+copy /Y %1 "%SETUP_TARGET%"      1>> "%SETUP_LOG_FILE%" 2>>&1
 if errorlevel 1 set SETUP_errorlevel=1
+echo. 1>> "%SETUP_LOG_FILE%" 2>>&1
 
 goto :EOF 
 
